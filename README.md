@@ -1,4 +1,6 @@
-# [PromiseTracker](https://promisetracker.codeforafrica.org)
+# [Promise Tracker](https://promisetracker.codeforafrica.org)
+
+**Wajibisha (Promise Tracker)**, is a tool to help journalists and civil society watchdogs more easily track campaign promises and other political / government pledges, using official evidence / data, as well as crowdsourced information, with a transparent and defensible methodology, to help inject accountability and honesty into the often cavalier way that promises are made to citizens to win their support for elections, policies, contracts … but are then seldom honoured.
 
 ## Installation
 
