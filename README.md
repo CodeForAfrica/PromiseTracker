@@ -8,7 +8,7 @@ PromiseTracker is a single page [React](https://reactjs.org/) web app deployable
 
 ## Attribution
 
-Wajibisha (Promise Tracker), modelled on https://rouhanimeter.com, to help newsroom verification desks track & fact-check performance promises.
+**Promise Tracker**, modelled on https://rouhanimeter.com, to help newsroom verification desks track & fact-check performance promises.
 
 ## Contributing
 
