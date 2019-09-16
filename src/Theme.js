@@ -18,14 +18,18 @@ const Theme = createMuiTheme({
     }
   },
   typography: {
-    h3: {
+    h2: {
       fontSize: '1.25rem',
+      fontWeight: 700,
+      lineHeight: 1
+    },
+    h3: {
+      fontSize: '1rem',
       fontWeight: 500,
       lineHeight: 1.4
     },
     body2: {
-      fontSize: '0.75rem',
-      color: 'rgb(155, 155, 155)'
+      fontSize: '0.75rem'
     }
   },
   props: {
@@ -48,6 +52,16 @@ const Theme = createMuiTheme({
     }
   },
   overrides: {
+    MuiTypography: {
+      root: {
+        height: 'fit-content'
+      }
+    },
+    MuiDivider: {
+      root: {
+        width: '100%'
+      }
+    },
     MuiListItem: {
       button: {
         '&:hover': {
