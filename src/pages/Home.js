@@ -4,6 +4,7 @@ import Page from '../components/Page';
 import PromisesSection from './sections/PromisesSection';
 import PromiseStatusIndicatorsSection from './sections/PromiseStatusIndicatorsSection';
 import PromiseCard from '../components/PromiseCard';
+import Partners from '../components/Partners'
 
 function Home() {
   return (
@@ -38,6 +39,7 @@ function Home() {
           />
         </Grid>
       </PromisesSection>
+      <Partners />
     </Page>
   );
 }
