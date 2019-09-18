@@ -53,14 +53,17 @@ const Theme = createMuiTheme({
     MuiSelect: {
       disableUnderline: true,
       IconComponent: KeyboardArrowDown
+    },
+    MuiInput: {
+      disableUnderline: true
     }
   },
   overrides: {
     MuiButton: {
       root: {
-        border: '1px solid #d1d1d1',
+        border: '0.0625rem solid #d1d1d1',
         backgroundColor: '#fff',
-        borderRadius: '25px',
+        borderRadius: '1.5625rem',
         fontWeight: 600,
         fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif'
       },
@@ -90,6 +93,21 @@ const Theme = createMuiTheme({
     MuiDivider: {
       root: {
         width: '100%'
+      }
+    },
+    MuiFormLabel: {
+      root: {
+        color: 'black',
+        marginBottom: '.625rem'
+      }
+    },
+    MuiTextField: {
+      root: {
+        padding: '1rem',
+        overflow: 'hidden',
+        border: '0.0625rem solid #d1d1d1',
+        backgroundColor: 'white',
+        color: '#637381 !important'
       }
     },
     MuiListItem: {
