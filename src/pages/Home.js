@@ -4,13 +4,14 @@ import Page from '../components/Page';
 import PromisesSection from './sections/PromisesSection';
 import PromiseStatusIndicatorsSection from './sections/PromiseStatusIndicatorsSection';
 import PromiseCard from '../components/PromiseCard';
+import LatestArticlesSection from './sections/LatestArticlesSection';
 import ContributeSection from './sections/ContributeSection';
 
 function Home() {
   return (
     <Page>
       <PromiseStatusIndicatorsSection />
-      <PromisesSection disableFilterHistory>
+      <PromisesSection enableShowMore disableFilterHistory>
         <Grid item xs={12} sm={6} md={4}>
           <PromiseCard
             status="stalled"
@@ -39,6 +40,7 @@ function Home() {
           />
         </Grid>
       </PromisesSection>
+      <LatestArticlesSection />
       <ContributeSection />
     </Page>
   );

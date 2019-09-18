@@ -28,6 +28,10 @@ const Theme = createMuiTheme({
       fontWeight: 500,
       lineHeight: 1.4
     },
+    body1: {
+      fontSize: '1rem',
+      lineHeight: 1.5
+    },
     body2: {
       fontSize: '0.75rem'
     }
@@ -65,6 +69,30 @@ const Theme = createMuiTheme({
       },
       text: {
         padding: '.75rem 3.5625rem'
+      },
+      textPrimary: {
+        '&:hover': {
+          border: '1px solid #659db9',
+          color: 'white',
+          backgroundColor: '#659db9',
+          fontWeight: 'bold'
+        }
+      },
+      textSecondary: {
+        '&:hover': {
+          color: 'yellow',
+          fontWeight: 'bold'
+        }
+      }
+    },
+    MuiTypography: {
+      root: {
+        height: 'fit-content'
+      }
+    },
+    MuiDivider: {
+      root: {
+        width: '100%'
       }
     },
     MuiFormLabel: {
@@ -92,11 +120,7 @@ const Theme = createMuiTheme({
     },
     MuiLink: {
       root: {
-        fontWeight: 'bold',
-        '&:hover': {
-          color: '#659db9',
-          fontWeight: 'bold'
-        }
+        fontWeight: 'bold'
       }
     },
     MuiInput: {
