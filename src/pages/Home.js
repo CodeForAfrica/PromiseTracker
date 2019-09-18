@@ -4,10 +4,9 @@ import Page from '../components/Page';
 import PromisesSection from './sections/PromisesSection';
 import PromiseStatusIndicatorsSection from './sections/PromiseStatusIndicatorsSection';
 import PromiseCard from '../components/PromiseCard';
-import Partners from '../components/Partners'
+import PartnersSection from './sections/PartnersSection';
 import LatestArticlesSection from './sections/LatestArticlesSection';
 import ContributeSection from './sections/ContributeSection';
-
 
 function Home() {
   return (
@@ -44,7 +43,7 @@ function Home() {
       </PromisesSection>
       <LatestArticlesSection />
       <ContributeSection />
-      <Partners />
+      <PartnersSection />
     </Page>
   );
 }
