@@ -42,9 +42,9 @@ function Home() {
           />
         </Grid>
       </PromisesSection>
-      <Partners />
       <LatestArticlesSection />
       <ContributeSection />
+      <Partners />
     </Page>
   );
 }
