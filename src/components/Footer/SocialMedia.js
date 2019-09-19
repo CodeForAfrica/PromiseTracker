@@ -1,6 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
-
 
 import { library } from '@fortawesome/fontawesome-svg-core';
 import {
@@ -12,8 +10,6 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 import { Grid, Typography, makeStyles } from '@material-ui/core';
-
-
 
 const useStyles = makeStyles({
   iconGrid: {
@@ -27,7 +23,7 @@ const useStyles = makeStyles({
     }
   },
   links: { color: '#fff' }
-})
+});
 
 library.add(faFacebookF, faTwitter, faInstagram, faTelegram);
 
@@ -35,14 +31,17 @@ function SocialMedia() {
   const classes = useStyles();
   return (
     <Grid item xs={12} md={4}>
-      <Typography variant="h3" style={{ color: 'black' }}>ON SOCIAL MEDIA</Typography>
+      <Typography variant="h3" style={{ color: 'black' }}>
+        ON SOCIAL MEDIA
+      </Typography>
       <Grid
         spacing={3}
         container
         direction="row"
         justify="flex-start"
         alignItems="center"
-        className={classes.iconGrid}>
+        className={classes.iconGrid}
+      >
         <Grid item>
           <a
             href="https://www.facebook.com/AfricanCIR/"
@@ -99,9 +98,5 @@ function SocialMedia() {
     </Grid>
   );
 }
-
-SocialMedia.propTypes = {
-  classes: PropTypes.shape().isRequired
-};
 
 export default SocialMedia;
