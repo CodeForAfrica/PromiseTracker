@@ -1,17 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-
-
-import { library } from '@fortawesome/fontawesome-svg-core';
-import {
-  faFacebookF,
-  faInstagram,
-  faTwitter,
-  faTelegram
-} from '@fortawesome/free-brands-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-
 import { Grid, Typography, makeStyles } from '@material-ui/core';
+import { Facebook, Instagram, Twitter } from 'react-feather';
 
 
 
@@ -28,8 +18,6 @@ const useStyles = makeStyles({
   },
   links: { color: '#fff' }
 })
-
-library.add(faFacebookF, faTwitter, faInstagram, faTelegram);
 
 function SocialMedia() {
   const classes = useStyles();
@@ -49,11 +37,7 @@ function SocialMedia() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            <FontAwesomeIcon
-              className={classes.fa}
-              icon={['fab', 'facebook-f']}
-              size="2x"
-            />
+            <Facebook className={classes.fa} />
           </a>
         </Grid>
         <Grid item>
@@ -62,11 +46,7 @@ function SocialMedia() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            <FontAwesomeIcon
-              className={classes.fa}
-              icon={['fab', 'instagram']}
-              size="2x"
-            />
+            <Instagram className={classes.fa} />
           </a>
         </Grid>
         <Grid item>
@@ -75,24 +55,7 @@ function SocialMedia() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            <FontAwesomeIcon
-              className={classes.fa}
-              icon={['fab', 'twitter']}
-              size="2x"
-            />
-          </a>
-        </Grid>
-        <Grid item>
-          <a
-            href="https://twitter.com/africancir"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <FontAwesomeIcon
-              className={classes.fa}
-              icon={['fab', 'telegram']}
-              size="2x"
-            />
+            <Twitter className={classes.fa} />
           </a>
         </Grid>
       </Grid>
