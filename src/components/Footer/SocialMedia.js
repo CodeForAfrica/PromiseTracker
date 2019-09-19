@@ -1,21 +1,27 @@
 import React from 'react';
 
-import { library } from '@fortawesome/fontawesome-svg-core';
-import {
-  faFacebookF,
-  faInstagram,
-  faTwitter,
-  faTelegram
-} from '@fortawesome/free-brands-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Grid, makeStyles } from '@material-ui/core';
+import { Facebook, Instagram, Twitter, Send } from 'react-feather';
 
-import { Grid } from '@material-ui/core';
 import A from '../A';
 import Section from './Section';
 
-library.add(faFacebookF, faTwitter, faInstagram, faTelegram);
+const useStyles = makeStyles({
+  iconGrid: {
+    padding: '2.5rem 0'
+  },
+  fa: {
+    transition: 'all .5s ease-in-out',
+    color: 'grey',
+    ' &:hover': {
+      color: '#257ca3'
+    }
+  },
+  links: { color: '#fff' }
+});
 
 function SocialMedia() {
+  const classes = useStyles();
   return (
     <Section title="ON SOCIAL MEDIA" spacing={2}>
       <Grid item>
@@ -24,11 +30,7 @@ function SocialMedia() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <FontAwesomeIcon
-            className="Mui-desaturated"
-            icon={['fab', 'facebook-f']}
-            size="2x"
-          />
+          <Facebook className={classes.fa} />
         </A>
       </Grid>
       <Grid item>
@@ -37,11 +39,7 @@ function SocialMedia() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <FontAwesomeIcon
-            className="Mui-desaturated"
-            icon={['fab', 'instagram']}
-            size="2x"
-          />
+          <Instagram className={classes.fa} />
         </A>
       </Grid>
       <Grid item>
@@ -50,11 +48,7 @@ function SocialMedia() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <FontAwesomeIcon
-            className="Mui-desaturated"
-            icon={['fab', 'twitter']}
-            size="2x"
-          />
+          <Twitter className={classes.fa} />
         </A>
       </Grid>
       <Grid item>
@@ -63,11 +57,7 @@ function SocialMedia() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <FontAwesomeIcon
-            className="Mui-desaturated"
-            icon={['fab', 'telegram']}
-            size="2x"
-          />
+          <Send className={classes.fa} />
         </A>
       </Grid>
     </Section>
