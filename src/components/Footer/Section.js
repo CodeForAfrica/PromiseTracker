@@ -6,17 +6,13 @@ import propTypes from '../propTypes';
 
 const useStyles = makeStyles(theme => ({
   root: {
-    maxHeight: '130px',
-    justifyContent: 'center',
     textAlign: 'center',
     [theme.breakpoints.up('md')]: {
       textAlign: 'unset',
-      justifyContent: 'flex-start',
-      maxHeight: 'unset'
+      justifyContent: 'flex-start'
     }
   },
   content: {
-    justifyContent: 'center',
     [theme.breakpoints.up('md')]: {
       justifyContent: 'flex-start'
     }
@@ -26,17 +22,23 @@ const useStyles = makeStyles(theme => ({
 function Section({ title, children, spacing, direction }) {
   const classes = useStyles();
   return (
-    <Grid className={classes.root} container direction="column" spacing={3}>
+    <Grid
+      spacing={3}
+      container
+      direction="column"
+      justify="center"
+      className={classes.root}
+    >
       <Grid item>
         <Typography variant="h3">{title}</Typography>
       </Grid>
       <Grid
-        className={classes.content}
-        container
         item
         xs={12}
+        justify="center"
         spacing={spacing}
         direction={direction}
+        className={classes.content}
       >
         {children}
       </Grid>
