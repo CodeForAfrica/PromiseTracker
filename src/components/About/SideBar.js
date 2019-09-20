@@ -5,7 +5,7 @@ import StatusChip from '../StatusChip';
 
 const useStyles = makeStyles({
   root: {
-    borderLeft: '1px solid #e6e6e6'
+    borderLeft: '0.0625rem solid #e6e6e6'
   },
   typo: {
     padding: '1rem 0'
