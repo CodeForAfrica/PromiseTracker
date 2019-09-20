@@ -7,23 +7,18 @@ import A from '../A';
 import Section from './Section';
 
 const useStyles = makeStyles({
-  iconGrid: {
-    padding: '2.5rem 0'
-  },
   fa: {
-    transition: 'all .5s ease-in-out',
     color: 'grey',
     ' &:hover': {
       color: '#257ca3'
     }
-  },
-  links: { color: '#fff' }
+  }
 });
 
 function SocialMedia() {
   const classes = useStyles();
   return (
-    <Section title="ON SOCIAL MEDIA" spacing={2}>
+    <Section title="ON SOCIAL MEDIA" spacing={3}>
       <Grid item>
         <A
           href="https://www.facebook.com/AfricanCIR/"
