@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import Promises from './pages/Promises';
 import Articles from './pages/Articles';
 import About from './pages/About';
+import ArticlePage from './components/ArticlePage';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route exact path="/promises" component={Promises} />
           <Route exact path="/articles" component={Articles} />
           <Route exact path="/about" component={About} />
+          <Route exact path="/article-page" component={ArticlePage} />
           <Route component={NotFound} />
         </Switch>
       </ScrollToTop>
