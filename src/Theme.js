@@ -18,6 +18,11 @@ const Theme = createMuiTheme({
     }
   },
   typography: {
+    h1: {
+      fontSize: '1.75rem',
+      fontWeight: 700,
+      lineHeight: 1.5
+    },
     h2: {
       fontSize: '1.25rem',
       fontWeight: 700,
@@ -56,9 +61,77 @@ const Theme = createMuiTheme({
     },
     MuiInput: {
       disableUnderline: true
+    },
+    MuiExpansionPanel: {
+      elevation: 0,
+      TransitionProps: {
+        timeout: 0
+      }
     }
   },
   overrides: {
+    MuiCssBaseline: {
+      '@global': {
+        '.Mui-share': {
+          outline: 'none',
+          '& .Mui-desaturated': {
+            color: 'grey',
+            filter: 'grayscale(1)',
+            '&:hover': {
+              filter: 'none',
+              color: '#659db9'
+            }
+          }
+        }
+      }
+    },
+    MuiExpansionPanel: {
+      root: {
+        '&.Mui-expanded': {
+          margin: 0
+        },
+        '&:before': {
+          content: ''
+        }
+      }
+    },
+    MuiExpansionPanelSummary: {
+      root: {
+        color: '#659db9',
+        '&.Mui-expanded': {
+          minHeight: '3rem',
+          '& > .Mui-icon-expanded': {
+            display: 'none'
+          },
+          '& > .Mui-icon-collapsed': {
+            display: 'none'
+          }
+        },
+        padding: 0
+      },
+      content: {
+        '& > .Mui-icon-expand': {
+          display: 'block'
+        },
+        '& > .Mui-icon-collapse': {
+          display: 'none'
+        },
+        '&.Mui-expanded': {
+          margin: 0,
+          '& > .Mui-icon-collapse': {
+            display: 'block'
+          },
+          '& > .Mui-icon-expand': {
+            display: 'none'
+          }
+        }
+      }
+    },
+    MuiExpansionPanelDetails: {
+      root: {
+        padding: 0
+      }
+    },
     MuiButton: {
       root: {
         border: '0.0625rem solid #d1d1d1',
@@ -68,11 +141,11 @@ const Theme = createMuiTheme({
         fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif'
       },
       text: {
-        padding: '.75rem 3.5625rem'
+        padding: '0.75rem 3.5625rem'
       },
       textPrimary: {
         '&:hover': {
-          border: '1px solid #659db9',
+          border: '0.0625rem solid #659db9',
           color: 'white',
           backgroundColor: '#659db9',
           fontWeight: 'bold'
@@ -98,7 +171,7 @@ const Theme = createMuiTheme({
     MuiFormLabel: {
       root: {
         color: 'black',
-        marginBottom: '.625rem'
+        marginBottom: '0.625rem'
       }
     },
     MuiTextField: {
