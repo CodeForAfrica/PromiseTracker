@@ -10,10 +10,11 @@ import {
 } from '@material-ui/core';
 import { isWidthUp, isWidthDown } from '@material-ui/core/withWidth';
 import CloseIcon from '@material-ui/icons/Close';
-import Link from './Link';
-
-import Layout from '../Layout';
+import { Menu } from 'react-feather';
 import propTypes from '../propTypes';
+
+import Link from './Link';
+import Layout from '../Layout';
 import Brand from './Brand';
 
 const navHeight = '5rem';
@@ -23,13 +24,13 @@ const useStyles = makeStyles(theme => ({
     height: navHeight,
     zIndex: 999
   },
-  layoutRoot: {
+  layoutRoot: ({ fixed }) => ({
     zIndex: 999,
-    position: 'fixed',
+    position: fixed ? 'fixed' : 'relative',
     height: navHeight,
     background: 'white',
     boxShadow: '0 0.125rem 0.25rem 0 rgba(0,0,0,.21)'
-  },
+  }),
   layoutContent: {
     flexWrap: 'nowrap',
     alignItems: 'center',
@@ -58,6 +59,12 @@ const useStyles = makeStyles(theme => ({
     width: '11.4375rem',
     height: '3rem',
     marginLeft: '1rem'
+  },
+  fa: {
+    color: 'grey',
+    ' &:hover': {
+      color: '#257ca3'
+    }
   }
 }));
 
@@ -119,7 +126,7 @@ function Navigation({ width, ...props }) {
               className={classes.menuButton}
               onClick={() => setDrawerIsOpen(!drawerIsOpen)}
             >
-              Menu
+              <Menu className={classes.fa} />
             </ButtonBase>
             {renderDrawer()}
           </>
@@ -133,7 +140,12 @@ function Navigation({ width, ...props }) {
 }
 
 Navigation.propTypes = {
+  fixed: propTypes.bool,
   width: propTypes.string.isRequired
+};
+
+Navigation.defaultProps = {
+  fixed: false
 };
 
 export default withWidth()(Navigation);
