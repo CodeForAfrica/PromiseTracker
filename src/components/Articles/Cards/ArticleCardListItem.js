@@ -1,12 +1,12 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/styles';
-import propTypes from './propTypes';
+import propTypes from '../../propTypes';
 import ArticleCardList from './ArticleCardList';
 
 const useStyles = makeStyles(theme => ({
   root: ({ enableLastBorder, square, width, height }) => ({
     width: '100%',
-    height: '11rem',
+    minHeight: '11rem',
     [theme.breakpoints.up('md')]: {
       width: width || 'unset',
       height: height || 'unset'
@@ -22,7 +22,6 @@ const useStyles = makeStyles(theme => ({
       left: !square ? 0 : undefined,
       margin: '0 auto',
       width: 'calc(100% - 2rem)',
-      borderBottom: '0.0625rem solid rgb(209, 209, 209)',
       [theme.breakpoints.up('md')]: {
         width: !square ? 'calc(100% - 2rem)' : 'unset',
         height: square ? 'calc(100% - 2rem)' : 'unset',

@@ -1,8 +1,10 @@
 import React from 'react';
+
 import { makeStyles } from '@material-ui/styles';
 import { Typography, Grid } from '@material-ui/core';
-import propTypes from './propTypes';
-import RouterLink from './RouterLink';
+import propTypes from '../../propTypes';
+
+import RouterLink from '../../RouterLink';
 
 const useStyles = makeStyles(theme => ({
   root: ({ width, height, square }) => ({
@@ -15,9 +17,11 @@ const useStyles = makeStyles(theme => ({
   }),
   inner: ({ width, height, square }) => ({
     display: 'flex',
-    width: '100%',
+    maxWidth: '100%',
     height: '11rem',
     flexDirection: 'row',
+    width: '100%',
+    borderTop: '0.0625rem solid rgb(209, 209, 209)',
     [theme.breakpoints.up('md')]: {
       flexDirection: square ? 'column' : 'row',
       width: width || '100%',
@@ -32,7 +36,8 @@ const useStyles = makeStyles(theme => ({
     height: '100%',
     [theme.breakpoints.up('sm')]: {
       display: 'block',
-      width: '8rem'
+      width: '10rem',
+      height: '11rem'
     },
     [theme.breakpoints.up('md')]: {
       height: square ? '75%' : '100%',
@@ -69,6 +74,7 @@ const useStyles = makeStyles(theme => ({
     }
   },
   actionArea: {
+    display: 'inline-block',
     '&:hover': {
       color: 'unset',
       '& h2': {
@@ -85,7 +91,9 @@ function ArticleCard({
   height,
   title,
   description,
-  imgSrc,
+  mediaSrc,
+  subtitle,
+  slug,
   date
 }) {
   const classes = useStyles({ width, height, jumbo, square });
@@ -98,11 +106,14 @@ function ArticleCard({
     })
     .toString();
   return (
-    <RouterLink className={classes.actionArea} to="#">
+    <RouterLink className={classes.actionArea} to={`articles/${slug}`}>
       <div className={classes.root}>
         <div className={classes.inner}>
-          <img alt="" className={classes.image} src={imgSrc} />
-
+          <img
+            className={classes.image}
+            src={mediaSrc}
+            alt="Article Thumbnsail"
+          />
           <Grid
             className={classes.content}
             container
@@ -110,7 +121,7 @@ function ArticleCard({
             justify="space-between"
           >
             <Grid item>
-              <Typography className={classes.label}>Report</Typography>
+              <Typography className={classes.label}>{subtitle}</Typography>
               <Typography className={classes.title} variant="h2">
                 {title}
               </Typography>
@@ -135,9 +146,11 @@ ArticleCard.propTypes = {
   square: propTypes.bool,
   width: propTypes.oneOfType([propTypes.number, propTypes.string]),
   height: propTypes.oneOfType([propTypes.number, propTypes.string]),
-  imgSrc: propTypes.string.isRequired,
+  mediaSrc: propTypes.string.isRequired,
   title: propTypes.string.isRequired,
+  subtitle: propTypes.string.isRequired,
   description: propTypes.string,
+  slug: propTypes.string.isRequired,
   date: propTypes.oneOfType([propTypes.string, propTypes.instanceOf(Date)])
     .isRequired
 };

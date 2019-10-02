@@ -1,14 +1,20 @@
 import React, { useMemo } from 'react';
+
 import { Button, withWidth } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
 import { isWidthUp } from '@material-ui/core/withWidth';
-import Page from '../components/Page';
 import propTypes from '../components/propTypes';
-import ArticleCardList from '../components/ArticleCardList';
-import ArticleCardListItem from '../components/ArticleCardListItem';
-import ArticleCard from '../components/ArticleCard';
+
+import Page from '../components/Page';
+
 import Layout from '../components/Layout';
+import ArticleCardList from '../components/Articles/Cards/ArticleCardList';
+import ArticleCardListItem from '../components/Articles/Cards/ArticleCardListItem';
+import ArticleCard from '../components/Articles/Cards/ArticleCard';
+
 import RouterLink from '../components/RouterLink';
+
+import data from '../data/articles';
 
 const useStyles = makeStyles({
   root: {},
@@ -24,14 +30,14 @@ function Articles({ width, location: { search } }) {
   const offset = useMemo(() => Number(offsetParam) || 0, [offsetParam]);
   const articles = {
     offset,
-    data: [{}, {}, {}, {}, {}, {}, {}, {}, {}]
+    data: data.articles
   };
 
   const renderRows = () => {
     const rows = [];
     for (let i = !articles.offset ? 1 : 0; i < articles.data.length; i += 3) {
-      const rowArticles = articles.data.slice(i).slice(0, 3);
-      const components = rowArticles.map(() => (
+      const rowArticles = articles.data.slice(i).slice(1);
+      const components = rowArticles.map(article => (
         <ArticleCardListItem
           square
           width="calc(100% / 3)"
@@ -46,9 +52,11 @@ function Articles({ width, location: { search } }) {
           <ArticleCard
             square
             height={400}
-            imgSrc="https://rouhanimeter.com/rm-media/uploads/RM-report-2019-header-800x546-1-600x410.png"
-            title="Promise Tracker Annual Report (Executive Summary)"
-            date="2019-09-16T17:53:45.289Z"
+            slug={article.slug}
+            subtitle={article.subtitle}
+            mediaSrc={article.mediaSrc}
+            title={article.title}
+            date={article.date}
           />
         </ArticleCardListItem>
       ));
@@ -71,14 +79,20 @@ function Articles({ width, location: { search } }) {
         <ArticleCardList>
           {!articles.offset && (
             <ArticleCardListItem>
-              <ArticleCard
-                jumbo
-                height={400}
-                date="2019-09-16T17:53:45.289Z"
-                title="Promise Tracker Annual Report (Executive Summary)"
-                imgSrc="https://rouhanimeter.com/rm-media/uploads/RM-report-2019-header-800x546-1-600x410.png"
-                description="August 2019 marks the sixth anniversary of Hassan Rouhani’s presidency. His sixth year in office was a difficult one, both for him and for the people of Iran. The economic and political crises that began earlier seem to continue into his seventh year. "
-              />
+              {articles.data[0] ? (
+                <ArticleCard
+                  jumbo
+                  height={400}
+                  slug={articles.data[0].slug}
+                  subtitle={articles.data[0].subtitle}
+                  mediaSrc={articles.data[0].mediaSrc}
+                  title={articles.data[0].title}
+                  date={articles.data[0].date}
+                  description="August 2019 marks the sixth anniversary of Hassan Rouhani’s presidency. His sixth year in office was a difficult one, both for him and for the people of Iran. The economic and political crises that began earlier seem to continue into his seventh year. "
+                />
+              ) : (
+                <null />
+              )}
             </ArticleCardListItem>
           )}
 

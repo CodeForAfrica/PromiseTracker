@@ -1,71 +1,66 @@
 import React from 'react';
-import {
-  makeStyles,
-  Typography,
-  Divider,
-  Button,
-  Grid
-} from '@material-ui/core';
+import { makeStyles, Typography, Button, Grid } from '@material-ui/core';
 import Layout from '../../components/Layout';
-import ArticleCard from '../../components/ArticleCard';
-import ArticleCardList from '../../components/ArticleCardList';
-import ArticleCardListItem from '../../components/ArticleCardListItem';
+
+import ArticleCard from '../../components/Articles/Cards/ArticleCard';
+import ArticleCardList from '../../components/Articles/Cards/ArticleCardList';
+import ArticleCardListItem from '../../components/Articles/Cards/ArticleCardListItem';
+
 import RouterLink from '../../components/RouterLink';
 
+import data from '../../data/articles';
+
 const useStyles = makeStyles({
-  root: {
-    padding: '1rem'
-  },
   sectionTitle: {
-    padding: '.5rem 0'
+    padding: '2rem 0'
   },
   readMore: {
     margin: '1rem 0'
   }
 });
 
+const articleSize = 4;
+
 function LatestArticlesSection() {
   const classes = useStyles();
   return (
-    <Layout classes={{ root: classes.root }} justify="center">
+    <Layout justify="center">
       <Grid item xs={12}>
         <Typography className={classes.sectionTitle} variant="h2">
           Latest Articles
         </Typography>
-        <Divider />
       </Grid>
 
-      <ArticleCardList>
-        <ArticleCardListItem square width="40%">
-          <ArticleCard
-            square
-            imgSrc="https://rouhanimeter.com/rm-media/uploads/RM-report-2019-header-800x546-1-600x410.png"
-            title="Promise Tracker Annual Report (Executive Summary)"
-            date="2019-09-16T17:53:45.289Z"
-          />
-        </ArticleCardListItem>
-        <ArticleCardListItem width="60%">
-          <ArticleCard
-            imgSrc="https://rouhanimeter.com/rm-media/uploads/RM-report-2019-header-800x546-1-600x410.png"
-            title="Promise Tracker Annual Report (Executive Summary)"
-            date="2019-09-16T17:53:45.289Z"
-          />
-        </ArticleCardListItem>
-        <ArticleCardListItem width="60%">
-          <ArticleCard
-            imgSrc="https://rouhanimeter.com/rm-media/uploads/RM-report-2019-header-800x546-1-600x410.png"
-            title="Promise Tracker Annual Report (Executive Summary)"
-            date="2019-09-16T17:53:45.289Z"
-          />
-        </ArticleCardListItem>
-        <ArticleCardListItem width="60%">
-          <ArticleCard
-            imgSrc="https://rouhanimeter.com/rm-media/uploads/RM-report-2019-header-800x546-1-600x410.png"
-            title="Promise Tracker Annual Report (Executive Summary)"
-            date="2019-09-16T17:53:45.289Z"
-          />
-        </ArticleCardListItem>
-      </ArticleCardList>
+      <Grid item>
+        <ArticleCardList>
+          <ArticleCardListItem square width="40%">
+            {data.articles[0] ? (
+              <ArticleCard
+                square
+                slug={data.articles[0].slug}
+                subtitle={data.articles[0].subtitle}
+                mediaSrc={data.articles[0].mediaSrc}
+                title={data.articles[0].title}
+                date={data.articles[0].date}
+              />
+            ) : (
+              <null />
+            )}
+          </ArticleCardListItem>
+          <ArticleCardListItem square width="60%">
+            {data.articles.slice(1, articleSize).map(article => (
+              <ArticleCard
+                squares
+                slug={article.slug}
+                subtitle={article.subtitle}
+                mediaSrc={article.mediaSrc}
+                title={article.title}
+                date={article.date}
+              />
+            ))}
+          </ArticleCardListItem>
+        </ArticleCardList>
+      </Grid>
 
       <Button
         classes={{ root: classes.readMore }}
