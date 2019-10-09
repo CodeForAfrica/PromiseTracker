@@ -12,9 +12,9 @@ import data from '../data/articles';
 
 import Header from '../components/Articles/Header';
 import Content from '../components/Articles/Content';
-import ContentSocialMedia from '../components/Articles/ContentSocialMedia';
-import Contribute from '../components/Articles/Contribute';
+import SocialMedia from '../components/Articles/SocialMedia';
 import Nav from '../components/Articles/Nav';
+import Sidebar from '../components/Articles/Sidebar';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -73,7 +73,7 @@ function Article({
               subtitle={article.subtitle}
               mediaSrc={article.mediaSrc}
             />
-            <ContentSocialMedia />
+            <SocialMedia />
             <Content
               first={article.content.first}
               middle={article.content.middle}
@@ -85,7 +85,7 @@ function Article({
             </Grid>
           </Grid>
           <Grid item xs={12} md={4}>
-            <Contribute />
+            <Sidebar />
           </Grid>
         </Grid>
       </Layout>
