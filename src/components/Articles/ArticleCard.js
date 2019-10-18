@@ -1,14 +1,20 @@
 import React from 'react';
 
 import { Typography, Grid, makeStyles } from '@material-ui/core';
-import propTypes from '../../propTypes';
+import propTypes from '../propTypes';
 
-import RouterLink from '../../RouterLink';
+import RouterLink from '../RouterLink';
 
 const useStyles = makeStyles({
+  imgGrid: {
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: '20vw'
+  },
   img: {
     height: 'auto',
-    maxWidth: '100%'
+    maxWidth: '100%',
+    objectFit: 'cover'
   }
 });
 
@@ -24,17 +30,21 @@ function ArticleCard({ title, description, mediaSrc, subtitle, slug, date }) {
     .toString();
   return (
     <RouterLink to={`articles/${slug}`}>
-      <Grid item>
-        <img src={mediaSrc} alt="Article Thumbnail" className={classes.img} />
-      </Grid>
-      <Grid container direction="column" spacing={6}>
-        <Grid item>
-          <Typography variant="caption">{subtitle}</Typography>
-          <Typography variant="h5">{title}</Typography>
-          <Typography variant="body1">{description}</Typography>
+      <Grid container direction="row">
+        <Grid item className={classes.imgGrid}>
+          <img src={mediaSrc} alt="Article Thumbnail" className={classes.img} />
         </Grid>
-        <Grid item>
-          <Typography variant="body2">{formattedDate}</Typography>
+        <Grid item xs={6}>
+          <Grid container direction="column" spacing={8}>
+            <Grid item>
+              <Typography variant="caption">{subtitle}</Typography>
+              <Typography variant="h5">{title}</Typography>
+              <Typography variant="body1">{description}</Typography>
+            </Grid>
+            <Grid item>
+              <Typography variant="body2">{formattedDate}</Typography>
+            </Grid>
+          </Grid>
         </Grid>
       </Grid>
     </RouterLink>

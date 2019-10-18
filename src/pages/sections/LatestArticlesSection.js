@@ -2,11 +2,7 @@ import React from 'react';
 import { makeStyles, Typography, Button, Grid } from '@material-ui/core';
 import Layout from '../../components/Layout';
 
-import ArticleCard from '../../components/Articles/Cards/ArticleCard';
-import ColumnArticleCard from '../../components/Articles/Cards/ColumnArticleCard';
-
-import ArticleCardList from '../../components/Articles/Cards/ArticleCardList';
-import ArticleCardListItem from '../../components/Articles/Cards/ArticleCardListItem';
+import ArticleCard from '../../components/Articles/ArticleCard';
 
 import RouterLink from '../../components/RouterLink';
 
@@ -29,9 +25,6 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-const articleSize = 4;
-// data.articles.slice(1, articleSize).map(article => console.log(article.index === 2));
-
 function LatestArticlesSection() {
   const classes = useStyles();
   return (
@@ -40,38 +33,28 @@ function LatestArticlesSection() {
         <Typography variant="h4">Latest Articles</Typography>
       </Grid>
       <Grid container direction="row" spacing={5} className={classes.mainGrid}>
-        <Grid item xs={5}>
-          <ArticleCardList>
-            <ArticleCardListItem>
-              {data.articles[0] ? (
-                <ArticleCard
-                  slug={data.articles[0].slug}
-                  subtitle={data.articles[0].subtitle}
-                  mediaSrc={data.articles[0].mediaSrc}
-                  title={data.articles[0].title}
-                  date={data.articles[0].date}
-                />
-              ) : (
-                <null />
-              )}
-            </ArticleCardListItem>
-          </ArticleCardList>
+        <Grid item xs={12} md={5}>
+          {data.articles[0] && (
+            <ArticleCard
+              slug={data.articles[0].slug}
+              subtitle={data.articles[0].subtitle}
+              mediaSrc={data.articles[0].mediaSrc}
+              title={data.articles[0].title}
+              date={data.articles[0].date}
+            />
+          )}
         </Grid>
 
-        <Grid item xs={7} className={classes.columnGrid}>
-          <ArticleCardList>
-            <ArticleCardListItem>
-              {data.articles.slice(1, articleSize).map(article => (
-                <ColumnArticleCard
-                  slug={article.slug}
-                  subtitle={article.subtitle}
-                  mediaSrc={article.mediaSrc}
-                  title={article.title}
-                  date={article.date}
-                />
-              ))}
-            </ArticleCardListItem>
-          </ArticleCardList>
+        <Grid item xs={12} md={7} className={classes.columnGrid}>
+          {data.articles.slice(1).map(article => (
+            <ArticleCard
+              slug={article.slug}
+              subtitle={article.subtitle}
+              mediaSrc={article.mediaSrc}
+              title={article.title}
+              date={article.date}
+            />
+          ))}
         </Grid>
       </Grid>
 
