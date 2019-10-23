@@ -1,30 +1,28 @@
 import React from 'react';
-import { makeStyles } from '@material-ui/core';
+import { makeStyles, Button } from '@material-ui/core';
 import propTypes from './propTypes';
 
 import config from '../config';
 
-const useStyles = makeStyles({
-  root: ({ status }) => ({
-    background: config.colors[status].light,
-    color: 'white',
-    cursor: 'pointer',
-    borderRadius: '1.125rem',
-    height: '2rem',
-    width: 'fit-content',
-    padding: '0 1.25rem',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center'
-  })
-});
+const useStyles = makeStyles(theme => ({
+  root: {
+    width: '50%',
+    padding: '0.2rem 1.25rem'
+  },
+  link: {
+    color: theme.palette.common.white,
+    textDecoration: 'none'
+  }
+}));
 
-function StatusChip({ status, ...props }) {
+function StatusChip({ status, href, ...props }) {
   const classes = useStyles({ status, ...props });
   return (
-    <div className={classes.root}>
-      {config.statusTypes.find(s => s.slug === status).name}
-    </div>
+    <Button variant="contained" color="primary" className={classes.root}>
+      <a href={`/promises?status=${status}`} className={classes.link}>
+        {config.statusTypes.find(s => s.slug === status).name}
+      </a>
+    </Button>
   );
 }
 
@@ -36,7 +34,12 @@ StatusChip.propTypes = {
     'in-progress',
     'stalled',
     'inactive'
-  ]).isRequired
+  ]).isRequired,
+  href: propTypes.string
+};
+
+StatusChip.defaultProps = {
+  href: undefined
 };
 
 export default StatusChip;

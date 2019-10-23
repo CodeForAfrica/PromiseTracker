@@ -8,32 +8,12 @@ import {
   Button
 } from '@material-ui/core';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles({
   contributeForm: {
     width: '100%',
-    [theme.breakpoints.up('md')]: {
-      width: '31.1875rem'
-    },
-    '& > div': {
-      marginBottom: '1.3125rem'
-    },
-    '& .MuiInputBase-input': {
-      color: '#637381'
-    }
-  },
-  descriptionTextField: {
-    height: '8.375rem'
-  },
-  submitButton: {
-    '&:hover': {
-      color: 'white',
-      border: '0.0625rem solid #f7b801',
-      backgroundColor: '#f7b801',
-      fontWeight: 'bold',
-      boxShadow: '0 0.125rem 0.125rem 0.0625rem rgba(0,0,0,.1)'
-    }
+    padding: '2rem'
   }
-}));
+});
 
 function Form() {
   const classes = useStyles();
@@ -49,20 +29,16 @@ function Form() {
   };
   return (
     <form className={classes.contributeForm} onSubmit={handleSubmit}>
-      <FormControl fullWidth>
+      <FormControl fullWidth margin="normal">
         <FormLabel htmlFor="description">Description</FormLabel>
-        <TextField
-          multiline
-          id="description"
-          className={classes.descriptionTextField}
-        />
+        <TextField multiline id="description" />
       </FormControl>
-      <FormControl fullWidth>
+      <FormControl fullWidth margin="normal">
         <FormLabel htmlFor="source">Source</FormLabel>
         <TextField id="source" />
       </FormControl>
-      <FormControl>
-        <Button className={classes.submitButton} type="submit">
+      <FormControl margin="normal">
+        <Button variant="contained" color="primary" type="submit">
           Submit
         </Button>
       </FormControl>

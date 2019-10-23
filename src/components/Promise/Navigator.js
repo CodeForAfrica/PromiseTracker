@@ -5,28 +5,12 @@ import KeyboardArrowLeft from '@material-ui/icons/KeyboardArrowLeft';
 import RouterLink from '../RouterLink';
 import propTypes from '../propTypes';
 
-const useStyles = makeStyles({
+const useStyles = makeStyles(theme => ({
   root: {
-    borderTop: '0.0625rem solid #9b9b9b',
+    borderTop: `1px solid ${theme.palette.divider}`,
     padding: '1.25rem 0'
-  },
-  label: {
-    position: 'relative',
-    maxHeight: '2.8rem',
-    overflow: 'hidden',
-    '&:after': {
-      content: '""',
-      position: 'absolute',
-      top: '1.4rem',
-      width: '4rem',
-      height: '1.4rem',
-      background:
-        'linear-gradient(to right, rgba(255, 255, 255, 0), rgb(255, 255, 255) 50%)',
-      textAlign: 'right',
-      right: 0
-    }
   }
-});
+}));
 
 function PromiseNavigator({ next, previous }) {
   const classes = useStyles();
@@ -39,17 +23,21 @@ function PromiseNavigator({ next, previous }) {
     >
       {previous && (
         <Grid item xs={6} md={5}>
-          <RouterLink to={previous.href} color="#659db9">
-            <KeyboardArrowLeft />
-            <Typography className={classes.label}>{previous.label}</Typography>
+          <RouterLink to={previous.href}>
+            <Typography variant="body2">
+              {' '}
+              <KeyboardArrowLeft fontSize="inherit" />
+              {previous.label}
+            </Typography>
           </RouterLink>
         </Grid>
       )}
       {next && (
         <Grid container item xs={6} md={5} justify="flex-end">
-          <RouterLink to={next.href} color="#659db9">
-            <Typography className={classes.label}>{next.label}</Typography>
-            <KeyboardArrowRight />
+          <RouterLink to={next.href}>
+            <Typography variant="body1">
+              {next.label} <KeyboardArrowRight fontSize="inherit" />
+            </Typography>
           </RouterLink>
         </Grid>
       )}

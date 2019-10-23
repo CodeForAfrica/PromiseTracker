@@ -3,8 +3,6 @@ import { PieChart, Pie, Cell, LabelList } from 'recharts';
 
 import { Grid, Typography, makeStyles } from '@material-ui/core';
 
-import config from '../config';
-
 const promises = [
   {
     status: 'achieved',
@@ -44,7 +42,7 @@ function PercentageLabelFormatter(value) {
   return `${((Number(value) * 100) / totalPromises).toFixed(0)}%`;
 }
 
-const useStyles = makeStyles({
+const useStyles = makeStyles(theme => ({
   root: {
     position: 'relative'
   },
@@ -54,25 +52,13 @@ const useStyles = makeStyles({
     height: '100%',
     top: 0
   },
-  centerNumberTypography: {
-    fontSize: '4.0625rem',
-    color: 'black',
-    lineHeight: '4.0625rem'
-  },
-  centerTextTypography: {
-    fontSize: '1.5625rem',
-    color: 'black',
-    lineHeight: '1.5625rem'
-  },
-  centerStatusTextTypography: {
-    fontSize: '0.9375rem',
-    color: 'black',
-    lineHeight: '0.9375rem'
+  typo: {
+    color: theme.palette.common.black
   },
   percentageLabel: {
     pointerEvents: 'none'
   }
-});
+}));
 
 function StatusPieChart() {
   const classes = useStyles();
@@ -92,14 +78,14 @@ function StatusPieChart() {
         alignItems="center"
         className={classes.centerTextGrid}
       >
-        <Typography className={classes.centerNumberTypography}>
+        <Typography variant="h6" className={classes.typo}>
           {activeData ? activeData.value : totalPromises}
         </Typography>
-        <Typography className={classes.centerTextTypography}>
+        <Typography variant="h6" className={classes.typo}>
           Promises
         </Typography>
         {activeData && (
-          <Typography className={classes.centerStatusTextTypography}>
+          <Typography variant="h6" className={classes.typo}>
             {activeData.name}
           </Typography>
         )}
@@ -113,6 +99,7 @@ function StatusPieChart() {
           nameKey="name"
           cx="50%"
           cy="50%"
+          paddingAngle={1}
           outerRadius={255 / 2}
           innerRadius={75}
           onMouseEnter={onMouseEnter}
@@ -121,7 +108,7 @@ function StatusPieChart() {
           {promises.map(promise => (
             <Cell
               key={promise.status}
-              fill={config.colors[promise.status].dark}
+              // fill={config.colors[promise.status].dark}
             />
           ))}
           <LabelList

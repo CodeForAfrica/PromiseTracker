@@ -1,24 +1,28 @@
 import React from 'react';
-import { Grid, Typography, Link as MuiLink } from '@material-ui/core';
+import {
+  Grid,
+  Typography,
+  makeStyles,
+  Link as MuiLink
+} from '@material-ui/core';
 
 import { Link as RouterLink } from 'react-router-dom';
 
-import { makeStyles } from '@material-ui/styles';
 import propTypes from '../propTypes';
 
-const useStyles = makeStyles({
-  root: {
-    display: 'inline-flex',
-    height: '100%'
+const useStyles = makeStyles(theme => ({
+  typo: {
+    color: theme.palette.common.white
   }
-});
-
-function Brand({ href, ...props }) {
-  const classes = useStyles(props);
+}));
+function Brand({ href }) {
+  const classes = useStyles();
   return (
-    <MuiLink className={classes.root} component={RouterLink} to={href}>
+    <MuiLink component={RouterLink} to={href}>
       <Grid container direction="column" justify="center" alignItems="center">
-        <Typography variant="h2">PROMISE TRACKER</Typography>
+        <Typography variant="h6" className={classes.typo}>
+          PROMISE TRACKER
+        </Typography>
       </Grid>
     </MuiLink>
   );

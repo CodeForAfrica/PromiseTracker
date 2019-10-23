@@ -18,12 +18,12 @@ import Sidebar from '../components/Articles/Sidebar';
 
 const useStyles = makeStyles(theme => ({
   root: {
-    padding: '4rem 0'
+    padding: '8rem 0'
   },
   articleGrid: {
     borderRight: 0,
     [theme.breakpoints.up('md')]: {
-      borderRight: '1px solid #e6e6e6'
+      borderRight: `1px solid ${theme.palette.divider}`
     }
   }
 }));

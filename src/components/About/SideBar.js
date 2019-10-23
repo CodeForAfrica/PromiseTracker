@@ -3,20 +3,23 @@ import React from 'react';
 import { Grid, Typography, makeStyles } from '@material-ui/core';
 import StatusChip from '../StatusChip';
 
-const useStyles = makeStyles({
+const useStyles = makeStyles(theme => ({
   root: {
-    borderLeft: '1px solid #e6e6e6'
+    borderLeft: `1px solid ${theme.palette.divider}`
+  },
+  title: {
+    paddingBottom: '2rem'
   },
   typo: {
     padding: '1rem 0'
   }
-});
+}));
 
 function SideBar({ ...props }) {
   const classes = useStyles(props);
   return (
-    <Grid item xs={12} md={4} className={classes.root}>
-      <Typography variant="h2" style={{ paddingBottom: '2rem' }}>
+    <Grid item xs={12} md={4} borderBottom={1} className={classes.root}>
+      <Typography variant="h3" className={classes.title}>
         OUR RATINGS
       </Typography>
       <Grid spacing={6} container>

@@ -10,21 +10,21 @@ import {
   TimelineEntry as PromiseTimelineEntry
 } from '../components/Promise';
 import TitledGrid from '../components/TitledGrid';
+import SideBar from '../components/Articles/Sidebar';
 
 const useStyles = makeStyles(theme => ({
   root: {
-    margin: '32px 0'
+    margin: '4rem 0',
+    padding: '5rem 0'
   },
-  mainContent: {
-    [theme.breakpoints.up('md')]: {
-      paddingRight: '64px'
-    }
+  sidebar: {
+    borderLeft: `1px solid ${theme.palette.divider}`
   },
-  sideContent: {
-    [theme.breakpoints.up('md')]: {
-      paddingLeft: '64px',
-      borderLeft: '0.0625rem solid #e6e6e6'
-    }
+  divider: {
+    padding: '3rem 0'
+  },
+  typo: {
+    padding: '2rem 0'
   }
 }));
 
@@ -34,72 +34,79 @@ function PromisePage({
   }
 }) {
   const classes = useStyles();
+  console.log(slug);
   /**
    * TODO: Pull data using slug
    */
-  console.log(slug);
   return (
     <Page fixNavigation={false}>
-      <Layout classes={{ root: classes.root }}>
-        <Grid item xs={12} md={8} className={classes.mainContent}>
+      <Layout classes={{ root: classes.root }} spacing={8}>
+        <Grid item xs={12} md={8}>
           <PromiseHeader
             status="stalled"
             term="Term 1"
             topic="Domestic policy"
             title="Assuring equal rights for all Iranian ethnicities"
           />
-          <Grid container item direction="column" spacing={8}>
-            <TitledGrid
-              container
-              item
-              direction="column"
-              spacing={1}
-              variant="h2"
-              title="Promise Timeline"
-            >
-              <Grid item>
-                <PromiseTimelineEntry
-                  defaultExpanded
-                  updated="Jul 26, 2019"
-                  status="compromised"
-                />
-              </Grid>
-              <Grid item>
-                <PromiseTimelineEntry
-                  updated="Jul 26, 2019"
-                  status="in-progress"
-                />
-              </Grid>
-            </TitledGrid>
+          <Grid item xs={12} className={classes.divider}>
+            <Divider />
+          </Grid>
 
-            <TitledGrid item variant="h2" title="About the promise">
-              <Typography />
-            </TitledGrid>
-
+          <TitledGrid
+            container
+            item
+            direction="column"
+            spacing={1}
+            variant="h4"
+            title="Promise Timeline"
+          >
             <Grid item>
-              <PromiseNavigator
-                previous={{
-                  href: '/promises/previous-promise-slug',
-                  label:
-                    'Civil Rights Charter will be submitted to the parliament as a bill.'
-                }}
-                next={{
-                  href: '/promises/next-promise-slug',
-                  label:
-                    'Reinstating university professors and administrators dismissed or forced into retirement for their political views.'
-                }}
+              <PromiseTimelineEntry
+                defaultExpanded
+                updated="Jul 26, 2019"
+                status="compromised"
               />
             </Grid>
+            <Grid item>
+              <PromiseTimelineEntry
+                updated="Jul 26, 2019"
+                status="in-progress"
+              />
+            </Grid>
+          </TitledGrid>
+
+          <TitledGrid
+            item
+            variant="h5"
+            title="About the promise"
+            className={classes.typo}
+          >
+            <Typography />
+          </TitledGrid>
+
+          <Grid item>
+            <PromiseNavigator
+              previous={{
+                href: '/promises/previous-promise-slug',
+                label:
+                  'Civil Rights Charter will be submitted to the parliament as a bill.'
+              }}
+              next={{
+                href: '/promises/next-promise-slug',
+                label:
+                  'Reinstating university professors and administrators dismissed or forced into retirement for their political views.'
+              }}
+            />
           </Grid>
         </Grid>
-        <Grid item xs={12} md={4} className={classes.sideContent}>
+        <Grid item xs={12} md={4} className={classes.sidebar}>
           <Grid container spacing={4}>
             <TitledGrid
               item
               xs={12}
               container
               spacing={2}
-              variant="h1"
+              variant="h4"
               title="Related Promises"
             >
               <Grid item xs={12}>
@@ -130,6 +137,7 @@ function PromisePage({
                 />
               </Grid>
             </TitledGrid>
+            <SideBar />
             <Grid container item>
               <Divider />
             </Grid>
