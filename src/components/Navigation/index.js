@@ -15,11 +15,9 @@ import {
 import { isWidthUp, isWidthDown } from '@material-ui/core/withWidth';
 import CloseIcon from '@material-ui/icons/Close';
 import propTypes from '../propTypes';
-
-import Link from './Link';
 import Brand from './Brand';
 
-const useStyles = makeStyles({
+const useStyles = makeStyles(theme => ({
   root: {
     flexGrow: 1
   },
@@ -32,9 +30,20 @@ const useStyles = makeStyles({
   menuList: {
     display: 'flex',
     flexDirection: 'column'
-    // color: 'black'
+  },
+  a: {
+    lineHeight: '100%',
+    margin: '2rem',
+    color: theme.palette.common.white,
+    textDecoration: 'none'
+  },
+  drawerA: {
+    lineHeight: '100%',
+    margin: '2rem',
+    color: theme.palette.primary,
+    textDecoration: 'none'
   }
-});
+}));
 
 function Navigation({ width, ...props }) {
   const classes = useStyles(props);
@@ -43,12 +52,21 @@ function Navigation({ width, ...props }) {
     return [
       { title: 'home', href: '/' },
       { title: 'promises', href: '/promises' },
-      { title: 'reports', href: '/articles' },
+      {
+        title: 'reports',
+        href: 'https://pesacheck.org/tagged/promise-tracker'
+      },
       { title: 'about us', href: '/about' }
     ].map(nav => (
-      <Link key={nav.href} href={nav.href}>
+      <a
+        key={nav.href}
+        href={nav.href}
+        className={classes.a}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
         {nav.title}
-      </Link>
+      </a>
     ));
   };
   const renderDrawer = () => {
@@ -71,12 +89,21 @@ function Navigation({ width, ...props }) {
           {[
             { title: 'home', href: '/' },
             { title: 'promises', href: '/promises' },
-            { title: 'reports', href: '/articles' },
+            {
+              title: 'reports',
+              href: 'https://pesacheck.org/tagged/promise-tracker'
+            },
             { title: 'about us', href: '/about' }
           ].map(nav => (
-            <Link key={nav.href} href={nav.href}>
+            <a
+              key={nav.href}
+              href={nav.href}
+              className={classes.drawerA}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               {nav.title}
-            </Link>
+            </a>
           ))}
         </MenuList>
       </Drawer>
