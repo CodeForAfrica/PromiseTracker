@@ -45,10 +45,11 @@ const useStyles = makeStyles({
     padding: '2rem 0rem 4.125rem'
   }),
   cardsContainer: {
-    padding: '2rem 0rem'
+    padding: '2rem 0rem',
+    margin: '0 0.5rem'
   },
   mainGrid: {
-    maxWidth: '37.5rem'
+    margin: '0 0.5rem'
   }
 });
 
@@ -125,64 +126,69 @@ function PromisesSection({
 
   return (
     <Layout justify="center" classes={{ root: classes.root }}>
-      <Grid item xs={12}>
-        <Grid container spacing={1} className={classes.mainGrid}>
-          <Grid item xs={6} sm={4}>
-            <Select
-              showIndicator={filter.status !== 'all'}
-              indicatorColor={
-                filter.status !== 'all' && config.colors[filter.status].dark
-              }
-              value={filter.status}
-              onChange={value => updateFilter('status', value)}
-              options={[
-                {
-                  value: 'all',
-                  name: 'All Statuses'
-                },
-                ...config.statusTypes.map(status => ({
-                  name: status.name,
-                  value: status.slug
-                }))
-              ]}
-            />
-          </Grid>
-          <Grid item xs={6} sm={4}>
-            <Select
-              showIndicator={filter.term !== 'all'}
-              value={filter.term}
-              onChange={value => updateFilter('term', value)}
-              options={[
-                {
-                  value: 'all',
-                  name: 'All Terms'
-                },
-                ...terms.map(term => ({
-                  name: term.name,
-                  value: term.slug
-                }))
-              ]}
-            />
-          </Grid>
-          <Grid item xs={6} sm={4}>
-            <Select
-              showIndicator={filter.topic !== 'all'}
-              value={filter.topic}
-              onChange={value => updateFilter('topic', value)}
-              options={[
-                {
-                  value: 'all',
-                  name: 'All Topics'
-                },
-                ...topics.map(topic => ({
-                  name: topic.name,
-                  value: topic.slug
-                }))
-              ]}
-            />
-          </Grid>
+      <Grid
+        container
+        justify="flex-start"
+        direction="row"
+        spacing={4}
+        className={classes.mainGrid}
+      >
+        <Grid item xs={6} sm={4} md={2}>
+          <Select
+            showIndicator={filter.status !== 'all'}
+            indicatorColor={
+              filter.status !== 'all' && config.colors[filter.status].dark
+            }
+            value={filter.status}
+            onChange={value => updateFilter('status', value)}
+            options={[
+              {
+                value: 'all',
+                name: 'All Statuses'
+              },
+              ...config.statusTypes.map(status => ({
+                name: status.name,
+                value: status.slug
+              }))
+            ]}
+          />
+        </Grid>
+        <Grid item xs={6} sm={4} md={2}>
+          <Select
+            showIndicator={filter.term !== 'all'}
+            value={filter.term}
+            onChange={value => updateFilter('term', value)}
+            options={[
+              {
+                value: 'all',
+                name: 'All Terms'
+              },
+              ...terms.map(term => ({
+                name: term.name,
+                value: term.slug
+              }))
+            ]}
+          />
+        </Grid>
+        <Grid item xs={6} sm={4} md={2}>
+          <Select
+            showIndicator={filter.topic !== 'all'}
+            value={filter.topic}
+            onChange={value => updateFilter('topic', value)}
+            options={[
+              {
+                value: 'all',
+                name: 'All Topics'
+              },
+              ...topics.map(topic => ({
+                name: topic.name,
+                value: topic.slug
+              }))
+            ]}
+          />
         </Grid>
       </Grid>
+
       <Grid container className={classes.cardsContainer} spacing={2}>
         {children}
       </Grid>

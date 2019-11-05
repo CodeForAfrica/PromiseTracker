@@ -10,7 +10,7 @@ import Layout from '../Layout';
 const useStyles = makeStyles({
   root: {
     backgroundColor: '#e6e6e6',
-    padding: '2.5rem'
+    padding: '2.5rem 0'
   },
   partners: {
     padding: '2rem 0'
@@ -20,7 +20,7 @@ const useStyles = makeStyles({
 function Footer() {
   const classes = useStyles();
   return (
-    <Layout classes={{ root: classes.root }} justify="center" spacing={10}>
+    <Layout classes={{ root: classes.root }} justify="center" spacing={5}>
       <Grid item xs={12} sm={7}>
         <About />
       </Grid>
