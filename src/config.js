@@ -69,8 +69,8 @@ export default {
       name: 'Domestic Policy'
     },
     {
-      slug: 'socio-cultural',
-      name: 'Socio-Cultural'
+      slug: 'social-cultural',
+      name: 'Social Cultural'
     }
   ],
   terms: [
@@ -79,18 +79,18 @@ export default {
       name: 'Term 1'
     },
     {
-      slug: 'term 2',
+      slug: 'term-2',
       name: 'Term 2'
     },
     {
-      slug: 'term 3',
+      slug: 'term-3',
       name: 'Term 3'
     }
   ],
   promises: [
     {
       title: 'Assuring equal rights for all Iranian ethnicities',
-      term: 'Term 1',
+      term: 'Term-1',
       topic: 'Domestic policy',
       slug: 'assuring-equal-rights-for-all-Iranian-ethnicities',
       status: 'achieved',
