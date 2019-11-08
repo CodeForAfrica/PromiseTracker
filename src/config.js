@@ -90,7 +90,7 @@ export default {
   promises: [
     {
       title: 'Assuring equal rights for all Iranian ethnicities',
-      term: 'Term-1',
+      term: 'Term 1',
       topic: 'Domestic policy',
       slug: 'assuring-equal-rights-for-all-Iranian-ethnicities',
       status: 'achieved',
@@ -155,7 +155,7 @@ export default {
       ]
     },
     {
-      title: 'An annual increase of one million foreign tourists',
+      title: 'An annual isncrease of one million foreign tourists',
       term: 'Term 1',
       topic: 'Economy',
       slug: 'an-annual-increase-of-one-million-foreign-tourists',
