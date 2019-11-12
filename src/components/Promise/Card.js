@@ -68,14 +68,13 @@ PromiseCard.propTypes = {
   title: propTypes.string.isRequired,
   term: propTypes.string.isRequired,
   topic: propTypes.string.isRequired,
-  href: propTypes.string,
+  href: propTypes.string.isRequired,
   img: propTypes.string,
   label: propTypes.string,
   value: propTypes.number
 };
 
 PromiseCard.defaultProps = {
-  href: undefined,
   img: undefined,
   label: undefined,
   value: undefined

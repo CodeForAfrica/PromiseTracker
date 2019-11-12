@@ -1,43 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
+
 import { makeStyles } from '@material-ui/styles';
 import { withRouter } from 'react-router';
 import { Grid, Button } from '@material-ui/core';
+import propTypes from '../../components/propTypes';
+
 import Layout from '../../components/Layout';
 import Select from '../../components/Select';
-import propTypes from '../../components/propTypes';
+import PromiseCard from '../../components/Promise/Card';
 import RouterLink from '../../components/RouterLink';
 
-import config from '../../config';
-
-const terms = [
-  {
-    slug: 'term-1',
-    name: 'Term 1'
-  },
-  {
-    slug: 'term 2',
-    name: 'Term 2'
-  }
-];
-
-const topics = [
-  {
-    slug: 'economy',
-    name: 'Economy'
-  },
-  {
-    slug: 'foreign-policy',
-    name: 'Foreign Policy'
-  },
-  {
-    slug: 'domestic-policy',
-    name: 'Domestic Policy'
-  },
-  {
-    slug: 'socio-cultural',
-    name: 'Socio Cultural'
-  }
-];
+import data from '../../data';
 
 const useStyles = makeStyles({
   root: props => ({
@@ -54,15 +27,15 @@ const useStyles = makeStyles({
 });
 
 function PromisesSection({
-  children,
+  enableShowMore,
   filter: propsFilter,
   location,
   history,
-  enableShowMore,
   disableFilterHistory,
   ...props
 }) {
   const classes = useStyles(props);
+
   const [filter, setFilter] = useState({
     status: propsFilter.status || 'all',
     term: propsFilter.term || 'all',
@@ -73,6 +46,7 @@ function PromisesSection({
     (name, value) => {
       setFilter({ ...filter, [name]: value });
       const params = new URLSearchParams(location.search);
+
       if (value !== 'all') {
         params.set(name, value);
       } else {
@@ -110,7 +84,6 @@ function PromisesSection({
 
   const filtersQueryString = useCallback(() => {
     const params = new URLSearchParams();
-
     if (filter.status !== 'all') {
       params.set('status', filter.status);
     }
@@ -124,6 +97,7 @@ function PromisesSection({
     return params.toString();
   }, [filter.status, filter.term, filter.topic]);
 
+  const { promises } = data;
   return (
     <Layout justify="center" classes={{ root: classes.root }}>
       <Grid
@@ -136,9 +110,6 @@ function PromisesSection({
         <Grid item xs={6} sm={4} md={2}>
           <Select
             showIndicator={filter.status !== 'all'}
-            indicatorColor={
-              filter.status !== 'all' && config.colors[filter.status].dark
-            }
             value={filter.status}
             onChange={value => updateFilter('status', value)}
             options={[
@@ -146,7 +117,7 @@ function PromisesSection({
                 value: 'all',
                 name: 'All Statuses'
               },
-              ...config.statusTypes.map(status => ({
+              ...data.statusTypes.map(status => ({
                 name: status.name,
                 value: status.slug
               }))
@@ -163,7 +134,7 @@ function PromisesSection({
                 value: 'all',
                 name: 'All Terms'
               },
-              ...terms.map(term => ({
+              ...data.terms.map(term => ({
                 name: term.name,
                 value: term.slug
               }))
@@ -180,7 +151,7 @@ function PromisesSection({
                 value: 'all',
                 name: 'All Topics'
               },
-              ...topics.map(topic => ({
+              ...data.topics.map(topic => ({
                 name: topic.name,
                 value: topic.slug
               }))
@@ -189,10 +160,34 @@ function PromisesSection({
         </Grid>
       </Grid>
 
-      <Grid container className={classes.cardsContainer} spacing={2}>
-        {children}
+      <Grid
+        container
+        className={classes.cardsContainer}
+        spacing={2}
+        color="white"
+      >
+        {promises
+          .filter(
+            filterPromise =>
+              (filter.status === 'all' ||
+                filterPromise.status === filter.status) &&
+              (filter.term === 'all' ||
+                (filterPromise.term === data.terms.slug) === filter.term) &&
+              (filter.topic === 'all' ||
+                (filterPromise.topic === data.topics.slug) === filter.topic)
+          )
+          .map(promise => (
+            <Grid item xs={12} sm={6} md={4}>
+              <PromiseCard
+                href={`promise/${promise.slug}`}
+                status={promise.status}
+                title={promise.title}
+                term={data.terms.find(s => s.slug === promise.term).name}
+                topic={data.topics.find(s => s.slug === promise.topic).name}
+              />
+            </Grid>
+          ))}
       </Grid>
-
       {enableShowMore && (
         <Button
           variant="contained"
@@ -212,7 +207,6 @@ PromisesSection.propTypes = {
   disableFilterHistory: propTypes.bool,
   location: propTypes.location.isRequired,
   history: propTypes.history.isRequired,
-  children: propTypes.children.isRequired,
   filter: propTypes.shape({
     status: propTypes.string,
     term: propTypes.string,

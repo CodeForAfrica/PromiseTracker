@@ -21,22 +21,25 @@ function PromiseNavigator({ next, previous }) {
       justify="space-between"
       spacing={1}
     >
-      {previous && (
-        <Grid item xs={6} md={5}>
-          <RouterLink to={previous.href}>
-            <Typography variant="body2">
+      {/* We need to keep the item component even when there is not previous
+          component to ensure proper positioning of next item
+       */}
+      <Grid item xs={6} md={5}>
+        {previous && (
+          <RouterLink to={previous.href} color="#659db9">
+            <Typography className={classes.label}>
               {' '}
-              <KeyboardArrowLeft fontSize="inherit" />
+              <KeyboardArrowLeft fontSize="small" />
               {previous.label}
             </Typography>
           </RouterLink>
-        </Grid>
-      )}
+        )}
+      </Grid>
       {next && (
         <Grid container item xs={6} md={5} justify="flex-end">
-          <RouterLink to={next.href}>
-            <Typography variant="body1">
-              {next.label} <KeyboardArrowRight fontSize="inherit" />
+          <RouterLink to={next.href} color="#659db9">
+            <Typography className={classes.label}>
+              {next.label} <KeyboardArrowRight fontSize="smal" />
             </Typography>
           </RouterLink>
         </Grid>

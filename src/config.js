@@ -28,31 +28,5 @@ export default {
       light: '#9b9b9b',
       dark: 'rgb(141, 141, 141)'
     }
-  },
-  statusTypes: [
-    {
-      slug: 'achieved',
-      name: 'Achieved'
-    },
-    {
-      slug: 'compromised',
-      name: 'Compromised'
-    },
-    {
-      slug: 'in-progress',
-      name: 'In Progress'
-    },
-    {
-      slug: 'not-achieved',
-      name: 'Not Achieved'
-    },
-    {
-      slug: 'stalled',
-      name: 'Stalled'
-    },
-    {
-      slug: 'inactive',
-      name: 'Inactive'
-    }
-  ]
+  }
 };
