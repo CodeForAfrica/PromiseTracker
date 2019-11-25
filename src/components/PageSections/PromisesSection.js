@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 
-import { Grid, Button, makeStyles } from '@material-ui/core';
+import { Grid, makeStyles } from '@material-ui/core';
 
 import { useRouter } from 'next/router';
 
@@ -10,7 +10,7 @@ import Layout from 'components/Layout';
 import Select from 'components/Select';
 import PromiseCard from 'components/Promise/Card';
 
-import Link from 'components/Link';
+import ButtonLink from 'components/Link/Button';
 
 import data from 'data';
 
@@ -156,11 +156,13 @@ function PromisesSection({ enableShowMore, filter, ...props }) {
       </Grid>
       {enableShowMore && (
         <Grid item className={classes.button}>
-          <Link href={`/promises${filtersQueryString()}`}>
-            <Button variant="contained" color="primary">
-              SHOW MORE
-            </Button>
-          </Link>
+          <ButtonLink
+            href={`/promises${filtersQueryString()}`}
+            variant="contained"
+            color="primary"
+          >
+            SHOW MORE
+          </ButtonLink>
         </Grid>
       )}
     </Layout>
