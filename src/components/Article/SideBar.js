@@ -1,12 +1,10 @@
 import React from 'react';
 
-import { makeStyles } from '@material-ui/styles';
-import { Grid } from '@material-ui/core';
+import { Grid, makeStyles } from '@material-ui/core';
 
-import Layout from '../Layout';
-
-import Content from '../Contribute/Content';
-import Form from '../Contribute/Form';
+import Layout from 'components/Layout';
+import Content from 'components/Contribute/Content';
+import Form from 'components/Contribute/Form';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -21,7 +19,7 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-function Sidebar() {
+function SideBar() {
   const classes = useStyles();
   return (
     <div className={classes.root}>
@@ -49,4 +47,4 @@ function Sidebar() {
   );
 }
 
-export default Sidebar;
+export default SideBar;

@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
+
 import { Menu } from 'react-feather';
+
+import Link from 'components/Link';
 
 import {
   AppBar,
@@ -8,14 +11,15 @@ import {
   withWidth,
   ButtonBase,
   Drawer,
+  Link as MuiLink,
   MenuList,
   Toolbar,
   IconButton
 } from '@material-ui/core';
 import { isWidthUp, isWidthDown } from '@material-ui/core/withWidth';
 import CloseIcon from '@material-ui/icons/Close';
-import propTypes from '../propTypes';
-import Brand from './Brand';
+import propTypes from 'components/propTypes';
+import Brand from 'components/Navigation/Brand';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -47,8 +51,9 @@ const useStyles = makeStyles(theme => ({
 
 function Navigation({ width, ...props }) {
   const classes = useStyles(props);
+
   const [drawerIsOpen, setDrawerIsOpen] = useState(false);
-  const renderNavLinks = () => {
+  const renderNavLinks = linkClassName => {
     return [
       { title: 'home', href: '/' },
       { title: 'promises', href: '/promises' },
@@ -57,17 +62,23 @@ function Navigation({ width, ...props }) {
         href: 'https://pesacheck.org/tagged/promise-tracker'
       },
       { title: 'about us', href: '/about' }
-    ].map(nav => (
-      <a
-        key={nav.href}
-        href={nav.href}
-        className={classes.a}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        {nav.title}
-      </a>
-    ));
+    ].map(nav =>
+      nav.href.startsWith('/') ? (
+        <Link key={nav.href} href={nav.href} className={linkClassName}>
+          {nav.title}
+        </Link>
+      ) : (
+        <MuiLink
+          key={nav.href}
+          href={nav.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={linkClassName}
+        >
+          {nav.title}
+        </MuiLink>
+      )
+    );
   };
   const renderDrawer = () => {
     return (
@@ -86,25 +97,7 @@ function Navigation({ width, ...props }) {
         </Toolbar>
 
         <MenuList className={classes.menuList}>
-          {[
-            { title: 'home', href: '/' },
-            { title: 'promises', href: '/promises' },
-            {
-              title: 'reports',
-              href: 'https://pesacheck.org/tagged/promise-tracker'
-            },
-            { title: 'about us', href: '/about' }
-          ].map(nav => (
-            <a
-              key={nav.href}
-              href={nav.href}
-              className={classes.drawerA}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {nav.title}
-            </a>
-          ))}
+          {renderNavLinks(classes.drawerA)}
         </MenuList>
       </Drawer>
     );
@@ -123,7 +116,7 @@ function Navigation({ width, ...props }) {
           )}
           <Brand href="/" />
           <Grid item className={classes.itemGrid}>
-            {isWidthUp('md', width) && renderNavLinks()}
+            {isWidthUp('md', width) && renderNavLinks(classes.a)}
           </Grid>
         </Toolbar>
       </AppBar>

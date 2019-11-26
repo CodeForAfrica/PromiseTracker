@@ -1,7 +1,7 @@
 import React from 'react';
 import { Grid, makeStyles } from '@material-ui/core';
 
-import propTypes from './propTypes';
+import propTypes from 'components/propTypes';
 
 const useStyles = makeStyles({
   root: {
@@ -20,6 +20,8 @@ function Layout({ children, justify, alignItems, spacing, ...props }) {
   return (
     <Grid className={classes.root} container justify="center">
       <Grid
+        item
+        xs={12}
         container
         className={classes.content}
         justify={justify}

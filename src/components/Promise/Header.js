@@ -1,13 +1,19 @@
 import React from 'react';
+
 import { Typography, Grid } from '@material-ui/core';
+
+import { useRouter } from 'next/router';
+
 import { Facebook, Twitter } from 'react-feather';
 import { FacebookShareButton, TwitterShareButton } from 'react-share';
-import propTypes from '../propTypes';
-import StatusChip from '../StatusChip';
+
+import propTypes from 'components/propTypes';
+import StatusChip from 'components/StatusChip';
 
 function PromiseHeader({ status, title, term, topic }) {
+  const router = useRouter();
   const statusAndShareSectionId = 'statusAndShareSection';
-  const shareUrl = window.location.href;
+  const shareUrl = router.query;
   return (
     <Grid container justify="column" spacing={4}>
       <Grid item>
@@ -28,7 +34,7 @@ function PromiseHeader({ status, title, term, topic }) {
         wrap="nowrap"
       >
         <Grid item xs={12}>
-          <StatusChip status={status} />
+          <StatusChip status={status} style={{ color: 'white' }} />
         </Grid>
         <Grid container item justify="flex-end" spacing={2}>
           <Grid item>

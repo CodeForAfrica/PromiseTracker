@@ -1,14 +1,14 @@
 import React from 'react';
-import { makeStyles } from '@material-ui/styles';
-import { Grid } from '@material-ui/core';
-import Layout from '../../components/Layout';
-import StatusPieChart from '../../components/StatusPieChart';
-import StatusIndicator from '../../components/StatusIndicator';
+import { Grid, makeStyles } from '@material-ui/core';
 
-import data from '../../data';
+import Layout from 'components/Layout';
+import StatusPieChart from 'components/StatusPieChart';
+import StatusIndicator from 'components/StatusIndicator';
+
+import data from 'data';
 
 const getIndicatorImage = require.context(
-  '../../components/assets/images/indicators',
+  '../../assets/images/indicators',
   false,
   /\.png$/
 );
@@ -22,7 +22,7 @@ const useStyles = makeStyles({
   }
 });
 
-function PromiseStatusIndicatorsSection() {
+function ChartSection() {
   const classes = useStyles();
   return (
     <div className={classes.root}>
@@ -32,7 +32,7 @@ function PromiseStatusIndicatorsSection() {
         </Grid>
         <Grid container spacing={2} justify="center">
           {data.chartPromises.map(promise => (
-            <Grid item xs={8} sm={4} md={2}>
+            <Grid key={promise.status} item xs={8} sm={4} md={2}>
               <StatusIndicator
                 img={getIndicatorImage(promise.img)}
                 label={promise.label}
@@ -47,4 +47,4 @@ function PromiseStatusIndicatorsSection() {
   );
 }
 
-export default PromiseStatusIndicatorsSection;
+export default ChartSection;

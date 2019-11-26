@@ -1,37 +1,26 @@
 import React from 'react';
 
-import { Helmet } from 'react-helmet';
+import PropTypes from 'prop-types';
 
-import Header from './Navigation';
+/* eslint import/no-unresolved: */
+// Solve false positive issues with eslint
 import Footer from './Footer';
-import propTypes from './propTypes';
+import Navigation from './Navigation';
 
-function Page({ children, title: propTitle, fixNavigation }) {
-  const title = propTitle
-    ? `${propTitle} | Promise Tracker`
-    : 'Promise Tracker';
-
+function Page({ children }) {
   return (
     <>
-      <Helmet>
-        <title>{title}</title>
-      </Helmet>
-      <Header fixed={fixNavigation} />
+      <Navigation />
       {children}
       <Footer />
     </>
   );
 }
-
 Page.propTypes = {
-  fixNavigation: propTypes.bool,
-  children: propTypes.children.isRequired,
-  title: propTypes.string
-};
-
-Page.defaultProps = {
-  fixNavigation: true,
-  title: undefined
+  children: PropTypes.oneOfType([
+    PropTypes.arrayOf(PropTypes.node),
+    PropTypes.node
+  ]).isRequired
 };
 
 export default Page;

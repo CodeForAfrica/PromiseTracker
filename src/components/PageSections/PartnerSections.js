@@ -1,14 +1,14 @@
 import React from 'react';
 import { Grid, makeStyles, Typography } from '@material-ui/core';
 
-import A from '../../components/A';
-import Layout from '../../components/Layout';
+import A from 'components/A';
+import Layout from 'components/Layout';
 
-import bbc from '../../components/assets/images/partners/bbc.png';
-import dw from '../../components/assets/images/partners/dw.png';
-import foreignAffairs from '../../components/assets/images/partners/foreignaffairs.png';
-import politifact from '../../components/assets/images/partners/politifact.png';
-import poyner from '../../components/assets/images/partners/poyner.png';
+import bbc from 'assets/images/partners/bbc.png';
+import dw from 'assets/images/partners/dw.png';
+import foreignAffairs from 'assets/images/partners/foreignaffairs.png';
+import politifact from 'assets/images/partners/politifact.png';
+import poyner from 'assets/images/partners/poyner.png';
 
 const useStyles = makeStyles(theme => ({
   root: {

@@ -1,10 +1,12 @@
 import React from 'react';
 import { Select as MuiSelect, MenuItem } from '@material-ui/core';
+
 import propTypes from './propTypes';
 
 function Select({ options, value, onChange }) {
   return (
     <MuiSelect
+      displayEmpty
       value={value}
       onChange={e => {
         onChange(e.target.value);

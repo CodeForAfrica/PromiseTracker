@@ -1,14 +1,9 @@
 import React from 'react';
-import {
-  Grid,
-  Typography,
-  makeStyles,
-  Link as MuiLink
-} from '@material-ui/core';
 
-import { Link as RouterLink } from 'react-router-dom';
+import { makeStyles } from '@material-ui/core';
 
-import propTypes from '../propTypes';
+import Link from 'components/Link';
+import propTypes from 'components/propTypes';
 
 const useStyles = makeStyles(theme => ({
   typo: {
@@ -18,13 +13,9 @@ const useStyles = makeStyles(theme => ({
 function Brand({ href }) {
   const classes = useStyles();
   return (
-    <MuiLink component={RouterLink} to={href}>
-      <Grid container direction="column" justify="center" alignItems="center">
-        <Typography variant="h6" className={classes.typo}>
-          PROMISE TRACKER
-        </Typography>
-      </Grid>
-    </MuiLink>
+    <Link href={href} variant="h6" className={classes.typo}>
+      PROMISE TRACKER
+    </Link>
   );
 }
 

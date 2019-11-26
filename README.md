@@ -4,11 +4,30 @@
 
 ## Installation
 
-PromiseTracker is a single page [React](https://reactjs.org/) web app deployable to GitHub pages with little help from [spa-github-pages](https://github.com/rafrex/spa-github-pages). See [package.json](./package.json) for the full list of dependencies and build & deploy scripts.
+PromiseTracker is a SSR rendered [Next](https://nextjs.org/) web app deployable to GitHub pages with little help from [spa-github-pages](https://github.com/rafrex/spa-github-pages). See [package.json](./package.json) for the full list of dependencies and build & deploy scripts.
+
+Run the following to get started :
+ On dev
+
+```sh
+
+  yarn
+  yarn dev
+
+
+```
+
+To generate static html
+
+```sh
+   yarn build
+   yarn start
+
+```
 
 ## Attribution
 
-**Promise Tracker**, modelled on https://rouhanimeter.com, to help newsroom verification desks track & fact-check performance promises.
+**Promise Tracker**, modelled on <https://rouhanimeter.com>, to help newsroom verification desks track & fact-check performance promises.
 
 ## Contributing
 

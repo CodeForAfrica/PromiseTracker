@@ -1,6 +1,6 @@
 import React from 'react';
-import { Grid, makeStyles, Button, ButtonGroup } from '@material-ui/core';
-import RouterLink from './RouterLink';
+import { Grid, makeStyles, Button, ButtonGroup, Link } from '@material-ui/core';
+
 import propTypes from './propTypes';
 
 const useStyles = makeStyles({
@@ -25,7 +25,7 @@ function StatusIndicator({ status, href, img, label, value, ...props }) {
     <Grid
       container
       to={href || `/promises?status=${status}`}
-      component={RouterLink}
+      component={Link}
       className={classes.root}
       direction="column"
     >

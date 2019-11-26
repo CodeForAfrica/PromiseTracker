@@ -1,18 +1,15 @@
 import React from 'react';
-import { makeStyles } from '@material-ui/styles';
-import { Grid } from '@material-ui/core';
+import { Grid, makeStyles } from '@material-ui/core';
 
-import Layout from '../../components/Layout';
-import Content from '../../components/Contribute/Content';
-import Form from '../../components/Contribute/Form';
+import Layout from 'components/Layout';
+import Content from 'components/Contribute/Content';
+import Form from 'components/Contribute/Form';
 
 const useStyles = makeStyles(theme => ({
   root: {
     [theme.breakpoints.up('md')]: {
       height: '28.375rem',
-      background: `linear-gradient(to right, ${theme.palette.primary.main}, ${
-        theme.palette.primary.main
-      } 50%, ${theme.palette.grey[200]} 50%, ${theme.palette.grey[200]})`
+      background: `linear-gradient(to right, ${theme.palette.primary.main}, ${theme.palette.primary.main} 50%, ${theme.palette.grey[200]} 50%, ${theme.palette.grey[200]})`
     }
   },
   contributeCallToAction: {

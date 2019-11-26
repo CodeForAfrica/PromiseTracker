@@ -2,7 +2,7 @@ import React from 'react';
 
 import { Typography, Grid, makeStyles } from '@material-ui/core';
 
-import propTypes from '../propTypes';
+import propTypes from 'components/propTypes';
 
 const useStyles = makeStyles(theme => ({
   typo: {

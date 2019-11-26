@@ -5,8 +5,8 @@ import Divider from '@material-ui/core/Divider';
 
 import { Facebook, Instagram, Twitter, Send } from 'react-feather';
 
-import A from '../A';
-import Section from '../Section';
+import A from 'components/A';
+import Section from 'components/Section';
 
 const useStyles = makeStyles({
   root: { padding: '0.5rem 0' }

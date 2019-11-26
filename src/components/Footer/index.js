@@ -2,10 +2,10 @@ import React from 'react';
 
 import { Grid, makeStyles } from '@material-ui/core';
 
-import About from './About';
-import Community from './Community';
-import Partners from './Partners';
-import Layout from '../Layout';
+import About from 'components/Footer/About';
+import Community from 'components/Footer/Community';
+import Partners from 'components/Footer/Partners';
+import Layout from 'components/Layout';
 
 const useStyles = makeStyles({
   root: {

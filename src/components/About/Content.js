@@ -10,7 +10,7 @@ const useStyles = makeStyles({
 function AboutContent() {
   const classes = useStyles();
   return (
-    <Grid item xs={12} md={8} spacing={8}>
+    <Grid item xs={12} md={8}>
       <Typography variant="h3" className={classes.title}>
         ABOUT US
       </Typography>

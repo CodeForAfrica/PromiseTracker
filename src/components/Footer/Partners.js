@@ -2,11 +2,11 @@ import React from 'react';
 
 import { makeStyles, Grid } from '@material-ui/core';
 
-import A from '../A';
+import A from 'components/A';
 
-import pesacheck from '../assets/images/logos/pesacheck.png';
-import hivos from '../assets/images/logos/hivos.png';
-import cfa from '../assets/images/logos/codeforafrica.png';
+import pesacheck from 'assets/images/logos/pesacheck.png';
+import hivos from 'assets/images/logos/hivos.png';
+import cfa from 'assets/images/logos/codeforafrica.png';
 
 const useStyles = makeStyles(theme => ({
   root: {
