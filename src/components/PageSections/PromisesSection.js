@@ -12,7 +12,11 @@ import PromiseCard from 'components/Promise/Card';
 
 import ButtonLink from 'components/Link/Button';
 
-import data from 'data';
+import filterData from 'data';
+import slugify from 'lib/slugify';
+
+import gql from 'graphql-tag';
+import { useQuery } from '@apollo/react-hooks';
 
 const useStyles = makeStyles({
   root: props => ({
@@ -29,9 +33,60 @@ const useStyles = makeStyles({
   button: { paddingTop: '3rem' }
 });
 
+const GET_PROMISES = gql`
+  query {
+    team {
+      id
+      name
+      projects {
+        edges {
+          node {
+            id
+            title
+            project_medias(last: 6) {
+              edges {
+                node {
+                  id
+                  dbid
+                  title
+                  tasks {
+                    edges {
+                      node {
+                        id
+                        label
+                        first_response_value
+                      }
+                    }
+                  }
+                  tags {
+                    edges {
+                      node {
+                        id
+                        tag_text
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
 function PromisesSection({ enableShowMore, filter, ...props }) {
   const classes = useStyles(props);
   const router = useRouter();
+
+  const { loading, error, data } = useQuery(GET_PROMISES);
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+  if (error) {
+    return null;
+  }
 
   const updateFilter = useCallback(
     (name, value) => {
@@ -60,7 +115,13 @@ function PromisesSection({ enableShowMore, filter, ...props }) {
     return search ? `?${search}` : '';
   }, [filter]);
 
-  const { promises } = data;
+  const findStatus = statusParam => {
+    return slugify(
+      statusParam.tasks.edges.find(
+        ({ node: task }) => task.label === 'What is the status of the promise?'
+      ).node.first_response_value
+    );
+  };
 
   return (
     <Layout justify="center" classes={{ root: classes.root }}>
@@ -83,7 +144,7 @@ function PromisesSection({ enableShowMore, filter, ...props }) {
                 value: '',
                 name: 'All Statuses'
               },
-              ...data.statusTypes.map(status => ({
+              ...filterData.statusTypes.map(status => ({
                 name: status.name,
                 value: status.slug
               }))
@@ -100,7 +161,7 @@ function PromisesSection({ enableShowMore, filter, ...props }) {
                 value: '',
                 name: 'All Terms'
               },
-              ...data.terms.map(term => ({
+              ...filterData.terms.map(term => ({
                 name: term.name,
                 value: term.slug
               }))
@@ -117,7 +178,7 @@ function PromisesSection({ enableShowMore, filter, ...props }) {
                 value: '',
                 name: 'All Topics'
               },
-              ...data.topics.map(topic => ({
+              ...filterData.topics.map(topic => ({
                 name: topic.name,
                 value: topic.slug
               }))
@@ -126,34 +187,49 @@ function PromisesSection({ enableShowMore, filter, ...props }) {
         </Grid>
       </Grid>
 
-      <Grid
-        item
-        xs={12}
-        container
-        className={classes.cardsContainer}
-        spacing={2}
-        color="white"
-      >
-        {promises
-          .filter(
-            promise =>
-              (!filter.status || promise.status === filter.status) &&
-              (!filter.term || promise.term === filter.term) &&
-              (!filter.topic || promise.topic === filter.topic)
-          )
-          .map(promise => (
-            <Grid key={promise.slug} item xs={12} sm={6} md={4}>
-              <PromiseCard
-                href="promise/[id]"
-                as={`promise/${promise.slug}`}
-                status={promise.status}
-                title={promise.title}
-                term={data.terms.find(s => s.slug === promise.term).name}
-                topic={data.topics.find(s => s.slug === promise.topic).name}
-              />
-            </Grid>
-          ))}
-      </Grid>
+      {data.team.projects.edges.map(({ node }) => (
+        <Grid
+          item
+          xs={12}
+          container
+          className={classes.cardsContainer}
+          spacing={2}
+          color="white"
+          key={node.id}
+        >
+          {node.project_medias.edges
+            .filter(
+              ({ node: filterMedia }) =>
+                (!filter.status || findStatus(filterMedia) === filter.status) &&
+                (!filter.term || filter.term === 'term-1') &&
+                (!filter.topic ||
+                  filterMedia.tags.edges
+                    .map(({ node: topic }) => slugify(topic.tag_text))
+                    .toString() === filter.topic)
+            )
+            .map(({ node: media }) => (
+              <Grid key={media.id} item xs={12} sm={6} md={4}>
+                <PromiseCard
+                  href="promise/[id]"
+                  as={`promise/${slugify(media.title)}`}
+                  term={filterData.terms.find(s => s.slug === 'term-1').name}
+                  title={media.title}
+                  topic={
+                    filterData.topics.find(
+                      s =>
+                        s.slug ===
+                        media.tags.edges
+                          .map(({ node: topic }) => slugify(topic.tag_text))
+                          .toString()
+                    ).name
+                  }
+                  status={findStatus(media)}
+                />
+              </Grid>
+            ))}
+        </Grid>
+      ))}
+
       {enableShowMore && (
         <Grid item className={classes.button}>
           <ButtonLink

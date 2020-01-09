@@ -4,19 +4,24 @@ import { Grid, makeStyles, Divider, Typography } from '@material-ui/core';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 
+import withApollo from 'lib/withApollo';
+import slugify from 'lib/slugify';
+
 import Page from 'components/Page';
 import Layout from 'components/Layout';
 import {
   Card as PromiseCard,
   Header as PromiseHeader,
-  Navigator as PromiseNavigator,
-  TimelineEntry as PromiseTimelineEntry
+  SideBar,
+  Navigator as PromiseNavigator
+  // TimelineEntry as PromiseTimelineEntry
 } from 'components/Promise';
 
 import TitledGrid from 'components/TiltedGrid';
-import SideBar from 'components/Article/SideBar';
 
-import data from 'data';
+import filterData from 'data';
+import gql from 'graphql-tag';
+import { useQuery } from '@apollo/react-hooks';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -34,34 +39,102 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
+const GET_PROMISES = gql`
+  query {
+    team {
+      id
+      name
+      projects {
+        edges {
+          node {
+            id
+            title
+            project_medias(last: 6) {
+              edges {
+                node {
+                  id
+                  dbid
+                  title
+                  tasks {
+                    edges {
+                      node {
+                        id
+                        label
+                        first_response_value
+                      }
+                    }
+                  }
+                  tags {
+                    edges {
+                      node {
+                        id
+                        tag_text
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
 function PromisePage() {
   const classes = useStyles();
   const router = useRouter();
 
-  const index = data.promises.findIndex(
-    promise => promise.slug === router.query.id
-  );
-  if (index === -1) {
-    return <div>{router.query.id}</div>;
+  const { loading, error, data } = useQuery(GET_PROMISES);
+  if (loading) {
+    return <div>Loading...</div>;
   }
-  const promise = data.promises[index];
-  const currentTopic = promise.topic;
-  const relatedTopic = data.promises.filter(
-    promiseItem => promiseItem !== promise && promiseItem.topic === currentTopic
+  if (error) {
+    return null;
+  }
+
+  const promises = data.team.projects.edges.map(({ node: project }) => project);
+  const medias = promises[0].project_medias.edges.map(
+    ({ node: media }) => media
+  );
+  const index = medias.findIndex(
+    media => slugify(media.title) === slugify(router.query.id)
+  );
+
+  if (index === -1) {
+    return <div>{slugify(router.query.id)}</div>;
+  }
+
+  const promise = medias[index];
+
+  const findStatus = promise.tasks.edges.find(
+    ({ node: task }) => task.label === 'What is the status of the promise?'
+  ).node.first_response_value;
+
+  const currentTopic = promise.tags.edges
+    .map(({ node: topic }) => slugify(topic.tag_text))
+    .toString();
+
+  const relatedTopic = medias.filter(
+    promiseItem =>
+      promiseItem !== promise &&
+      promiseItem.tags.edges
+        .map(({ node: relatedTopicTag }) => slugify(relatedTopicTag.tag_text))
+        .toString() === currentTopic
   );
 
   // Lets use null to ensure the nothing is rendered: undefined seems to
   // render `0`
-  const prevPromise = index ? data.promises[index - 1] : null;
-  const nextPromise =
-    index < data.promises.length - 1 && data.promises[index + 1];
+  const prevPromise = index ? medias[index - 1] : null;
+  const nextPromise = index < medias.length - 1 && medias[index + 1];
 
   const previous = prevPromise && {
-    href: `/promise/${prevPromise.slug}`,
+    href: `/promise/${slugify(prevPromise.title)}`,
     label: prevPromise.title
   };
   const next = nextPromise && {
-    href: `/promise/${nextPromise.slug}`,
+    href: `/promise/${slugify(nextPromise.title)}`,
     label: nextPromise.title
   };
 
@@ -74,16 +147,17 @@ function PromisePage() {
         <Layout classes={{ root: classes.root }} spacing={8}>
           <Grid item xs={12} md={8}>
             <PromiseHeader
-              status={promise.status}
-              term={data.terms.find(s => s.slug === promise.term).name}
-              topic={data.topics.find(s => s.slug === promise.topic).name}
+              key={promise.id}
+              status={slugify(findStatus)}
+              term="Term 1"
+              topic={filterData.topics.find(s => s.slug === currentTopic).name}
               title={promise.title}
             />
             <Grid item xs={12} className={classes.divider}>
               <Divider />
             </Grid>
 
-            <TitledGrid
+            {/* <TitledGrid
               container
               item
               direction="column"
@@ -100,7 +174,7 @@ function PromisePage() {
                   />
                 </Grid>
               ))}
-            </TitledGrid>
+            </TitledGrid> */}
 
             <TitledGrid
               item
@@ -115,6 +189,7 @@ function PromisePage() {
               <PromiseNavigator previous={previous} next={next} />
             </Grid>
           </Grid>
+
           <Grid item xs={12} md={4} className={classes.sidebar}>
             <Grid container spacing={4}>
               <TitledGrid
@@ -123,16 +198,32 @@ function PromisePage() {
                 container
                 spacing={2}
                 variant="h4"
-                title="Related Promises"
+                title={relatedTopic.length === 0 ? '' : 'Related Promises'}
               >
                 {relatedTopic.map(topic => (
-                  <Grid item xs={12}>
+                  <Grid item xs={12} key={topic.id}>
                     <PromiseCard
-                      status={topic.status}
                       title={topic.title}
-                      term={data.terms.find(s => s.slug === topic.term).name}
-                      topic={data.topics.find(s => s.slug === topic.topic).name}
-                      href={topic.slug}
+                      href="/promise/[id]"
+                      as={`/promise/${slugify(topic.title)}`}
+                      term="Term 1"
+                      topic={
+                        filterData.topics.find(
+                          s =>
+                            s.slug ===
+                            topic.tags.edges
+                              .map(({ node: relatedTopicTag }) =>
+                                slugify(relatedTopicTag.tag_text)
+                              )
+                              .toString()
+                        ).name
+                      }
+                      status={slugify(
+                        topic.tasks.edges.find(
+                          ({ node: task }) =>
+                            task.label === 'What is the status of the promise?'
+                        ).node.first_response_value
+                      )}
                     />
                   </Grid>
                 ))}
@@ -149,4 +240,4 @@ function PromisePage() {
   );
 }
 
-export default PromisePage;
+export default withApollo(PromisePage);

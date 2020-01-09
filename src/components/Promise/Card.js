@@ -11,7 +11,7 @@ import {
 import Link from 'components/Link';
 
 import propTypes from 'components/propTypes';
-import StatusChip from 'components/StatusChip';
+import StatusChip from 'components/Promise/StatusChip';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -64,12 +64,13 @@ function PromiseCard({
 
 PromiseCard.propTypes = {
   status: propTypes.oneOf([
-    'achieved',
-    'not-achieved',
-    'compromised',
+    'complete',
+    'behind-schedule',
+    'unstarted',
     'in-progress',
     'stalled',
-    'inactive'
+    'inconclusive',
+    ''
   ]).isRequired,
   title: propTypes.string.isRequired,
   term: propTypes.string.isRequired,

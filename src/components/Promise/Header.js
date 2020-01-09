@@ -8,14 +8,14 @@ import { Facebook, Twitter } from 'react-feather';
 import { FacebookShareButton, TwitterShareButton } from 'react-share';
 
 import propTypes from 'components/propTypes';
-import StatusChip from 'components/StatusChip';
+import StatusChip from 'components/Promise/StatusChip';
 
 function PromiseHeader({ status, title, term, topic }) {
   const router = useRouter();
   const statusAndShareSectionId = 'statusAndShareSection';
-  const shareUrl = router.query;
+  const shareUrl = router.query.id;
   return (
-    <Grid container justify="column" spacing={4}>
+    <Grid container direction="column" justify="space-between" spacing={4}>
       <Grid item>
         <Typography variant="h4">{title}</Typography>
       </Grid>
@@ -31,12 +31,13 @@ function PromiseHeader({ status, title, term, topic }) {
         item
         container
         direction="row"
+        justify="space-between"
         wrap="nowrap"
       >
-        <Grid item xs={12}>
+        <Grid item>
           <StatusChip status={status} style={{ color: 'white' }} />
         </Grid>
-        <Grid container item justify="flex-end" spacing={2}>
+        <Grid container item justify="flex-end" spacing={2} xs={6} sm={4}>
           <Grid item>
             <Typography variant="body1">Share:</Typography>
           </Grid>
@@ -58,12 +59,13 @@ function PromiseHeader({ status, title, term, topic }) {
 
 PromiseHeader.propTypes = {
   status: propTypes.oneOf([
-    'achieved',
-    'not-achieved',
-    'compromised',
+    'complete',
+    'behind-schedule',
+    'unstarted',
     'in-progress',
     'stalled',
-    'inactive'
+    'inconclusive',
+    ''
   ]).isRequired,
   title: propTypes.string.isRequired,
   term: propTypes.string.isRequired,

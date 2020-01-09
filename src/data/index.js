@@ -1,46 +1,50 @@
 export default {
   statusTypes: [
     {
-      slug: 'achieved',
-      name: 'Achieved'
+      slug: 'complete',
+      name: 'Complete'
     },
     {
-      slug: 'compromised',
-      name: 'Compromised'
+      slug: 'unstarted',
+      name: 'Unstarted'
     },
     {
       slug: 'in-progress',
       name: 'In Progress'
     },
     {
-      slug: 'not-achieved',
-      name: 'Not Achieved'
+      slug: 'behind-schedule',
+      name: 'Behind Schedule'
     },
     {
       slug: 'stalled',
       name: 'Stalled'
     },
     {
-      slug: 'inactive',
-      name: 'Inactive'
+      slug: 'inconclusive',
+      name: 'Inconclusive'
     }
   ],
   topics: [
     {
-      slug: 'economy',
-      name: 'Economy'
+      slug: 'nairobi',
+      name: 'Nairobi'
     },
     {
-      slug: 'foreign-policy',
-      name: 'Foreign Policy'
+      slug: 'traffic-management',
+      name: 'Traffic Management'
     },
     {
-      slug: 'domestic-policy',
-      name: 'Domestic Policy'
+      slug: 'governance',
+      name: 'Governance'
     },
     {
-      slug: 'social-cultural',
-      name: 'Social Cultural'
+      slug: 'environment-and-sanitation',
+      name: 'Environment and Sanitation'
+    },
+    {
+      slug: 'health',
+      name: 'Health'
     }
   ],
   terms: [
@@ -57,126 +61,17 @@ export default {
       name: 'Term 3'
     }
   ],
-  promises: [
-    {
-      title: 'Assuring equal rights for all Iranian ethnicities',
-      term: 'term-1',
-      topic: 'domestic-policy',
-      slug: 'assuring-equal-rights-for-all-Iranian-ethnicities',
-      status: 'achieved',
-      timeline: [
-        {
-          updated: 'Jul 18, 2019',
-          status: 'achieved'
-        },
-        {
-          updated: 'Jul 10, 2017',
-          status: 'inactive'
-        }
-      ]
-    },
-    {
-      title: 'Providing affordable housing and controlling the housing prices',
-      term: 'term-2',
-      topic: 'economy',
-      slug: 'providing-affordable-housing-and-controlling-the-housing-prices',
-      status: 'not-achieved',
-      timeline: [
-        {
-          updated: 'Jul 18, 2019',
-          status: 'not-achieved'
-        }
-      ]
-    },
-    {
-      title:
-        'Provide commodity subsidies for basic goods to support households with low income',
-      term: 'term-3',
-      topic: 'social-cultural',
-      slug:
-        'provide-commodity-subsidies-for-basic-goods-to-support-households-with-low-income',
-      status: 'compromised',
-      timeline: [
-        {
-          updated: 'Jul 18, 2019',
-          status: 'compromised'
-        }
-      ]
-    },
-    {
-      title: 'Instructing literature of minority languages in schools',
-      term: 'term-2',
-      topic: 'domestic-policy',
-      slug: 'instructing-literature-of-minority-languages-in-schools',
-      status: 'inactive',
-      timeline: [
-        {
-          updated: 'Jul 26, 2019',
-          status: 'inactive'
-        },
-        {
-          updated: 'Jul 20, 2018',
-          status: 'compromised'
-        },
-        {
-          updated: 'Jul 20, 2018',
-          status: 'inactive'
-        }
-      ]
-    },
-    {
-      title: 'An annual increase of one million foreign tourists',
-      term: 'term-1',
-      topic: 'economy',
-      slug: 'an-annual-increase-of-one-million-foreign-tourists',
-      status: 'in-progress',
-      timeline: [
-        {
-          updated: 'Jul 18, 2019',
-          status: 'in-progress'
-        },
-        {
-          updated: 'Jul 10, 2017',
-          status: 'stalled'
-        }
-      ]
-    },
-    {
-      title: 'Provide insurance for women who are primary caregivers',
-      term: 'term-3',
-      topic: 'social-cultural',
-      slug: 'provide-insurance-for-women-who-are-primary-caregivers',
-      status: 'stalled',
-      timeline: [
-        {
-          updated: 'Dec 18, 2017',
-          status: 'in-progress'
-        },
-        {
-          updated: 'Nov 10, 2017',
-          status: 'compromised'
-        },
-        {
-          updated: 'Jan 10, 2018',
-          status: 'inactive'
-        },
-        {
-          updated: 'Jul 10, 2019',
-          status: 'stalled'
-        }
-      ]
-    }
-  ],
+
   chartPromises: [
     {
-      status: 'achieved',
-      name: 'Achieved',
+      status: 'complete',
+      name: 'Complete',
       value: 14,
       img: './status-achieved.png'
     },
     {
-      status: 'compromised',
-      name: 'Compromised',
+      status: 'unstarted',
+      name: 'Unstarted',
       value: 8,
       img: './status-compromised.png'
     },
@@ -187,8 +82,8 @@ export default {
       img: './status-in-progress.png'
     },
     {
-      status: 'not-achieved',
-      name: 'Not Achieved',
+      status: 'behind-schedule',
+      name: 'Behind Schedule',
       value: 45,
       img: './status-not-achieved.png'
     },
@@ -199,8 +94,8 @@ export default {
       img: './status-stalled.png'
     },
     {
-      status: 'inactive',
-      name: 'Inactive',
+      status: 'inconclusive',
+      name: 'Inconclusive',
       value: 10,
       img: './status-inactive.png'
     }
