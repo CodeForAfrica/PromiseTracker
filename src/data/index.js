@@ -2,27 +2,33 @@ export default {
   statusTypes: [
     {
       slug: 'complete',
-      name: 'Complete'
+      name: 'Complete',
+      img: './status-complete.png'
     },
     {
       slug: 'unstarted',
-      name: 'Unstarted'
+      name: 'Unstarted',
+      img: './status-unstarted.png'
     },
     {
       slug: 'in-progress',
-      name: 'In Progress'
+      name: 'In Progress',
+      img: './status-in-progress.png'
     },
     {
       slug: 'behind-schedule',
-      name: 'Behind Schedule'
+      name: 'Behind Schedule',
+      img: './status-behind-schedule.png'
     },
     {
       slug: 'stalled',
-      name: 'Stalled'
+      name: 'Stalled',
+      img: './status-stalled.png'
     },
     {
       slug: 'inconclusive',
-      name: 'Inconclusive'
+      name: 'Inconclusive',
+      img: './status-inconclusive.png'
     }
   ],
   topics: [
@@ -59,45 +65,6 @@ export default {
     {
       slug: 'term-3',
       name: 'Term 3'
-    }
-  ],
-
-  chartPromises: [
-    {
-      status: 'complete',
-      name: 'Complete',
-      value: 14,
-      img: './status-achieved.png'
-    },
-    {
-      status: 'unstarted',
-      name: 'Unstarted',
-      value: 8,
-      img: './status-compromised.png'
-    },
-    {
-      status: 'in-progress',
-      name: 'In Progress',
-      value: 11,
-      img: './status-in-progress.png'
-    },
-    {
-      status: 'behind-schedule',
-      name: 'Behind Schedule',
-      value: 45,
-      img: './status-not-achieved.png'
-    },
-    {
-      status: 'stalled',
-      name: 'Stalled',
-      value: 12,
-      img: './status-stalled.png'
-    },
-    {
-      status: 'inconclusive',
-      name: 'Inconclusive',
-      value: 10,
-      img: './status-inactive.png'
     }
   ]
 };
