@@ -1,13 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 
-import {
-  Typography,
-  FormControl,
-  FormLabel,
-  TextField,
-  Button,
-  makeStyles
-} from '@material-ui/core';
+import { FormControl, TextField, Button, makeStyles } from '@material-ui/core';
+import FormHelperText from '@material-ui/core/FormHelperText';
+
+import useForm from './useForm';
+
+import validateForm from './validateForm';
 
 const useStyles = makeStyles({
   contributeForm: {
@@ -18,36 +16,60 @@ const useStyles = makeStyles({
 
 function Form() {
   const classes = useStyles();
-  const [submitted, setSubmitted] = useState(false);
+  const { values, response, handleChange, handleSubmit } = useForm(
+    validateForm
+  );
 
-  const handleSubmit = e => {
-    e.preventDefault();
-
-    setSubmitted(true);
-    setInterval(() => {
-      setSubmitted(false);
-    }, 4000);
-  };
   return (
     <form className={classes.contributeForm} onSubmit={handleSubmit}>
-      <FormControl fullWidth margin="normal">
-        <FormLabel htmlFor="description">Description</FormLabel>
-        <TextField multiline id="description" />
-      </FormControl>
-      <FormControl fullWidth margin="normal">
-        <FormLabel htmlFor="source">Source</FormLabel>
-        <TextField id="source" />
-      </FormControl>
+      <TextField
+        multiline
+        id="quote"
+        name="quote"
+        type="text"
+        label="What is the promise?"
+        fullWidth
+        margin="normal"
+        value={values.quote || ''}
+        onChange={handleChange}
+        error={response.quote}
+        helperText={response.quote && response.quote}
+      />
+      <TextField
+        id="source"
+        name="source"
+        type="text"
+        fullWidth
+        margin="normal"
+        label="Sources"
+        value={values.source || ''}
+        onChange={handleChange}
+        error={response.source}
+        helperText={response.source && response.source}
+      />
+      <br />
+      <FormHelperText id="component-helper-text">
+        Please state who made the promise,when and where. Include any supporting
+        link if possible
+      </FormHelperText>
       <FormControl margin="normal">
-        <Button variant="contained" color="primary" type="submit">
+        <Button
+          variant="contained"
+          color="primary"
+          type="submit"
+          value="submit"
+          name="submit"
+        >
           Submit
         </Button>
       </FormControl>
-      {submitted && (
-        <FormControl fullWidth>
-          <Typography>Thank you for your submission!</Typography>
-        </FormControl>
-      )}
+      <FormControl fullWidth>
+        {response.submit && (
+          <FormHelperText id="component-helper-text">
+            {response.submit}
+          </FormHelperText>
+        )}
+      </FormControl>
     </form>
   );
 }
