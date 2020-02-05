@@ -10,7 +10,7 @@ const GET_PROMISES = gql`
         edges {
           node {
             status
-            tasks(first: 150) {
+            tasks {
               edges {
                 node {
                   id
