@@ -5,9 +5,7 @@ import { Grid, Typography, makeStyles } from '@material-ui/core';
 
 import chartData from 'data';
 import slugify from 'lib/slugify';
-
-import gql from 'graphql-tag';
-import { useQuery } from '@apollo/react-hooks';
+import usePromises from 'data/usePromises';
 
 import Layout from 'components/Layout';
 import StatusIndicator from 'components/StatusIndicator';
@@ -18,49 +16,6 @@ const getIndicatorImage = require.context(
   false,
   /\.png$/
 );
-
-const GET_CHART_DATA = gql`
-  query {
-    team(slug: "pesacheck-promise-tracker") {
-      id
-      name
-      projects {
-        edges {
-          node {
-            id
-            title
-            project_medias(last: 6) {
-              edges {
-                node {
-                  id
-                  dbid
-                  title
-                  tasks {
-                    edges {
-                      node {
-                        id
-                        label
-                        first_response_value
-                      }
-                    }
-                  }
-                  tags {
-                    edges {
-                      node {
-                        id
-                        tag_text
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-`;
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -89,7 +44,7 @@ const useStyles = makeStyles(theme => ({
 function PieChartStatusSection() {
   const classes = useStyles();
 
-  const { loading, error, data } = useQuery(GET_CHART_DATA);
+  const { loading, error, data } = usePromises();
   if (loading) {
     return <div>Loading pie chart...</div>;
   }
@@ -98,10 +53,7 @@ function PieChartStatusSection() {
   }
 
   // Get total promises
-  const promises = data.team.projects.edges.map(({ node: project }) => project);
-  const medias = promises[0].project_medias.edges.map(
-    ({ node: media }) => media
-  );
+  const medias = data.search.medias.edges.map(({ node: media }) => media);
 
   const promiseStatuses = chartData.statusTypes.map(promise => ({
     ...promise,
