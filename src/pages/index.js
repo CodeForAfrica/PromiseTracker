@@ -20,7 +20,7 @@ function Index() {
   return (
     <Page>
       <PieChartStatusSection />
-      <PromisesSection filter={filter} />
+      <PromisesSection filter={filter} limit={6} />
       <LatestReportsSection />
       <ContributeSection />
       <PartnersSection />
