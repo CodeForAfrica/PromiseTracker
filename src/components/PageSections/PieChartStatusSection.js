@@ -8,6 +8,7 @@ import slugify from 'lib/slugify';
 
 import Layout from 'components/Layout';
 import StatusIndicator from 'components/StatusIndicator';
+import config from '../../config';
 
 const getIndicatorImage = require.context(
   '../../assets/images/indicators',
@@ -123,7 +124,10 @@ function PieChartStatusSection({ promises }) {
                 onMouseLeave={onMouseLeave}
               >
                 {promiseStatuses.map(promise => (
-                  <Cell key={promise.slug} />
+                  <Cell
+                    key={promise.slug}
+                    fill={config.colors[promise.slug].dark}
+                  />
                 ))}
                 <LabelList
                   className={classes.percentageLabel}
