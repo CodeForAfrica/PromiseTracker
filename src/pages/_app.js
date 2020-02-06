@@ -7,6 +7,9 @@ import theme from 'theme';
 import { MuiThemeProvider } from '@material-ui/core';
 import CssBaseline from '@material-ui/core/CssBaseline';
 
+import { DefaultSeo } from 'next-seo';
+import SEO from '../next-seo.config';
+
 class PromiseTrackerApp extends App {
   componentDidMount() {
     // Remove the server-side injected CSS.
@@ -22,6 +25,7 @@ class PromiseTrackerApp extends App {
       <>
         <MuiThemeProvider theme={theme}>
           <CssBaseline />
+          <DefaultSeo {...SEO} />
           <Component {...pageProps} />
         </MuiThemeProvider>
       </>
