@@ -6,60 +6,15 @@ import { Grid, Typography, makeStyles } from '@material-ui/core';
 import chartData from 'data';
 import slugify from 'lib/slugify';
 
-import gql from 'graphql-tag';
-import { useQuery } from '@apollo/react-hooks';
-
 import Layout from 'components/Layout';
 import StatusIndicator from 'components/StatusIndicator';
+import config from '../../config';
 
 const getIndicatorImage = require.context(
   '../../assets/images/indicators',
   false,
   /\.png$/
 );
-
-const GET_CHART_DATA = gql`
-  query {
-    team(slug: "pesacheck-promise-tracker") {
-      id
-      name
-      projects {
-        edges {
-          node {
-            id
-            title
-            project_medias(last: 6) {
-              edges {
-                node {
-                  id
-                  dbid
-                  title
-                  tasks {
-                    edges {
-                      node {
-                        id
-                        label
-                        first_response_value
-                      }
-                    }
-                  }
-                  tags {
-                    edges {
-                      node {
-                        id
-                        tag_text
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-`;
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -85,19 +40,10 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-function PieChartStatusSection() {
+function PieChartStatusSection({ promises }) {
   const classes = useStyles();
 
-  const { loading, error, data } = useQuery(GET_CHART_DATA);
-  if (loading) {
-    return <div>Loading pie chart...</div>;
-  }
-  if (error) {
-    return null;
-  }
-
   // Get total promises
-  const promises = data.team.projects.edges.map(({ node: project }) => project);
   const medias = promises[0].project_medias.edges.map(
     ({ node: media }) => media
   );
@@ -178,7 +124,10 @@ function PieChartStatusSection() {
                 onMouseLeave={onMouseLeave}
               >
                 {promiseStatuses.map(promise => (
-                  <Cell key={promise.slug} />
+                  <Cell
+                    key={promise.slug}
+                    fill={config.colors[promise.slug].dark}
+                  />
                 ))}
                 <LabelList
                   className={classes.percentageLabel}

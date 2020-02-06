@@ -20,8 +20,7 @@ import {
 import TitledGrid from 'components/TiltedGrid';
 
 import filterData from 'data';
-import gql from 'graphql-tag';
-import { useQuery } from '@apollo/react-hooks';
+import fetchPromises from 'lib/fetchPromises';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -39,62 +38,10 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-const GET_PROMISES = gql`
-  query {
-    team(slug: "pesacheck-promise-tracker") {
-      id
-      name
-      projects {
-        edges {
-          node {
-            id
-            title
-            project_medias(last: 6) {
-              edges {
-                node {
-                  id
-                  dbid
-                  title
-                  tasks {
-                    edges {
-                      node {
-                        id
-                        label
-                        first_response_value
-                      }
-                    }
-                  }
-                  tags {
-                    edges {
-                      node {
-                        id
-                        tag_text
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-`;
-
-function PromisePage() {
+function PromisePage({ promises }) {
   const classes = useStyles();
   const router = useRouter();
 
-  const { loading, error, data } = useQuery(GET_PROMISES);
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-  if (error) {
-    return null;
-  }
-
-  const promises = data.team.projects.edges.map(({ node: project }) => project);
   const medias = promises[0].project_medias.edges.map(
     ({ node: media }) => media
   );
@@ -107,7 +54,6 @@ function PromisePage() {
   }
 
   const promise = medias[index];
-
   const findStatus = promise.tasks.edges.find(
     ({ node: task }) => task.label === 'What is the status of the promise?'
   ).node.first_response_value;
@@ -130,11 +76,11 @@ function PromisePage() {
   const nextPromise = index < medias.length - 1 && medias[index + 1];
 
   const previous = prevPromise && {
-    href: `/promise/${slugify(prevPromise.title)}`,
+    href: `/promise/${prevPromise.dbid}/${slugify(prevPromise.title)}`,
     label: prevPromise.title
   };
   const next = nextPromise && {
-    href: `/promise/${slugify(nextPromise.title)}`,
+    href: `/promise/${nextPromise.dbid}/${slugify(nextPromise.title)}`,
     label: nextPromise.title
   };
 
@@ -204,8 +150,8 @@ function PromisePage() {
                   <Grid item xs={12} key={topic.id}>
                     <PromiseCard
                       title={topic.title}
-                      href="/promise/[id]"
-                      as={`/promise/${slugify(topic.title)}`}
+                      href="/promise/[dbid]/[id]"
+                      as={`/promise/${topic.dbid}/${slugify(topic.title)}`}
                       term="Term 1"
                       topic={
                         filterData.topics.find(
@@ -240,6 +186,6 @@ function PromisePage() {
   );
 }
 
-PromisePage.getInitialProps = async () => {};
+PromisePage.getInitialProps = fetchPromises;
 
 export default withApollo(PromisePage);

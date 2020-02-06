@@ -16,7 +16,6 @@ const useStyles = makeStyles({
 
 function About() {
   const classes = useStyles();
-
   return (
     <>
       <Head>
