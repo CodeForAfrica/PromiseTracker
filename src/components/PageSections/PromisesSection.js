@@ -13,6 +13,7 @@ import PromiseCard from 'components/Promise/Card';
 import ButtonLink from 'components/Link/Button';
 
 import filterData from 'data';
+import findStatus from 'lib/findStatus';
 import slugify from 'lib/slugify';
 
 import gql from 'graphql-tag';
@@ -115,14 +116,6 @@ function PromisesSection({ enableShowMore, filter, ...props }) {
     return search ? `?${search}` : '';
   }, [filter]);
 
-  const findStatus = statusParam => {
-    return slugify(
-      statusParam.tasks.edges.find(
-        ({ node: task }) => task.label === 'What is the status of the promise?'
-      ).node.first_response_value
-    );
-  };
-
   return (
     <Layout justify="center" classes={{ root: classes.root }}>
       <Grid
@@ -212,16 +205,24 @@ function PromisesSection({ enableShowMore, filter, ...props }) {
                 <PromiseCard
                   href="promise/[dbid]/[id]"
                   as={`promise/${media.dbid}/${slugify(media.title)}`}
-                  term={filterData.terms.find(s => s.slug === 'term-1').name}
+                  term={
+                    (
+                      filterData.terms.find(s => s.slug === 'term-1') || {
+                        name: ''
+                      }
+                    ).name
+                  }
                   title={media.title}
                   description={media.description}
                   topic={
-                    filterData.topics.find(
-                      s =>
-                        s.slug ===
-                        media.tags.edges
-                          .map(({ node: topic }) => slugify(topic.tag_text))
-                          .toString()
+                    (
+                      filterData.topics.find(
+                        s =>
+                          s.slug ===
+                          media.tags.edges
+                            .map(({ node: topic }) => slugify(topic.tag_text))
+                            .toString()
+                      ) || { name: '' }
                     ).name
                   }
                   status={findStatus(media)}
