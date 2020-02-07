@@ -16,6 +16,7 @@ const getIndicatorImage = require.context(
   /\.png$/
 );
 
+
 const useStyles = makeStyles(theme => ({
   root: {
     padding: '3rem 0'
@@ -92,19 +93,26 @@ function PieChartStatusSection({ promises }) {
               className={classes.centerTextGrid}
             >
               <Typography variant="h6" className={classes.typo}>
-                {activeData ? activeData.count : totalPromises}
+                {activeData
+                  ? activeData.count ||
+                    promiseStatuses.find(p => p.slug === activeData.status)
+                      .count
+                  : totalPromises}
               </Typography>
               <Typography variant="h6" className={classes.typo}>
                 Promises
               </Typography>
+
               {activeData && (
                 <Typography variant="h6" className={classes.typo}>
-                  {(chartData.statusTypes.find(
-                    s => s.slug === activeData.slug
-                  ) &&
-                    chartData.statusTypes.find(s => s.slug === activeData.slug)
-                      .name) ||
-                    ''}
+                  {
+                    (
+                      promiseStatuses.find(
+                        ({ slug }) =>
+                          slug === (activeData.slug || activeData.status)
+                      ) || { name: '' }
+                    ).name
+                  }
                 </Typography>
               )}
             </Grid>
@@ -148,6 +156,8 @@ function PieChartStatusSection({ promises }) {
                 label={promise.name}
                 status={promise.slug}
                 value={promise.count}
+                onMouseEnter={onMouseEnter}
+                onMouseLeave={onMouseLeave}
               />
             </Grid>
           ))}
