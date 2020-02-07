@@ -29,6 +29,7 @@ const GET_CHART_DATA = gql`
           node {
             id
             title
+            description
             project_medias(last: 6) {
               edges {
                 node {
@@ -147,19 +148,26 @@ function PieChartStatusSection() {
               className={classes.centerTextGrid}
             >
               <Typography variant="h6" className={classes.typo}>
-                {activeData ? activeData.count : totalPromises}
+                {activeData
+                  ? activeData.count ||
+                    promiseStatuses.find(p => p.slug === activeData.status)
+                      .count
+                  : totalPromises}
               </Typography>
               <Typography variant="h6" className={classes.typo}>
                 Promises
               </Typography>
+
               {activeData && (
                 <Typography variant="h6" className={classes.typo}>
-                  {(chartData.statusTypes.find(
-                    s => s.slug === activeData.slug
-                  ) &&
-                    chartData.statusTypes.find(s => s.slug === activeData.slug)
-                      .name) ||
-                    ''}
+                  {
+                    (
+                      promiseStatuses.find(
+                        ({ slug }) =>
+                          slug === (activeData.slug || activeData.status)
+                      ) || { name: '' }
+                    ).name
+                  }
                 </Typography>
               )}
             </Grid>
@@ -203,6 +211,8 @@ function PieChartStatusSection() {
                 label={promise.name}
                 status={promise.slug}
                 value={promise.count}
+                onMouseEnter={onMouseEnter}
+                onMouseLeave={onMouseLeave}
               />
             </Grid>
           ))}

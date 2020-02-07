@@ -1,49 +1,67 @@
 import React from 'react';
-import { Grid, makeStyles, Button, ButtonGroup, Link } from '@material-ui/core';
-
+import { Grid, makeStyles, Box } from '@material-ui/core';
 import propTypes from './propTypes';
 
 import config from '../config';
 
 const useStyles = makeStyles({
-  root: {
-    width: '100%'
-  },
   indicatorImage: {
     height: 'auto',
     maxWidth: '100%'
   },
   smallButton: ({ status }) => ({
     width: '30%',
-    background: config.colors[status].light
+    background: config.colors[status].light,
+    textTransform: 'uppercase'
   }),
   largeButton: ({ status }) => ({
     width: '70%',
-    background: config.colors[status].dark
+    background: config.colors[status].dark,
+    textTransform: 'uppercase'
   })
 });
 
-function StatusIndicator({ status, href, img, label, value, ...props }) {
+function StatusIndicator({
+  status,
+  href,
+  img,
+  label,
+  value,
+  onMouseEnter,
+  onMouseLeave,
+  ...props
+}) {
   const classes = useStyles({ status, ...props });
+
   return (
     <Grid
-      container
-      to={href || `/promises?status=${status}`}
-      component={Link}
-      className={classes.root}
-      direction="column"
+      item
+      onMouseEnter={() => onMouseEnter({ status })}
+      onMouseLeave={() => onMouseLeave({ status })}
     >
-      <Grid item>
-        <img alt="Indicator" className={classes.indicatorImage} src={img} />
-        <ButtonGroup variant="contained" aria-label="split button" fullWidth>
-          <Button size="small" className={classes.smallButton}>
-            {value}
-          </Button>
-          <Button size="small" className={classes.largeButton}>
-            {label || status}
-          </Button>
-        </ButtonGroup>
-      </Grid>
+      <img alt="Indicator" className={classes.indicatorImage} src={img} />
+      <Box display="flex" flexDirection="row">
+        <Box
+          color="black"
+          pl={2}
+          py={1}
+          fontSize={12}
+          fontWeight={500}
+          className={classes.smallButton}
+        >
+          {value}
+        </Box>
+        <Box
+          color="black"
+          pl={2}
+          py={1}
+          fontSize={12}
+          fontWeight={500}
+          className={classes.largeButton}
+        >
+          {label || status}
+        </Box>
+      </Box>
     </Grid>
   );
 }
