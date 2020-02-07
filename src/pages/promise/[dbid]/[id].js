@@ -4,7 +4,6 @@ import { Grid, makeStyles, Divider, Typography } from '@material-ui/core';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 
-import withApollo from 'lib/withApollo';
 import slugify from 'lib/slugify';
 
 import Page from 'components/Page';
@@ -37,7 +36,6 @@ const useStyles = makeStyles(theme => ({
     padding: '2rem 0'
   }
 }));
-
 
 function PromisePage({ promises }) {
   const classes = useStyles();
@@ -190,4 +188,4 @@ function PromisePage({ promises }) {
 
 PromisePage.getInitialProps = fetchPromises;
 
-export default withApollo(PromisePage);
+export default PromisePage;
