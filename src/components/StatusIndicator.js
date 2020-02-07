@@ -37,7 +37,8 @@ function StatusIndicator({
   const classes = useStyles({ status, ...props });
 
   return (
-    <div
+    <Grid
+      item
       onMouseEnter={() => onMouseEnter({ status })}
       onMouseLeave={() => onMouseLeave({ status })}
     >
@@ -48,6 +49,7 @@ function StatusIndicator({
             color="black"
             pl={2}
             py={1}
+            fontSize={12}
             fontWeight={500}
             className={classes.smallButton}
           >
@@ -57,6 +59,7 @@ function StatusIndicator({
             color="black"
             pl={2}
             py={1}
+            fontSize={12}
             fontWeight={500}
             className={classes.largeButton}
           >
@@ -64,7 +67,7 @@ function StatusIndicator({
           </Box>
         </Box>
       </Grid>
-    </div>
+    </Grid>
   );
 }
 
