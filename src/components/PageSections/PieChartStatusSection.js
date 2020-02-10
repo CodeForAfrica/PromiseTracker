@@ -8,7 +8,8 @@ import slugify from 'lib/slugify';
 
 import Layout from 'components/Layout';
 import StatusIndicator from 'components/StatusIndicator';
-import config from '../../config';
+
+import config from 'config';
 
 const getIndicatorImage = require.context(
   '../../assets/images/indicators',
