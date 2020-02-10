@@ -13,7 +13,7 @@ import PromiseCard from 'components/Promise/Card';
 import ButtonLink from 'components/Link/Button';
 
 import filterData from 'data';
-// import findStatus from 'lib/findStatus';
+import findStatus from 'lib/findStatus';
 import slugify from 'lib/slugify';
 
 const useStyles = makeStyles({
@@ -62,16 +62,6 @@ function PromisesSection({ promises, enableShowMore, filter, ...props }) {
     return search ? `?${search}` : '';
   }, [filter]);
 
-  const findStatus = statusParam => {
-    return slugify(
-      (
-        statusParam.tasks.edges.find(
-          ({ node: task }) =>
-            task.label === 'What is the status of the promise?'
-        ) || { node: { first_response_value: '' } }
-      ).node.first_response_value
-    );
-  };
   return (
     <Layout justify="center" classes={{ root: classes.root }}>
       <Grid
@@ -173,7 +163,7 @@ function PromisesSection({ promises, enableShowMore, filter, ...props }) {
                     ) || {}
                   ).name
                 }
-                status={findStatus(media)}
+                status={slugify(findStatus(media))}
               />
             </Grid>
           ))}
