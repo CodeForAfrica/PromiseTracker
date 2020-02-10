@@ -16,7 +16,6 @@ const getIndicatorImage = require.context(
   /\.png$/
 );
 
-
 const useStyles = makeStyles(theme => ({
   root: {
     padding: '3rem 0'
@@ -44,11 +43,6 @@ const useStyles = makeStyles(theme => ({
 function PieChartStatusSection({ promises }) {
   const classes = useStyles();
 
-  // Get total promises
-  const medias = promises[0].project_medias.edges.map(
-    ({ node: media }) => media
-  );
-
   const promiseStatuses = chartData.statusTypes.map(promise => ({
     ...promise,
     count: 0
@@ -59,7 +53,7 @@ function PieChartStatusSection({ promises }) {
         ({ node: task }) => task.label === 'What is the status of the promise?'
       ).node.first_response_value
     );
-  medias.forEach(media => {
+  promises.forEach(media => {
     const status = statusFor(media);
     const promiseStatus = promiseStatuses.find(s => s.slug === status);
     promiseStatus.count += 1;
