@@ -4,13 +4,8 @@ import { Grid, makeStyles, Divider, Typography } from '@material-ui/core';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 
-import gql from 'graphql-tag';
-import { useQuery } from '@apollo/react-hooks';
-
-import filterData from 'data';
-import findStatus from 'lib/findStatus';
 import slugify from 'lib/slugify';
-import withApollo from 'lib/withApollo';
+import findStatus from 'lib/findStatus';
 
 import {
   Card as PromiseCard,
@@ -22,6 +17,9 @@ import {
 import Layout from 'components/Layout';
 import Page from 'components/Page';
 import TitledGrid from 'components/TiltedGrid';
+
+import filterData from 'data';
+import fetchPromises from 'lib/fetchPromises';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -39,67 +37,11 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-const GET_PROMISES = gql`
-  query {
-    team(slug: "pesacheck-promise-tracker") {
-      id
-      name
-      projects {
-        edges {
-          node {
-            id
-            title
-            description
-            project_medias(last: 6) {
-              edges {
-                node {
-                  id
-                  dbid
-                  title
-                  tasks {
-                    edges {
-                      node {
-                        id
-                        label
-                        first_response_value
-                      }
-                    }
-                  }
-                  tags {
-                    edges {
-                      node {
-                        id
-                        tag_text
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-`;
-
-function PromisePage() {
+function PromisePage({ promises }) {
   const classes = useStyles();
   const router = useRouter();
 
-  const { loading, error, data } = useQuery(GET_PROMISES);
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-  if (error) {
-    return null;
-  }
-
-  const promises = data.team.projects.edges.map(({ node: project }) => project);
-  const medias = promises[0].project_medias.edges.map(
-    ({ node: media }) => media
-  );
-  const index = medias.findIndex(
+  const index = promises.findIndex(
     media => slugify(media.title) === slugify(router.query.id)
   );
 
@@ -107,13 +49,12 @@ function PromisePage() {
     return <div>{slugify(router.query.id)}</div>;
   }
 
-  const promise = medias[index];
-
+  const promise = promises[index];
   const currentTopic = promise.tags.edges
     .map(({ node: topic }) => slugify(topic.tag_text))
     .toString();
 
-  const relatedTopic = medias.filter(
+  const relatedTopic = promises.filter(
     promiseItem =>
       promiseItem !== promise &&
       promiseItem.tags.edges
@@ -123,8 +64,8 @@ function PromisePage() {
 
   // Lets use null to ensure the nothing is rendered: undefined seems to
   // render `0`
-  const prevPromise = index ? medias[index - 1] : null;
-  const nextPromise = index < medias.length - 1 && medias[index + 1];
+  const prevPromise = index ? promises[index - 1] : null;
+  const nextPromise = index < promises.length - 1 && promises[index + 1];
 
   const previous = prevPromise && {
     href: `/promise/${prevPromise.dbid}/${slugify(prevPromise.title)}`,
@@ -185,7 +126,7 @@ function PromisePage() {
               title="About the promise"
               className={classes.typo}
             >
-              <Typography>{promise.description}</Typography>
+              <Typography>{promise.description || ''}</Typography>
             </TitledGrid>
 
             <Grid item>
@@ -207,7 +148,7 @@ function PromisePage() {
                   <Grid item xs={12} key={topic.id}>
                     <PromiseCard
                       title={topic.title}
-                      description={topic.description}
+                      description={topic.description || ''}
                       href="/promise/[dbid]/[id]"
                       as={`/promise/${topic.dbid}/${slugify(topic.title)}`}
                       term="Term 1"
@@ -239,4 +180,6 @@ function PromisePage() {
   );
 }
 
-export default withApollo(PromisePage);
+PromisePage.getInitialProps = fetchPromises;
+
+export default PromisePage;

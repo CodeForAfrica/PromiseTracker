@@ -16,9 +16,6 @@ import filterData from 'data';
 import findStatus from 'lib/findStatus';
 import slugify from 'lib/slugify';
 
-import gql from 'graphql-tag';
-import { useQuery } from '@apollo/react-hooks';
-
 const useStyles = makeStyles({
   root: props => ({
     background: props.color || 'rgb(246, 246, 246)',
@@ -34,60 +31,9 @@ const useStyles = makeStyles({
   button: { paddingTop: '3rem' }
 });
 
-const GET_PROMISES = gql`
-  query {
-    team(slug: "pesacheck-promise-tracker") {
-      id
-      name
-      projects {
-        edges {
-          node {
-            id
-            title
-            project_medias(last: 6) {
-              edges {
-                node {
-                  id
-                  dbid
-                  title
-                  tasks {
-                    edges {
-                      node {
-                        id
-                        label
-                        first_response_value
-                      }
-                    }
-                  }
-                  tags {
-                    edges {
-                      node {
-                        id
-                        tag_text
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-`;
-
-function PromisesSection({ enableShowMore, filter, ...props }) {
+function PromisesSection({ promises, enableShowMore, filter, ...props }) {
   const classes = useStyles(props);
   const router = useRouter();
-
-  const { loading, error, data } = useQuery(GET_PROMISES);
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-  if (error) {
-    return null;
-  }
 
   const updateFilter = useCallback(
     (name, value) => {
@@ -180,57 +126,48 @@ function PromisesSection({ enableShowMore, filter, ...props }) {
         </Grid>
       </Grid>
 
-      {data.team.projects.edges.map(({ node }) => (
-        <Grid
-          item
-          xs={12}
-          container
-          className={classes.cardsContainer}
-          spacing={2}
-          color="white"
-          key={node.id}
-        >
-          {node.project_medias.edges
-            .filter(
-              ({ node: filterMedia }) =>
-                (!filter.status || findStatus(filterMedia) === filter.status) &&
-                (!filter.term || filter.term === 'term-1') &&
-                (!filter.topic ||
-                  filterMedia.tags.edges
-                    .map(({ node: topic }) => slugify(topic.tag_text))
-                    .toString() === filter.topic)
-            )
-            .map(({ node: media }) => (
-              <Grid key={media.id} item xs={12} sm={6} md={4}>
-                <PromiseCard
-                  href="promise/[dbid]/[id]"
-                  as={`promise/${media.dbid}/${slugify(media.title)}`}
-                  term={
-                    (
-                      filterData.terms.find(s => s.slug === 'term-1') || {
-                        name: ''
-                      }
-                    ).name
-                  }
-                  title={media.title}
-                  description={media.description}
-                  topic={
-                    (
-                      filterData.topics.find(
-                        s =>
-                          s.slug ===
-                          media.tags.edges
-                            .map(({ node: topic }) => slugify(topic.tag_text))
-                            .toString()
-                      ) || { name: '' }
-                    ).name
-                  }
-                  status={findStatus(media)}
-                />
-              </Grid>
-            ))}
-        </Grid>
-      ))}
+      <Grid
+        item
+        xs={12}
+        container
+        spacing={2}
+        color="white"
+        className={classes.cardsContainer}
+      >
+        {promises
+          .filter(
+            filterMedia =>
+              (!filter.status || findStatus(filterMedia) === filter.status) &&
+              (!filter.term || filter.term === 'term-1') &&
+              (!filter.topic ||
+                filterMedia.tags.edges
+                  .map(({ node: topic }) => slugify(topic.tag_text))
+                  .toString() === filter.topic)
+          )
+          .map(media => (
+            <Grid key={media.id} item xs={12} sm={6} md={4}>
+              <PromiseCard
+                href="promise/[dbid]/[id]"
+                as={`promise/${media.dbid}/${slugify(media.title)}`}
+                term={filterData.terms.find(s => s.slug === 'term-1').name}
+                title={media.title}
+                description={media.description || ''}
+                topic={
+                  (
+                    filterData.topics.find(
+                      s =>
+                        s.slug ===
+                        media.tags.edges
+                          .map(({ node: topic }) => slugify(topic.tag_text))
+                          .toString()
+                    ) || {}
+                  ).name
+                }
+                status={slugify(findStatus(media))}
+              />
+            </Grid>
+          ))}
+      </Grid>
 
       {enableShowMore && (
         <Grid item className={classes.button}>

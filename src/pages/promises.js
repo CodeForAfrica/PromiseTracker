@@ -4,11 +4,11 @@ import { makeStyles } from '@material-ui/core';
 
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import withApollo from 'lib/withApollo';
 
 import Layout from 'components/Layout';
 import Page from 'components/Page';
 import PromisesSection from 'components/PageSections/PromisesSection';
+import fetchPromises from 'lib/fetchPromises';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -17,7 +17,7 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-function Promises() {
+function Promises({ promises }) {
   const classes = useStyles();
   const router = useRouter();
   const { status = '', term = '', topic = '' } = router.query;
@@ -31,6 +31,7 @@ function Promises() {
       <Page>
         <Layout classes={{ root: classes.root }}>
           <PromisesSection
+            promises={promises}
             enableShowMore={false}
             color="white"
             filter={filter}
@@ -41,4 +42,6 @@ function Promises() {
   );
 }
 
-export default withApollo(Promises);
+Promises.getInitialProps = fetchPromises;
+
+export default Promises;

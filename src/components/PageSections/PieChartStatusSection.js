@@ -3,66 +3,20 @@ import { PieChart, Pie, Cell, LabelList } from 'recharts';
 
 import { Grid, Typography, makeStyles } from '@material-ui/core';
 
-import gql from 'graphql-tag';
-import { useQuery } from '@apollo/react-hooks';
-
 import chartData from 'data';
-import config from 'config';
-import findStatus from 'lib/findStatus';
 import slugify from 'lib/slugify';
 
 import Layout from 'components/Layout';
 import StatusIndicator from 'components/StatusIndicator';
+
+import config from 'config';
+import findStatus from 'lib/findStatus';
 
 const getIndicatorImage = require.context(
   '../../assets/images/indicators',
   false,
   /\.png$/
 );
-
-const GET_CHART_DATA = gql`
-  query {
-    team(slug: "pesacheck-promise-tracker") {
-      id
-      name
-      projects {
-        edges {
-          node {
-            id
-            title
-            description
-            project_medias(last: 6) {
-              edges {
-                node {
-                  id
-                  dbid
-                  title
-                  tasks {
-                    edges {
-                      node {
-                        id
-                        label
-                        first_response_value
-                      }
-                    }
-                  }
-                  tags {
-                    edges {
-                      node {
-                        id
-                        tag_text
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-`;
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -88,30 +42,15 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-function PieChartStatusSection() {
+function PieChartStatusSection({ promises }) {
   const classes = useStyles();
-
-  const { loading, error, data } = useQuery(GET_CHART_DATA);
-  if (loading) {
-    return <div>Loading pie chart...</div>;
-  }
-  if (error) {
-    return null;
-  }
-
-  // Get total promises
-  const promises = data.team.projects.edges.map(({ node: project }) => project);
-  const medias = promises[0].project_medias.edges.map(
-    ({ node: media }) => media
-  );
 
   const promiseStatuses = chartData.statusTypes.map(promise => ({
     ...promise,
     count: 0
   })); // Initialize
-  const statusFor = media => slugify(findStatus(media));
-  medias.forEach(media => {
-    const status = statusFor(media);
+  promises.forEach(media => {
+    const status = slugify(findStatus(media));
     const promiseStatus = promiseStatuses.find(s => s.slug === status);
     promiseStatus.count += 1;
   });

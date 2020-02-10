@@ -43,10 +43,6 @@ export default {
   ],
   topics: [
     {
-      slug: 'nairobi',
-      name: 'Nairobi'
-    },
-    {
       slug: 'traffic-management',
       name: 'Traffic Management'
     },
@@ -59,8 +55,28 @@ export default {
       name: 'Environment and Sanitation'
     },
     {
+      slug: 'women',
+      name: 'Women'
+    },
+    {
+      slug: 'housing',
+      name: 'Housing'
+    },
+    {
       slug: 'health',
       name: 'Health'
+    },
+    {
+      slug: 'transport',
+      name: 'Transport'
+    },
+    {
+      slug: 'jobs-and-business-creation',
+      name: 'Jobs and Business Creation'
+    },
+    {
+      slug: 'youth-and-people-with-disabilities',
+      name: 'Youth and people with Disabilities'
     }
   ],
   terms: [
