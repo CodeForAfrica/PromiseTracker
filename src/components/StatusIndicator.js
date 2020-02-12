@@ -1,45 +1,59 @@
 import React from 'react';
-import { Grid, makeStyles, Box } from '@material-ui/core';
+import { makeStyles, Box } from '@material-ui/core';
 import propTypes from './propTypes';
 
 import config from '../config';
 
-const useStyles = makeStyles({
+const useStyles = makeStyles(({ breakpoints }) => ({
+  root: {
+    textAlign: 'center',
+    [breakpoints.up('sm')]: {
+      margin: '0 0.25rem'
+    }
+  },
   indicatorImage: {
     height: 'auto',
     maxWidth: '100%'
   },
   smallButton: ({ status }) => ({
-    width: '30%',
     background: config.colors[status].light,
-    textTransform: 'uppercase'
+    paddingLeft: '0.5rem',
+    paddingRight: '0.5rem',
+    textAlign: 'right',
+    textTransform: 'uppercase',
+    width: '21%'
   }),
   largeButton: ({ status }) => ({
-    width: '70%',
     background: config.colors[status].dark,
-    textTransform: 'uppercase'
+    paddingLeft: '0.5rem',
+    textAlign: 'left',
+    textTransform: 'uppercase',
+    width: '79%'
   })
-});
+}));
 
-function StatusIndicator({
-  status,
-  href,
-  img,
-  label,
-  value,
-  onMouseEnter,
-  onMouseLeave,
-  ...props
-}) {
+const getIndicatorImage = require.context(
+  '../assets/images/indicators',
+  false,
+  /\.png$/
+);
+
+function StatusIndicator({ onMouseEnter, onMouseLeave, promise, ...props }) {
+  const status = promise.slug;
   const classes = useStyles({ status, ...props });
+  const label = promise.name || status;
 
   return (
-    <Grid
-      item
+    <div
       onMouseEnter={() => onMouseEnter({ status })}
       onMouseLeave={() => onMouseLeave({ status })}
+      className={classes.root}
     >
-      <img alt="Indicator" className={classes.indicatorImage} src={img} />
+      <img
+        alt="Indicator"
+        className={classes.indicatorImage}
+        src={getIndicatorImage(promise.img)}
+      />
       <Box display="flex" flexDirection="row">
         <Box
           color="black"
@@ -49,7 +63,7 @@ function StatusIndicator({
           fontWeight={500}
           className={classes.smallButton}
         >
-          {value}
+          {promise.count}
         </Box>
         <Box
           color="black"
@@ -59,34 +73,30 @@ function StatusIndicator({
           fontWeight={500}
           className={classes.largeButton}
         >
-          {label || status}
+          {label}
         </Box>
       </Box>
-    </Grid>
+    </div>
   );
 }
 
 StatusIndicator.propTypes = {
-  status: propTypes.oneOf([
-    'complete',
-    'behind-schedule',
-    'unstarted',
-    'in-progress',
-    'stalled',
-    'inconclusive',
-    ''
-  ]).isRequired,
-  href: propTypes.string,
-  img: propTypes.string,
-  label: propTypes.string,
-  value: propTypes.number
+  promise: propTypes.shape({
+    name: propTypes.string,
+    img: propTypes.string,
+    slug: propTypes.oneOf([
+      'complete',
+      'behind-schedule',
+      'unstarted',
+      'in-progress',
+      'stalled',
+      'inconclusive',
+      ''
+    ]),
+    count: propTypes.number
+  }).isRequired
 };
 
-StatusIndicator.defaultProps = {
-  href: undefined,
-  img: undefined,
-  label: undefined,
-  value: undefined
-};
+StatusIndicator.defaultProps = {};
 
 export default StatusIndicator;
