@@ -11,8 +11,8 @@ import {
   Card as PromiseCard,
   Header as PromiseHeader,
   SideBar,
-  Navigator as PromiseNavigator
-  // TimelineEntry as PromiseTimelineEntry
+  Navigator as PromiseNavigator,
+  TimelineEntry as PromiseTimelineEntry
 } from 'components/Promise';
 import Layout from 'components/Layout';
 import Page from 'components/Page';
@@ -21,6 +21,7 @@ import TitledGrid from 'components/TiltedGrid';
 import filterData from 'data';
 import fetchPromises from 'lib/fetchPromises';
 import findTerm from 'lib/findTerm';
+import findActivityLog from 'lib/findActivityLog';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -77,16 +78,9 @@ function PromisePage({ promises }) {
     label: nextPromise.title
   };
 
-  const activityLog = promise.log.edges.filter(
-    ({ node: log }) =>
-      log.task !== null &&
-      log.event_type === 'update_dynamicannotationfield' &&
-      log.task.label === 'What is the status of the promise?'
+  const logStatus = findActivityLog(promise).map(
+    ({ node: n }) => JSON.parse(n.object_changes_json).value
   );
-  // console.log(activityLog);
-  const getActivity = activityLog.map(({ node: n }) => n.object_changes_json);
-  const getArray = JSON.parse(getActivity).value;
-  console.log(getArray.map(n => n.replace(/[---.../:\s]/g, '').toLowerCase()));
 
   return (
     <>
@@ -113,7 +107,7 @@ function PromisePage({ promises }) {
               <Divider />
             </Grid>
 
-            {/* <TitledGrid
+            <TitledGrid
               container
               item
               direction="column"
@@ -121,16 +115,16 @@ function PromisePage({ promises }) {
               variant="h4"
               title="Promise Timeline"
             >
-              {promise.timeline.map(timeline => (
+              {logStatus[0].map(n => (
                 <Grid item>
                   <PromiseTimelineEntry
                     defaultExpanded
-                    updated={timeline.updated}
-                    status={timeline.status}
+                    // updated={}
+                    status={n.replace(/[---/...\s]/g, '').toLowerCase()}
                   />
                 </Grid>
               ))}
-            </TitledGrid> */}
+            </TitledGrid>
 
             <TitledGrid
               item
