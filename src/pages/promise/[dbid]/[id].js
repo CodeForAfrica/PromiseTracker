@@ -81,16 +81,15 @@ function PromisePage({ promises }) {
   const getUpdateDate = findActivityLog(promise).map(
     ({ node: n }) => n.task.updated_at
   );
-
   console.log(getUpdateDate);
-  const date = new Date(getUpdateDate);
+  const date = new Date(getUpdateDate).toLocaleDateString('en-US');
 
   const logStatus = findActivityLog(promise).map(
     ({ node: n }) => JSON.parse(n.object_changes_json).value
   );
 
-  const trimmed = logStatus[0].map(n =>
-    n
+  const trimmed = logStatus[0].map(status =>
+    status
       .replace(/[-]+/g, '')
       .replace(/[...]/g, '')
       .replace(/^\s+/g, '')
@@ -137,7 +136,7 @@ function PromisePage({ promises }) {
                 {trimmed.map(values => (
                   <PromiseTimelineEntry
                     defaultExpanded
-                    updated={date.toLocaleDateString()}
+                    updated={date}
                     status={values}
                   />
                 ))}
