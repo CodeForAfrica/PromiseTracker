@@ -32,7 +32,7 @@ function LatestReportsSection() {
   return (
     <Layout justify="center" classes={{ root: classes.root }}>
       <Grid item xs={12} className={classes.sectionTitle}>
-        <Typography variant="h4">Latest Reports</Typography>
+        <Typography variant="h4">Latest Articles</Typography>
       </Grid>
 
       <Grid item xs={12} container direction="row" className={classes.mainGrid}>
@@ -56,7 +56,7 @@ function LatestReportsSection() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          Read more Reports
+          Read more Articles
         </Button>
       </Grid>
     </Layout>

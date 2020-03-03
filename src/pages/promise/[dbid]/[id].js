@@ -11,8 +11,8 @@ import {
   Card as PromiseCard,
   Header as PromiseHeader,
   SideBar,
-  Navigator as PromiseNavigator
-  // TimelineEntry as PromiseTimelineEntry
+  Navigator as PromiseNavigator,
+  TimelineEntry as PromiseTimelineEntry
 } from 'components/Promise';
 import Layout from 'components/Layout';
 import Page from 'components/Page';
@@ -21,6 +21,8 @@ import TitledGrid from 'components/TiltedGrid';
 import filterData from 'data';
 import fetchPromises from 'lib/fetchPromises';
 import findTerm from 'lib/findTerm';
+import findActivityLog from 'lib/findActivityLog';
+import convertDateObj from 'lib/convertDateObj';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -77,6 +79,29 @@ function PromisePage({ promises }) {
     label: nextPromise.title
   };
 
+  function trimData(value) {
+    return value
+      .replace(/[-]+/g, '')
+      .replace(/[...]/g, '')
+      .replace(/^\s+/g, '')
+      .replace(/\s*$/, '')
+      .replace(/\s+/g, '-')
+      .toLowerCase();
+  }
+
+  const activityLog = findActivityLog(promise);
+  const getTimeline = activityLog.map(({ node }) =>
+    node.event_type === 'create_dynamicannotationfield'
+      ? {
+          status: trimData(JSON.parse(node.object_changes_json).value[1]),
+          time: convertDateObj(node.created_at)
+        }
+      : {
+          status: trimData(JSON.parse(node.object_changes_json).value[1]),
+          time: convertDateObj(node.task.updated_at)
+        }
+  );
+
   return (
     <>
       <Head>
@@ -102,7 +127,7 @@ function PromisePage({ promises }) {
               <Divider />
             </Grid>
 
-            {/* <TitledGrid
+            <TitledGrid
               container
               item
               direction="column"
@@ -110,21 +135,25 @@ function PromisePage({ promises }) {
               variant="h4"
               title="Promise Timeline"
             >
-              {promise.timeline.map(timeline => (
-                <Grid item>
-                  <PromiseTimelineEntry
-                    defaultExpanded
-                    updated={timeline.updated}
-                    status={timeline.status}
-                  />
-                </Grid>
-              ))}
-            </TitledGrid> */}
+              <Grid item>
+                {getTimeline
+                  .sort()
+                  .reverse()
+                  .map(value => (
+                    <PromiseTimelineEntry
+                      key={value.status}
+                      defaultExpanded
+                      updated={value.time.toLocaleDateString()}
+                      status={value.status}
+                    />
+                  ))}
+              </Grid>
+            </TitledGrid>
 
             <TitledGrid
               item
               variant="h5"
-              title="About the promise"
+              title="Description of the promise"
               className={classes.typo}
             >
               <Typography>{promise.description || ''}</Typography>
