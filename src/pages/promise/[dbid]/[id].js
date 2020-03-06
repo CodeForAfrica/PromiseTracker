@@ -101,7 +101,6 @@ function PromisePage({ promises }) {
           time: convertDateObj(node.task.updated_at)
         }
   );
-
   return (
     <>
       <Head>
@@ -139,10 +138,10 @@ function PromisePage({ promises }) {
                 {getTimeline
                   .sort()
                   .reverse()
-                  .map(value => (
+                  .map((value, i) => (
                     <PromiseTimelineEntry
                       key={value.status}
-                      defaultExpanded
+                      defaultExpanded={i === 0}
                       updated={value.time.toLocaleDateString()}
                       status={value.status}
                     />
