@@ -1,6 +1,7 @@
 import React from 'react';
 
-import { Typography, Grid, makeStyles } from '@material-ui/core';
+import { Typography, Grid } from '@material-ui/core';
+import { makeStyles } from '@material-ui/core/styles';
 
 import propTypes from 'components/propTypes';
 
@@ -17,7 +18,7 @@ function Content({ title, subtitle, description }) {
       <Typography variant="h4" className={classes.typo}>
         {title}
       </Typography>
-      <Typography variant="h6" className={classes.typo}>
+      <Typography variant="h5" className={classes.typo}>
         {subtitle}
       </Typography>
       <Typography variant="body1" className={classes.typo}>

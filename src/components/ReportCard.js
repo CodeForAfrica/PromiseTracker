@@ -3,11 +3,11 @@ import React from 'react';
 import {
   Typography,
   Grid,
-  makeStyles,
   Card,
   CardMedia,
   CardContent
 } from '@material-ui/core';
+import { makeStyles } from '@material-ui/core/styles';
 
 import propTypes from 'components/propTypes';
 
@@ -55,7 +55,7 @@ function ReportCard({ title, description, image, subtitle, uniqueSlug, date }) {
         <CardContent>
           <div className={classes.content}>
             <Typography variant="caption"> {subtitle}</Typography>
-            <Typography variant="h5">{title}</Typography>
+            <Typography variant="h6">{title}</Typography>
             <Typography variant="body1">{description}</Typography>
           </div>
           <Typography variant="body2">{formattedDate}</Typography>

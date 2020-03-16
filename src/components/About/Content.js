@@ -1,6 +1,7 @@
 import React from 'react';
 
-import { Grid, Typography, makeStyles } from '@material-ui/core';
+import { Grid, Typography } from '@material-ui/core';
+import { makeStyles } from '@material-ui/core/styles';
 
 const useStyles = makeStyles({
   title: {
@@ -11,7 +12,7 @@ function AboutContent() {
   const classes = useStyles();
   return (
     <Grid item xs={12} md={8}>
-      <Typography variant="h3" className={classes.title}>
+      <Typography variant="h4" className={classes.title}>
         About PromiseTracker
       </Typography>
       <Typography variant="body1">

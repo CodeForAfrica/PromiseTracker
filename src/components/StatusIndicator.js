@@ -1,5 +1,7 @@
 import React from 'react';
-import { makeStyles, Box } from '@material-ui/core';
+import { Box } from '@material-ui/core';
+import { makeStyles } from '@material-ui/core/styles';
+
 import propTypes from './propTypes';
 
 import config from '../config';
@@ -17,6 +19,7 @@ const useStyles = makeStyles(({ breakpoints }) => ({
   },
   smallButton: ({ status }) => ({
     background: config.colors[status].light,
+    color: 'white',
     paddingLeft: '0.5rem',
     paddingRight: '0.5rem',
     textAlign: 'right',
@@ -25,6 +28,7 @@ const useStyles = makeStyles(({ breakpoints }) => ({
   }),
   largeButton: ({ status }) => ({
     background: config.colors[status].dark,
+    color: 'white',
     paddingLeft: '0.5rem',
     textAlign: 'left',
     textTransform: 'uppercase',
@@ -56,7 +60,6 @@ function StatusIndicator({ onMouseEnter, onMouseLeave, promise, ...props }) {
       />
       <Box display="flex" flexDirection="row">
         <Box
-          color="black"
           pl={2}
           py={1}
           fontSize={12}
@@ -66,7 +69,6 @@ function StatusIndicator({ onMouseEnter, onMouseLeave, promise, ...props }) {
           {promise.count}
         </Box>
         <Box
-          color="black"
           pl={2}
           py={1}
           fontSize={12}

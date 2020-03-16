@@ -1,6 +1,7 @@
 import React from 'react';
 
-import { Grid, makeStyles } from '@material-ui/core';
+import { Grid } from '@material-ui/core';
+import { makeStyles } from '@material-ui/core/styles';
 
 import Layout from 'components/Layout';
 import Content from 'components/Contribute/Content';
@@ -8,7 +9,8 @@ import Form from 'components/Contribute/Form';
 
 const useStyles = makeStyles(theme => ({
   root: {
-    padding: '2.5rem 0'
+    padding: '2.5rem 0',
+    marginRight: '1rem'
   },
   typoGrid: {
     padding: '2rem',

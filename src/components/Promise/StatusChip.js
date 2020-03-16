@@ -1,19 +1,24 @@
 import React from 'react';
-import { makeStyles, Box } from '@material-ui/core';
+
+import { Box } from '@material-ui/core';
+import { makeStyles } from '@material-ui/core/styles';
+
 import propTypes from 'components/propTypes';
 import data from 'data';
 
+import config from '../../config';
+
 const useStyles = makeStyles(theme => ({
-  root: {
+  root: ({ status }) => ({
     padding: '0.2rem 1.25rem',
     ...theme.typography.button,
-    backgroundColor: theme.palette.primary.main,
+    backgroundColor: config.colors[status].dark,
     textDecoration: 'none',
     textAlign: 'center',
     borderRadius: `0.2rem`,
     color: 'white',
     textTransform: 'uppercase'
-  }
+  })
 }));
 
 function StatusChip({ status, ...props }) {
@@ -22,7 +27,7 @@ function StatusChip({ status, ...props }) {
   const name = (statusType && statusType.name) || '';
 
   return (
-    <Box variant="contained" color="primary" className={classes.root}>
+    <Box variant="contained" className={classes.root}>
       {name}
     </Box>
   );

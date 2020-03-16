@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 
-import { makeStyles, Grid } from '@material-ui/core';
+import { Grid } from '@material-ui/core';
+import { makeStyles } from '@material-ui/core/styles';
 
 import chartData from 'data';
 import findStatus from 'lib/findStatus';

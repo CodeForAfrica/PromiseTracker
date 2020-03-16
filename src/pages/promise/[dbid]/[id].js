@@ -1,5 +1,6 @@
 import React from 'react';
-import { Grid, makeStyles, Divider, Typography } from '@material-ui/core';
+import { Grid, Divider, Typography } from '@material-ui/core';
+import { makeStyles } from '@material-ui/core/styles';
 
 import { useRouter } from 'next/router';
 import Head from 'next/head';
@@ -37,6 +38,9 @@ const useStyles = makeStyles(theme => ({
   },
   typo: {
     padding: '2rem 0'
+  },
+  description: {
+    marginTop: '1rem'
   }
 }));
 
@@ -151,11 +155,13 @@ function PromisePage({ promises }) {
 
             <TitledGrid
               item
-              variant="h5"
+              variant="h6"
               title="Description of the promise"
               className={classes.typo}
             >
-              <Typography>{promise.description || ''}</Typography>
+              <Typography variant="body2" className={classes.description}>
+                {promise.description || ''}
+              </Typography>
             </TitledGrid>
 
             <Grid item>

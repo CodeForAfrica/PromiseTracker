@@ -7,7 +7,6 @@ import Link from 'components/Link';
 import {
   AppBar,
   Grid,
-  makeStyles,
   withWidth,
   ButtonBase,
   Drawer,
@@ -20,6 +19,8 @@ import { isWidthUp, isWidthDown } from '@material-ui/core/withWidth';
 import CloseIcon from '@material-ui/icons/Close';
 import propTypes from 'components/propTypes';
 import Brand from 'components/Navigation/Brand';
+
+import { makeStyles } from '@material-ui/core/styles';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -38,12 +39,18 @@ const useStyles = makeStyles(theme => ({
   a: {
     lineHeight: '100%',
     margin: '2rem',
-    color: theme.palette.common.white,
-    textDecoration: 'none'
+    fontSize: '1rem',
+    color: theme.palette.primary.light,
+    textDecoration: 'none',
+    '&:hover': {
+      textDecoration: 'none',
+      color: theme.palette.common.white
+    }
   },
   drawerA: {
     lineHeight: '100%',
     margin: '2rem',
+    fontSize: '1rem',
     color: theme.palette.primary,
     textDecoration: 'none'
   }
