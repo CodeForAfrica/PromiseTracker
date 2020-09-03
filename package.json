@@ -1,5 +1,5 @@
 {
-	"name": "promise-tracker-v0.2",
+	"name": "promise-tracker",
 	"version": "0.2.0-alpha.1",
 	"private": true,
 	"scripts": {
