@@ -1,36 +1,38 @@
 import React from 'react';
-import App from 'next/app';
+import PropTypes from 'prop-types';
 
-import 'assets/css/App.css';
-import theme from 'theme';
-
-import { MuiThemeProvider } from '@material-ui/core';
+import Head from 'next/head';
+import { ThemeProvider } from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
+import theme from '@/promisetracker/theme/index';
 
-import { DefaultSeo } from 'next-seo';
-import SEO from '../next-seo.config';
+export default function MyApp(props) {
+  const { Component, pageProps } = props;
 
-class PromiseTrackerApp extends App {
-  componentDidMount() {
+  React.useEffect(() => {
     // Remove the server-side injected CSS.
     const jssStyles = document.querySelector('#jss-server-side');
     if (jssStyles) {
       jssStyles.parentElement.removeChild(jssStyles);
     }
-  }
+  }, []);
 
-  render() {
-    const { Component, pageProps } = this.props;
-    return (
-      <>
-        <MuiThemeProvider theme={theme}>
-          <CssBaseline />
-          <DefaultSeo {...SEO} />
-          <Component {...pageProps} />
-        </MuiThemeProvider>
-      </>
-    );
-  }
+  return (
+    <>
+      <Head>
+        <title>Promise Tracker Initial Setup</title>
+        <meta name="viewport" content="minimum-scale=1, initial-scale=1, width=device-width" />
+      </Head>
+      <ThemeProvider theme={theme}>
+        {/* CssBaseline kickstart an elegant, consistent, and simple baseline to build upon. */}
+        <CssBaseline />
+        <Component {...pageProps} />
+      </ThemeProvider>
+    </>
+  );
 }
 
-export default PromiseTrackerApp;
+MyApp.propTypes = {
+  Component: PropTypes.elementType.isRequired,
+  pageProps: PropTypes.arrayOf(PropTypes.shape({}).isRequired).isRequired,
+};

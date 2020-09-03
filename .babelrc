@@ -4,7 +4,13 @@
   ],
   "plugins": [
     [
-      "syntax-dynamic-import"
+      "transform-imports",
+      {
+        "material-ui/core": {
+          "transform": "material-ui/core/${member}",
+          "preventFullImport": true
+        }
+      }
     ],
     [
       "module-resolver",
@@ -13,10 +19,7 @@
           "./src"
         ],
         "alias": {
-          "assets": "./src/assets",
-          "components": "./src/components",
-          "data": "./src/data",
-          "lib": "./src/lib"
+          "@/promisetracker": "./src"
         }
       }
     ]
