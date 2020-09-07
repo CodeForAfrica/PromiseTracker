@@ -1,6 +1,6 @@
-import { deepmerge } from '@material-ui/utils';
+import { deepmerge } from "@material-ui/utils";
 
-import createTheme from '@hurumap-ui/charts/styles/createTheme';
+import createTheme from "@hurumap-ui/charts/styles/createTheme";
 
 const FONT_FAMILY_HEADING = '"Amiri", "serif"';
 const FONT_FAMILY_TEXT_SECONDARY = '"Open Sans", "sans-serif"';
@@ -9,113 +9,113 @@ const FONT_FAMILY_TEXT_HIGHTLIGHT = '"Source Sans Pro", "sans-serif"';
 // ## DEFAULT
 const theme = createTheme({
   palette: {
-    background: { default: '#fff' },
-    primary: { main: '#202020', dark: '#000000' },
+    background: { default: "#fff" },
+    primary: { main: "#202020", dark: "#000000" },
     secondary: {
-      main: '#EBEBEB',
-      light: '#F7F7F7',
+      main: "#EBEBEB",
+      light: "#F7F7F7",
     },
-    highlight: { main: '#005DFD', light: '#FFB322', faded: '#90DAFF' },
+    highlight: { main: "#005DFD", light: "#FFB322", faded: "#90DAFF" },
   },
   typography: {
     fontFamily: FONT_FAMILY_TEXT_SECONDARY,
     h1: {
       fontFamily: FONT_FAMILY_HEADING,
-      fontStretch: 'normal',
-      fontStyle: 'normal',
-      fontWeight: 'bold',
-      letterSpacing: '0.76px',
+      fontStretch: "normal",
+      fontStyle: "normal",
+      fontWeight: "bold",
+      letterSpacing: "0.76px",
     },
     h2: {
       fontFamily: FONT_FAMILY_HEADING,
-      fontStretch: 'normal',
-      fontStyle: 'normal',
-      fontWeight: 'normal',
-      letterSpacing: '0.86px',
+      fontStretch: "normal",
+      fontStyle: "normal",
+      fontWeight: "normal",
+      letterSpacing: "0.86px",
     },
     h3: {
       fontFamily: FONT_FAMILY_HEADING,
-      fontStretch: 'normal',
-      fontStyle: 'normal',
-      fontWeight: 'bold',
+      fontStretch: "normal",
+      fontStyle: "normal",
+      fontWeight: "bold",
     },
     h4: {
       fontFamily: FONT_FAMILY_TEXT_SECONDARY,
-      fontStretch: 'normal',
-      fontStyle: 'normal',
+      fontStretch: "normal",
+      fontStyle: "normal",
       fontWeight: 600,
-      letterSpacing: '0.64px',
-      textTransform: 'uppercase',
+      letterSpacing: "0.64px",
+      textTransform: "uppercase",
     },
     h5: {
       fontFamily: FONT_FAMILY_TEXT_SECONDARY,
-      fontStretch: 'normal',
-      fontStyle: 'normal',
+      fontStretch: "normal",
+      fontStyle: "normal",
       fontWeight: 600,
-      letterSpacing: '0.56px',
-      textTransform: 'Uppercase',
+      letterSpacing: "0.56px",
+      textTransform: "Uppercase",
     },
     h6: {
       fontFamily: FONT_FAMILY_TEXT_SECONDARY,
-      fontStretch: 'normal',
-      fontStyle: 'normal',
+      fontStretch: "normal",
+      fontStyle: "normal",
       fontWeight: 700,
       letterSpacing: 0,
-      textTransform: 'Uppercase',
+      textTransform: "Uppercase",
     },
     subtitle1: {
       fontFamily: FONT_FAMILY_TEXT_SECONDARY,
-      fontStretch: 'normal',
-      fontStyle: 'regular',
+      fontStretch: "normal",
+      fontStyle: "regular",
       fontWeight: 600,
       letterSpacing: 0,
     },
     body1: {
       fontFamily: FONT_FAMILY_TEXT_SECONDARY,
-      fontStretch: 'normal',
-      fontStyle: 'italic',
+      fontStretch: "normal",
+      fontStyle: "italic",
       fontWeight: 500,
       letterSpacing: 0, // 20px
     },
     body2: {
       fontFamily: FONT_FAMILY_TEXT_SECONDARY,
-      fontStretch: 'normal',
-      fontStyle: 'normal',
+      fontStretch: "normal",
+      fontStyle: "normal",
       fontWeight: 400,
       letterSpacing: 0, // 14px
     },
     caption: {
       fontFamily: FONT_FAMILY_TEXT_SECONDARY,
-      fontStretch: 'normal',
-      fontStyle: 'normal',
+      fontStretch: "normal",
+      fontStyle: "normal",
       letterSpacing: 0, // 12px/10px
     },
     button: {
       fontFamily: FONT_FAMILY_TEXT_HIGHTLIGHT,
-      fontStretch: 'normal',
-      fontStyle: 'normal',
-      color: 'white',
+      fontStretch: "normal",
+      fontStyle: "normal",
+      color: "white",
       fontWeight: 600,
       letterSpacing: 0,
-      textTransform: 'none', // button ex
+      textTransform: "none", // button ex
     },
   },
   overrides: {
     MuiCssBaseline: {
-      '@global': {
+      "@global": {
         html: {
-          maxWidth: '100%',
-          overflowX: 'hidden',
-          height: '100%',
+          maxWidth: "100%",
+          overflowX: "hidden",
+          height: "100%",
         },
         body: {
-          maxWidth: '100%',
-          overflowX: 'hidden',
-          height: '100%',
+          maxWidth: "100%",
+          overflowX: "hidden",
+          height: "100%",
         },
         // Next.js root div
-        '#__next': {
-          height: '100%',
+        "#__next": {
+          height: "100%",
         },
       },
     },
@@ -140,7 +140,7 @@ deepmerge(
       fontSize: pxToRem(32),
       lineHeight: 32 / 40,
       fontWeight: 700,
-      [breakpoints.up('md')]: {
+      [breakpoints.up("md")]: {
         fontSize: pxToRem(38),
         lineHeight: 38 / 56,
       },
@@ -149,7 +149,7 @@ deepmerge(
       color: palette.primary.main,
       fontSize: pxToRem(32),
       lineHeight: 32 / 48,
-      [breakpoints.up('md')]: {
+      [breakpoints.up("md")]: {
         fontSize: pxToRem(36),
         lineHeight: 36 / 56,
       },
@@ -158,7 +158,7 @@ deepmerge(
       color: palette.primary.dark,
       fontSize: pxToRem(16),
       lineHeight: 16 / 35,
-      [breakpoints.up('md')]: {
+      [breakpoints.up("md")]: {
         fontSize: pxToRem(24),
         lineHeight: 24 / 28.8,
       },
@@ -167,7 +167,7 @@ deepmerge(
       color: palette.primary.main,
       fontSize: pxToRem(16),
       lineHeight: 16 / 24,
-      [breakpoints.up('md')]: {
+      [breakpoints.up("md")]: {
         fontSize: pxToRem(16),
         lineHeight: 16 / 24,
       },
@@ -176,7 +176,7 @@ deepmerge(
       color: palette.background.main,
       fontSize: pxToRem(14),
       lineHeight: 14 / 16,
-      [breakpoints.up('md')]: {
+      [breakpoints.up("md")]: {
         color: palette.primary.main,
         fontSize: pxToRem(14),
         lineHeight: 14 / 24,
@@ -185,7 +185,7 @@ deepmerge(
     h6: {
       fontSize: pxToRem(10),
       lineHeight: 10 / 16,
-      [breakpoints.up('md')]: {
+      [breakpoints.up("md")]: {
         fontSize: pxToRem(10),
         lineHeight: 10 / 24, // card caption
       },
@@ -194,7 +194,7 @@ deepmerge(
       color: palette.primary.main,
       fontSize: pxToRem(14),
       lineHeight: 14 / 24,
-      [breakpoints.up('md')]: {
+      [breakpoints.up("md")]: {
         fontSize: pxToRem(20),
         lineHeight: 20 / 40, // 20px
       },
@@ -202,7 +202,7 @@ deepmerge(
     body2: {
       fontSize: pxToRem(14),
       lineHeight: 14 / 24,
-      [breakpoints.up('md')]: {
+      [breakpoints.up("md")]: {
         fontSize: pxToRem(14),
         lineHeight: 14 / 24, // 14px
       },
@@ -210,13 +210,13 @@ deepmerge(
     subtitle1: {
       fontSize: pxToRem(14),
       lineHeight: 14 / 24,
-      [breakpoints.up('md')]: {
+      [breakpoints.up("md")]: {
         fontSize: pxToRem(12),
         lineHeight: 12 / 14.4,
       },
     },
     caption: {
-      [breakpoints.up('md')]: {
+      [breakpoints.up("md")]: {
         fontSize: pxToRem(12),
         lineHeight: 12 / 10,
       },
@@ -224,13 +224,13 @@ deepmerge(
     button: {
       fontSize: pxToRem(14),
       lineHeight: 14 / 18,
-      [breakpoints.up('md')]: {
+      [breakpoints.up("md")]: {
         fontSize: pxToRem(14),
         lineHeight: 14 / 18, // button
       },
     },
   },
-  { clone: false },
+  { clone: false }
 );
 
 // ## OVERRIDES
@@ -242,38 +242,38 @@ deepmerge(
       // Name of the rule
       contained: {
         backgroundColor: palette.primary.main,
-        border: 'none',
-        boxShadow: 'none',
+        border: "none",
+        boxShadow: "none",
         color: palette.text.secondary,
-        '&:hover': {
-          border: 'none',
-          boxShadow: 'none',
+        "&:hover": {
+          border: "none",
+          boxShadow: "none",
         },
       },
       containedPrimary: {
         backgroundColor: palette.primary.main,
-        border: 'none',
-        boxShadow: 'none',
+        border: "none",
+        boxShadow: "none",
         color: palette.text.secondary,
       },
       containedSizeSmall: {
         fontSize: typography.pxToRem(14),
         lineHeight: 18 / 14,
-        [breakpoints.up('xl')]: {
+        [breakpoints.up("xl")]: {
           fontSize: typography.pxToRem(16),
         },
       },
       containedSizeLarge: {
         fontSize: typography.pxToRem(16),
         lineHeight: 24 / 16,
-        [breakpoints.up('xl')]: {
+        [breakpoints.up("xl")]: {
           fontSize: typography.pxToRem(24),
           lineHeight: 24 / 24,
         },
       },
     },
   },
-  { clone: false },
+  { clone: false }
 );
 
 export default theme;
