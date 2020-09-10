@@ -6,8 +6,8 @@ import classNames from "classnames";
 
 import { Section } from "@commons-ui/core";
 import Logo from "@/promisetracker/components/Navigation/Logo";
-import MenuList from "@/promisetracker/components/Navigation/DesktopNavigation/MenuList";
 import Search from "@/promisetracker/components/Search";
+import PageNavigation from "@/promisetracker/components/Navigation/DesktopNavigation/PageNavigation";
 
 const useStyles = makeStyles(({ breakpoints }) => ({
   logo: {},
@@ -62,8 +62,8 @@ function DesktopNavigation() {
             <Grid item md={3}>
               <Logo />
             </Grid>
-            <Grid item md={5}>
-              <MenuList />
+            <Grid item md={4}>
+              <PageNavigation />
             </Grid>
             <Grid item md={3}>
               <Search />

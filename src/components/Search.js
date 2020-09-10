@@ -3,47 +3,30 @@ import PropTypes from "prop-types";
 
 import { makeStyles } from "@material-ui/core/styles";
 import { IconButton, InputBase, Paper } from "@material-ui/core";
-import { Search as SearchIcon } from "@material-ui/icons";
 
-const useStyles = makeStyles(({ breakpoints, typography }) => ({
+import searchicon from "assets/Page-1.svg";
+
+const useStyles = makeStyles(({ palette, typography }) => ({
   root: {
     alignItems: "center",
     backgroundColor: "#EEEEEE",
-    border: "1px solid #9D9C9C",
-    borderRadius: 10,
+    borderRadius: 0,
     boxShadow: "none",
     display: "flex",
     width: "100%",
   },
   input: {
-    color: "#9D9C9C",
+    color: palette.primary.main,
     flex: 1,
-    fontSize: typography.pxToRem(20),
+    padding: "0rem 2rem",
+    fontSize: typography.pxToRem(16),
   },
   inputInput: {
     flex: 1,
-    [breakpoints.up("md")]: {
-      paddingBottom: typography.pxToRem(7),
-      paddingLeft: typography.pxToRem(9),
-      paddingRight: typography.pxToRem(9),
-      paddingTop: typography.pxToRem(7),
-    },
-    [breakpoints.up("xl")]: {
-      paddingBottom: typography.pxToRem(15),
-      paddingLeft: typography.pxToRem(19),
-      paddingRight: typography.pxToRem(19),
-      paddingTop: typography.pxToRem(13),
-    },
   },
   iconButton: {
-    color: "#9D9C9C",
-    [breakpoints.up("md")]: {
-      paddingBottom: 0,
-      paddingTop: 0,
-    },
-    [breakpoints.up("xl")]: {
-      paddingBottom: `${typography.pxToRem(7)}`,
-      paddingTop: `${typography.pxToRem(7)}`,
+    "&:hover": {
+      backgroundColor: "unset",
     },
   },
 }));
@@ -92,7 +75,7 @@ function Search({ ariaLabel, onClick, onChange, placeholder, ...props }) {
         className={classes.iconButton}
         aria-label="search"
       >
-        <SearchIcon style={{ fontSize: 42 }} />
+        <img src={searchicon} alt="Search Icon" />
       </IconButton>
     </Paper>
   );
