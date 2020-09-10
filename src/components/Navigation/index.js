@@ -3,6 +3,7 @@ import React from "react";
 import { AppBar, Toolbar, useMediaQuery } from "@material-ui/core";
 import { makeStyles, useTheme } from "@material-ui/core/styles";
 import DesktopNavigation from "@/promisetracker/components/Navigation/DesktopNavigation";
+import MobileNavigation from "@/promisetracker/components/Navigation/MobileNavigation";
 
 const useStyles = makeStyles(({ breakpoints, palette }) => ({
   root: {
@@ -28,7 +29,7 @@ function Navigation() {
     <>
       <AppBar color="primary" position="sticky" className={classes.root}>
         <Toolbar disableGutters className={classes.toolbar}>
-          {isDesktop ? <DesktopNavigation /> : null}
+          {isDesktop ? <DesktopNavigation /> : <MobileNavigation />}
         </Toolbar>
       </AppBar>
     </>

@@ -13,7 +13,7 @@ const theme = createTheme({
     background: { default: "#fff" },
     primary: { main: "#202020", dark: "#000000" }, // black
     secondary: { main: "#EBEBEB", light: "#F7F7F7" }, // grey
-    hightlight: { main: "#005DFD", light: "#FFB322", faded: "#90DAFF" }, // blue. yellow, light blue
+    highlight: { main: "#005DFD", light: "#FFB322", faded: "#90DAFF" }, // blue. yellow, light blue
   },
   typography: {
     fontFamily: FONT_FAMILY_TEXT_SECONDARY,

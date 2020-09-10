@@ -16,7 +16,7 @@ const useStyles = makeStyles(({ breakpoints, palette, typography }) => ({
   },
   section: {},
   button: {
-    marginRight: "0.5rem",
+    // marginRight: "0.5rem",
     width: "auto",
     fontWeight: 600,
   },
