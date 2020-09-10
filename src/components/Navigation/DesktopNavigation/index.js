@@ -69,7 +69,7 @@ function DesktopNavigation() {
               <Search />
             </Grid>
 
-            <Grid item md={1} container justify="flex-start">
+            <Grid item md={1} direction="column" container>
               <Link
                 href="/#"
                 underline="none"
@@ -88,6 +88,17 @@ function DesktopNavigation() {
               >
                 Fr
               </Link>
+
+              <Link
+                href="/#"
+                underline="none"
+                variant="overline"
+                className={classNames(classes.buttonLanguage, "active")}
+              >
+                AM
+              </Link>
+              {/* TODO(kilemens): Hide other languages for MVP */}
+
               <Link
                 href="/#"
                 underline="none"
@@ -100,6 +111,7 @@ function DesktopNavigation() {
                 عربى
               </Link>
             </Grid>
+            <Grid />
           </Grid>
         </Section>
       </Grid>
