@@ -1,13 +1,14 @@
 import React from "react";
 import PropTypes from "prop-types";
 
-import { Grid } from "@material-ui/core";
+import classNames from "classnames";
+
+import { Grid, Typography } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 
 import { Section } from "@commons-ui/core";
 
 import LinkButton from "components/Link/Button";
-import config from "@/promisetracker/config";
 
 const useStyles = makeStyles(({ breakpoints, palette, typography }) => ({
   root: {
@@ -17,16 +18,10 @@ const useStyles = makeStyles(({ breakpoints, palette, typography }) => ({
   button: {
     marginRight: "0.5rem",
     width: "auto",
-    color: "#9D9C9C",
-    [breakpoints.up("lg")]: {
-      marginRight: "2rem",
-    },
-    [breakpoints.up("xl")]: {
-      marginRight: "4rem",
-    },
+    fontWeight: 600,
   },
   buttonCurrent: {
-    color: palette.secondary.main,
+    color: palette.primary.main,
   },
   navigation: {
     height: typography.pxToRem(50),
@@ -36,9 +31,8 @@ const useStyles = makeStyles(({ breakpoints, palette, typography }) => ({
   },
 }));
 
-function PageNavigation({ ...props }) {
+function PageNavigation({ navigation, ...props }) {
   const classes = useStyles(props);
-  const { navigationMenu } = config;
   return (
     <div className={classes.root}>
       <Section classes={{ root: classes.section }}>
@@ -49,10 +43,16 @@ function PageNavigation({ ...props }) {
           alignItems="center"
           className={classes.navigation}
         >
-          {navigationMenu.map((menu) => (
+          {navigation.map((menu) => (
             <Grid item key={menu.href}>
-              <LinkButton href={menu.href} size="small">
-                {menu.name}
+              <LinkButton
+                href={menu.href}
+                size="large"
+                className={classNames(classes.button, {
+                  [classes.buttonCurrent]: classes.buttonCurrent,
+                })}
+              >
+                <Typography variant="h5">{menu.name}</Typography>
               </LinkButton>
             </Grid>
           ))}

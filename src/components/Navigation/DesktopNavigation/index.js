@@ -9,9 +9,13 @@ import Logo from "@/promisetracker/components/Navigation/Logo";
 import Search from "@/promisetracker/components/Search";
 import PageNavigation from "@/promisetracker/components/Navigation/DesktopNavigation/PageNavigation";
 
+import config from "@/promisetracker/config";
+
 const useStyles = makeStyles(({ breakpoints }) => ({
   logo: {},
-  section: {},
+  section: {
+    padding: "3rem 5rem",
+  },
   navigation: {},
   button: {
     paddingLeft: 0,
@@ -47,8 +51,9 @@ const useStyles = makeStyles(({ breakpoints }) => ({
   },
 }));
 
-function DesktopNavigation() {
-  const classes = useStyles();
+function DesktopNavigation(props) {
+  const classes = useStyles(props);
+  const { navigationMenu } = config;
   return (
     <Grid container className={classes.root}>
       <Grid item xs={12}>
@@ -63,7 +68,7 @@ function DesktopNavigation() {
               <Logo />
             </Grid>
             <Grid item md={5}>
-              <PageNavigation />
+              <PageNavigation navigation={navigationMenu} />
             </Grid>
             <Grid item md={3}>
               <Search />
