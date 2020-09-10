@@ -62,54 +62,58 @@ function DesktopNavigation() {
             <Grid item md={3}>
               <Logo />
             </Grid>
-            <Grid item md={4}>
+            <Grid item md={5}>
               <PageNavigation />
             </Grid>
             <Grid item md={3}>
               <Search />
             </Grid>
 
-            <Grid item md={1} direction="column" container>
-              <Link
-                href="/#"
-                underline="none"
-                variant="overline"
-                className={classNames(classes.buttonLanguage, "active")}
-              >
-                En
-              </Link>
-              {/* TODO(kilemens): Hide other languages for MVP */}
+            <Grid item md={1} direction="column" container justify="flex-start">
+              <Grid item>
+                <Link
+                  href="/#"
+                  underline="none"
+                  variant="overline"
+                  className={classNames(classes.buttonLanguage, "active")}
+                >
+                  En
+                </Link>
+                {/* TODO(kilemens): Hide other languages for MVP */}
 
-              <Link
-                href="/#"
-                underline="none"
-                variant="overline"
-                className={classNames(classes.buttonLanguage)}
-              >
-                Fr
-              </Link>
+                <Link
+                  href="/#"
+                  underline="none"
+                  variant="overline"
+                  className={classNames(classes.buttonLanguage)}
+                >
+                  Am
+                </Link>
+              </Grid>
 
-              <Link
-                href="/#"
-                underline="none"
-                variant="overline"
-                className={classNames(classes.buttonLanguage, "active")}
-              >
-                AM
-              </Link>
-              {/* TODO(kilemens): Hide other languages for MVP */}
+              <Grid item>
+                <Link
+                  href="/#"
+                  underline="none"
+                  variant="overline"
+                  className={classNames(classes.buttonLanguage, "active")}
+                >
+                  Fr
+                </Link>
+                {/* TODO(kilemens): Hide other languages for MVP */}
 
-              <Link
-                href="/#"
-                underline="none"
-                variant="overline"
-                className={classNames(
-                  classes.buttonLanguage,
-                  classes.buttonLanguageLast
-                )}
-              >
-                عربى
-              </Link>
+                <Link
+                  href="/#"
+                  underline="none"
+                  variant="overline"
+                  className={classNames(
+                    classes.buttonLanguage,
+                    classes.buttonLanguageLast
+                  )}
+                >
+                  عربى
+                </Link>
+              </Grid>
             </Grid>
             <Grid />
           </Grid>
