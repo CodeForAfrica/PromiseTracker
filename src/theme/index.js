@@ -3,7 +3,7 @@ import { deepmerge } from "@material-ui/utils";
 import createTheme from "@hurumap-ui/charts/styles/createTheme";
 
 const FONT_FAMILY_HEADING = '"Amiri", "serif"';
-const FONT_FAMILY_TEXT_PRIMARY = '"Georgia", "serif"';
+const FONT_FAMILY_TEXT_PRIMARY = '"Merriweather", "serif"';
 const FONT_FAMILY_TEXT_SECONDARY = '"Open Sans", "sans-serif"';
 const FONT_FAMILY_TEXT_HIGHTLIGHT = '"Source Sans Pro", "sans-serif"';
 
@@ -194,20 +194,16 @@ deepmerge(
     },
     body1: {
       color: palette.primary.main,
-      fontSize: pxToRem(14),
-      lineHeight: 24 / 14,
+      fontSize: pxToRem(13),
+      lineHeight: 24 / 13,
       [breakpoints.up("md")]: {
-        fontSize: pxToRem(20),
-        lineHeight: 40 / 20, // Georgia title text 20px// Call to action sections
+        fontSize: pxToRem(18),
+        lineHeight: 40 / 18, // Georgia title text 18px// Call to action sections
       },
     },
     body2: {
-      fontSize: pxToRem(14),
-      lineHeight: 24 / 14,
-      [breakpoints.up("md")]: {
-        fontSize: pxToRem(14),
-        lineHeight: 24 / 14, // Georgia regular body text 14px
-      },
+      fontSize: pxToRem(13),
+      lineHeight: 24 / 13, // Georgia regular body text 13px
     },
     subtitle1: {
       fontSize: pxToRem(14),

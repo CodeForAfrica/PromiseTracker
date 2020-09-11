@@ -11,6 +11,9 @@ const useStyles = makeStyles(({ typography, palette }) => ({
   root: {
     padding: "1rem",
   },
+  collapse: {
+    borderLeft: `2px solid ${palette.secondary.dark}`,
+  },
   listItem: {
     padding: "2rem 0rem",
     "&:hover": {
@@ -77,7 +80,12 @@ function NavigationList(props) {
           </Typography>
         </ListItem>
 
-        <Collapse in={!open} timeout="auto" unmountOnExit>
+        <Collapse
+          in={!open}
+          timeout="auto"
+          unmountOnExit
+          className={classes.collapse}
+        >
           <Grid item className={classes.items}>
             <List component="nav">
               {analysisMenu.map((item) => (

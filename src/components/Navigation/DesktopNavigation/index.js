@@ -13,10 +13,10 @@ import NavigationButton from "@/promisetracker/components/Navigation/DesktopNavi
 
 import config from "@/promisetracker/config";
 
-const useStyles = makeStyles(({ breakpoints }) => ({
+const useStyles = makeStyles(() => ({
   logo: {},
   section: {
-    padding: "3rem 5rem",
+    padding: "3rem 4rem",
   },
   navigation: {},
   button: {
@@ -27,12 +27,6 @@ const useStyles = makeStyles(({ breakpoints }) => ({
       backgroundColor: "white",
     },
     width: "auto",
-    [breakpoints.up("lg")]: {
-      marginRight: "2rem",
-    },
-    [breakpoints.up("xl")]: {
-      marginRight: "4rem",
-    },
   },
   buttonLanguage: {
     color: "#9D9C9C",
@@ -41,12 +35,6 @@ const useStyles = makeStyles(({ breakpoints }) => ({
     },
     marginLeft: "0.75rem",
     width: "auto",
-    [breakpoints.up("lg")]: {
-      marginLeft: "1.25rem",
-    },
-    [breakpoints.up("xl")]: {
-      marginLeft: "2rem",
-    },
   },
   buttonLanguageLast: {
     marginRight: "-5.5rem",
@@ -71,9 +59,10 @@ function DesktopNavigation(props) {
               <Logo />
             </Grid>
 
-            <Grid item md={5} container direction="row">
+            <Grid item md={5} container direction="row" justify="space-evenly">
               <Grid item>
                 <MenuButton
+                  href="/promises"
                   color="secondary"
                   size="large"
                   title="Promises"
@@ -101,6 +90,7 @@ function DesktopNavigation(props) {
 
               <Grid item>
                 <MenuButton
+                  href="/act-now"
                   color="secondary"
                   size="large"
                   title="Act Now"

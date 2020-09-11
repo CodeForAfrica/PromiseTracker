@@ -23,7 +23,7 @@ export default class MyDocument extends Document {
           {/* see: https://csswizardry.com/2020/05/the-fastest-google-fonts/ */}
           <link
             rel="stylesheet"
-            href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Open+Sans:wght@300;400;600;700&family=Source+Sans+Pro:wght@200;300;400;600;700&display=swap"
+            href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Merriweather:wght@300;400;700&family=Open+Sans:wght@300;400;600;700&family=Source+Sans+Pro:wght@200;300;400;600;700&display=swap"
             media="print"
             onLoad="this.media='all'"
           />
