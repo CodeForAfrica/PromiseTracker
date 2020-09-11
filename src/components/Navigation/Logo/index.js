@@ -1,11 +1,19 @@
 import React from "react";
-import logo from "assets/header-pt-logo.svg";
-import { makeStyles } from "@material-ui/core/styles";
+
+import logo from "assets/header-pt-logo-mobile.svg";
+import desktoplogo from "assets/header-pt-logo.svg";
+
+import { useMediaQuery } from "@material-ui/core";
+
+import { makeStyles, useTheme } from "@material-ui/core/styles";
 import IconButton from "@/promisetracker/components/Link/IconButton";
 
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles(({ breakpoints }) => ({
   logo: {
-    padding: 0,
+    padding: "1rem",
+    [breakpoints.up("md")]: {
+      padding: 0,
+    },
     "&:hover": {
       backgroundColor: "unset",
     },
@@ -14,6 +22,10 @@ const useStyles = makeStyles(() => ({
 
 function Logo() {
   const classes = useStyles();
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
+  const src = isDesktop ? desktoplogo : logo;
+
   return (
     <IconButton
       disableRipple
@@ -21,7 +33,7 @@ function Logo() {
       href="/"
       className={classes.logo}
     >
-      <img src={logo} alt="Promise Tracker Logo" />
+      <img src={src} alt="Promise Tracker Logo" />
     </IconButton>
   );
 }
