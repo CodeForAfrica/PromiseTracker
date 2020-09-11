@@ -7,7 +7,9 @@ import classNames from "classnames";
 import { Section } from "@commons-ui/core";
 import Logo from "@/promisetracker/components/Navigation/Logo";
 import Search from "@/promisetracker/components/Search";
-import MainNavigation from "@/promisetracker/components/Navigation/DesktopNavigation/MainNavigation";
+import MenuButton from "@/promisetracker/components/Navigation/DesktopNavigation/MenuButton";
+import PageNavigation from "@/promisetracker/components/Navigation/DesktopNavigation/PageNavigation";
+import NavigationButton from "@/promisetracker/components/Navigation/DesktopNavigation/NavigationButton";
 
 import config from "@/promisetracker/config";
 
@@ -53,7 +55,8 @@ const useStyles = makeStyles(({ breakpoints }) => ({
 
 function DesktopNavigation(props) {
   const classes = useStyles(props);
-  const { navigationMenu } = config;
+  const { analysisMenu } = config;
+
   return (
     <Grid container className={classes.root}>
       <Grid item xs={12}>
@@ -67,9 +70,46 @@ function DesktopNavigation(props) {
             <Grid item md={3}>
               <Logo />
             </Grid>
-            <Grid item md={5}>
-              <MainNavigation navigation={navigationMenu} />
+
+            <Grid item md={5} container direction="row">
+              <Grid item>
+                <MenuButton
+                  color="secondary"
+                  size="large"
+                  title="Promises"
+                  variant="outlined"
+                  className={classes.button}
+                />
+              </Grid>
+
+              <Grid item>
+                <NavigationButton
+                  color="secondary"
+                  title="Analysis"
+                  size="large"
+                  className={classes.button}
+                >
+                  <PageNavigation
+                    navigation={analysisMenu}
+                    classes={{
+                      root: classes.pageNavigation,
+                      section: classes.section,
+                    }}
+                  />
+                </NavigationButton>
+              </Grid>
+
+              <Grid item>
+                <MenuButton
+                  color="secondary"
+                  size="large"
+                  title="Act Now"
+                  variant="outlined"
+                  className={classes.button}
+                />
+              </Grid>
             </Grid>
+
             <Grid item md={3}>
               <Search />
             </Grid>

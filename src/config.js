@@ -1,30 +1,16 @@
 const config = {
-  navigationMenu: [
+  analysisMenu: [
     {
-      name: "Promises",
-      href: "/promises",
+      name: "Articles",
+      href: "/one",
     },
     {
-      name: "Analysis",
-      href: "/analysis",
-      analysisMenu: [
-        {
-          name: "one",
-          url: "/one",
-        },
-        {
-          name: "two",
-          url: "/two",
-        },
-        {
-          name: "thre",
-          url: "/three",
-        },
-      ],
+      name: "Reseources",
+      href: "/two",
     },
     {
-      name: "Act Now",
-      href: "/actnow",
+      name: "Fact-checks",
+      href: "/three",
     },
   ],
 };
