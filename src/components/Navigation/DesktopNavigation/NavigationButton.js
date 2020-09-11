@@ -28,7 +28,6 @@ const useStyles = makeStyles(({ spacing, typography }) => ({
   },
   button: {
     border: 0,
-    marginRight: "1rem",
     "&:hover": {
       border: 0,
     },

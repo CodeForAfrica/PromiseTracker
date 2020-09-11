@@ -1,27 +1,48 @@
 import React from "react";
 
-import {
-  Grid,
-  List,
-  ListItem,
-  ListItemText,
-  Collapse,
-} from "@material-ui/core";
+import { Grid, List, ListItem, Collapse, Typography } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 
-const useStyles = makeStyles(() => ({
+import Link from "@/promisetracker/components/Link";
+
+import config from "@/promisetracker/config";
+
+const useStyles = makeStyles(({ typography, palette }) => ({
   root: {
     padding: "1rem",
   },
   listItem: {
+    padding: "2rem 0rem",
     "&:hover": {
       backgroundColor: "unset",
     },
   },
+  listItemText: {
+    padding: "2rem 0rem",
+    color: palette.background.default,
+  },
+  title: {
+    color: palette.background.default,
+    fontSize: typography.pxToRem(18),
+    textTransform: "uppercase",
+  },
+  items: {
+    padding: "0rem 3rem",
+    opacity: 0.5,
+  },
 }));
+
+function ListItemLink(props) {
+  const classes = useStyles();
+  return (
+    <Link {...props} variant="subtitle2" className={classes.listItemLink} />
+  );
+}
 
 function NavigationList(props) {
   const classes = useStyles(props);
+  const { analysisMenu } = config;
+
   const [open, setOpen] = React.useState(true);
 
   const handleClick = () => {
@@ -40,7 +61,9 @@ function NavigationList(props) {
         className={classes.list}
       >
         <ListItem autoFocus={false} button className={classes.listItem}>
-          <ListItemText primary="Promises" className={classes.ListItemText} />
+          <Typography variant="h4" className={classes.title}>
+            Promises
+          </Typography>
         </ListItem>
 
         <ListItem
@@ -49,19 +72,34 @@ function NavigationList(props) {
           onClick={handleClick}
           className={classes.listItem}
         >
-          <ListItemText primary="Analysis" className={classes.ListItemText} />
+          <Typography variant="h4" className={classes.title}>
+            Analysis
+          </Typography>
         </ListItem>
 
         <Collapse in={!open} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            <ListItem button className={classes.nested}>
-              <ListItemText primary="Starred" />
-            </ListItem>
-          </List>
+          <Grid item className={classes.items}>
+            <List component="nav">
+              {analysisMenu.map((item) => (
+                <ListItemLink
+                  key={item.name}
+                  underline="none"
+                  href={item.href}
+                  as={item.href}
+                >
+                  <Typography variant="h4" className={classes.listItemText}>
+                    {item.name}
+                  </Typography>
+                </ListItemLink>
+              ))}
+            </List>
+          </Grid>
         </Collapse>
 
         <ListItem autoFocus={false} button className={classes.listItem}>
-          <ListItemText primary="Act Now" className={classes.ListItemText} />
+          <Typography variant="h4" className={classes.title}>
+            Act Now
+          </Typography>
         </ListItem>
       </List>
     </Grid>

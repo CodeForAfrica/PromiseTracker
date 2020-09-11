@@ -7,7 +7,6 @@ import { makeStyles } from "@material-ui/core/styles";
 const useStyles = makeStyles(() => ({
   button: {
     border: 0,
-    marginRight: "1rem",
     "&:hover": {
       border: 0,
     },
