@@ -32,7 +32,7 @@ const useStyles = makeStyles(() => ({
     padding: "8px 24px",
     transform: "matrix(-1, 0, 0, -1, 0, 0, )",
     background:
-      "transparent linear-gradient(360deg, #202020 0%, #005DFD 100%) 0% 0% no-repeat",
+      "transparent linear-gradient(360deg, #202020 0%, #005DFD 100%) 0% 0% no-repeat padding-box",
   },
   dialogContent: {
     backgroundColor: "#005DFD",

@@ -21,13 +21,17 @@ const useStyles = makeStyles(({ typography, palette }) => ({
     },
   },
   listItemText: {
-    padding: "2rem 0rem",
-    color: palette.background.default,
+    padding: "1.5rem 0rem",
+    color: "white",
+    fontSize: typography.pxToRem(18),
+    textTransform: "uppercase",
+    fontWeight: 500,
   },
   title: {
     color: palette.background.default,
     fontSize: typography.pxToRem(18),
     textTransform: "uppercase",
+    fontWeight: 500,
   },
   items: {
     padding: "0rem 3rem",
