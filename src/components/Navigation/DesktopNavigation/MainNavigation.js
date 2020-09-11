@@ -31,7 +31,7 @@ const useStyles = makeStyles(({ breakpoints, palette, typography }) => ({
   },
 }));
 
-function PageNavigation({ navigation, ...props }) {
+function MainNavigation({ navigation, ...props }) {
   const classes = useStyles(props);
   return (
     <div className={classes.root}>
@@ -62,7 +62,7 @@ function PageNavigation({ navigation, ...props }) {
   );
 }
 
-PageNavigation.propTypes = {
+MainNavigation.propTypes = {
   navigation: PropTypes.arrayOf(
     PropTypes.shape({
       name: PropTypes.string.isRequired,
@@ -71,4 +71,4 @@ PageNavigation.propTypes = {
   ).isRequired,
 };
 
-export default PageNavigation;
+export default MainNavigation;

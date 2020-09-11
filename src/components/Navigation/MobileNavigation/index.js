@@ -22,21 +22,26 @@ import MenuIcon from "@material-ui/icons/Menu";
 import IconButtonLink from "components/Link/IconButton";
 
 import Logo from "@/promisetracker/components/Navigation/Logo";
+import NavigationList from "@/promisetracker/components/Navigation/MobileNavigation/NavigationList";
+
+import config from "@/promisetracker/config";
 
 const useStyles = makeStyles(() => ({
   dialog: {},
   dialogActions: {
     padding: "8px 24px",
+    transform: "matrix(-1, 0, 0, -1, 0, 0, )",
+    background:
+      "transparent linear-gradient(360deg, #202020 0%, #005DFD 100%) 0% 0% no-repeat",
   },
-
+  dialogContent: {
+    backgroundColor: "#005DFD",
+  },
   menuIcon: {
     color: "#202020",
   },
   searchIcon: {
     color: "#D6D6D6",
-  },
-  dialogPaper: {
-    backgroundColor: "#005DFD",
   },
   button: {
     color: "white",
@@ -60,6 +65,7 @@ const Transition = React.forwardRef(function Transition(props, ref) {
 function MobileNavigation(props) {
   const classes = useStyles(props);
   const [open, setOpen] = React.useState(false);
+  const { navigationMenu } = config;
 
   const handleClickOpen = (e) => {
     if (e) {
@@ -157,9 +163,9 @@ function MobileNavigation(props) {
               </IconButton>
             </Grid>
           </DialogActions>
-          <DialogContent>
+          <DialogContent className={classes.dialogContent}>
             <Typography variant="body2" style={{ color: "white" }}>
-              content goes here
+              <NavigationList navigation={navigationMenu} />
             </Typography>
           </DialogContent>
         </Dialog>

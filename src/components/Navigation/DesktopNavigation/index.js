@@ -7,7 +7,7 @@ import classNames from "classnames";
 import { Section } from "@commons-ui/core";
 import Logo from "@/promisetracker/components/Navigation/Logo";
 import Search from "@/promisetracker/components/Search";
-import PageNavigation from "@/promisetracker/components/Navigation/DesktopNavigation/PageNavigation";
+import MainNavigation from "@/promisetracker/components/Navigation/DesktopNavigation/MainNavigation";
 
 import config from "@/promisetracker/config";
 
@@ -68,7 +68,7 @@ function DesktopNavigation(props) {
               <Logo />
             </Grid>
             <Grid item md={5}>
-              <PageNavigation navigation={navigationMenu} />
+              <MainNavigation navigation={navigationMenu} />
             </Grid>
             <Grid item md={3}>
               <Search />
