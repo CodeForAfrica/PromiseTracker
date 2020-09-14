@@ -1,21 +1,22 @@
 import React, { useRef } from "react";
 import PropTypes from "prop-types";
-
-import { Typography } from "@material-ui/core";
 import LinkButton from "@/promisetracker/components/Link/Button";
 
 import { makeStyles } from "@material-ui/core/styles";
 
-const useStyles = makeStyles(({ palette }) => ({
+const useStyles = makeStyles(({ palette, typography }) => ({
   button: {
     border: 0,
+    color: palette.primary.main,
+    textTransform: "uppercase",
+    fontSize: typography.pxToRem(16),
     "&:hover": {
       border: 0,
     },
     "&.active": {
       backgroundColor: palette.primary.dark,
-      borderRadius: 0,
       color: "white",
+      borderRadius: 0,
     },
   },
 }));
@@ -35,7 +36,7 @@ function MenuButton({ size, href, title, ...props }) {
       ref={buttonRef}
       className={classes.button}
     >
-      <Typography variant="h4">{title}</Typography>
+      {title}
     </LinkButton>
   );
 }

@@ -7,7 +7,6 @@ import {
   ClickAwayListener,
   Collapse,
   Popper,
-  Typography,
 } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 
@@ -23,19 +22,18 @@ const useStyles = makeStyles(({ spacing, palette, typography }) => ({
     width: "100%",
     zIndex: 9999,
   },
-  title: {
-    fontWeight: 700,
-  },
   button: {
     border: 0,
+    color: palette.primary.main,
+    textTransform: "uppercase",
+    fontSize: typography.pxToRem(16),
     "&:hover": {
       border: 0,
     },
     "&.active": {
       backgroundColor: palette.primary.dark,
-      border: "none",
-      boxShadow: "none",
       color: "white",
+      borderRadius: 0,
     },
   },
 }));
@@ -73,7 +71,7 @@ function NavigationButton({
       ref={buttonRef}
       className={classes.button}
     >
-      <Typography variant="h4">{title}</Typography>
+      {title}
     </Button>
   );
   useEffect(() => {
