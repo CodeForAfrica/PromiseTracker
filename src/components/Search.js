@@ -19,7 +19,9 @@ const useStyles = makeStyles(({ palette, typography }) => ({
     color: palette.primary.main,
     flex: 1,
     padding: "0rem 2rem",
-    fontSize: typography.pxToRem(16),
+    fontSize: typography.pxToRem(14),
+    fontFamily: typography.fontFamily,
+    fontWeight: 500,
   },
   inputInput: {
     flex: 1,

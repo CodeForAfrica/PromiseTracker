@@ -30,7 +30,7 @@ const useStyles = makeStyles(({ spacing, palette, typography }) => ({
     fontFamily: typography.fontFamily,
     letterSpacing: "0.56px",
     fontWeight: 500,
-    fontSize: typography.pxToRem(16),
+    fontSize: typography.pxToRem(14),
     "&:hover": {
       border: 0,
     },
