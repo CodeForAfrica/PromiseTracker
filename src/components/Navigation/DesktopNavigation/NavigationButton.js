@@ -25,7 +25,11 @@ const useStyles = makeStyles(({ spacing, palette, typography }) => ({
   button: {
     border: 0,
     color: palette.primary.main,
+    padding: "1.2rem",
     textTransform: "uppercase",
+    fontFamily: typography.fontFamily,
+    letterSpacing: "0.56px",
+    fontWeight: 500,
     fontSize: typography.pxToRem(16),
     "&:hover": {
       border: 0,
