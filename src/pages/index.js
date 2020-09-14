@@ -3,11 +3,12 @@ import React from "react";
 import Page from "@/promisetracker/components/Page";
 import Newsletter from "@/promisetracker/components/Newsletter";
 
-function Index() {
+function Home() {
   return (
     <Page>
-     <Newsletter />
+      <Newsletter />
     </Page>
-  )
-  
-export default Index;
+  );
+}
+
+export default Home;
