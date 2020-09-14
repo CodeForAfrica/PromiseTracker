@@ -20,8 +20,8 @@ const useStyles = makeStyles(({ breakpoints }) => ({
   },
 }));
 
-function Logo() {
-  const classes = useStyles();
+function Logo(props) {
+  const classes = useStyles(props);
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
   const src = isDesktop ? desktoplogo : logo;

@@ -11,7 +11,7 @@ import {
 } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 
-const useStyles = makeStyles(({ spacing, typography }) => ({
+const useStyles = makeStyles(({ spacing, palette, typography }) => ({
   root: {
     display: "flex",
   },
@@ -30,6 +30,12 @@ const useStyles = makeStyles(({ spacing, typography }) => ({
     border: 0,
     "&:hover": {
       border: 0,
+    },
+    "&.active": {
+      backgroundColor: palette.primary.dark,
+      border: "none",
+      boxShadow: "none",
+      color: "white",
     },
   },
 }));
@@ -63,9 +69,9 @@ function NavigationButton({
       onClick={handleToggleOpen}
       size={size}
       {...props}
-      variant={active || open ? "outlined" : undefined}
+      variant="outlined"
       ref={buttonRef}
-      // className={open ? classes.currentButton : undefined}
+      className={classes.button}
     >
       <Typography variant="h4">{title}</Typography>
     </Button>

@@ -15,12 +15,7 @@ const useStyles = makeStyles(({ palette }) => ({
     "&.active": {
       backgroundColor: palette.primary.dark,
       borderRadius: 0,
-    },
-  },
-  title: {
-    color: "white",
-    "&.hover": {
-      color: "red",
+      color: "white",
     },
   },
 }));
@@ -40,9 +35,7 @@ function MenuButton({ size, href, title, ...props }) {
       ref={buttonRef}
       className={classes.button}
     >
-      <Typography variant="h4" className={classes.title}>
-        {title}
-      </Typography>
+      <Typography variant="h4">{title}</Typography>
     </LinkButton>
   );
 }
