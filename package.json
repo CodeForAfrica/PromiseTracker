@@ -10,6 +10,7 @@
     "@material-ui/utils": "^4.10.2",
     "@zeit/next-css": "^1.0.1",
     "classnames": "^2.2.6",
+    "jss": "^10.4.0",
     "next": "9.5.3",
     "next-images": "^1.4.1",
     "prop-types": "^15.7.2",
