@@ -9,6 +9,8 @@ const useStyles = makeStyles(({ palette, typography }) => ({
     border: 0,
     color: palette.primary.main,
     textTransform: "uppercase",
+    fontFamily: typography.fontFamily,
+    letterSpacing: "0.56px",
     fontSize: typography.pxToRem(16),
     "&:hover": {
       border: 0,

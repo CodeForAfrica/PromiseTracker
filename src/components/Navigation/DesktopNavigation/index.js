@@ -59,7 +59,7 @@ function DesktopNavigation(props) {
               <Logo />
             </Grid>
 
-            <Grid item md={5} container direction="row" justify="space-evenly">
+            <Grid item md={5} container direction="row" justify="center">
               <Grid item>
                 <MenuButton
                   href="/promises"
