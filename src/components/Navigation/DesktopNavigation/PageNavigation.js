@@ -3,12 +3,12 @@ import PropTypes from "prop-types";
 
 import classNames from "classnames";
 
-import { Grid, Typography } from "@material-ui/core";
+import { Grid } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 
 import LinkButton from "components/Link/Button";
 
-const useStyles = makeStyles(({ palette }) => ({
+const useStyles = makeStyles(({ palette, typography }) => ({
   root: {
     width: "100%",
     backgroundColor: palette.background.paper,
@@ -16,11 +16,12 @@ const useStyles = makeStyles(({ palette }) => ({
   },
   button: {
     width: "auto",
-    fontWeight: 600,
+    fontWeight: "normal",
+    color: "#909090",
+    textTransform: "uppercase",
+    fontFamily: typography.fontFamily,
   },
-  buttonCurrent: {
-    color: palette.primary.main,
-  },
+  buttonCurrent: {},
   navigation: {
     padding: "1rem 10rem",
   },
@@ -45,7 +46,7 @@ function PageNavigation({ navigation, ...props }) {
                 [classes.buttonCurrent]: classes.buttonCurrent,
               })}
             >
-              <Typography variant="h5">{menu.name}</Typography>
+              {menu.name}
             </LinkButton>
           </Grid>
         ))}
