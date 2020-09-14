@@ -26,7 +26,7 @@ import NavigationList from "@/promisetracker/components/Navigation/MobileNavigat
 
 import config from "@/promisetracker/config";
 
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles(({ palette, typography }) => ({
   dialog: {},
   dialogActions: {
     padding: "8px 24px",
@@ -38,22 +38,25 @@ const useStyles = makeStyles(() => ({
     backgroundColor: "#005DFD",
   },
   menuIcon: {
-    color: "#202020",
+    color: palette.primary.main,
   },
   searchIcon: {
     color: "#D6D6D6",
   },
   button: {
-    color: "white",
+    color: palette.background.default,
     padding: "1rem",
   },
   languageButton: {
-    fontWeight: 700,
-    lineHeight: 1.875,
-    minWidth: "1.5rem",
+    fontWeight: "normal",
+    color: palette.primary.main,
+    fontFamily: typography.fontFamily,
+    textTransform: "capitalize",
+    fontSize: typography.pxToRem(14),
     opacity: 0.5,
     "&.active": {
       opacity: 1.0,
+      color: palette.background.default,
     },
   },
 }));
@@ -132,6 +135,14 @@ function MobileNavigation(props) {
                   )}
                 >
                   En
+                </Link>
+                <Link
+                  href="/#"
+                  variant="overline"
+                  underline="none"
+                  className={classNames(classes.button, classes.languageButton)}
+                >
+                  Am
                 </Link>
                 <Link
                   href="/#"

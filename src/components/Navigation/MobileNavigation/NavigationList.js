@@ -12,7 +12,7 @@ const useStyles = makeStyles(({ typography, palette }) => ({
     padding: "1rem",
   },
   collapse: {
-    borderLeft: `2px solid ${palette.secondary.dark}`,
+    borderLeft: `1.5px solid ${palette.secondary.dark}`,
   },
   listItem: {
     padding: "2rem 0rem",
@@ -21,7 +21,13 @@ const useStyles = makeStyles(({ typography, palette }) => ({
     },
   },
   listItemText: {
-    padding: "1.5rem 0rem",
+    paddingTop: "2rem",
+    color: "white",
+    fontSize: typography.pxToRem(18),
+    textTransform: "uppercase",
+    fontWeight: 500,
+  },
+  indexlistItemText: {
     color: "white",
     fontSize: typography.pxToRem(18),
     textTransform: "uppercase",
@@ -90,16 +96,21 @@ function NavigationList(props) {
           unmountOnExit
           className={classes.collapse}
         >
-          <Grid item className={classes.items}>
-            <List component="nav">
-              {analysisMenu.map((item) => (
+          <Grid item>
+            <List component="nav" className={classes.items}>
+              {analysisMenu.map((item, i) => (
                 <ListItemLink
                   key={item.name}
                   underline="none"
                   href={item.href}
                   as={item.href}
                 >
-                  <Typography variant="h4" className={classes.listItemText}>
+                  <Typography
+                    variant="h4"
+                    className={
+                      i === 0 ? classes.indexlistItemText : classes.listItemText
+                    }
+                  >
                     {item.name}
                   </Typography>
                 </ListItemLink>
