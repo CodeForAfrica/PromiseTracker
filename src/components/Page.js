@@ -1,4 +1,6 @@
 import React from "react";
+import PropTypes from "prop-types";
+
 import Navigation from "@/promisetracker/components/Navigation";
 import { makeStyles } from "@material-ui/core/styles";
 
@@ -16,12 +18,21 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
-function Page() {
-  const classes = useStyles();
+function Page({ children, ...props }) {
+  const classes = useStyles(props);
   return (
     <div className={classes.root}>
       <Navigation classes={{ section: classes.section }} />
+      {children}
     </div>
   );
 }
+
+Page.propTypes = {
+  children: PropTypes.oneOfType([
+    PropTypes.arrayOf(PropTypes.node),
+    PropTypes.node,
+  ]).isRequired,
+};
+
 export default Page;
