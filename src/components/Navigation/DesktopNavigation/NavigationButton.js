@@ -65,7 +65,7 @@ function NavigationButton({
       {...props}
       variant={active || open ? "outlined" : undefined}
       ref={buttonRef}
-      className={classes.button}
+      // className={open ? classes.currentButton : undefined}
     >
       <Typography variant="h4">{title}</Typography>
     </Button>
