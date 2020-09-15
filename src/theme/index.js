@@ -198,12 +198,12 @@ deepmerge(
       lineHeight: 24 / 13,
       [breakpoints.up("md")]: {
         fontSize: pxToRem(18),
-        lineHeight: 40 / 18, // Georgia title text 18px// Call to action sections
+        lineHeight: 40 / 18, // Merryweather title text 18px// Call to action sections
       },
     },
     body2: {
       fontSize: pxToRem(13),
-      lineHeight: 24 / 13, // Georgia regular body text 13px
+      lineHeight: 24 / 13, // Merryweather regular body text 13px
     },
     subtitle1: {
       fontSize: pxToRem(14),
