@@ -25,7 +25,7 @@ const useStyles = makeStyles(({ spacing, palette, typography }) => ({
   button: {
     border: 0,
     color: palette.primary.main,
-    padding: "1.2rem",
+    padding: "0.8rem ",
     textTransform: "uppercase",
     fontFamily: typography.fontFamily,
     letterSpacing: "0.56px",

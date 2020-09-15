@@ -16,7 +16,7 @@ import config from "@/promisetracker/config";
 const useStyles = makeStyles(() => ({
   logo: {},
   section: {
-    padding: "3rem 4rem",
+    padding: "1.8rem 4rem",
   },
   navigation: {},
   button: {
