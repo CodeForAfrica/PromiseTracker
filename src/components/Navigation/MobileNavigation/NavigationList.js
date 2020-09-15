@@ -8,50 +8,50 @@ import Link from "@/promisetracker/components/Link";
 import config from "@/promisetracker/config";
 
 const useStyles = makeStyles(({ typography, palette }) => ({
-  root: {
-    padding: "1rem",
-  },
+  root: {},
   collapse: {
+    margin: "1rem",
     borderLeft: `1.5px solid ${palette.secondary.dark}`,
   },
   listItem: {
-    padding: "1rem 0rem",
     "&:hover": {
       backgroundColor: "unset",
     },
   },
   listItemText: {
     paddingTop: "2rem",
-    color: "white",
+    color: palette.background.default,
     fontSize: typography.pxToRem(18),
     textTransform: "uppercase",
     fontWeight: 600,
     letterSpacing: "0.72px",
     fontFamily: typography.fontFamily,
+    padding: "0rem 1rem",
   },
   indexlistItemText: {
-    color: "white",
     fontSize: typography.pxToRem(18),
+    color: palette.background.default,
     textTransform: "uppercase",
     fontWeight: 600,
     letterSpacing: "0.72px",
     fontFamily: typography.fontFamily,
+    padding: "0rem 1rem",
   },
   title: {
     color: palette.background.default,
     fontSize: typography.pxToRem(18),
     textTransform: "uppercase",
     fontWeight: 500,
+    padding: "1rem 0rem",
   },
   items: {
-    padding: "0rem 3rem",
+    padding: "0rem 1.5rem",
     opacity: 0.5,
   },
 }));
 
 function ListItemLink(props) {
-  const classes = useStyles();
-  return <Link {...props} variant="h4" className={classes.listItemLink} />;
+  return <Link {...props} variant="h4" />;
 }
 
 function NavigationList(props) {
@@ -97,9 +97,9 @@ function NavigationList(props) {
           in={!open}
           timeout="auto"
           unmountOnExit
-          className={classes.collapse}
+          // className={classes.collapse}
         >
-          <List component="nav" className={classes.items}>
+          <List component="nav" className={classes.collapse}>
             {analysisMenu.map((item, i) => (
               <ListItemLink
                 key={item.name}
