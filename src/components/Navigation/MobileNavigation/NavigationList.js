@@ -11,7 +11,7 @@ const useStyles = makeStyles(({ typography, palette }) => ({
   root: {},
   collapse: {
     margin: "1rem",
-    borderLeft: `1.5px solid ${palette.secondary.dark}`,
+    borderLeft: `1.5px solid #707070`,
   },
   listItem: {
     "&:hover": {
@@ -35,19 +35,20 @@ const useStyles = makeStyles(({ typography, palette }) => ({
     fontWeight: 600,
     letterSpacing: "0.72px",
     fontFamily: typography.fontFamily,
-    padding: "0rem 1rem",
+    padding: "1rem 1rem 0rem 1rem",
   },
   openTitle: {
     color: palette.secondary.main,
     fontSize: typography.pxToRem(13),
     textTransform: "uppercase",
     fontWeight: 600,
+    letterSpacing: "0.52px",
   },
   title: {
     color: palette.background.default,
     fontSize: typography.pxToRem(18),
     textTransform: "uppercase",
-    fontWeight: 500,
+    fontWeight: 600,
     padding: "1rem 0rem",
   },
   items: {
