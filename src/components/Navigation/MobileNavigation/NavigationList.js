@@ -15,7 +15,7 @@ const useStyles = makeStyles(({ typography, palette }) => ({
     borderLeft: `1.5px solid ${palette.secondary.dark}`,
   },
   listItem: {
-    padding: "2rem 0rem",
+    padding: "1rem 0rem",
     "&:hover": {
       backgroundColor: "unset",
     },
@@ -51,9 +51,7 @@ const useStyles = makeStyles(({ typography, palette }) => ({
 
 function ListItemLink(props) {
   const classes = useStyles();
-  return (
-    <Link {...props} variant="subtitle2" className={classes.listItemLink} />
-  );
+  return <Link {...props} variant="h4" className={classes.listItemLink} />;
 }
 
 function NavigationList(props) {
@@ -72,12 +70,13 @@ function NavigationList(props) {
       justify="space-between"
       className={classes.root}
     >
-      <List
-        component="nav"
-        aria-labelledby="nested-list-subheader"
-        className={classes.list}
-      >
-        <ListItem autoFocus={false} button className={classes.listItem}>
+      <List component="nav" aria-labelledby="nested-list-subheader">
+        <ListItem
+          component="div"
+          autoFocus={false}
+          button
+          className={classes.listItem}
+        >
           <Typography variant="h4" className={classes.title}>
             Promises
           </Typography>
@@ -100,30 +99,33 @@ function NavigationList(props) {
           unmountOnExit
           className={classes.collapse}
         >
-          <Grid item>
-            <List component="nav" className={classes.items}>
-              {analysisMenu.map((item, i) => (
-                <ListItemLink
-                  key={item.name}
-                  underline="none"
-                  href={item.href}
-                  as={item.href}
+          <List component="nav" className={classes.items}>
+            {analysisMenu.map((item, i) => (
+              <ListItemLink
+                key={item.name}
+                underline="none"
+                href={item.href}
+                as={item.href}
+              >
+                <Typography
+                  variant="h4"
+                  className={
+                    i === 0 ? classes.indexlistItemText : classes.listItemText
+                  }
                 >
-                  <Typography
-                    variant="h4"
-                    className={
-                      i === 0 ? classes.indexlistItemText : classes.listItemText
-                    }
-                  >
-                    {item.name}
-                  </Typography>
-                </ListItemLink>
-              ))}
-            </List>
-          </Grid>
+                  {item.name}
+                </Typography>
+              </ListItemLink>
+            ))}
+          </List>
         </Collapse>
 
-        <ListItem autoFocus={false} button className={classes.listItem}>
+        <ListItem
+          component="div"
+          autoFocus={false}
+          button
+          className={classes.listItem}
+        >
           <Typography variant="h4" className={classes.title}>
             Act Now
           </Typography>
