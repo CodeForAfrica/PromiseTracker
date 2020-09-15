@@ -37,6 +37,12 @@ const useStyles = makeStyles(({ typography, palette }) => ({
     fontFamily: typography.fontFamily,
     padding: "0rem 1rem",
   },
+  openTitle: {
+    color: palette.secondary.main,
+    fontSize: typography.pxToRem(13),
+    textTransform: "uppercase",
+    fontWeight: 500,
+  },
   title: {
     color: palette.background.default,
     fontSize: typography.pxToRem(18),
@@ -88,17 +94,15 @@ function NavigationList(props) {
           onClick={handleClick}
           className={classes.listItem}
         >
-          <Typography variant="h4" className={classes.title}>
+          <Typography
+            variant="h4"
+            className={open ? classes.title : classes.openTitle}
+          >
             Analysis
           </Typography>
         </ListItem>
 
-        <Collapse
-          in={!open}
-          timeout="auto"
-          unmountOnExit
-          // className={classes.collapse}
-        >
+        <Collapse in={!open} timeout="auto" unmountOnExit>
           <List component="nav" className={classes.collapse}>
             {analysisMenu.map((item, i) => (
               <ListItemLink
