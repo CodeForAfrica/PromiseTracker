@@ -1,49 +1,40 @@
 import React from "react";
-
-import App from "next/app";
+import PropTypes from "prop-types";
 import Head from "next/head";
-
+import { ThemeProvider } from "@material-ui/core/styles";
 import CssBaseline from "@material-ui/core/CssBaseline";
-import {
-  jssPreset,
-  StylesProvider,
-  ThemeProvider,
-} from "@material-ui/core/styles";
-import { create } from "jss";
+import theme from "@/promisetracker/theme";
 
-import theme from "theme";
+export default function MyApp(props) {
+  const { Component, pageProps } = props;
 
-export default class PromiseTrackerApp extends App {
-  static jss = create(jssPreset());
-
-  componentDidMount() {
+  React.useEffect(() => {
     // Remove the server-side injected CSS.
     const jssStyles = document.querySelector("#jss-server-side");
     if (jssStyles) {
-      jssStyles.parentNode.removeChild(jssStyles);
+      jssStyles.parentElement.removeChild(jssStyles);
     }
-  }
+  }, []);
 
-  render() {
-    const { Component, pageProps } = this.props;
-
-    return (
-      <>
-        <Head>
-          <title>Promise Tracker | Home</title>
-          <meta
-            name="viewport"
-            content="width=device-width,minimum-scale=1,initial-scale=1"
-          />
-          <meta charSet="utf-8" />
-        </Head>
-        <StylesProvider jss={PromiseTrackerApp.jss}>
-          <ThemeProvider theme={theme}>
-            <CssBaseline />
-            <Component {...pageProps} />
-          </ThemeProvider>
-        </StylesProvider>
-      </>
-    );
-  }
+  return (
+    <>
+      <Head>
+        <title>Promise Tracker | Home</title>
+        <meta
+          name="viewport"
+          content="minimum-scale=1, initial-scale=1, width=device-width"
+        />
+      </Head>
+      <ThemeProvider theme={theme}>
+        {/* CssBaseline kickstart an elegant, consistent, and simple baseline to build upon. */}
+        <CssBaseline />
+        <Component {...pageProps} />
+      </ThemeProvider>
+    </>
+  );
 }
+
+MyApp.propTypes = {
+  Component: PropTypes.elementType.isRequired,
+  pageProps: PropTypes.shape({}).isRequired,
+};
