@@ -256,19 +256,30 @@ deepmerge(
         "&:hover": {
           border: "none",
           boxShadow: "none", // black button
+          backgroundColor: palette.primary.dark,
         },
       },
       containedPrimary: {
         color: palette.background.default,
         backgroundColor: "#005DFD",
         border: "none",
-        boxShadow: "none", // blue button
+        boxShadow: "none",
+        "&:hover": {
+          border: "none",
+          boxShadow: "none", // blue button
+          backgroundColor: "#005DFD",
+        },
       },
       containedSecondary: {
         color: "#005DFD",
         backgroundColor: palette.secondary.main,
         border: "none",
-        boxShadow: "none", // grey button
+        boxShadow: "none",
+        "&:hover": {
+          border: "none",
+          boxShadow: "none", // grey button
+          backgroundColor: palette.secondary.main,
+        },
       },
       containedSizeSmall: {
         fontSize: typography.pxToRem(14),
