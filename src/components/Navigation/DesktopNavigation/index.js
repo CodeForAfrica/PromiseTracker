@@ -13,12 +13,11 @@ import NavigationButton from "@/promisetracker/components/Navigation/DesktopNavi
 
 import config from "@/promisetracker/config";
 
-const useStyles = makeStyles(() => ({
-  logo: {},
-  section: {
-    padding: "1.8rem 4rem",
+const useStyles = makeStyles(({ widths }) => ({
+  root: {
+    width: widths.values.lg,
+    padding: "1.5rem 0rem",
   },
-  navigation: {},
   button: {
     paddingLeft: 0,
     paddingRight: 0,
@@ -49,15 +48,10 @@ function DesktopNavigation(props) {
   const className = clsx(classes.buttonLanguage, classes.buttonLanguageLast);
 
   return (
-    <Grid container className={classes.root}>
-      <Grid item xs={12}>
-        <Section classes={{ root: classes.section }}>
-          <Grid
-            container
-            justify="flex-start"
-            alignItems="center"
-            className={classes.navigation}
-          >
+    <Grid container>
+      <Grid container item xs={12} justify="center">
+        <Section classes={{ root: classes.root }}>
+          <Grid container justify="flex-start" alignItems="center">
             <Grid item md={3}>
               <Logo />
             </Grid>
@@ -81,13 +75,7 @@ function DesktopNavigation(props) {
                   size="large"
                   className={classes.button}
                 >
-                  <PageNavigation
-                    navigation={analysisMenu}
-                    classes={{
-                      root: classes.pageNavigation,
-                      section: classes.section,
-                    }}
-                  />
+                  <PageNavigation navigation={analysisMenu} />
                 </NavigationButton>
               </Grid>
 

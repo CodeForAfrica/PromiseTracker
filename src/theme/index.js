@@ -126,7 +126,9 @@ const theme = createTheme({
   },
   widths: {
     values: {
-      lg: 1080, // 0, 141, 0, 141 margin
+      sm: 304, // 0, 28, 0, 28 margin
+      md: 768,
+      lg: 1084, // 0, 141, 0, 141 margin
     },
   },
 });

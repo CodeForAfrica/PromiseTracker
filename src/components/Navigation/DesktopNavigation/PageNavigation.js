@@ -21,7 +21,6 @@ const useStyles = makeStyles(({ palette, typography }) => ({
     textTransform: "uppercase",
     fontFamily: typography.fontFamily,
   },
-  buttonCurrent: {},
   navigation: {
     padding: "1rem 10rem",
   },
