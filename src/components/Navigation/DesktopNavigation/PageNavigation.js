@@ -1,7 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 
-import classNames from "classnames";
+import clsx from "clsx";
 
 import { Grid } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
@@ -29,6 +29,7 @@ const useStyles = makeStyles(({ palette, typography }) => ({
 
 function PageNavigation({ navigation, ...props }) {
   const classes = useStyles(props);
+  const className = clsx(classes.button, classes.buttonCurrent);
   return (
     <div className={classes.root}>
       <Grid
@@ -39,13 +40,7 @@ function PageNavigation({ navigation, ...props }) {
       >
         {navigation.map((menu) => (
           <Grid item key={menu.href}>
-            <LinkButton
-              href={menu.href}
-              size="large"
-              className={classNames(classes.button, {
-                [classes.buttonCurrent]: classes.buttonCurrent,
-              })}
-            >
+            <LinkButton href={menu.href} size="large" className={className}>
               {menu.name}
             </LinkButton>
           </Grid>

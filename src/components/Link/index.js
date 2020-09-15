@@ -2,7 +2,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 
-import classNames from "classnames";
+import clsx from "clsx";
 
 import { useRouter } from "next/router";
 
@@ -23,7 +23,7 @@ function Link(props) {
   } = props;
   const router = useRouter();
 
-  const className = classNames(classNameProps, {
+  const className = clsx(classNameProps, {
     [activeClassName]: router.asPath === href && activeClassName,
   });
 

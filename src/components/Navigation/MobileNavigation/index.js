@@ -1,6 +1,6 @@
 import React from "react";
 
-import classNames from "classnames";
+import clsx from "clsx";
 
 import { makeStyles } from "@material-ui/core/styles";
 
@@ -70,6 +70,13 @@ function MobileNavigation(props) {
   const [open, setOpen] = React.useState(false);
   const { navigationMenu } = config;
 
+  const activeclassName = clsx(
+    classes.button,
+    classes.languageButton,
+    "active"
+  );
+  const className = clsx(classes.button, classes.languageButton);
+
   const handleClickOpen = (e) => {
     if (e) {
       e.preventDefault();
@@ -128,11 +135,7 @@ function MobileNavigation(props) {
                   href="/#"
                   variant="overline"
                   underline="none"
-                  className={classNames(
-                    classes.button,
-                    classes.languageButton,
-                    "active"
-                  )}
+                  className={activeclassName}
                 >
                   En
                 </Link>
@@ -140,7 +143,7 @@ function MobileNavigation(props) {
                   href="/#"
                   variant="overline"
                   underline="none"
-                  className={classNames(classes.button, classes.languageButton)}
+                  className={className}
                 >
                   Am
                 </Link>
@@ -148,7 +151,7 @@ function MobileNavigation(props) {
                   href="/#"
                   variant="overline"
                   underline="none"
-                  className={classNames(classes.button, classes.languageButton)}
+                  className={className}
                 >
                   Fr
                 </Link>
@@ -156,7 +159,7 @@ function MobileNavigation(props) {
                   href="/#"
                   variant="overline"
                   underline="none"
-                  className={classNames(classes.button, classes.languageButton)}
+                  className={className}
                 >
                   عربى
                 </Link>

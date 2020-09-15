@@ -2,7 +2,7 @@ import React from "react";
 import { Grid, Link } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 
-import classNames from "classnames";
+import clsx from "clsx";
 
 import { Section } from "@commons-ui/core";
 import Logo from "@/promisetracker/components/Navigation/Logo";
@@ -44,6 +44,9 @@ const useStyles = makeStyles(() => ({
 function DesktopNavigation(props) {
   const classes = useStyles(props);
   const { analysisMenu } = config;
+
+  const activeClassName = clsx(classes.buttonLanguage, "active");
+  const className = clsx(classes.buttonLanguage, classes.buttonLanguageLast);
 
   return (
     <Grid container className={classes.root}>
@@ -110,7 +113,7 @@ function DesktopNavigation(props) {
                   href="/#"
                   underline="none"
                   variant="overline"
-                  className={classNames(classes.buttonLanguage, "active")}
+                  className={activeClassName}
                 >
                   En
                 </Link>
@@ -120,7 +123,7 @@ function DesktopNavigation(props) {
                   href="/#"
                   underline="none"
                   variant="overline"
-                  className={classNames(classes.buttonLanguage)}
+                  className={classes.buttonLanguage}
                 >
                   Am
                 </Link>
@@ -131,7 +134,7 @@ function DesktopNavigation(props) {
                   href="/#"
                   underline="none"
                   variant="overline"
-                  className={classNames(classes.buttonLanguage, "active")}
+                  className={activeClassName}
                 >
                   Fr
                 </Link>
@@ -141,10 +144,7 @@ function DesktopNavigation(props) {
                   href="/#"
                   underline="none"
                   variant="overline"
-                  className={classNames(
-                    classes.buttonLanguage,
-                    classes.buttonLanguageLast
-                  )}
+                  className={className}
                 >
                   عربى
                 </Link>
