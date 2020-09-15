@@ -12,7 +12,7 @@ const useStyles = makeStyles(({ palette, typography }) => ({
     textTransform: "uppercase",
     fontFamily: typography.fontFamily,
     letterSpacing: "0.56px",
-    fontWeight: 500,
+    fontWeight: 600,
     fontSize: typography.pxToRem(14),
     "&:hover": {
       border: 0,
