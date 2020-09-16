@@ -73,6 +73,7 @@ function DesktopNavigation(props) {
                   color="secondary"
                   title="Analysis"
                   size="large"
+                  href="/"
                   className={classes.button}
                 >
                   <PageNavigation navigation={analysisMenu} />

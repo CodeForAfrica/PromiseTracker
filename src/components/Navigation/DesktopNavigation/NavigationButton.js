@@ -2,14 +2,9 @@ import React, { useEffect, useRef, useState } from "react";
 
 import PropTypes from "prop-types";
 
-import {
-  Box,
-  Button,
-  ClickAwayListener,
-  Collapse,
-  Popper,
-} from "@material-ui/core";
+import { Box, ClickAwayListener, Collapse, Popper } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
+import LinkButton from "@/promisetracker/components/Link/Button";
 
 const useStyles = makeStyles(({ spacing, palette, typography }) => ({
   root: {
@@ -53,6 +48,7 @@ const useStyles = makeStyles(({ spacing, palette, typography }) => ({
 
 function NavigationButton({
   active,
+  href,
   anchorEl,
   button: buttonProp,
   children,
@@ -76,8 +72,11 @@ function NavigationButton({
     setOpen(false);
   };
   const button = buttonProp || (
-    <Button
+    <LinkButton
       onClick={handleToggleOpen}
+      disableFocusRipple
+      disableRipple
+      href={href}
       size={size}
       {...props}
       variant={active || open ? "outlined" : null}
@@ -85,7 +84,7 @@ function NavigationButton({
       className={open ? classes.currentButton : classes.button}
     >
       {title}
-    </Button>
+    </LinkButton>
   );
   useEffect(() => {
     setOpen(openProp);
@@ -126,6 +125,7 @@ NavigationButton.propTypes = {
   children: PropTypes.shape({}),
   title: PropTypes.string,
   size: PropTypes.string,
+  href: PropTypes.string,
 };
 
 NavigationButton.defaultProps = {
@@ -138,5 +138,6 @@ NavigationButton.defaultProps = {
   title: undefined,
   size: undefined,
   children: undefined,
+  href: undefined,
 };
 export default NavigationButton;
