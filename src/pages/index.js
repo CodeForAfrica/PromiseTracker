@@ -4,6 +4,7 @@ import { makeStyles } from "@material-ui/core/styles";
 
 import LatestArticles from "@/promisetracker/components/LatestArticles";
 import LatestPromises from "@/promisetracker/components/LatestPromises";
+import Newsletter from "@/promisetracker/components/Newsletter";
 import Page from "@/promisetracker/components/Page";
 
 import articleImage from "@/promisetracker/assets/article-thumb-01.png";
@@ -62,6 +63,7 @@ function Index(props) {
           section: classes.section,
         }}
       />
+      <Newsletter />
     </Page>
   );
 }
