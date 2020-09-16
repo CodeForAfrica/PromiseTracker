@@ -35,10 +35,18 @@ const useStyles = makeStyles(({ spacing, palette, typography }) => ({
     "&:hover": {
       border: 0,
     },
-    "&.active": {
-      backgroundColor: palette.primary.dark,
-      color: "white",
-      borderRadius: 0,
+  },
+  currentButton: {
+    background: palette.primary.dark,
+    borderRadius: 0,
+    padding: "0.8rem ",
+    textTransform: "uppercase",
+    fontFamily: typography.fontFamily,
+    letterSpacing: "0.56px",
+    fontWeight: 600,
+    fontSize: typography.pxToRem(14),
+    "&:hover": {
+      border: 0,
     },
   },
 }));
@@ -72,9 +80,9 @@ function NavigationButton({
       onClick={handleToggleOpen}
       size={size}
       {...props}
-      variant="outlined"
+      variant={active || open ? "outlined" : null}
       ref={buttonRef}
-      className={classes.button}
+      className={open ? classes.currentButton : classes.button}
     >
       {title}
     </Button>
