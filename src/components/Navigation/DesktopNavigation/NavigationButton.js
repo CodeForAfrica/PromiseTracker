@@ -30,6 +30,11 @@ const useStyles = makeStyles(({ spacing, palette, typography }) => ({
     "&:hover": {
       border: 0,
     },
+    "&.active": {
+      backgroundColor: palette.primary.dark,
+      color: "white",
+      borderRadius: 0,
+    },
   },
   currentButton: {
     background: palette.primary.dark,
@@ -41,7 +46,8 @@ const useStyles = makeStyles(({ spacing, palette, typography }) => ({
     fontWeight: 600,
     fontSize: typography.pxToRem(14),
     "&:hover": {
-      border: 0,
+      background: palette.primary.dark,
+      borderRadius: 0,
     },
   },
 }));
@@ -81,7 +87,7 @@ function NavigationButton({
       {...props}
       variant={active || open ? "outlined" : null}
       ref={buttonRef}
-      className={open ? classes.currentButton : classes.button}
+      className={open || active ? classes.currentButton : classes.button}
     >
       {title}
     </LinkButton>
