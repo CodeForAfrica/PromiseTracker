@@ -27,6 +27,9 @@ import NavigationList from "@/promisetracker/components/Navigation/MobileNavigat
 import config from "@/promisetracker/config";
 
 const useStyles = makeStyles(({ palette, typography }) => ({
+  root: {
+    padding: "0rem 2rem ",
+  },
   dialog: {},
   dialogActions: {
     padding: "8px 24px",
@@ -91,8 +94,13 @@ function MobileNavigation(props) {
   };
 
   return (
-    <Grid container justify="space-between" alignItems="center">
-      <Grid item>
+    <Grid
+      container
+      justify="space-between"
+      alignItems="center"
+      className={classes.root}
+    >
+      <Grid item xs={3}>
         <Logo />
       </Grid>
       <Grid item>

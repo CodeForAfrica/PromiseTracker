@@ -1,7 +1,7 @@
 import React from "react";
 
-import logo from "assets/header-pt-logo-mobile.svg";
-import desktoplogo from "assets/header-pt-logo.svg";
+import logo from "assets/PT-logo-header-mob@2x.png";
+import desktoplogo from "assets/PT-logo-header-desktop@2x.png";
 
 import { useMediaQuery } from "@material-ui/core";
 
@@ -11,11 +11,19 @@ import IconButton from "@/promisetracker/components/Link/IconButton";
 const useStyles = makeStyles(({ breakpoints }) => ({
   logo: {
     padding: "1rem",
+    maxWidth: "100%",
+    height: "auto",
     [breakpoints.up("md")]: {
       padding: 0,
     },
     "&:hover": {
       backgroundColor: "unset",
+    },
+  },
+  img: {
+    width: "135px",
+    [breakpoints.up("md")]: {
+      width: "236px",
     },
   },
 }));
@@ -33,7 +41,7 @@ function Logo(props) {
       href="/"
       className={classes.logo}
     >
-      <img src={src} alt="Promise Tracker Logo" />
+      <img src={src} alt="Promise Tracker Logo" className={classes.img} />
     </IconButton>
   );
 }
