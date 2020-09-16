@@ -29,6 +29,7 @@ function Index(props) {
   return (
     <Page>
       <LatestPromises
+        actionLabel="See All"
         items={Array(6).fill({
           date: "2019-08-10",
           description: `
@@ -49,6 +50,7 @@ function Index(props) {
         }}
       />
       <LatestArticles
+        actionLabel="See All"
         items={Array(6).fill({
           date: "2019-08-10",
           description: `
