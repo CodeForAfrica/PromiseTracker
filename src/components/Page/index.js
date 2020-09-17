@@ -1,9 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
 
-import Error from "next/error";
-import { NextSeo } from "next-seo";
-
 import { makeStyles } from "@material-ui/core/styles";
 
 import Navigation from "@/promisetracker/components/Navigation";
@@ -21,15 +18,11 @@ const useStyles = makeStyles(() => ({
     paddingTop: 0,
   },
 }));
-function Page({ children, errorCode, ...props }) {
+function Page({ children, ...props }) {
   const classes = useStyles(props);
-  if (errorCode) {
-    return <Error statusCode={errorCode} />;
-  }
 
   return (
     <div className={classes.root}>
-      <NextSeo {...props} />
       <Navigation classes={{ section: classes.section }} />
       {children}
     </div>
@@ -41,11 +34,6 @@ Page.propTypes = {
     PropTypes.arrayOf(PropTypes.node),
     PropTypes.node,
   ]).isRequired,
-  errorCode: PropTypes.number,
-};
-
-Page.defaultProps = {
-  errorCode: undefined,
 };
 
 export default Page;
