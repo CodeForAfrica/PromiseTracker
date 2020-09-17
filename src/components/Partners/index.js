@@ -1,14 +1,15 @@
 import React from "react";
 import PropTypes from "prop-types";
 
-import { makeStyles } from "@material-ui/core/styles";
 import { Grid, Typography } from "@material-ui/core";
-import partner1 from "assets/partner-01.png";
-import partner2 from "assets/partner-02.svg";
-import partner3 from "assets/partner-03.svg";
-import partner4 from "assets/partner-04.png";
-import partner5 from "assets/partner-05.png";
-import partner6 from "assets/partner-06.svg";
+import { makeStyles } from "@material-ui/core/styles";
+
+import partner1 from "@/promisetracker/assets/partner-01.png";
+import partner2 from "@/promisetracker/assets/partner-02.svg";
+import partner3 from "@/promisetracker/assets/partner-03.svg";
+import partner4 from "@/promisetracker/assets/partner-04.png";
+import partner5 from "@/promisetracker/assets/partner-05.png";
+import partner6 from "@/promisetracker/assets/partner-06.svg";
 
 const useStyles = makeStyles(({ palette, breakpoints, widths }) => ({
   root: {
