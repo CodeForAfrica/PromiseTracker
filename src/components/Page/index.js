@@ -3,6 +3,8 @@ import PropTypes from "prop-types";
 
 import Error from "next/error";
 import { NextSeo } from "next-seo";
+import Footer from "@/promisetracker/components/Footer";
+import config from "@/promisetracker/config";
 
 function Page({ children, errorCode, ...props }) {
   if (errorCode) {
@@ -13,6 +15,7 @@ function Page({ children, errorCode, ...props }) {
     <>
       <NextSeo {...props} />
       {children}
+      <Footer page={config.page} />
     </>
   );
 }
