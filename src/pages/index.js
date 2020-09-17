@@ -2,10 +2,12 @@ import React from "react";
 
 import { makeStyles } from "@material-ui/core/styles";
 
+import ActNow from "@/promisetracker/components/ActNow";
 import LatestArticles from "@/promisetracker/components/LatestArticles";
 import LatestPromises from "@/promisetracker/components/LatestPromises";
-import Newsletter from "@/promisetracker/components/Newsletter";
 import Page from "@/promisetracker/components/Page";
+import Partners from "@/promisetracker/components/Partners";
+import Subscribe from "@/promisetracker/components/Newsletter";
 
 import articleImage from "@/promisetracker/assets/article-thumb-01.png";
 import promiseImage from "@/promisetracker/assets/promise-thumb-01.png";
@@ -49,6 +51,7 @@ function Index(props) {
           section: classes.section,
         }}
       />
+      <ActNow />
       <LatestArticles
         actionLabel="See All"
         items={Array(6).fill({
@@ -65,7 +68,8 @@ function Index(props) {
           section: classes.section,
         }}
       />
-      <Newsletter />
+      <Partners />
+      <Subscribe />
     </Page>
   );
 }
