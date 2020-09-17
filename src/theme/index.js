@@ -9,15 +9,6 @@ const FONT_FAMILY_TEXT_HIGHTLIGHT = '"Source Sans Pro", "sans-serif"';
 
 // ## DEFAULT
 const theme = createTheme({
-  breakpoints: {
-    values: {
-      xs: 0,
-      sm: 600,
-      md: 960,
-      lg: 1360,
-      xl: 1920,
-    },
-  },
   palette: {
     background: { default: "#fff" },
     primary: { main: "#202020", dark: "#000000" }, // black
@@ -110,6 +101,7 @@ const theme = createTheme({
       color: "white",
       fontWeight: 600,
       letterSpacing: 0,
+      textTransform: "upppercase", // Source sans pro Button text
     },
   },
   overrides: {
@@ -261,7 +253,6 @@ deepmerge(
         border: "none",
         boxShadow: "none",
         color: palette.background.default,
-        borderRadius: 0,
         "&:hover": {
           border: "none",
           boxShadow: "none", // black button
