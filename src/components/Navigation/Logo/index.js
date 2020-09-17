@@ -11,8 +11,6 @@ import IconButton from "@/promisetracker/components/Link/IconButton";
 const useStyles = makeStyles(({ breakpoints }) => ({
   logo: {
     padding: "1rem",
-    maxWidth: "100%",
-    height: "auto",
     [breakpoints.up("md")]: {
       padding: 0,
     },
@@ -21,9 +19,11 @@ const useStyles = makeStyles(({ breakpoints }) => ({
     },
   },
   img: {
-    width: "135px",
+    height: "auto",
+    maxWidth: "8.5rem",
     [breakpoints.up("md")]: {
-      width: "236px",
+      maxWidth: "14.75rem",
+      height: "auto",
     },
   },
 }));
