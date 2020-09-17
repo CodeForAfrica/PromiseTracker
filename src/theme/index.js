@@ -3,26 +3,17 @@ import { deepmerge } from "@material-ui/utils";
 import createTheme from "@hurumap-ui/charts/styles/createTheme";
 
 const FONT_FAMILY_HEADING = '"Amiri", "serif"';
-const FONT_FAMILY_TEXT_PRIMARY = '"Georgia", "serif"';
+const FONT_FAMILY_TEXT_PRIMARY = '"Merriweather", "serif"';
 const FONT_FAMILY_TEXT_SECONDARY = '"Open Sans", "sans-serif"';
 const FONT_FAMILY_TEXT_HIGHTLIGHT = '"Source Sans Pro", "sans-serif"';
 
 // ## DEFAULT
 const theme = createTheme({
-  breakpoints: {
-    values: {
-      xs: 0,
-      sm: 600,
-      md: 960,
-      lg: 1360,
-      xl: 1920,
-    },
-  },
   palette: {
     background: { default: "#fff" },
     primary: { main: "#202020", dark: "#000000" }, // black
     secondary: { main: "#EBEBEB", light: "#F7F7F7" }, // grey
-    hightlight: { main: "#005DFD", light: "#FFB322", faded: "#90DAFF" }, // blue. yellow, light blue
+    highlight: { main: "#005DFD", light: "#FFB322", faded: "#90DAFF" }, // blue. yellow, light blue
   },
   typography: {
     fontFamily: FONT_FAMILY_TEXT_SECONDARY,
@@ -110,6 +101,7 @@ const theme = createTheme({
       color: "white",
       fontWeight: 600,
       letterSpacing: 0,
+      textTransform: "upppercase", // Source sans pro Button text
     },
   },
   overrides: {
@@ -134,7 +126,9 @@ const theme = createTheme({
   },
   widths: {
     values: {
-      lg: 1080, // 0, 141, 0, 141 margin
+      sm: 304, // 0, 28, 0, 28 margin
+      md: 768,
+      lg: 1084, // 0, 141, 0, 141 margin
     },
   },
 });
@@ -202,20 +196,16 @@ deepmerge(
     },
     body1: {
       color: palette.primary.main,
-      fontSize: pxToRem(14),
-      lineHeight: 24 / 14,
+      fontSize: pxToRem(13),
+      lineHeight: 24 / 13,
       [breakpoints.up("md")]: {
-        fontSize: pxToRem(20),
-        lineHeight: 40 / 20, // Georgia title text 20px// Call to action sections
+        fontSize: pxToRem(18),
+        lineHeight: 40 / 18, // Merryweather title text 18px// Call to action sections
       },
     },
     body2: {
-      fontSize: pxToRem(14),
-      lineHeight: 24 / 14,
-      [breakpoints.up("md")]: {
-        fontSize: pxToRem(14),
-        lineHeight: 24 / 14, // Georgia regular body text 14px
-      },
+      fontSize: pxToRem(13),
+      lineHeight: 24 / 13, // Merryweather regular body text 13px
     },
     subtitle1: {
       fontSize: pxToRem(14),
@@ -263,23 +253,33 @@ deepmerge(
         border: "none",
         boxShadow: "none",
         color: palette.background.default,
-        borderRadius: 0,
         "&:hover": {
           border: "none",
           boxShadow: "none", // black button
+          backgroundColor: palette.primary.dark,
         },
       },
       containedPrimary: {
         color: palette.background.default,
         backgroundColor: "#005DFD",
         border: "none",
-        boxShadow: "none", // blue button
+        boxShadow: "none",
+        "&:hover": {
+          border: "none",
+          boxShadow: "none", // blue button
+          backgroundColor: "#005DFD",
+        },
       },
       containedSecondary: {
         color: "#005DFD",
         backgroundColor: palette.secondary.main,
         border: "none",
-        boxShadow: "none", // grey button
+        boxShadow: "none",
+        "&:hover": {
+          border: "none",
+          boxShadow: "none", // grey button
+          backgroundColor: palette.secondary.main,
+        },
       },
       containedSizeSmall: {
         fontSize: typography.pxToRem(14),
