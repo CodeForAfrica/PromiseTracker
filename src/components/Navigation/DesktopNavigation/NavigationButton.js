@@ -32,6 +32,7 @@ const useStyles = makeStyles(({ spacing, palette, typography }) => ({
     fontSize: typography.pxToRem(14),
     "&:hover": {
       border: 0,
+      backgroundColor: "unset",
     },
     "&.active": {
       backgroundColor: palette.primary.dark,

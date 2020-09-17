@@ -20,9 +20,21 @@ const useStyles = makeStyles(({ palette, typography }) => ({
     color: "#909090",
     textTransform: "uppercase",
     fontFamily: typography.fontFamily,
+    padding: "1rem",
+    borderBottom: "3px solid transparent",
+    "&:hover": {
+      borderRadius: 0,
+      border: 0,
+      color: palette.primary.dark,
+      backgroundColor: "unset",
+      borderBottom: `3px solid ${palette.primary.main}`,
+    },
+    "&.active": {
+      color: palette.primary.dark,
+    },
   },
   navigation: {
-    padding: "1rem 10rem",
+    padding: "0rem 10rem",
   },
 }));
 
@@ -39,7 +51,13 @@ function PageNavigation({ navigation, ...props }) {
       >
         {navigation.map((menu) => (
           <Grid item key={menu.href}>
-            <LinkButton href={menu.href} size="large" className={className}>
+            <LinkButton
+              disableFocusRipple
+              disableRipple
+              href={menu.href}
+              size="large"
+              className={className}
+            >
               {menu.name}
             </LinkButton>
           </Grid>
