@@ -1,7 +1,7 @@
 import React from "react";
 
-import logo from "@/promisetracker/assets/PT-logo-header-mob@2x.png";
-import desktoplogo from "@/promisetracker/assets/PT-logo-header-desktop@2x.png";
+import logo from "assets/PT-logo-header-mob@2x.png";
+import desktoplogo from "assets/PT-logo-header-desktop@2x.png";
 
 import { useMediaQuery } from "@material-ui/core";
 

@@ -4,7 +4,7 @@ import PropTypes from "prop-types";
 import { makeStyles } from "@material-ui/core/styles";
 import { IconButton, InputBase, Paper } from "@material-ui/core";
 
-import searchicon from "@/promisetracker/assets/Page-1.svg";
+import searchicon from "assets/Page-1.svg";
 
 const useStyles = makeStyles(({ palette, typography }) => ({
   root: {
