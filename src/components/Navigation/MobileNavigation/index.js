@@ -19,7 +19,7 @@ import SearchIcon from "@material-ui/icons/Search";
 import CloseIcon from "@material-ui/icons/Close";
 import MenuIcon from "@material-ui/icons/Menu";
 
-import IconButtonLink from "@/promisetracker/components/Link/IconButton";
+import IconButtonLink from "components/Link/IconButton";
 
 import Logo from "@/promisetracker/components/Navigation/Logo";
 import NavigationList from "@/promisetracker/components/Navigation/MobileNavigation/NavigationList";
