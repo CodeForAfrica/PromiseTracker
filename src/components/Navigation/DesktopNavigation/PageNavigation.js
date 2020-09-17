@@ -1,5 +1,7 @@
-import React from "react";
+import React, { useRef } from "react";
 import PropTypes from "prop-types";
+
+import { useRouter } from "next/router";
 
 import clsx from "clsx";
 
@@ -29,9 +31,6 @@ const useStyles = makeStyles(({ palette, typography }) => ({
       backgroundColor: "unset",
       borderBottom: `3px solid ${palette.primary.main}`,
     },
-    "&.active": {
-      color: palette.primary.dark,
-    },
   },
   navigation: {
     padding: "0rem 10rem",
@@ -40,7 +39,10 @@ const useStyles = makeStyles(({ palette, typography }) => ({
 
 function PageNavigation({ navigation, ...props }) {
   const classes = useStyles(props);
-  const className = clsx(classes.button, classes.buttonCurrent);
+  const router = useRouter();
+  const buttonRef = useRef();
+  const className = clsx(classes.button);
+
   return (
     <div className={classes.root}>
       <Grid
@@ -54,8 +56,10 @@ function PageNavigation({ navigation, ...props }) {
             <LinkButton
               disableFocusRipple
               disableRipple
-              href={menu.href}
+              href={router.pathname || menu.href}
+              as={router.pathname ? menu.href : undefined}
               size="large"
+              ref={buttonRef}
               className={className}
             >
               {menu.name}
