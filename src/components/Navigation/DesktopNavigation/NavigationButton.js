@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 
+import { useRouter } from "next/router";
+
 import PropTypes from "prop-types";
 
 import { Box, ClickAwayListener, Collapse, Popper } from "@material-ui/core";
@@ -66,6 +68,8 @@ function NavigationButton({
   ...props
 }) {
   const classes = useStyles(props);
+  const router = useRouter();
+
   const buttonRef = useRef();
   const [open, setOpen] = useState();
   const handleToggleOpen = () => {
@@ -94,7 +98,13 @@ function NavigationButton({
   );
   useEffect(() => {
     setOpen(openProp);
+    if (router.asPath === "/analysis") {
+      setOpen((prevOpen) => !prevOpen);
+      router.push("/analysis", undefined, { shallow: true });
+    }
   }, [openProp]);
+
+  useEffect(() => {}, [router.query]);
 
   return (
     <>
