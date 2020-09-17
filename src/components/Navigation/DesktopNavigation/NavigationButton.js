@@ -7,6 +7,7 @@ import PropTypes from "prop-types";
 import { Box, ClickAwayListener, Collapse, Popper } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 import LinkButton from "@/promisetracker/components/Link/Button";
+import config from "@/promisetracker/config";
 
 const useStyles = makeStyles(({ spacing, palette, typography }) => ({
   root: {
@@ -69,6 +70,7 @@ function NavigationButton({
 }) {
   const classes = useStyles(props);
   const router = useRouter();
+  const { analysisMenu } = config;
 
   const buttonRef = useRef();
   const [open, setOpen] = useState();
@@ -98,10 +100,15 @@ function NavigationButton({
   );
   useEffect(() => {
     setOpen(openProp);
-    if (router.asPath === "/analysis") {
-      setOpen((prevOpen) => !prevOpen);
-      router.push("/analysis", undefined, { shallow: true });
-    }
+    analysisMenu.forEach((item) => {
+      if (router.asPath === `/analysis/${item.href}`) {
+        setOpen((prevOpen) => !prevOpen);
+        return router.push(`/analysis/${item.href}`, undefined, {
+          shallow: true,
+        });
+      }
+      return null;
+    });
   }, [openProp]);
 
   useEffect(() => {}, [router.query]);

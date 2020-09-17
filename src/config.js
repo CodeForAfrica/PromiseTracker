@@ -2,15 +2,15 @@ const config = {
   analysisMenu: [
     {
       name: "Articles",
-      href: "analysis/articles",
+      href: "articles",
     },
     {
       name: "Resources",
-      href: "analysis/resources",
+      href: "resources",
     },
     {
       name: "Fact-checks",
-      href: "analysis/fact-checks",
+      href: "fact-checks",
     },
   ],
 };
