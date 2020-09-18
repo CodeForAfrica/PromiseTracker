@@ -2,6 +2,7 @@ import React from "react";
 
 import { makeStyles } from "@material-ui/core/styles";
 
+import Hero from "@/promisetracker/components/Hero";
 import ActNow from "@/promisetracker/components/ActNow";
 import LatestArticles from "@/promisetracker/components/LatestArticles";
 import LatestPromises from "@/promisetracker/components/LatestPromises";
@@ -30,6 +31,11 @@ function Index(props) {
 
   return (
     <Page>
+      <Hero
+        classes={{
+          section: classes.section,
+        }}
+      />
       <LatestPromises
         actionLabel="See All"
         items={Array(6).fill({
