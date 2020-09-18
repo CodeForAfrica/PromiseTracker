@@ -22,8 +22,8 @@ const config = {
     },
     copyright: {
       copyright: "PROMISE TRACKER",
-      copyright_logo: {
-        image: cc,
+      copyrightLogo: {
+        image: { url: cc },
         link: "#",
         alt: "PROMISE TRACKER",
       },
