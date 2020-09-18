@@ -8,8 +8,6 @@ export default {
         <link href="//cdn-images.mailchimp.com/embedcode/slim-10_7.css" rel="stylesheet" type="text/css">
         <style type="text/css">
           #mc_embed_signup{background:#fff; clear:left; font:14px Helvetica,Arial,sans-serif; }
-          /* Add your own Mailchimp form style overrides in your site stylesheet or in this style block.
-             We recommend moving this block and the preceding CSS link to the HEAD of your HTML file. */
         </style>
         <div id="mc_embed_signup">
         <form action="https://codeforafrica.us6.list-manage.com/subscribe/post?u=65e5825507b3cec760f272e79&amp;id=286e6e3985" method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" class="validate" target="_blank" novalidate>
