@@ -69,7 +69,11 @@ function Index(props) {
         }}
       />
       <Partners />
-      <Subscribe />
+      <Subscribe
+        classes={{
+          section: classes.section,
+        }}
+      />
     </Page>
   );
 }
