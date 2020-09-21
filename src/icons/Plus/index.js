@@ -11,13 +11,12 @@ const useStyles = makeStyles(() => ({
 
 function ShareIcon(props) {
   const classes = useStyles(props);
-
   return (
-    <SvgIcon htmlColor="#202020" {...props}>
+    <SvgIcon htmlColor="#202020" viewBox="0 0 21 20" {...props}>
       <path
         className={classes.root}
-        d="M264,138.586,262.515,140l-4.455-4.242,1.485-1.415ZM251.4,134a6.007,6.007,0,1,1,6.3-6,6.162,6.162,0,0,1-6.3,6Zm0-14a8.01,8.01,0,1,0,8.4,8,8.208,8.208,0,0,0-8.4-8Z"
-        transform="translate(-243 -120)"
+        d="M344,89v2h-9.45v9h-2.1V91H323V89h9.45V80h2.1v9Z"
+        transform="translate(-323 -80)"
       />
     </SvgIcon>
   );

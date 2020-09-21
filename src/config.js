@@ -70,11 +70,11 @@ const config = {
           },
           {
             label: "FAQ",
-            href: "/join",
+            href: "/faq",
           },
           {
             label: "Resources",
-            href: "/join",
+            href: "/analysis/resources",
           },
         ],
       },
