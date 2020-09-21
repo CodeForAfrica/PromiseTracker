@@ -8,7 +8,9 @@ import { NextSeo } from "next-seo";
 
 import { makeStyles } from "@material-ui/core/styles";
 
+import Footer from "@/promisetracker/components/Footer";
 import Navigation from "@/promisetracker/components/Navigation";
+import config from "@/promisetracker/config";
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -35,6 +37,7 @@ function Page({ children, errorCode, title: titleProp, ...props }) {
       <NextSeo title={title} {...props} />
       <Navigation classes={{ section: classes.section }} />
       {children}
+      <Footer page={config.page} />
     </div>
   );
 }
