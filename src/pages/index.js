@@ -29,7 +29,7 @@ function Index(props) {
   const classes = useStyles(props);
 
   return (
-    <Page>
+    <Page classes={{ section: classes.section }}>
       <LatestPromises
         actionLabel="See All"
         items={Array(6).fill({
