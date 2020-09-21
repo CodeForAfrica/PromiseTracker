@@ -1,21 +1,23 @@
 import React from "react";
 import PropTypes from "prop-types";
+
 import { Grid, Hidden, Typography, useMediaQuery } from "@material-ui/core";
+import { useTheme } from "@material-ui/core/styles";
+
 import {
-  Section,
-  FooterLogo,
   FooterAbout,
+  FooterCopyright,
+  FooterLegalLinks,
+  FooterLogo,
   FooterQuickLinks,
   FooterStayInTouch,
-  FooterLegalLinks,
-  FooterCopyright,
+  Section,
 } from "@commons-ui/core";
 
 import Link from "@/promisetracker/components/Link";
 import ptLogo from "@/promisetracker/assets/footer-pt-logo.png";
 
-import useStyles from "@/promisetracker/components/Footer/useStyles";
-import { useTheme } from "@material-ui/core/styles";
+import useStyles from "./useStyles";
 
 function MainFooter({
   page: {
