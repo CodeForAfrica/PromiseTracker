@@ -1,8 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
 
-// import clsx from "clsx";
-
 import { Grid, useMediaQuery } from "@material-ui/core";
 import { useTheme } from "@material-ui/core/styles";
 
@@ -73,13 +71,6 @@ function KeyPromise({ actionLabel, description, image, title, ...props }) {
 
 KeyPromise.propTypes = {
   actionLabel: PropTypes.string,
-  classes: PropTypes.shape({
-    card: PropTypes.string,
-    scrollBar: PropTypes.string,
-    section: PropTypes.string,
-    sectionTitle: PropTypes.string,
-    root: PropTypes.string,
-  }),
   date: PropTypes.string.isRequired,
   description: PropTypes.string,
   image: PropTypes.string.isRequired,
@@ -89,7 +80,6 @@ KeyPromise.propTypes = {
 
 KeyPromise.defaultProps = {
   actionLabel: undefined,
-  classes: undefined,
   description: undefined,
 };
 

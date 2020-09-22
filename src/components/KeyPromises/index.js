@@ -1,14 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
 
-// import clsx from "clsx";
-
-// import { Grid, useMediaQuery } from "@material-ui/core";
-// import { useTheme } from "@material-ui/core/styles";
 import { IconButton, MobileStepper } from "@material-ui/core";
 import { KeyboardArrowLeft, KeyboardArrowRight } from "@material-ui/icons";
-
-// import SwipeableViews from "react-swipeable-views";
 
 import { Section } from "@commons-ui/core";
 
@@ -44,12 +38,6 @@ function KeyPromises({ actionLabel, items, title, titleProps, ...props }) {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
-  // const theme = useTheme();
-  // const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
-
-  // if (!items?.length) {
-  //   return null;
-  // }
   return (
     <div className={classes.root}>
       <Section
@@ -57,15 +45,11 @@ function KeyPromises({ actionLabel, items, title, titleProps, ...props }) {
         titleProps={{ ...DEFAULT_TITLE_PROPS, ...titleProps }}
         classes={{ root: classes.section, title: classes.sectionTitle }}
       >
-        {/* <SwipeableViews index={activeStep}> */}
-        {/* {items.map((keyPromise) => ( */}
         <KeyPromise
           key={items[activeStep].title}
           actionLabel={actionLabel}
           {...items[activeStep]}
         />
-        {/* ))} */}
-        {/* </SwipeableViews> */}
         <MobileStepper
           ref={stepperRef}
           steps={steps}
@@ -104,13 +88,6 @@ function KeyPromises({ actionLabel, items, title, titleProps, ...props }) {
 
 KeyPromises.propTypes = {
   actionLabel: PropTypes.string,
-  classes: PropTypes.shape({
-    card: PropTypes.string,
-    scrollBar: PropTypes.string,
-    section: PropTypes.string,
-    sectionTitle: PropTypes.string,
-    root: PropTypes.string,
-  }),
   items: PropTypes.arrayOf(
     PropTypes.shape({
       title: PropTypes.string.isRequired,
@@ -122,7 +99,6 @@ KeyPromises.propTypes = {
 
 KeyPromises.defaultProps = {
   actionLabel: undefined,
-  classes: undefined,
   items: undefined,
   title: undefined,
   titleProps: undefined,
