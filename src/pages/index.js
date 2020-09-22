@@ -30,8 +30,8 @@ function Index(props) {
   const classes = useStyles(props);
 
   return (
-    <Page>
-      <Hero />
+    <Page classes={{ section: classes.section }}>
+    <Hero />
       <LatestPromises
         actionLabel="See All"
         items={Array(6).fill({
@@ -71,7 +71,11 @@ function Index(props) {
         }}
       />
       <Partners />
-      <Subscribe />
+      <Subscribe
+        classes={{
+          section: classes.section,
+        }}
+      />
     </Page>
   );
 }
