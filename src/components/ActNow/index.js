@@ -25,14 +25,14 @@ const useStyles = makeStyles(({ breakpoints, widths }) => ({
     flexDirection: "column-reverse",
     alignItems: "center",
     justifyContent: "center",
-    [breakpoints.up("md")]: {
+    [breakpoints.up("lg")]: {
       flexDirection: "row",
     },
   },
   textContainer: {
     width: "100%",
     padding: "0rem 2rem",
-    [breakpoints.up("md")]: {
+    [breakpoints.up("lg")]: {
       width: "80%",
     },
   },
@@ -46,7 +46,7 @@ const useStyles = makeStyles(({ breakpoints, widths }) => ({
   description: {
     padding: "1rem 0rem 1.5rem 0rem",
     textAlign: "left",
-    [breakpoints.up("md")]: {
+    [breakpoints.up("lg")]: {
       lineHeight: "1.875rem",
     },
   },
