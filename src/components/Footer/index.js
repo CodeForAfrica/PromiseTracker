@@ -25,14 +25,14 @@ function MainFooter({
     contacts,
     legal_links: legalLinksLinks,
     organization_logo: organizationLogoProp,
-    quick_links: quickLinksLinks,
+    quick_links: quickLinksProp,
     copyright,
   },
   ...props
 }) {
   const classes = useStyles({ props });
   const theme = useTheme();
-  const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
+  const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
 
   const organizationLogo = {
     image: { url: organizationLogoProp.image, alt: organizationLogoProp.alt },
@@ -46,9 +46,20 @@ function MainFooter({
       href: "/legal/[...slug]",
     })),
   };
-  const quickLinks = quickLinksLinks.map((q) => ({
+  const getPath = (href) => {
+    const path = href.split("/").slice(0, 2).join("/");
+    switch (path) {
+      case "/about":
+        return "/about/[...slug]";
+      case "/analysis":
+        return "/analysis/[...slug]";
+      default:
+        return path;
+    }
+  };
+  const quickLinks = quickLinksProp.map((q) => ({
     ...q,
-    links: q.links.map((l) => ({ ...l, as: l.href, href: "/about/[...slug]" })),
+    links: q.links.map((l) => ({ ...l, as: l.href, href: getPath(l.href) })),
     linkComponent: Link,
   }));
 
