@@ -70,7 +70,11 @@ function Index(props) {
           section: classes.section,
         }}
       />
-      <ActNow />
+      <ActNow
+        classes={{
+          section: classes.section,
+        }}
+      />
       <LatestArticles
         actionLabel="See All"
         items={Array(6).fill({
@@ -87,7 +91,11 @@ function Index(props) {
           section: classes.section,
         }}
       />
-      <Partners />
+      <Partners
+        classes={{
+          section: classes.section,
+        }}
+      />
       <Subscribe
         classes={{
           section: classes.section,
