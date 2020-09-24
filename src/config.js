@@ -7,7 +7,16 @@ import cc from "@/promisetracker/assets/cc.svg";
 
 import logo from "@/promisetracker/assets/logo-C4A.svg";
 
+const WP_BACKEND_URL =
+  process.env.NODE_ENV === "development"
+    ? "http://localhost/wordpress"
+    : "https://dashboard.hurumap.org";
+
 const config = {
+  WP_BACKEND_URL,
+  WP_HURUMAP_DATA_API: `${WP_BACKEND_URL}/wp-json/hurumap-data`,
+  DEFAULT_LANG: "en",
+
   title: "PromiseTracker",
   settings: {
     subscribe: {
