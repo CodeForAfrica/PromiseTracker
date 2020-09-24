@@ -55,10 +55,10 @@ function PostCard({
           </Grid>
         </CardContent>
         <CardMedia
-          alt="Codification of national sports and athletics law"
+          alt={title}
           component="img"
           image={image}
-          title="Codification of national sports and athletics law"
+          title={title}
           className={classes.media}
         />
         {description && (

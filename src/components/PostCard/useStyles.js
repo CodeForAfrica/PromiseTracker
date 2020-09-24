@@ -38,6 +38,7 @@ const useStyles = makeStyles(({ breakpoints, typography }) => ({
       marginTop: typography.pxToRem(30 - 7),
     },
   },
+
   media: {
     display: "block",
     marginTop: typography.pxToRem(19 - 16),
