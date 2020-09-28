@@ -33,7 +33,7 @@ function Index(props) {
 
   return (
     <Page classes={{ section: classes.section }}>
-      <Hero
+      <Hero />
       <KeyPromises
         actionLabel="Learn More"
         items={Array(6)

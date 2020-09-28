@@ -213,7 +213,7 @@ deepmerge(
       [breakpoints.up("md")]: {
         fontSize: pxToRem(18),
         lineHeight: 40 / 18,
-      }
+      },
       [breakpoints.up("lg")]: {
         fontSize: pxToRem(18),
         lineHeight: 40 / 18,
