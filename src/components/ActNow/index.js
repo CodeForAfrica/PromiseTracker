@@ -1,19 +1,24 @@
 import React from "react";
 import PropTypes from "prop-types";
 
-import { Grid, Typography, Button } from "@material-ui/core";
+import { Grid, Typography, useMediaQuery } from "@material-ui/core";
+import { makeStyles, useTheme } from "@material-ui/core/styles";
 
-import { makeStyles } from "@material-ui/core/styles";
+import { Section } from "@commons-ui/core";
 
+import CtAButton from "@/promisetracker/components/CtAButton";
 import actNowImg from "@/promisetracker/assets/actnow-img.png";
 
-const useStyles = makeStyles(({ breakpoints, widths }) => ({
+const useStyles = makeStyles(({ breakpoints, typography }) => ({
+  section: {},
   root: {
     backgroundColor: "#ebebeb",
     width: "100%",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    paddingBottom: typography.pxToRem(53),
+    paddingTop: typography.pxToRem(45),
   },
   title: {
     padding: 0,
@@ -21,63 +26,89 @@ const useStyles = makeStyles(({ breakpoints, widths }) => ({
     textTransform: "capitalize",
   },
   content: {
-    maxWidth: widths.values.lg,
+    alignItems: "center",
     flexDirection: "column-reverse",
-    alignItems: "center",
     justifyContent: "center",
-    [breakpoints.up("md")]: {
+    [breakpoints.up("lg")]: {
+      alignItems: "stretch",
       flexDirection: "row",
+      justifyContent: "space-between",
     },
   },
-  textContainer: {
-    width: "100%",
-    padding: "0rem 2rem",
-    [breakpoints.up("md")]: {
-      width: "80%",
+  cta: {
+    marginBottom: 0,
+    [breakpoints.up("lg")]: {
+      justifyContent: "left",
+      padding: 0,
     },
   },
-  grid: {
-    display: "flex",
-    padding: "1rem",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
+  ctaButton: {
+    minWidth: typography.pxToRem(138),
+    [breakpoints.up("lg")]: {
+      minWidth: typography.pxToRem(158),
+    },
   },
   description: {
     padding: "1rem 0rem 1.5rem 0rem",
     textAlign: "left",
-    [breakpoints.up("md")]: {
+    [breakpoints.up("lg")]: {
       lineHeight: "1.875rem",
+    },
+  },
+  image: {
+    maxWidth: typography.pxToRem(314),
+    minWidth: typography.pxToRem(314),
+    objectFit: "cover",
+    [breakpoints.up("lg")]: {
+      maxWidth: typography.pxToRem(484),
+      minWidth: typography.pxToRem(484),
+    },
+  },
+  textContainer: {
+    marginTop: typography.pxToRem(19),
+    [breakpoints.up("lg")]: {
+      marginTop: 0,
     },
   },
 }));
 
-function ActNow({ description: descriptionProp, title, ...props }) {
+function ActNow({ description, title, ...props }) {
   const classes = useStyles(props);
-  const description =
-    (descriptionProp && descriptionProp.length > 0 && descriptionProp) ||
-    undefined;
+  const theme = useTheme();
+  const descriptionVariant = useMediaQuery(theme.breakpoints.up("lg"))
+    ? "body1"
+    : "body2";
 
   return (
     <div className={classes.root}>
-      <Grid container className={classes.content}>
-        <Grid className={classes.grid} item xs={12} md={6}>
-          <div className={classes.textContainer}>
-            <Typography variant="h1" className={classes.title}>
-              {title}
-            </Typography>
-            <Typography variant="body1" className={classes.description}>
-              {description}
-            </Typography>
-            <Button variant="contained" size="large">
-              Act Now
-            </Button>
-          </div>
+      <Section classes={{ root: classes.section }}>
+        <Grid container className={classes.content}>
+          <Grid item xs={12} lg={6} container alignItems="center">
+            <div className={classes.textContainer}>
+              <Typography variant="h1" className={classes.title}>
+                {title}
+              </Typography>
+              <Typography
+                variant={descriptionVariant}
+                className={classes.description}
+              >
+                {description}
+              </Typography>
+              <CtAButton
+                classes={{
+                  root: classes.cta,
+                  button: classes.ctaButton,
+                }}
+              >
+                See How
+              </CtAButton>
+            </div>
+          </Grid>
+          <Grid item xs={12} lg={5}>
+            <img src={actNowImg} alt="Act Now" className={classes.image} />
+          </Grid>
         </Grid>
-        <Grid className={classes.grid} item xs={12} md={6}>
-          <img src={actNowImg} alt="Act Now" className={classes.image} />
-        </Grid>
-      </Grid>
+      </Section>
     </div>
   );
 }

@@ -10,11 +10,20 @@ const useStyles = makeStyles(({ breakpoints, typography }) => ({
   content: {},
   contentRoot: {},
   date: {},
-  description: {},
+  description: {
+    textTransform: "none",
+  },
   descriptionContainer: {
     marginTop: typography.pxToRem(58.49 - 7),
     [breakpoints.up("lg")]: {
       marginTop: typography.pxToRem(32 - 7),
+    },
+  },
+  link: {
+    color: "unset",
+    "&:hover": {
+      textDecoration: "none",
+      color: "unset",
     },
   },
   media: {},

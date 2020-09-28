@@ -30,9 +30,9 @@ function MainFooter({
   },
   ...props
 }) {
-  const classes = useStyles({ props });
+  const classes = useStyles(props);
   const theme = useTheme();
-  const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
+  const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
 
   const organizationLogo = {
     image: { url: organizationLogoProp.image, alt: organizationLogoProp.alt },
@@ -64,7 +64,7 @@ function MainFooter({
   }));
 
   return (
-    <>
+    <div className={classes.root}>
       <div className={classes.primary}>
         <Section classes={{ root: classes.section }}>
           <FooterLogo hasDivider={false} {...organizationLogo} />
@@ -202,7 +202,7 @@ function MainFooter({
           </Grid>
         </Section>
       </div>
-    </>
+    </div>
   );
 }
 

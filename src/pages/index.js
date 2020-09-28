@@ -4,6 +4,7 @@ import { makeStyles } from "@material-ui/core/styles";
 
 import Hero from "@/promisetracker/components/Hero";
 import ActNow from "@/promisetracker/components/ActNow";
+import KeyPromises from "@/promisetracker/components/KeyPromises";
 import LatestArticles from "@/promisetracker/components/LatestArticles";
 import LatestPromises from "@/promisetracker/components/LatestPromises";
 import Page from "@/promisetracker/components/Page";
@@ -11,6 +12,7 @@ import Partners from "@/promisetracker/components/Partners";
 import Subscribe from "@/promisetracker/components/Newsletter";
 
 import articleImage from "@/promisetracker/assets/article-thumb-01.png";
+import promiseCarouselImage from "@/promisetracker/assets/promise-carusel-01.png";
 import promiseImage from "@/promisetracker/assets/promise-thumb-01.png";
 
 const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
@@ -32,6 +34,19 @@ function Index(props) {
   return (
     <Page classes={{ section: classes.section }}>
       <Hero
+      <KeyPromises
+        actionLabel="Learn More"
+        items={Array(6)
+          .fill(null)
+          .map((_, i) => ({
+            date: "2019-08-10",
+            description: `
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer euismod odio non leo pretium pellentesque. Curabitur blandit urna cursus, malesuada erat ut, egestas odio. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer euismod odio non leo pretium pellentesque. Curabitur blandit urna cursus, malesuada erat ut, egestas odio.
+            `,
+            image: promiseCarouselImage,
+            title: `Codification of national sports and athletics law ${i + 1}`,
+          }))}
+        title="Key Promises"
         classes={{
           section: classes.section,
         }}
@@ -57,7 +72,11 @@ function Index(props) {
           section: classes.section,
         }}
       />
-      <ActNow />
+      <ActNow
+        classes={{
+          section: classes.section,
+        }}
+      />
       <LatestArticles
         actionLabel="See All"
         items={Array(6).fill({
@@ -74,7 +93,11 @@ function Index(props) {
           section: classes.section,
         }}
       />
-      <Partners />
+      <Partners
+        classes={{
+          section: classes.section,
+        }}
+      />
       <Subscribe
         classes={{
           section: classes.section,
