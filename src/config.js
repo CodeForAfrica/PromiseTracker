@@ -47,8 +47,8 @@ const config = {
     copyright: {
       copyright: "PROMISE TRACKER",
       copyrightLogo: {
-        image: { url: cc },
-        link: "#",
+        image: { url: cc, alt: "Copyright" },
+        url: "/",
         alt: "Promise Tracker",
       },
     },
@@ -77,7 +77,7 @@ const config = {
           },
           {
             label: "Methodology",
-            href: "/methodology",
+            href: "/about/methodology",
           },
         ],
       },
