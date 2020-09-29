@@ -188,6 +188,7 @@ const config = {
       color: "#FF5255",
       description:
         "Could occur due to inaction by administration or lack of support from legislative branch.",
+      textColor: "#FFFFFF",
       title: "Stalled",
     },
     {
