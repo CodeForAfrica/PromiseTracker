@@ -299,6 +299,28 @@ deepmerge(
         fontSize: typography.pxToRem(16),
         lineHeight: 24 / 16,
       },
+      outlined: {
+        backgroundColor: "none",
+        border: `.122rem solid ${palette.primary.main}`,
+        boxShadow: "none",
+        boxSizing: "border-box",
+        color: palette.primary.main,
+        borderRadius: 0,
+        "&:hover": {
+          border: `.122rem solid ${palette.primary.main}`,
+          boxShadow: "none",
+        },
+      },
+      text: {
+        backgroundColor: "none",
+        boxShadow: "none",
+        boxSizing: "border-box",
+        color: palette.primary.main,
+        borderRadius: 0,
+        "&:hover": {
+          boxShadow: "none",
+        },
+      },
     },
   },
   { clone: false }
