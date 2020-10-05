@@ -26,13 +26,16 @@ const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
       width: typography.pxToRem(widths.values.lg),
     },
   },
+  footer: {
+    marginTop: 0,
+  },
 }));
 
 function Index(props) {
   const classes = useStyles(props);
 
   return (
-    <Page classes={{ section: classes.section }}>
+    <Page classes={{ section: classes.section, footer: classes.footer }}>
       <KeyPromises
         actionLabel="Learn More"
         items={Array(6)
