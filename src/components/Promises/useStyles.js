@@ -5,12 +5,14 @@ const useStyles = makeStyles(({ breakpoints, typography, palette }) => ({
     marginBottom: typography.pxToRem(32),
     marginTop: typography.pxToRem(16),
   },
+  promisesContainer: {
+    marginBottom: typography.pxToRem(32),
+  },
   section: {
     marginBottom: "2rem",
   },
   sectionTitle: {
     marginBottom: typography.pxToRem(32),
-    marginTop: typography.pxToRem(64),
     position: "relative",
     "&:after": {
       content: '""',
@@ -19,11 +21,6 @@ const useStyles = makeStyles(({ breakpoints, typography, palette }) => ({
       left: 0,
       width: typography.pxToRem(80),
       borderBottom: `5px solid ${palette.primary.dark}`,
-    },
-    [breakpoints.up("lg")]: {
-      width: "5rem",
-      marginBottom: 0,
-      marginTop: typography.pxToRem(35),
     },
   },
   row: {
