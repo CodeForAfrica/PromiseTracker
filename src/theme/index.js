@@ -207,8 +207,9 @@ deepmerge(
       },
     },
     body1: {
-      fontSize: pxToRem(18),
-      lineHeight: 40 / 18,
+      color: palette.primary.main,
+      fontSize: pxToRem(13),
+      lineHeight: 24 / 13,
       [breakpoints.up("lg")]: {
         fontSize: pxToRem(18),
         lineHeight: 40 / 18,

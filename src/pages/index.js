@@ -2,6 +2,7 @@ import React from "react";
 
 import { makeStyles } from "@material-ui/core/styles";
 
+import Hero from "@/promisetracker/components/Hero";
 import ActNow from "@/promisetracker/components/ActNow";
 import KeyPromises from "@/promisetracker/components/KeyPromises";
 import LatestArticles from "@/promisetracker/components/LatestArticles";
@@ -26,6 +27,16 @@ const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
       width: typography.pxToRem(widths.values.lg),
     },
   },
+  heroSection: {
+    padding: `0 ${typography.pxToRem(23)}`,
+    margin: 0,
+    width: "100%",
+    [breakpoints.up("lg")]: {
+      padding: 0,
+      margin: "0 auto",
+      width: typography.pxToRem(widths.values.lg + 100),
+    },
+  },
 }));
 
 function Index(props) {
@@ -33,6 +44,7 @@ function Index(props) {
 
   return (
     <Page classes={{ section: classes.section }}>
+      <Hero classes={{ heroSection: classes.heroSection }} />
       <KeyPromises
         actionLabel="Learn More"
         items={Array(6)
