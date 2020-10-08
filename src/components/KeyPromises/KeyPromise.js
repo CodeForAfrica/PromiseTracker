@@ -79,13 +79,12 @@ function KeyPromise({
           events={[
             { year: 2017, label: "Event A", color: "white" },
             { year: 2015, label: "Event B", color: "white" },
-            {
-              year: 2013,
-              label: status.title,
-              color: status.color,
-              isCurrent: true,
-            },
           ]}
+          status={{
+            year: status.year,
+            label: status.title,
+            color: status.color,
+          }}
         />
       </Grid>
     </Grid>
@@ -101,6 +100,7 @@ KeyPromise.propTypes = {
   status: PropTypes.shape({
     title: PropTypes.string,
     color: PropTypes.string,
+    year: PropTypes.number,
   }),
 };
 
