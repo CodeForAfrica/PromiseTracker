@@ -2,6 +2,7 @@ import React from "react";
 
 import { makeStyles } from "@material-ui/core/styles";
 
+import Hero from "@/promisetracker/components/Hero";
 import ActNow from "@/promisetracker/components/ActNow";
 import KeyPromises from "@/promisetracker/components/KeyPromises";
 import LatestArticles from "@/promisetracker/components/LatestArticles";
@@ -36,6 +37,7 @@ function Index(props) {
 
   return (
     <Page classes={{ section: classes.section, footer: classes.footer }}>
+      <Hero classes={{ section: classes.section }} />
       <KeyPromises
         actionLabel="Learn More"
         items={Array(6)

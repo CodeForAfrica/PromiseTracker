@@ -29,9 +29,9 @@ function MainFooter({
     quick_links: quickLinksProp,
     copyright,
   },
-  ...props
+  ...otherProps
 }) {
-  const classes = useStyles(props);
+  const classes = useStyles(otherProps);
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
 
@@ -60,7 +60,9 @@ function MainFooter({
     const linkify = ({ href: hrefProp = "", ...others }) => {
       const isRelativeHref =
         hrefProp.startsWith("/") && !hrefProp.startsWith("//");
-      const component = isRelativeHref ? Link : A;
+      const component = isRelativeHref
+        ? Link
+        : React.forwardRef((props, ref) => <A ref={ref} {...props} />);
       const as = isRelativeHref ? hrefProp : undefined;
       const href = isRelativeHref ? hrefify(hrefProp) : hrefProp;
 
