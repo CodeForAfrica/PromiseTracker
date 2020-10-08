@@ -14,8 +14,9 @@ import useStyles from "./useStyles";
 function KeyPromise({
   actionLabel,
   description,
+  events,
   image,
-  status,
+  statuses,
   title,
   ...props
 }) {
@@ -75,17 +76,7 @@ function KeyPromise({
         )}
       </Grid>
       <Grid className={classes.timelineGrid} item xs={12}>
-        <PromiseTimeline
-          events={[
-            { year: 2017, label: "Event A", color: "white" },
-            { year: 2015, label: "Event B", color: "white" },
-          ]}
-          status={{
-            year: status.year,
-            label: status.title,
-            color: status.color,
-          }}
-        />
+        <PromiseTimeline events={events} statuses={statuses} />
       </Grid>
     </Grid>
   );
@@ -95,19 +86,17 @@ KeyPromise.propTypes = {
   actionLabel: PropTypes.string,
   date: PropTypes.string.isRequired,
   description: PropTypes.string,
+  events: PropTypes.arrayOf(PropTypes.shape({})),
   image: PropTypes.string.isRequired,
+  statuses: PropTypes.arrayOf(PropTypes.shape({})),
   title: PropTypes.string.isRequired,
-  status: PropTypes.shape({
-    title: PropTypes.string,
-    color: PropTypes.string,
-    year: PropTypes.number,
-  }),
 };
 
 KeyPromise.defaultProps = {
   actionLabel: undefined,
   description: undefined,
-  status: undefined,
+  events: undefined,
+  statuses: undefined,
 };
 
 export default KeyPromise;
