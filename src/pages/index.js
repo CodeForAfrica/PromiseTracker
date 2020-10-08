@@ -39,7 +39,7 @@ function Index(props) {
     const round = (number, decimalPlaces) =>
       Number(`${Math.round(`${number}e${decimalPlaces}`)}e-${decimalPlaces}`);
     const month = Math.floor(Math.random() * 10) / 10; // 0 ~ 0.9
-    const year = 2012 + Math.floor(Math.random() * 6); // 2012 ~ 2017
+    const year = 2017 + Math.floor(Math.random() * 4); // 2017 ~ 2020
     return round(year + month, 1);
   };
 
@@ -48,6 +48,7 @@ function Index(props) {
       <Hero classes={{ section: classes.section }} />
       <KeyPromises
         actionLabel="Learn More"
+        interval={[2017, 2022]}
         items={Array(6)
           .fill(null)
           .map((_, i) => ({
