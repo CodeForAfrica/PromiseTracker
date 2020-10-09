@@ -16,6 +16,8 @@ import config from "@/promisetracker/config";
 import promiseCarouselImage from "@/promisetracker/assets/promise-carusel-01.png";
 import promiseImage from "@/promisetracker/assets/promise-thumb-01.png";
 
+import fetchPromises from "@/promisetracker/lib/fetchPromises";
+
 const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
   section: {
     padding: `0 ${typography.pxToRem(23)}`,
@@ -41,7 +43,6 @@ const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
 
 function Index(props) {
   const classes = useStyles(props);
-
   return (
     <Page classes={{ section: classes.section }}>
       <Hero classes={{ heroSection: classes.heroSection }} />
@@ -116,5 +117,7 @@ function Index(props) {
     </Page>
   );
 }
+
+Index.getInitialProps = fetchPromises;
 
 export default Index;
