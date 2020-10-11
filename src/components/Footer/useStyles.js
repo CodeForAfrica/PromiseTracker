@@ -39,7 +39,6 @@ const useStyles = makeStyles(
       },
     },
     copyrightText: {
-      fontWeight: 400,
       color: palette.secondary.dark,
     },
 
@@ -101,11 +100,24 @@ const useStyles = makeStyles(
       },
     },
     stayInTouch: {
-      justifyContent: "flex-end",
+      justifyContent: "center",
+      [breakpoints.up("lg")]: {
+        justifyContent: "flex-end",
+      },
     },
     stayInTouchText: {
       color: palette.secondary.dark,
-      fontWeight: 400,
+      [breakpoints.up("lg")]: {
+        marginRight: typography.pxToRem(17),
+      },
+    },
+    stayInTouchTitle: {
+      flexBasis: "100%",
+      textAlign: "center",
+      [breakpoints.up("lg")]: {
+        flexBasis: "auto",
+        textAlign: "left",
+      },
     },
     legalContainer: {
       display: "flex",
@@ -130,18 +142,28 @@ const useStyles = makeStyles(
     },
     legalLinks: {
       "& li": {
+        border: "none",
         paddingBottom: "1rem",
       },
+      // TODO(kilemenis): Override md styles until we have table designs
+      [breakpoints.up("md")]: {
+        "& > li": {
+          display: "list-item",
+        },
+        "& > li:last-of-type": {
+          padding: "2rem",
+        },
+      },
       [breakpoints.up("lg")]: {
-        "& li": {
-          padding: "0",
-          paddingLeft: ".5rem",
+        "& > li": {
+          display: "inline",
+          padding: 0,
+          paddingLeft: typography.pxToRem(24),
         },
       },
     },
     legalLink: {
       color: palette.secondary.dark,
-      fontWeight: 400,
     },
     ptLogo: {
       maxWidth: "14.75rem",

@@ -6,6 +6,7 @@ import { Grid } from "@material-ui/core";
 import { Section } from "@commons-ui/core";
 
 import Accordion from "@/promisetracker/components/FAQ/Accordion";
+import H1 from "@/promisetracker/components/H1";
 
 import useStyles from "./useStyles";
 
@@ -15,7 +16,7 @@ function FAQ({ faqs, title, ...props }) {
   return (
     <Section
       title={title}
-      titleProps={{ variant: "h1" }}
+      titleProps={{ component: H1 }}
       classes={{ root: classes.section, title: classes.sectionTitle }}
     >
       <Grid container className={classes.root}>

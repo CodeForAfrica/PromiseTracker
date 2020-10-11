@@ -207,8 +207,9 @@ deepmerge(
       },
     },
     body1: {
-      fontSize: pxToRem(14),
-      lineHeight: 24 / 14,
+      color: palette.primary.main,
+      fontSize: pxToRem(13),
+      lineHeight: 24 / 13,
       [breakpoints.up("lg")]: {
         fontSize: pxToRem(18),
         lineHeight: 40 / 18,
@@ -293,6 +294,28 @@ deepmerge(
       containedSizeLarge: {
         fontSize: typography.pxToRem(16),
         lineHeight: 24 / 16,
+      },
+      outlined: {
+        backgroundColor: "none",
+        border: `.122rem solid ${palette.primary.main}`,
+        boxShadow: "none",
+        boxSizing: "border-box",
+        color: palette.primary.main,
+        borderRadius: 0,
+        "&:hover": {
+          border: `.122rem solid ${palette.primary.main}`,
+          boxShadow: "none",
+        },
+      },
+      text: {
+        backgroundColor: "none",
+        boxShadow: "none",
+        boxSizing: "border-box",
+        color: palette.primary.main,
+        borderRadius: 0,
+        "&:hover": {
+          boxShadow: "none",
+        },
       },
     },
   },
