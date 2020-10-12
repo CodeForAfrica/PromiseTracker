@@ -13,17 +13,19 @@ import PlusIcon from "@/promisetracker/icons/Plus";
 
 import useStyles from "./useStyles";
 
-function AccordionPanel({ faq, ...props }) {
+function AccordionPanel({ expanded: expandedProp, summary, title, ...props }) {
   const classes = useStyles(props);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(expandedProp);
   const handleChange = () => {
     setExpanded((prev) => !prev);
   };
 
   return (
     <Accordion
-      onChange={handleChange}
+      {...props}
       elevation={0}
+      expanded={expanded}
+      onChange={handleChange}
       classes={{ root: classes.accordion, expanded: classes.accordionExpanded }}
     >
       <AccordionSummary
@@ -33,21 +35,22 @@ function AccordionPanel({ faq, ...props }) {
           content: classes.accordionSummaryContent,
         }}
       >
-        <Typography variant="h4">{faq.title}</Typography>
+        <Typography variant="h4">{title}</Typography>
       </AccordionSummary>
       <AccordionDetails classes={{ root: classes.accordionDetails }}>
-        <Typography variant="body2">{faq.summary}</Typography>
+        <Typography variant="body2">{summary}</Typography>
       </AccordionDetails>
     </Accordion>
   );
 }
 AccordionPanel.propTypes = {
-  faq: PropTypes.shape({
-    title: PropTypes.string,
-    summary: PropTypes.string,
-  }).isRequired,
+  expanded: PropTypes.bool,
+  summary: PropTypes.string.isRequired,
+  title: PropTypes.string.isRequired,
 };
 
-AccordionPanel.defaultProps = {};
+AccordionPanel.defaultProps = {
+  expanded: false,
+};
 
 export default AccordionPanel;
