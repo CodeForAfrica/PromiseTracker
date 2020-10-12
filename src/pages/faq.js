@@ -22,57 +22,59 @@ const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
   },
 }));
 
-function Index({ errorCode, promiseTracker, ...props }) {
+function Index({ errorCode, page, actNow, ...props }) {
   const {
-    page: {
-      faqs: propsFAQ,
-      title: { rendered: pageTitle },
-    },
-  } = promiseTracker;
+    faqs: propsFAQ,
+    title: { rendered: pageTitle },
+  } = page;
+
   const faqs = propsFAQ.reduce((arr, e) => arr.concat(e.questions_answers), []);
   const classes = useStyles(props);
 
   return (
     <Page
       errorCode={errorCode}
-      promiseTracker={promiseTracker}
+      page={page}
       title={pageTitle}
       classes={{ section: classes.section }}
     >
       <FAQ faqs={faqs} classes={{ section: classes.section }} />
-      <ActNow classes={{ section: classes.section }} />
+      <ActNow {...actNow} classes={{ section: classes.section }} />
     </Page>
   );
 }
 
-export async function getStaticProps({ query }) {
-  const { lang: pageLanguage } = query;
-  const lang = pageLanguage || config.DEFAULT_LANG;
-  const promiseTracker = await getSitePage("faq", lang);
-  const errorCode = null;
+export async function getStaticProps() {
+  const lang = config.DEFAULT_LANG;
+  const page = await getSitePage("faq", lang);
 
+  const errorCode = null;
   return {
     props: {
       errorCode,
-      promiseTracker,
+      page: page.page,
+      actNow: page.page.actNow,
     },
   };
 }
 
 Index.propTypes = {
-  promiseTracker: PropTypes.shape({
-    page: PropTypes.shape({
-      faqs: PropTypes.shape({}),
-      title: PropTypes.shape({
-        rendered: PropTypes.string,
-      }),
+  page: PropTypes.shape({
+    faqs: PropTypes.shape({}),
+    title: PropTypes.shape({
+      rendered: PropTypes.string,
     }),
+    actNow: PropTypes.shape({}),
   }),
   errorCode: PropTypes.number,
+  actNow: PropTypes.shape({}),
+  subscribe: PropTypes.shape({}),
 };
 Index.defaultProps = {
-  promiseTracker: undefined,
+  page: undefined,
   errorCode: undefined,
+  actNow: undefined,
+  subscribe: undefined,
 };
 
 export default Index;

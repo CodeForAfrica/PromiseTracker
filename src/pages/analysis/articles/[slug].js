@@ -34,7 +34,7 @@ const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
   },
 }));
 
-function Index({ article, page, relatedArticles, ...props }) {
+function Index({ article, page, relatedArticles, subscribe, ...props }) {
   const classes = useStyles(props);
 
   return (
@@ -53,6 +53,7 @@ function Index({ article, page, relatedArticles, ...props }) {
         }}
       />
       <Subscribe
+        {...subscribe}
         classes={{
           section: classes.section,
         }}
@@ -73,6 +74,7 @@ Index.propTypes = {
     title: PropTypes.string,
   }),
   page: PropTypes.shape({}),
+  subscribe: PropTypes.shape({}),
   relatedArticles: PropTypes.arrayOf(PropTypes.shape({})),
 };
 
@@ -89,6 +91,7 @@ Index.defaultProps = {
     title: "Codification of national sports and athletics law",
   }),
   page: undefined,
+  subscribe: undefined,
 };
 
 export async function getStaticPaths() {
@@ -126,7 +129,7 @@ export async function getStaticProps({ params: { slug: slugParam } }) {
       article,
       errorCode,
       page: page.page,
-      articleProp,
+      subscribe: page.page.subscribe,
     },
   };
 }
