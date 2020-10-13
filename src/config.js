@@ -1,4 +1,3 @@
-import instagram from "@/promisetracker/assets/footer-social-ig.svg";
 import facebook from "@/promisetracker/assets/footer-social-fb.svg";
 import twitter from "@/promisetracker/assets/footer-social-tw.svg";
 import linkedIn from "@/promisetracker/assets/footer-social-ln.svg";
@@ -85,8 +84,7 @@ const config = {
         links: [
           {
             label: "Subscribe",
-            href:
-              "https://codeforafrica.us6.list-manage.com/subscribe/post?u=65e5825507b3cec760f272e79&amp;id=286e6e3985",
+            href: "/subscribe",
           },
           {
             label: "Join Us",
@@ -98,7 +96,7 @@ const config = {
           },
           {
             label: "Resources",
-            href: "/analysis/resources",
+            href: "/resources",
           },
         ],
       },
@@ -115,13 +113,6 @@ const config = {
     ],
     contacts: {
       socialMedia: [
-        {
-          url: "https://github.com/codeforafrica",
-          image: {
-            url: instagram,
-            alt: "",
-          },
-        },
         {
           url: "https://www.linkedin.com/company/code-for-africa/",
           image: {
