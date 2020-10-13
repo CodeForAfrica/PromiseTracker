@@ -63,8 +63,8 @@ function MainFooter({
       const component = isRelativeHref
         ? Link
         : React.forwardRef((props, ref) => <A ref={ref} {...props} />);
-      const as = isRelativeHref ? hrefProp : undefined;
       const href = isRelativeHref ? hrefify(hrefProp) : hrefProp;
+      const as = href !== hrefProp ? hrefProp : undefined;
 
       return {
         ...others,
