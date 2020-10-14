@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 
 import { makeStyles } from "@material-ui/core/styles";
 import { Hidden } from "@material-ui/core";
@@ -9,7 +10,7 @@ import Page from "@/promisetracker/components/Page";
 import Subscribe from "@/promisetracker/components/Newsletter";
 
 import config from "@/promisetracker/config";
-import promiseImage from "@/promisetracker/assets/promise-thumb-01.png";
+import { getSitePage } from "@/promisetracker/cms";
 
 const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
   section: {
@@ -24,31 +25,21 @@ const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
   },
 }));
 
-function Index(props) {
+function Index({ page, posts, actNow, subscribe, title, ...props }) {
   const classes = useStyles(props);
 
   return (
-    <Page title="Promises" classes={{ section: classes.section }}>
+    <Page {...page} title={title} classes={{ section: classes.section }}>
       <Promises
-        items={Array(6)
-          .fill(null)
-          .map((_, i) => ({
-            date: "2019-08-10",
-            description: `
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer
-              euismod odio non leo pretium pellentesque.
-            `,
-            image: promiseImage,
-            status: config.promiseStatuses[i % config.promiseStatuses.length],
-            title: "Codification of national sports and athletics law",
-          }))}
-        title="Promises"
+        items={posts}
+        title={title}
         classes={{
           section: classes.section,
         }}
       />
-      <Hidden mdDown>
+      <Hidden lgDown>
         <ActNow
+          {...actNow}
           classes={{
             section: classes.section,
           }}
@@ -56,6 +47,7 @@ function Index(props) {
       </Hidden>
 
       <Subscribe
+        {...subscribe}
         classes={{
           section: classes.section,
         }}
@@ -64,4 +56,42 @@ function Index(props) {
   );
 }
 
+Index.propTypes = {
+  page: PropTypes.shape({}).isRequired,
+  posts: PropTypes.shape({}),
+  actNow: PropTypes.shape({}),
+  subscribe: PropTypes.shape({}),
+  title: PropTypes.string,
+};
+
+Index.defaultProps = {
+  posts: undefined,
+  actNow: undefined,
+  subscribe: undefined,
+  title: "Promises",
+};
+
 export default Index;
+
+export async function getStaticProps({ query = {} }) {
+  const { lang: pageLanguage } = query;
+  const lang = pageLanguage || config.DEFAULT_LANG;
+  const page = await getSitePage("promises", lang);
+  const posts = page.page.posts.map((post, i) => ({
+    image: post.featured_image,
+    description: post.post_content.replace(/(<([^>]+)>)/gi, ""),
+    date: new Date(post.post_date).toLocaleDateString(),
+    title: post.post_title,
+    status: config.promiseStatuses[i % config.promiseStatuses.length],
+  }));
+  delete page.page.posts;
+  return {
+    props: {
+      page: page.page,
+      posts,
+      actNow: page.page.actNow,
+      subscribe: page.page.subscribe,
+      title: page.page.title.rendered,
+    },
+  };
+}
