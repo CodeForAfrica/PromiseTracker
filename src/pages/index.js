@@ -137,6 +137,8 @@ function Index(props) {
         }}
       />
       <Partners
+        items={config.partners}
+        title="Partners"
         classes={{
           section: classes.section,
         }}
