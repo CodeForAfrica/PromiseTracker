@@ -71,7 +71,7 @@ function Promise({
           <RichTypography className={classes.promiseBody} variant="body1">
             {promise.body}
           </RichTypography>
-          <AuthorAtribution />
+          <AuthorAtribution {...promise.attribution} />
         </Grid>
         <Grid item md={1} implementation="css" smDown component={Hidden} />
         <Hidden mdDown>
@@ -102,6 +102,7 @@ Promise.propTypes = {
     image: PropTypes.string,
     title: PropTypes.string,
     status: PropTypes.shape({}),
+    attribution: PropTypes.shape({}),
   }).isRequired,
   promiseLabel: PropTypes.string,
   breadcrumb: PropTypes.string,
