@@ -1,6 +1,9 @@
 import React from "react";
 
 import { makeStyles } from "@material-ui/core/styles";
+import { gql } from "@apollo/client";
+
+import createApolloClient from "@/promisetracker/lib/createApolloClient";
 
 import Hero from "@/promisetracker/components/Hero";
 import ActNow from "@/promisetracker/components/ActNow";
@@ -39,8 +42,19 @@ const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
   },
 }));
 
+const GET_TEAMS = gql`
+  query {
+    team(slug: "pesacheck-promise-tracker") {
+      id
+      name
+      dbid
+    }
+  }
+`;
+
 function Index(props) {
   const classes = useStyles(props);
+  // console.log(props.promises)
   return (
     <Page classes={{ section: classes.section }}>
       <Hero classes={{ heroSection: classes.heroSection }} />
@@ -114,6 +128,21 @@ function Index(props) {
       />
     </Page>
   );
+}
+
+export async function getStaticProps() {
+  const apolloClient = createApolloClient();
+
+  await apolloClient.query({
+    query: GET_TEAMS,
+  });
+
+  return {
+    props: {
+      promises: apolloClient.cache.extract(),
+    },
+    revalidate: 1,
+  };
 }
 
 export default Index;
