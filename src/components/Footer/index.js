@@ -23,11 +23,11 @@ import useStyles from "./useStyles";
 function MainFooter({
   page: {
     about,
-    contacts,
+    social_media: SocialMedia,
     legal_links: legalLinksProp,
     organization_logo: organizationLogoProp,
     quick_links: quickLinksProp,
-    copyright,
+    copyright_logo: copyright,
   },
   ...otherProps
 }) {
@@ -151,7 +151,7 @@ function MainFooter({
               <div className={classes.legalContainer}>
                 {!isDesktop && (
                   <FooterStayInTouch
-                    {...contacts}
+                    socialMedia={SocialMedia}
                     options={{
                       socialMedia: {
                         color: "textSecondary",
@@ -195,7 +195,7 @@ function MainFooter({
             {isDesktop && (
               <Grid item xs={12} lg={6} className={classes.secondaryGridItem}>
                 <FooterStayInTouch
-                  {...contacts}
+                  socialMedia={SocialMedia}
                   options={{
                     socialMedia: {
                       color: "textSecondary",
@@ -228,8 +228,8 @@ MainFooter.propTypes = {
       initiative: PropTypes.string,
       about: PropTypes.string,
     }),
-    contacts: PropTypes.shape({}),
-    copyright: PropTypes.shape({}),
+    social_media: PropTypes.arrayOf(PropTypes.shape({})),
+    copyright_logo: PropTypes.shape({}),
     legal_links: PropTypes.arrayOf(PropTypes.shape({})),
     quick_links: PropTypes.arrayOf(PropTypes.shape({})),
     organization_logo: PropTypes.shape({}),

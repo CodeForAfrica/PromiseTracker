@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 
 import { makeStyles, useTheme } from "@material-ui/core/styles";
 
@@ -11,8 +12,10 @@ import Page from "@/promisetracker/components/Page";
 import Partners from "@/promisetracker/components/Partners";
 import Subscribe from "@/promisetracker/components/Newsletter";
 
-import articleImage from "@/promisetracker/assets/article-thumb-01.png";
+import { getSitePage } from "@/promisetracker/cms";
 import config from "@/promisetracker/config";
+
+import articleImage from "@/promisetracker/assets/article-thumb-01.png";
 import promiseCarouselImage from "@/promisetracker/assets/promise-carusel-01.png";
 import promiseImage from "@/promisetracker/assets/promise-thumb-01.png";
 
@@ -32,7 +35,7 @@ const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
   },
 }));
 
-function Index(props) {
+function Index({ actNow, subscribe, ...props }) {
   const classes = useStyles(props);
   const theme = useTheme();
   const randomYear = () => {
@@ -114,6 +117,7 @@ function Index(props) {
         }}
       />
       <ActNow
+        {...actNow}
         classes={{
           section: classes.section,
         }}
@@ -144,6 +148,7 @@ function Index(props) {
         }}
       />
       <Subscribe
+        {...subscribe}
         classes={{
           section: classes.section,
         }}
@@ -152,4 +157,35 @@ function Index(props) {
   );
 }
 
+Index.propTypes = {
+  actNow: PropTypes.shape({}),
+  subscribe: PropTypes.shape({}),
+};
+
+Index.defaultProps = {
+  actNow: undefined,
+  subscribe: undefined,
+};
+
 export default Index;
+
+export async function getStaticProps({ query = {} }) {
+  const { lang: pageLanguage } = query;
+  const lang = pageLanguage || config.DEFAULT_LANG;
+  const page = await getSitePage("analysis-articles", lang);
+  const posts = page.page.posts.map((post) => ({
+    image: post.featured_image,
+    description: post.post_content.replace(/(<([^>]+)>)/gi, ""),
+    date: new Date(post.post_date).toLocaleDateString(),
+    title: post.post_title,
+  }));
+  delete page.page.posts;
+  return {
+    props: {
+      page: page.page,
+      posts,
+      actNow: page.page.actNow,
+      subscribe: page.page.subscribe,
+    },
+  };
+}
