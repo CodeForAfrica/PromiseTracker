@@ -6,14 +6,7 @@ import clsx from "clsx";
 import { Grid, useMediaQuery } from "@material-ui/core";
 import { makeStyles, useTheme } from "@material-ui/core/styles";
 
-import { Section } from "@commons-ui/core";
-
-import partner1 from "@/promisetracker/assets/partner-01.png";
-import partner2 from "@/promisetracker/assets/partner-02.svg";
-import partner3 from "@/promisetracker/assets/partner-03.svg";
-import partner4 from "@/promisetracker/assets/partner-04.png";
-import partner5 from "@/promisetracker/assets/partner-05.png";
-import partner6 from "@/promisetracker/assets/partner-06.svg";
+import { A, Section } from "@commons-ui/core";
 
 const useStyles = makeStyles(({ breakpoints, palette, typography }) => ({
   root: {
@@ -32,13 +25,13 @@ const useStyles = makeStyles(({ breakpoints, palette, typography }) => ({
   },
   partner: {
     display: "flex",
-    height: typography.pxToRem(70),
-    maxWidth: typography.pxToRem(153),
-    minWidth: typography.pxToRem(153),
+    height: typography.pxToRem(72),
+    minHeight: typography.pxToRem(72),
+    maxHeight: typography.pxToRem(72),
     [breakpoints.up("lg")]: {
-      height: typography.pxToRem(119),
-      maxWidth: typography.pxToRem(256),
-      minWidth: typography.pxToRem(256),
+      height: typography.pxToRem(120),
+      minHeight: typography.pxToRem(120),
+      maxHeight: typography.pxToRem(120),
     },
   },
   partnerFirst: {
@@ -82,28 +75,33 @@ function Partners({ items, title, ...props }) {
   const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
   const columnsCount = isDesktop ? 3 : 2;
 
+  if (!items?.length) {
+    return null;
+  }
   return (
     <div className={classes.root}>
       <Section
-        title="Partners"
+        title={title}
         titleProps={{ variant: "h4" }}
         classes={{ root: classes.section, title: classes.sectionTitle }}
       >
         <Grid container className={classes.partners}>
           {items.slice(0, 6).map((partner, i) => (
             <Grid key={partner.name} item xs={6} lg={4}>
-              <img
-                src={partner.logo}
-                alt={partner.name}
-                className={clsx(classes.partner, {
-                  [classes.partnerFirst]: (i + 1) % columnsCount === 1,
-                  [classes.partnerLast]: (i + 1) % columnsCount === 0,
-                  // center would never happen in mobile i.e any number % 2 is
-                  // either 0 or 1
-                  [classes.partnerMiddle]: (i + 1) % columnsCount === 2,
-                  [classes.partnerRow]: i > columnsCount - 1,
-                })}
-              />
+              <A href={partner.href}>
+                <img
+                  src={partner.logo}
+                  alt={partner.name}
+                  className={clsx(classes.partner, {
+                    [classes.partnerFirst]: (i + 1) % columnsCount === 1,
+                    [classes.partnerLast]: (i + 1) % columnsCount === 0,
+                    // center would never happen in mobile i.e any number % 2 is
+                    // either 0 or 1
+                    [classes.partnerMiddle]: (i + 1) % columnsCount === 2,
+                    [classes.partnerRow]: i > columnsCount - 1,
+                  })}
+                />
+              </A>
             </Grid>
           ))}
         </Grid>
@@ -117,14 +115,7 @@ Partners.propTypes = {
 };
 
 Partners.defaultProps = {
-  items: [
-    { logo: partner1, name: "PessaCheck" },
-    { logo: partner2, name: "Star" },
-    { logo: partner3, name: "Piga" },
-    { logo: partner4, name: "DW" },
-    { logo: partner5, name: "Meedan" },
-    { logo: partner6, name: "AWS" },
-  ],
+  items: undefined,
   title: undefined,
 };
 

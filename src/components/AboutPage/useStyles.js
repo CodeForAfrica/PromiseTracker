@@ -1,67 +1,79 @@
 import { makeStyles } from "@material-ui/core/styles";
 
-const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
-  section: {
-    padding: `0 ${typography.pxToRem(23)}`,
-    margin: 0,
-    width: "100%",
-    [breakpoints.up("lg")]: {
-      padding: 0,
-      margin: "0 auto",
-      width: typography.pxToRem(widths.values.lg),
+const useStyles = makeStyles(
+  ({ breakpoints, palette, typography, widths }) => ({
+    section: {
+      padding: `0 ${typography.pxToRem(23)}`,
+      margin: 0,
+      width: "100%",
+      [breakpoints.up("lg")]: {
+        padding: 0,
+        margin: "0 auto",
+        width: typography.pxToRem(widths.values.lg),
+      },
     },
-  },
-  sectionTitle: {},
-  actNow: {
-    marginTop: typography.pxToRem(52),
-  },
-  criteria: {
-    marginTop: typography.pxToRem(60),
-  },
-  criteriaItems: {
-    marginTop: typography.pxToRem(25),
-  },
-  description: {
-    marginTop: typography.pxToRem(52),
-    [breakpoints.up("lg")]: {
-      marginTop: typography.pxToRem(0),
+    sectionTitle: {},
+    actNow: {},
+    content: {},
+    contentSection: {
+      padding: `${typography.pxToRem(64)} 0 ${typography.pxToRem(96)} 0`,
+      backgroundColor: palette.background.default,
     },
-  },
-  grid: {
-    marginTop: typography.pxToRem(34),
-    [breakpoints.up("lg")]: {
-      marginTop: typography.pxToRem(43),
-    },
-  },
-  gridAside: {
-    order: 0,
-    [breakpoints.up("lg")]: {
-      order: 1,
-    },
-  },
-  gridMain: {
-    order: 1,
-    [breakpoints.up("lg")]: {
-      order: 0,
-    },
-  },
-  image: {
-    display: "flex",
-    margin: `0 auto`,
-    minWidth: typography.pxToRem(257),
-    width: typography.pxToRem(257),
-    [breakpoints.up("lg")]: {
-      marginTop: typography.pxToRem(0),
-      maxWidth: typography.pxToRem(352),
-      minWidth: typography.pxToRem(352),
-    },
-  },
-  footer: {
-    marginTop: 0,
-    [breakpoints.up("lg")]: {
+    contentSectionGrid: {
       marginTop: 0,
+      paddingBottom: 0,
     },
-  },
-}));
+    criteria: {},
+    criteriaItems: {
+      marginTop: typography.pxToRem(25),
+    },
+    description: {
+      marginTop: typography.pxToRem(52),
+      [breakpoints.up("lg")]: {
+        marginTop: typography.pxToRem(0),
+      },
+    },
+    grid: {
+      paddingBottom: typography.pxToRem(40),
+      [breakpoints.up("lg")]: {
+        position: "relative",
+      },
+    },
+    gridAside: {},
+    gridContent: {},
+    featuredImage: {
+      display: "flex",
+      margin: `0 auto`,
+      minWidth: typography.pxToRem(314),
+      width: typography.pxToRem(314),
+      [breakpoints.up("lg")]: {
+        // Assumes image size of 440 x 350
+        bottom: `-${typography.pxToRem(350 / 2)}`,
+        marginTop: typography.pxToRem(0),
+        maxWidth: typography.pxToRem(440),
+        minWidth: typography.pxToRem(440),
+        position: "absolute",
+        right: 0,
+        width: typography.pxToRem(440),
+      },
+    },
+    footer: {},
+    partner: {
+      paddingTop: typography.pxToRem(76),
+      "&:first-of-type": {
+        paddingTop: 0,
+      },
+    },
+    partnerImage: {
+      marginTop: typography.pxToRem(18),
+    },
+    partnerName: {
+      marginTop: typography.pxToRem(18),
+    },
+    partnerDescription: {
+      marginTop: typography.pxToRem(36),
+    },
+  })
+);
 
 export default useStyles;
