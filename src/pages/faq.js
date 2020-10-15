@@ -3,11 +3,11 @@ import PropTypes from "prop-types";
 
 import { makeStyles } from "@material-ui/core/styles";
 
-import Page from "@/promisetracker/components/Page";
-import FAQ from "@/promisetracker/components/FAQ";
 import ActNow from "@/promisetracker/components/ActNow";
 import { getSitePage } from "@/promisetracker/cms";
 import config from "@/promisetracker/config";
+import ContentPage from "@/promisetracker/components/ContentPage";
+import FAQ from "@/promisetracker/components/FAQ";
 
 const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
   section: {
@@ -20,33 +20,39 @@ const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
       width: typography.pxToRem(widths.values.lg),
     },
   },
+  footer: {
+    marginTop: 0,
+  },
 }));
 
-function Index({ errorCode, page, actNow, ...props }) {
+function Index({ errorCode, faqs, page, actNow, ...props }) {
   const {
-    faqs: propsFAQ,
     title: { rendered: pageTitle },
   } = page;
 
-  const faqs = propsFAQ.reduce((arr, e) => arr.concat(e.questions_answers), []);
   const classes = useStyles(props);
 
   return (
-    <Page
-      errorCode={errorCode}
-      page={page}
+    <ContentPage
+      slug="faq"
       title={pageTitle}
-      classes={{ section: classes.section }}
+      classes={{ section: classes.section, footer: classes.footer }}
+      content={<FAQ items={faqs} />}
+      contentProps={{
+        lg: 8,
+      }}
     >
-      <FAQ faqs={faqs} classes={{ section: classes.section }} />
-      <ActNow {...actNow} classes={{ section: classes.section }} />
-    </Page>
+      <ActNow classes={{ section: classes.section }} />
+    </ContentPage>
   );
 }
 
 export async function getStaticProps() {
   const lang = config.DEFAULT_LANG;
   const page = await getSitePage("faq", lang);
+  const faqs = page.page.faqs
+    .reduce((arr, e) => arr.concat(e.questions_answers), [])
+    .map((faq) => ({ title: faq.question, summary: faq.answer }));
 
   const errorCode = null;
   return {
@@ -54,18 +60,19 @@ export async function getStaticProps() {
       errorCode,
       page: page.page,
       actNow: page.page.actNow,
+      faqs,
     },
   };
 }
 
 Index.propTypes = {
   page: PropTypes.shape({
-    faqs: PropTypes.shape({}),
     title: PropTypes.shape({
       rendered: PropTypes.string,
     }),
     actNow: PropTypes.shape({}),
   }),
+  faqs: PropTypes.shape({}),
   errorCode: PropTypes.number,
   actNow: PropTypes.shape({}),
   subscribe: PropTypes.shape({}),
@@ -75,6 +82,7 @@ Index.defaultProps = {
   errorCode: undefined,
   actNow: undefined,
   subscribe: undefined,
+  faqs: undefined,
 };
 
 export default Index;

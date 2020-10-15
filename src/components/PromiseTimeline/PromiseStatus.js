@@ -4,9 +4,9 @@ import { useMediaQuery } from "@material-ui/core";
 import { useTheme } from "@material-ui/core/styles";
 import TimelineEvent from "./TimelineEvent";
 
-function PromiseStatus({ children, duration, status }) {
+function PromiseStatus({ children, color, interval, year, ...props }) {
   const width = `${
-    ((status.year - duration[0]) * 100) / (duration[1] - duration[0])
+    ((year - interval[0]) * 100) / (interval[1] - interval[0])
   }%`;
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
@@ -19,22 +19,26 @@ function PromiseStatus({ children, duration, status }) {
         width={width}
         height="10"
         style={{
-          fill: status.color,
+          fill: color,
         }}
       />
       {isDesktop && children}
-      <TimelineEvent duration={duration} event={status} radius="8" />
+      <TimelineEvent
+        {...props}
+        color={color}
+        interval={interval}
+        radius="8"
+        year={year}
+      />
     </>
   );
 }
 
 PromiseStatus.propTypes = {
-  duration: PropTypes.arrayOf(PropTypes.number).isRequired,
-  status: PropTypes.shape({
-    year: PropTypes.number,
-    color: PropTypes.string,
-  }).isRequired,
   children: PropTypes.node,
+  color: PropTypes.string.isRequired,
+  interval: PropTypes.arrayOf(PropTypes.number).isRequired,
+  year: PropTypes.number.isRequired,
 };
 
 PromiseStatus.defaultProps = {

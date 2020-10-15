@@ -2,7 +2,6 @@ import React from "react";
 import PropTypes from "prop-types";
 
 import { makeStyles } from "@material-ui/core/styles";
-import { Hidden } from "@material-ui/core";
 
 import ActNow from "@/promisetracker/components/ActNow";
 import Promises from "@/promisetracker/components/Promises";
@@ -23,13 +22,26 @@ const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
       width: typography.pxToRem(widths.values.lg),
     },
   },
+  actNow: {
+    display: "none",
+    [breakpoints.up("lg")]: {
+      display: "flex",
+    },
+  },
+  footer: {
+    marginTop: 0,
+  },
 }));
 
 function Index({ page, posts, actNow, subscribe, title, ...props }) {
   const classes = useStyles(props);
 
   return (
-    <Page {...page} title={title} classes={{ section: classes.section }}>
+    <Page
+      page={page}
+      title={title}
+      classes={{ section: classes.section, footer: classes.footer }}
+    >
       <Promises
         items={posts}
         title={title}
@@ -37,14 +49,14 @@ function Index({ page, posts, actNow, subscribe, title, ...props }) {
           section: classes.section,
         }}
       />
-      <Hidden lgDown>
-        <ActNow
-          {...actNow}
-          classes={{
-            section: classes.section,
-          }}
-        />
-      </Hidden>
+
+      <ActNow
+        {...actNow}
+        classes={{
+          section: classes.section,
+          root: classes.actNow,
+        }}
+      />
 
       <Subscribe
         {...subscribe}

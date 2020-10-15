@@ -32,6 +32,9 @@ const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
       marginTop: typography.pxToRem(96),
     },
   },
+  footer: {
+    marginTop: 0,
+  },
 }));
 
 function Index({ article, page, relatedArticles, subscribe, ...props }) {
@@ -41,7 +44,7 @@ function Index({ article, page, relatedArticles, subscribe, ...props }) {
     <Page
       page={page}
       title={article.title}
-      classes={{ section: classes.section }}
+      classes={{ section: classes.section, footer: classes.footer }}
     >
       <Article article={article} />
       <RelatedArticles

@@ -1,7 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 
-import { makeStyles } from "@material-ui/core/styles";
+import { makeStyles, useTheme } from "@material-ui/core/styles";
 
 import Hero from "@/promisetracker/components/Hero";
 import ActNow from "@/promisetracker/components/ActNow";
@@ -30,26 +30,38 @@ const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
       width: typography.pxToRem(widths.values.lg),
     },
   },
-  heroSection: {
-    padding: `0 ${typography.pxToRem(23)}`,
-    margin: 0,
-    width: "100%",
-    [breakpoints.up("lg")]: {
-      padding: 0,
-      margin: "0 auto",
-      width: typography.pxToRem(widths.values.lg + 100),
-    },
+  footer: {
+    marginTop: 0,
   },
 }));
 
 function Index({ actNow, subscribe, ...props }) {
   const classes = useStyles(props);
+  const theme = useTheme();
+  const randomYear = () => {
+    // https://www.jacklmoore.com/notes/rounding-in-javascript/
+    const round = (number, decimalPlaces) =>
+      Number(`${Math.round(`${number}e${decimalPlaces}`)}e-${decimalPlaces}`);
+    const month = Math.floor(Math.random() * 10) / 10; // 0 ~ 0.9
+    const year = 2017 + Math.floor(Math.random() * 4); // 2017 ~ 2020
+    return round(year + month, 1);
+  };
 
   return (
-    <Page classes={{ section: classes.section }}>
-      <Hero classes={{ heroSection: classes.heroSection }} />
+    <Page classes={{ section: classes.section, footer: classes.footer }}>
+      <Hero
+        criteria={{
+          items: config.promiseStatuses,
+          title: "What do the ratings mean?",
+        }}
+        name="Mike “Sonko” Mbuvi"
+        position="Nairobi Governor"
+        title="Campaign promises made by Mike Mbuvi"
+        classes={{ section: classes.section }}
+      />
       <KeyPromises
         actionLabel="Learn More"
+        interval={[2017, 2022]}
         items={Array(6)
           .fill(null)
           .map((_, i) => ({
@@ -57,9 +69,28 @@ function Index({ actNow, subscribe, ...props }) {
             description: `
           Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer euismod odio non leo pretium pellentesque. Curabitur blandit urna cursus, malesuada erat ut, egestas odio. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer euismod odio non leo pretium pellentesque. Curabitur blandit urna cursus, malesuada erat ut, egestas odio.
             `,
+            events: [
+              {
+                year: randomYear(),
+                title: "Event A",
+                color: "white",
+                textColor: theme.palette.text.main,
+              },
+              {
+                year: randomYear(),
+                title: "Event B",
+                color: "white",
+                textColor: theme.palette.text.main,
+              },
+            ],
             image: promiseCarouselImage,
             title: `Codification of national sports and athletics law ${i + 1}`,
-            status: config.promiseStatuses[i % config.promiseStatuses.length],
+            statuses: [
+              {
+                ...config.promiseStatuses[i % config.promiseStatuses.length],
+                year: randomYear(),
+              },
+            ],
           }))}
         title="Key Promises"
         classes={{
@@ -78,7 +109,7 @@ function Index({ actNow, subscribe, ...props }) {
             `,
             image: promiseImage,
             status: config.promiseStatuses[i % config.promiseStatuses.length],
-            title: "Codification of national sports and athletics law",
+            title: `Codification of national sports and athletics law ${i + 1}`,
           }))}
         title="Latest Promises"
         classes={{
@@ -93,21 +124,25 @@ function Index({ actNow, subscribe, ...props }) {
       />
       <LatestArticles
         actionLabel="See All"
-        items={Array(6).fill({
-          date: "2019-08-10",
-          description: `
+        items={Array(6)
+          .fill(null)
+          .map((_, i) => ({
+            date: "2019-08-10",
+            description: `
               Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer
               euismod odio non leo pretium pellentesque.
             `,
-          image: articleImage,
-          title: "Codification of national sports and athletics law",
-        })}
+            image: articleImage,
+            title: `Codification of national sports and athletics law ${i + 1}`,
+          }))}
         title="Latest Articles"
         classes={{
           section: classes.section,
         }}
       />
       <Partners
+        items={config.partners}
+        title="Partners"
         classes={{
           section: classes.section,
         }}

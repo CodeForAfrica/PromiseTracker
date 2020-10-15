@@ -2,10 +2,10 @@ import React, { useState, useRef } from "react";
 import PropTypes from "prop-types";
 import { useTheme } from "@material-ui/core/styles";
 
-function Event({ duration, event, radius }) {
+function Event({ color, interval, radius, textColor, title, year }) {
   const theme = useTheme();
   const xposition = `${
-    ((event.year - duration[0]) * 100) / (duration[1] - duration[0])
+    ((year - interval[0]) * 100) / (interval[1] - interval[0])
   }%`;
   const yposition = "20";
   const textRef = useRef();
@@ -29,37 +29,41 @@ function Event({ duration, event, radius }) {
         cy="70"
         r={radius}
         stroke="#F7F7F7"
-        strokeWidth="3"
-        fill={event.color}
+        strokeWidth="1"
+        fill={color}
       />
       <rect
         width={`${textPosition.width * 2}`}
         height={`${textPosition.height * 2}`}
         x={`${textPosition.x - textPosition.width / 2}`}
         y={`${textPosition.y - textPosition.height / 2}`}
-        fill={event.color}
+        fill={color}
         rx="8"
       />
       <text
         ref={textRef}
         x={xposition}
         y={yposition}
+        fill={textColor}
         stroke="#202020"
         strokeWidth=".1"
         fontFamily={theme.typography.h6.fontFamily}
         fontSize={theme.typography.h6.fontSize}
         fontWeight={600}
       >
-        {event.label.toUpperCase()}
+        {title.toUpperCase()}
       </text>
     </>
   );
 }
 
 Event.propTypes = {
-  duration: PropTypes.arrayOf(PropTypes.number).isRequired,
-  event: PropTypes.shape().isRequired,
+  color: PropTypes.string.isRequired,
+  interval: PropTypes.arrayOf(PropTypes.number).isRequired,
   radius: PropTypes.string,
+  textColor: PropTypes.string.isRequired,
+  title: PropTypes.string.isRequired,
+  year: PropTypes.number.isRequired,
 };
 
 Event.defaultProps = {

@@ -35,6 +35,15 @@ const useStyles = makeStyles(
         marginTop: typography.pxToRem(35),
       },
     },
+    actNow: {
+      display: "none",
+      [breakpoints.up("lg")]: {
+        display: "flex",
+      },
+    },
+    footer: {
+      marginTop: 0,
+    },
   })
 );
 
@@ -43,7 +52,11 @@ function Index({ page, posts, actNow, subscribe, ...props }) {
   const { title: pageTitle } = page;
 
   return (
-    <Page {...page} title={pageTitle} classes={{ section: classes.section }}>
+    <Page
+      page={page}
+      title={pageTitle}
+      classes={{ section: classes.section, footer: classes.footer }}
+    >
       <Articles
         items={posts}
         title={pageTitle}
@@ -56,6 +69,7 @@ function Index({ page, posts, actNow, subscribe, ...props }) {
         {...actNow}
         classes={{
           section: classes.section,
+          root: classes.actNow,
         }}
       />
       <Subscribe
