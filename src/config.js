@@ -1,4 +1,7 @@
-import instagram from "@/promisetracker/assets/footer-social-ig.svg";
+import aboutMethodology from "@/promisetracker/assets/illo-method@2x.png";
+import aboutPartners from "@/promisetracker/assets/illo-partners@2x.png";
+import aboutProject from "@/promisetracker/assets/illo-aboutTheProject@2x.png";
+
 import facebook from "@/promisetracker/assets/footer-social-fb.svg";
 import twitter from "@/promisetracker/assets/footer-social-tw.svg";
 import linkedIn from "@/promisetracker/assets/footer-social-ln.svg";
@@ -6,6 +9,13 @@ import github from "@/promisetracker/assets/footer-social-gh.svg";
 import cc from "@/promisetracker/assets/cc.svg";
 
 import logo from "@/promisetracker/assets/logo-C4A.svg";
+
+import partner1 from "@/promisetracker/assets/partner-logo@2x.png";
+import partner2 from "@/promisetracker/assets/partner-logo_1@2x.png";
+import partner3 from "@/promisetracker/assets/partner-logo_2@2x.png";
+import partner4 from "@/promisetracker/assets/partner-logo_3@2x.png";
+import partner5 from "@/promisetracker/assets/partner-logo_4@2x.png";
+import partner6 from "@/promisetracker/assets/partner-logo_5@2x.png";
 
 const config = {
   title: "PromiseTracker",
@@ -102,7 +112,7 @@ const config = {
           },
           {
             label: "Resources",
-            href: "/analysis/resources",
+            href: "/resources",
           },
         ],
       },
@@ -119,13 +129,6 @@ const config = {
     ],
     contacts: {
       socialMedia: [
-        {
-          url: "https://github.com/codeforafrica",
-          image: {
-            url: instagram,
-            alt: "",
-          },
-        },
         {
           url: "https://www.linkedin.com/company/code-for-africa/",
           image: {
@@ -177,19 +180,61 @@ const config = {
     title: "Analysis",
     url: "/analysis",
   },
+  partners: [
+    {
+      description:
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.",
+      href: "//pesacheck.org",
+      logo: partner1,
+      name: "PesaCheck",
+    },
+    {
+      description:
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.",
+      href: "//the-star.co.ke",
+      logo: partner2,
+      name: "The Star",
+    },
+    {
+      description:
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.",
+      href: "//pigafirimbi.africauncensored.online",
+      logo: partner3,
+      name: "Piga Firimbi",
+    },
+    {
+      description:
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.",
+      href: "//www.dw.com/en/dw-akademie/about-us/s-9519",
+      logo: partner4,
+      name: "DW Akademie",
+    },
+    {
+      description:
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.",
+      href: "//meedan.com",
+      logo: partner5,
+      name: "Meedan",
+    },
+    {
+      description:
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.",
+      href: "//aws.amazon.com",
+      logo: partner6,
+      name: "AWS",
+    },
+  ],
   promiseStatuses: [
     {
       color: "#005DFD",
       description: "The promise is mostly or completely fulfilled.",
       textColor: "#FFFFFF",
       title: "Completed",
-      year: 2014.4,
     },
     {
       color: "#90DAFF",
       description: "The promise is in the works or being considered.",
       title: "In Progress",
-      year: 2013.4,
     },
     {
       color: "#FF5255",
@@ -197,21 +242,18 @@ const config = {
         "Could occur due to inaction by administration or lack of support from legislative branch.",
       textColor: "#FFFFFF",
       title: "Stalled",
-      year: 2015.4,
     },
     {
       color: "#FFB322",
       description:
         "No progress, perhaps due to financial limitations, opposition from lawmakers or a change in priorities.",
       title: "Delayed",
-      year: 2016.4,
     },
     {
       color: "#EBEBEB",
       description:
         "Every promise begins at this level and retains this rating until evidence of progress or proof that it has been shelved.",
       title: "Unrated",
-      year: 2016.4,
     },
     {
       color: "#909090",
@@ -219,7 +261,6 @@ const config = {
         "The promise is accomplished only in part, but has succeeded at least in part consistently with the goal of the promise.",
       textColor: "#FFFFFF",
       title: "Unstarted",
-      year: 2014.4,
     },
   ],
   pages: {
@@ -232,33 +273,32 @@ const config = {
           `,
           description:
             "The promise tracker is a platform-based promise tracker where citizens can track various promises and services promised by governors, institutions, political parties in their manifestos during the campaigns leading up to the elections and in the post election period.",
+          featuredImage: aboutProject,
           title: "The Project",
         },
         team: {
           content: `
-            <p>Engaging with governments needs data, to this end, this project not only develops a promise tracker but also showcases this information on an easy-to-understand platform, making the PromiseTracker a contributor to public discourse around service delivery by elected officials. This leads to a more robust dialogue and positive engagement with the elected officials or government bodies around this subject.
-            <p>The PromiseTracker initial focus will be on Nairobi tracking progress on Governor Mike Sonko’s seven-point plan to improve the city in the first 100 days of his term and 5 year plan. The tracker will also focus on other county governors whose plans are elaborated in their manifestos, such as Makueni, Mombasa, Kisumu, Nakuru, Kitui and Nandi. While the promises made by the national government have been covered extensively, promises made by the governors have received less coverage, resulting in limited analysis around whether they are actually viable.
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
           `,
           description:
-            "The promise tracker is a platform-based promise tracker where citizens can track various promises and services promised by governors, institutions, political parties in their manifestos during the campaigns leading up to the elections and in the post election period.",
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.",
           title: "The Team",
         },
         partners: {
-          content: `
-            <p>Engaging with governments needs data, to this end, this project not only develops a promise tracker but also showcases this information on an easy-to-understand platform, making the PromiseTracker a contributor to public discourse around service delivery by elected officials. This leads to a more robust dialogue and positive engagement with the elected officials or government bodies around this subject.
-            <p>The PromiseTracker initial focus will be on Nairobi tracking progress on Governor Mike Sonko’s seven-point plan to improve the city in the first 100 days of his term and 5 year plan. The tracker will also focus on other county governors whose plans are elaborated in their manifestos, such as Makueni, Mombasa, Kisumu, Nakuru, Kitui and Nandi. While the promises made by the national government have been covered extensively, promises made by the governors have received less coverage, resulting in limited analysis around whether they are actually viable.
-          `,
           description:
-            "The promise tracker is a platform-based promise tracker where citizens can track various promises and services promised by governors, institutions, political parties in their manifestos during the campaigns leading up to the elections and in the post election period.",
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.",
+          featuredImage: aboutPartners,
           title: "The Partners",
         },
         methodology: {
           content: `
-            <p>Engaging with governments needs data, to this end, this project not only develops a promise tracker but also showcases this information on an easy-to-understand platform, making the PromiseTracker a contributor to public discourse around service delivery by elected officials. This leads to a more robust dialogue and positive engagement with the elected officials or government bodies around this subject.
-            <p>The PromiseTracker initial focus will be on Nairobi tracking progress on Governor Mike Sonko’s seven-point plan to improve the city in the first 100 days of his term and 5 year plan. The tracker will also focus on other county governors whose plans are elaborated in their manifestos, such as Makueni, Mombasa, Kisumu, Nakuru, Kitui and Nandi. While the promises made by the national government have been covered extensively, promises made by the governors have received less coverage, resulting in limited analysis around whether they are actually viable.
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
           `,
           description:
-            "The promise tracker is a platform-based promise tracker where citizens can track various promises and services promised by governors, institutions, political parties in their manifestos during the campaigns leading up to the elections and in the post election period.",
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.",
+          featuredImage: aboutMethodology,
           title: "Methodology",
         },
       },
@@ -266,9 +306,12 @@ const config = {
   },
 };
 
-config.pages.about.pages.project.criteria = {
+config.pages.about.pages.methodology.criteria = {
   items: config.promiseStatuses,
   title: "Promise Criteria",
+};
+config.pages.about.pages.partners.partners = {
+  items: config.partners,
 };
 
 export default config;

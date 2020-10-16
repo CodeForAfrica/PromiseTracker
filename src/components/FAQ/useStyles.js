@@ -1,8 +1,6 @@
 import { makeStyles } from "@material-ui/core/styles";
 
 const useStyles = makeStyles(({ breakpoints, palette, typography }) => ({
-  section: {},
-  sectionTitle: {},
   root: {
     marginBottom: typography.pxToRem(52),
     [breakpoints.up("lg")]: {
@@ -10,6 +8,8 @@ const useStyles = makeStyles(({ breakpoints, palette, typography }) => ({
     },
   },
   accordion: {
+    backgroundColor: palette.secondary.light,
+    borderBottom: `2px solid ${palette.secondary.main}`,
     "&:before": {
       backgroundColor: palette.secondary.main,
       height: 2,
@@ -17,9 +17,9 @@ const useStyles = makeStyles(({ breakpoints, palette, typography }) => ({
     },
     "&.Mui-expanded": {
       margin: 0,
-    },
-    "& .MuiCollapse-container": {
-      borderBottom: `2px solid ${palette.secondary.main}`,
+      "&:before": {
+        opacity: 1,
+      },
     },
   },
   accordionDetails: {

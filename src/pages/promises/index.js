@@ -1,7 +1,6 @@
 import React from "react";
 
 import { makeStyles } from "@material-ui/core/styles";
-import { Hidden } from "@material-ui/core";
 
 import ActNow from "@/promisetracker/components/ActNow";
 import Promises from "@/promisetracker/components/Promises";
@@ -22,13 +21,25 @@ const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
       width: typography.pxToRem(widths.values.lg),
     },
   },
+  actNow: {
+    display: "none",
+    [breakpoints.up("lg")]: {
+      display: "flex",
+    },
+  },
+  footer: {
+    marginTop: 0,
+  },
 }));
 
 function Index(props) {
   const classes = useStyles(props);
 
   return (
-    <Page title="Promises" classes={{ section: classes.section }}>
+    <Page
+      title="Promises"
+      classes={{ section: classes.section, footer: classes.footer }}
+    >
       <Promises
         items={Array(6)
           .fill(null)
@@ -40,20 +51,19 @@ function Index(props) {
             `,
             image: promiseImage,
             status: config.promiseStatuses[i % config.promiseStatuses.length],
-            title: "Codification of national sports and athletics law",
+            title: `Codification of national sports and athletics law ${i}`,
           }))}
         title="Promises"
         classes={{
           section: classes.section,
         }}
       />
-      <Hidden mdDown>
-        <ActNow
-          classes={{
-            section: classes.section,
-          }}
-        />
-      </Hidden>
+      <ActNow
+        classes={{
+          section: classes.section,
+          root: classes.actNow,
+        }}
+      />
 
       <Subscribe
         classes={{
