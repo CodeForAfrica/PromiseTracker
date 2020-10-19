@@ -16,6 +16,8 @@ import {
 } from "@commons-ui/core";
 
 import Link from "@/promisetracker/components/Link";
+
+import cfaLogo from "@/promisetracker/assets/logo-C4A.svg";
 import ptLogo from "@/promisetracker/assets/footer-pt-logo.png";
 
 import useStyles from "./useStyles";
@@ -23,11 +25,11 @@ import useStyles from "./useStyles";
 function MainFooter({
   page: {
     about,
-    contacts,
+    social_media: SocialMedia,
     legal_links: legalLinksProp,
     organization_logo: organizationLogoProp,
     quick_links: quickLinksProp,
-    copyright,
+    copyright_logo: copyright,
   },
   ...otherProps
 }) {
@@ -36,7 +38,10 @@ function MainFooter({
   const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
 
   const organizationLogo = {
-    image: { url: organizationLogoProp.image, alt: organizationLogoProp.alt },
+    image: {
+      url: organizationLogoProp.image || cfaLogo,
+      alt: organizationLogoProp.alt,
+    },
     url: organizationLogoProp.link,
   };
   const legalLinks = {
@@ -151,7 +156,7 @@ function MainFooter({
               <div className={classes.legalContainer}>
                 {!isDesktop && (
                   <FooterStayInTouch
-                    {...contacts}
+                    socialMedia={SocialMedia}
                     options={{
                       socialMedia: {
                         color: "textSecondary",
@@ -195,7 +200,7 @@ function MainFooter({
             {isDesktop && (
               <Grid item xs={12} lg={6} className={classes.secondaryGridItem}>
                 <FooterStayInTouch
-                  {...contacts}
+                  socialMedia={SocialMedia}
                   options={{
                     socialMedia: {
                       color: "textSecondary",
@@ -228,8 +233,8 @@ MainFooter.propTypes = {
       initiative: PropTypes.string,
       about: PropTypes.string,
     }),
-    contacts: PropTypes.shape({}),
-    copyright: PropTypes.shape({}),
+    social_media: PropTypes.arrayOf(PropTypes.shape({})),
+    copyright_logo: PropTypes.shape({}),
     legal_links: PropTypes.arrayOf(PropTypes.shape({})),
     quick_links: PropTypes.arrayOf(PropTypes.shape({})),
     organization_logo: PropTypes.shape({}),

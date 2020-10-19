@@ -6,10 +6,8 @@ import facebook from "@/promisetracker/assets/footer-social-fb.svg";
 import twitter from "@/promisetracker/assets/footer-social-tw.svg";
 import linkedIn from "@/promisetracker/assets/footer-social-ln.svg";
 import github from "@/promisetracker/assets/footer-social-gh.svg";
+import instagram from "@/promisetracker/assets/footer-social-ig.svg";
 import cc from "@/promisetracker/assets/cc.svg";
-
-import logo from "@/promisetracker/assets/logo-C4A.svg";
-
 import partner1 from "@/promisetracker/assets/partner-logo@2x.png";
 import partner2 from "@/promisetracker/assets/partner-logo_1@2x.png";
 import partner3 from "@/promisetracker/assets/partner-logo_2@2x.png";
@@ -17,7 +15,16 @@ import partner4 from "@/promisetracker/assets/partner-logo_3@2x.png";
 import partner5 from "@/promisetracker/assets/partner-logo_4@2x.png";
 import partner6 from "@/promisetracker/assets/partner-logo_5@2x.png";
 
+import logo from "@/promisetracker/assets/logo-C4A.svg";
+
+const WP_BACKEND_URL =
+  process.env.WP_BACKEND_URL || "https://dashboard.hurumap.org/promisetracker";
+
 const config = {
+  WP_BACKEND_URL,
+  WP_HURUMAP_DATA_API: `${WP_BACKEND_URL}/wp-json/hurumap-data`,
+  DEFAULT_LANG: "en",
+
   title: "PromiseTracker",
   url: "https://promisetracker.pesacheck.org/",
   GRAPHQL_URI: "https://check-api.checkmedia.org/api/graphql",
@@ -127,40 +134,44 @@ const config = {
         href: "/legal/terms",
       },
     ],
-    contacts: {
-      socialMedia: [
-        {
-          url: "https://www.linkedin.com/company/code-for-africa/",
-          image: {
-            url: linkedIn,
-            alt: "",
-          },
+    social_media: [
+      {
+        url: "https://github.com/codeforafrica",
+        image: {
+          url: instagram,
+          alt: "",
         },
-        {
-          url:
-            "https://twitter.com/Code4Africa?ref_src=twsrc%5Egoogle%7Ctwcamp%5Eserp%7Ctwgr%5Eauthor",
-          image: {
-            url: twitter,
-            alt: "",
-          },
+      },
+      {
+        url: "https://www.linkedin.com/company/code-for-africa/",
+        image: {
+          url: linkedIn,
+          alt: "",
         },
-        {
-          url: "https://www.facebook.com/CodeForAfrica/",
-          image: {
-            url: facebook,
-            alt: "",
-          },
+      },
+      {
+        url:
+          "https://twitter.com/Code4Africa?ref_src=twsrc%5Egoogle%7Ctwcamp%5Eserp%7Ctwgr%5Eauthor",
+        image: {
+          url: twitter,
+          alt: "",
         },
-        {
-          url: "https://github.com/codeforafrica",
-          image: {
-            url: github,
-            alt: "",
-          },
+      },
+      {
+        url: "https://www.facebook.com/CodeForAfrica/",
+        image: {
+          url: facebook,
+          alt: "",
         },
-      ],
-      title: "Stay in touch with us @",
-    },
+      },
+      {
+        url: "https://github.com/codeforafrica",
+        image: {
+          url: github,
+          alt: "",
+        },
+      },
+    ],
   },
   analysisMenu: {
     subnav: [
