@@ -16,6 +16,8 @@ import {
 } from "@commons-ui/core";
 
 import Link from "@/promisetracker/components/Link";
+
+import cfaLogo from "@/promisetracker/assets/logo-C4A.svg";
 import ptLogo from "@/promisetracker/assets/footer-pt-logo.png";
 
 import useStyles from "./useStyles";
@@ -36,7 +38,10 @@ function MainFooter({
   const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
 
   const organizationLogo = {
-    image: { url: organizationLogoProp.image, alt: organizationLogoProp.alt },
+    image: {
+      url: organizationLogoProp.image || cfaLogo,
+      alt: organizationLogoProp.alt,
+    },
     url: organizationLogoProp.link,
   };
   const legalLinks = {

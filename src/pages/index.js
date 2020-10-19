@@ -14,6 +14,7 @@ import Subscribe from "@/promisetracker/components/Newsletter";
 
 import { getSitePage } from "@/promisetracker/cms";
 import config from "@/promisetracker/config";
+import check from "@/promisetracker/lib/check";
 
 import articleImage from "@/promisetracker/assets/article-thumb-01.png";
 import promiseCarouselImage from "@/promisetracker/assets/promise-carusel-01.png";
@@ -35,7 +36,7 @@ const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
   },
 }));
 
-function Index({ actNow, subscribe, ...props }) {
+function Index({ actNow, page, subscribe, ...props }) {
   const classes = useStyles(props);
   const theme = useTheme();
   const randomYear = () => {
@@ -48,7 +49,10 @@ function Index({ actNow, subscribe, ...props }) {
   };
 
   return (
-    <Page classes={{ section: classes.section, footer: classes.footer }}>
+    <Page
+      page={page}
+      classes={{ section: classes.section, footer: classes.footer }}
+    >
       <Hero
         criteria={{
           items: config.promiseStatuses,
@@ -159,11 +163,13 @@ function Index({ actNow, subscribe, ...props }) {
 
 Index.propTypes = {
   actNow: PropTypes.shape({}),
+  page: PropTypes.shape({}),
   subscribe: PropTypes.shape({}),
 };
 
 Index.defaultProps = {
   actNow: undefined,
+  page: undefined,
   subscribe: undefined,
 };
 
@@ -179,13 +185,25 @@ export async function getStaticProps({ query = {} }) {
     date: new Date(post.post_date).toLocaleDateString(),
     title: post.post_title,
   }));
-  delete page.page.posts;
+  const promises = await check("pesacheck-promise-tracker").promises({
+    limit: 6,
+    query: `{ "projects": ["2831"] }`,
+  });
+  const promisesByCategories = await check(
+    "pesacheck-promise-tracker"
+  ).promisesByCategories({
+    team: "pesacheck-promise-tracker",
+  });
+
   return {
     props: {
-      page: page.page,
-      posts,
       actNow: page.page.actNow,
+      page: page.page,
+      promises,
+      promisesByCategories,
+      posts,
       subscribe: page.page.subscribe,
     },
+    revalidate: 2 * 60, // seconds
   };
 }
