@@ -204,6 +204,6 @@ export async function getStaticProps({ query = {} }) {
       posts,
       subscribe: page.page.subscribe,
     },
-    revalidate: 2 * 60, // 60 seconds
+    revalidate: 2 * 60, // seconds
   };
 }
