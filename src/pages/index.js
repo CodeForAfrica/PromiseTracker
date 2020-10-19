@@ -1,7 +1,5 @@
 import React from "react";
 
-// import createApolloClient from "@/promisetracker/lib/createApolloClient";
-// import { gql } from "@apollo/client";
 import { makeStyles, useTheme } from "@material-ui/core/styles";
 
 import Hero from "@/promisetracker/components/Hero";
@@ -15,6 +13,7 @@ import Subscribe from "@/promisetracker/components/Newsletter";
 
 import articleImage from "@/promisetracker/assets/article-thumb-01.png";
 import config from "@/promisetracker/config";
+import check from "@/promisetracker/lib/check";
 import promiseCarouselImage from "@/promisetracker/assets/promise-carusel-01.png";
 import promiseImage from "@/promisetracker/assets/promise-thumb-01.png";
 
@@ -33,67 +32,6 @@ const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
     marginTop: 0,
   },
 }));
-
-/* const GET_TEAMS = gql`
-	query {
-		team(slug: "pesacheck-promise-tracker") {
-			id
-			name
-			dbid
-		}
-	}
-`;
-
-const getPromisesList = gql`
-query {
-	team(slug:"pesacheck-promise-tracker") {
-		id
-		name
-		medias_count
-		projects {
-			edges {
-				node {
-					id
-					title
-					medias_count
-					project_medias {
-						edges {
-							node {
-								id
-								title
-								description
-								media {
-									id
-									thumbnail_path
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-}`;
-
-const getPromisesQuery = gql`
-  query getPromises($query: String!, $limit: Int!) {
-    search(query: $query) {
-      medias(first: $limit) {
-        edges {
-          node {
-            id
-            dbid
-            title
-            description
-            status
-            archived
-          }
-        }
-      }
-    }
-  }
-`;
- */
 
 function Index(props) {
   const classes = useStyles(props);
@@ -215,23 +153,22 @@ function Index(props) {
   );
 }
 
-// export async function getStaticProps() {
-//   const apolloClient = createApolloClient();
+export async function getStaticProps() {
+  const promises = await check("pesacheck-promise-tracker").promises({
+    limit: 6,
+    query: `{ "projects": ["2831"] }`,
+  });
+  const promisesByCategories = await check(
+    "pesacheck-promise-tracker"
+  ).promisesByCategories({
+    team: "pesacheck-promise-tracker",
+  });
+  const props = { promises, promisesByCategories };
 
-//   await apolloClient.query({
-//     query: getPromisesQuery,
-//     variables: {
-//       limit: 2,
-//       query: '{"projects":["2831"]}',
-//     },
-//   });
-
-//   return {
-//     props: {
-//       promises: apolloClient.cache.extract(),
-//     },
-//     revalidate: 1,
-//   };
-// }
+  return {
+    props,
+    revalidate: 1,
+  };
+}
 
 export default Index;
