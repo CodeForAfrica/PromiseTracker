@@ -29,7 +29,7 @@ function MainFooter({
     legal_links: legalLinksProp,
     organization_logo: organizationLogoProp,
     quick_links: quickLinksProp,
-    copyright_logo: copyright,
+    copyright,
   },
   ...otherProps
 }) {
@@ -88,7 +88,11 @@ function MainFooter({
     <div className={classes.root}>
       <div className={classes.primary}>
         <Section classes={{ root: classes.section }}>
-          <FooterLogo hasDivider={false} {...organizationLogo} />
+          <FooterLogo
+            hasDivider={false}
+            {...organizationLogo}
+            classes={{ organization: classes.organization }}
+          />
           <Grid container>
             <Grid item xs={12} lg={8}>
               <FooterAbout
@@ -234,7 +238,7 @@ MainFooter.propTypes = {
       about: PropTypes.string,
     }),
     social_media: PropTypes.arrayOf(PropTypes.shape({})),
-    copyright_logo: PropTypes.shape({}),
+    copyright: PropTypes.shape({}),
     legal_links: PropTypes.arrayOf(PropTypes.shape({})),
     quick_links: PropTypes.arrayOf(PropTypes.shape({})),
     organization_logo: PropTypes.shape({}),
