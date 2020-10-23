@@ -12,9 +12,9 @@ import Page from "@/promisetracker/components/Page";
 import Partners from "@/promisetracker/components/Partners";
 import Subscribe from "@/promisetracker/components/Newsletter";
 
-import { getSitePage } from "@/promisetracker/cms";
 import config from "@/promisetracker/config";
 import check from "@/promisetracker/lib/check";
+import wp from "@/promisetracker/lib/wp";
 
 import articleImage from "@/promisetracker/assets/article-thumb-01.png";
 import promiseCarouselImage from "@/promisetracker/assets/promise-carusel-01.png";
@@ -36,7 +36,7 @@ const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
   },
 }));
 
-function Index({ actNow, page, subscribe, ...props }) {
+function Index({ page, ...props }) {
   const classes = useStyles(props);
   const theme = useTheme();
   const randomYear = () => {
@@ -48,6 +48,9 @@ function Index({ actNow, page, subscribe, ...props }) {
     return round(year + month, 1);
   };
 
+  if (!page) {
+    return null;
+  }
   return (
     <Page
       page={page}
@@ -121,7 +124,7 @@ function Index({ actNow, page, subscribe, ...props }) {
         }}
       />
       <ActNow
-        {...actNow}
+        {...page.actNow}
         classes={{
           section: classes.section,
         }}
@@ -145,14 +148,14 @@ function Index({ actNow, page, subscribe, ...props }) {
         }}
       />
       <Partners
-        items={config.partners}
+        items={page.partners}
         title="Partners"
         classes={{
           section: classes.section,
         }}
       />
       <Subscribe
-        {...subscribe}
+        {...page.subscribe}
         classes={{
           section: classes.section,
         }}
@@ -162,29 +165,22 @@ function Index({ actNow, page, subscribe, ...props }) {
 }
 
 Index.propTypes = {
-  actNow: PropTypes.shape({}),
-  page: PropTypes.shape({}),
-  subscribe: PropTypes.shape({}),
+  page: PropTypes.shape({
+    actNow: PropTypes.shape({}),
+    partners: PropTypes.arrayOf(PropTypes.shape({})),
+    subscribe: PropTypes.shape({}),
+  }),
 };
 
 Index.defaultProps = {
-  actNow: undefined,
   page: undefined,
-  subscribe: undefined,
 };
 
 export default Index;
 
 export async function getStaticProps({ query = {} }) {
-  const { lang: pageLanguage } = query;
-  const lang = pageLanguage || config.DEFAULT_LANG;
-  const page = await getSitePage("analysis-articles", lang);
-  const posts = page.page.posts.map((post) => ({
-    image: post.featured_image,
-    description: post.post_content.replace(/(<([^>]+)>)/gi, ""),
-    date: new Date(post.post_date).toLocaleDateString(),
-    title: post.post_title,
-  }));
+  const { lang } = query;
+  const page = await wp().pages({ slug: "index", lang }).first;
   const promises = await check("pesacheck-promise-tracker").promises({
     limit: 6,
     query: `{ "projects": ["2831"] }`,
@@ -197,12 +193,9 @@ export async function getStaticProps({ query = {} }) {
 
   return {
     props: {
-      actNow: page.page.actNow,
-      page: page.page,
+      page,
       promises,
       promisesByCategories,
-      posts,
-      subscribe: page.page.subscribe,
     },
     revalidate: 2 * 60, // seconds
   };
