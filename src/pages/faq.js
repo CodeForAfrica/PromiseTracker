@@ -4,10 +4,10 @@ import PropTypes from "prop-types";
 import { makeStyles } from "@material-ui/core/styles";
 
 import ActNow from "@/promisetracker/components/ActNow";
-import { getSitePage } from "@/promisetracker/cms";
-import config from "@/promisetracker/config";
 import ContentPage from "@/promisetracker/components/ContentPage";
 import FAQ from "@/promisetracker/components/FAQ";
+
+import wp from "@/promisetracker/lib/wp";
 
 const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
   section: {
@@ -25,64 +25,53 @@ const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
   },
 }));
 
-function Index({ errorCode, faqs, page, actNow, ...props }) {
-  const {
-    title: { rendered: pageTitle },
-  } = page;
-
+function FaqPage({ actNow, faqs, footer, navigation, ...props }) {
   const classes = useStyles(props);
 
   return (
     <ContentPage
-      slug="faq"
-      title={pageTitle}
+      {...props}
+      footer={footer}
+      navigation={navigation}
       classes={{ section: classes.section, footer: classes.footer }}
       content={<FAQ items={faqs} />}
       contentProps={{
         lg: 8,
       }}
     >
-      <ActNow classes={{ section: classes.section }} />
+      <ActNow {...actNow} classes={{ section: classes.section }} />
     </ContentPage>
   );
 }
 
-export async function getStaticProps() {
-  const lang = config.DEFAULT_LANG;
-  const page = await getSitePage("faq", lang);
-  const faqs = page.page.faqs
-    .reduce((arr, e) => arr.concat(e.questions_answers), [])
-    .map((faq) => ({ title: faq.question, summary: faq.answer }));
-
-  const errorCode = null;
-  return {
-    props: {
-      errorCode,
-      page: page.page,
-      actNow: page.page.actNow,
-      faqs,
-    },
-  };
-}
-
-Index.propTypes = {
-  page: PropTypes.shape({
-    title: PropTypes.shape({
-      rendered: PropTypes.string,
-    }),
-    actNow: PropTypes.shape({}),
-  }),
-  faqs: PropTypes.shape({}),
-  errorCode: PropTypes.number,
+FaqPage.propTypes = {
   actNow: PropTypes.shape({}),
-  subscribe: PropTypes.shape({}),
+  footer: PropTypes.shape({}),
+  navigation: PropTypes.shape({}),
+  faqs: PropTypes.arrayOf(PropTypes.shape({})),
 };
-Index.defaultProps = {
-  page: undefined,
-  errorCode: undefined,
+
+FaqPage.defaultProps = {
   actNow: undefined,
-  subscribe: undefined,
+  footer: undefined,
+  navigation: undefined,
   faqs: undefined,
 };
 
-export default Index;
+export async function getStaticProps({ query = {} }) {
+  const { lang } = query;
+  const page = await wp().pages({ slug: "faq", lang }).first;
+  const faqs = page.faqs
+    .reduce((arr, e) => arr.concat(e.questions_answers), [])
+    .map((faq) => ({ title: faq.question, summary: faq.answer }));
+
+  return {
+    props: {
+      ...page,
+      faqs,
+    },
+    revalidate: 2 * 60, // seconds
+  };
+}
+
+export default FaqPage;
