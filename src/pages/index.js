@@ -36,7 +36,7 @@ const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
   },
 }));
 
-function Index({ page, ...props }) {
+function Index({ actNow, footer, navigation, partners, subscribe, ...props }) {
   const classes = useStyles(props);
   const theme = useTheme();
   const randomYear = () => {
@@ -48,12 +48,11 @@ function Index({ page, ...props }) {
     return round(year + month, 1);
   };
 
-  if (!page) {
-    return null;
-  }
   return (
     <Page
-      page={page}
+      {...props}
+      footer={footer}
+      navigation={navigation}
       classes={{ section: classes.section, footer: classes.footer }}
     >
       <Hero
@@ -124,7 +123,7 @@ function Index({ page, ...props }) {
         }}
       />
       <ActNow
-        {...page.actNow}
+        {...actNow}
         classes={{
           section: classes.section,
         }}
@@ -148,14 +147,14 @@ function Index({ page, ...props }) {
         }}
       />
       <Partners
-        items={page.partners}
+        {...partners}
         title="Partners"
         classes={{
           section: classes.section,
         }}
       />
       <Subscribe
-        {...page.subscribe}
+        {...subscribe}
         classes={{
           section: classes.section,
         }}
@@ -165,18 +164,20 @@ function Index({ page, ...props }) {
 }
 
 Index.propTypes = {
-  page: PropTypes.shape({
-    actNow: PropTypes.shape({}),
-    partners: PropTypes.arrayOf(PropTypes.shape({})),
-    subscribe: PropTypes.shape({}),
-  }),
+  actNow: PropTypes.shape({}),
+  footer: PropTypes.shape({}),
+  navigation: PropTypes.shape({}),
+  partners: PropTypes.shape({}),
+  subscribe: PropTypes.shape({}),
 };
 
 Index.defaultProps = {
-  page: undefined,
+  actNow: undefined,
+  footer: undefined,
+  navigation: undefined,
+  partners: undefined,
+  subscribe: undefined,
 };
-
-export default Index;
 
 export async function getStaticProps({ query = {} }) {
   const { lang } = query;
@@ -193,10 +194,12 @@ export async function getStaticProps({ query = {} }) {
 
   return {
     props: {
-      page,
+      ...page,
       promises,
       promisesByCategories,
     },
     revalidate: 2 * 60, // seconds
   };
 }
+
+export default Index;
