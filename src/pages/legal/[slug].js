@@ -2,36 +2,31 @@ import React from "react";
 
 import AboutPage from "@/promisetracker/components/AboutPage";
 
-import config from "@/promisetracker/config";
+import wp from "@/promisetracker/lib/wp";
 
-function About(props) {
+function Legal(props) {
   return <AboutPage {...props} />;
 }
 
 export async function getStaticPaths() {
   const fallback = false;
-  const slugs = Object.keys(config.pages.about.pages);
-  const paths = slugs.map((slug) => ({
-    params: { slug },
-  }));
+  const pages = await wp().pages({ slug: "legal" }).children;
+  const paths = pages.map(({ slug }) => ({ params: { slug } }));
 
   return { fallback, paths };
 }
 
 export async function getStaticProps({ params: { slug: slugParam } }) {
   const slug = slugParam.toLowerCase();
-  const slugs = Object.keys(config.pages.about.pages);
-  const index = slugs.findIndex((pageSlug) => slug === pageSlug);
+  const pages = await wp().pages({ slug: "legal" }).children;
+  const index = pages.findIndex((page) => page.slug === slug);
   const errorCode = index === -1 ? 404 : null;
-  const page = errorCode ? {} : config.pages.about.pages[slug];
+  const page = pages[index] || null;
 
   return {
-    props: {
-      ...page,
-      errorCode,
-      slug,
-    },
+    props: { ...page, errorCode, slug },
+    revalidate: 2 * 60, // seconds
   };
 }
 
-export default About;
+export default Legal;

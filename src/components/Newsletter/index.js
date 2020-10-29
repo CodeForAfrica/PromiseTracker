@@ -149,8 +149,8 @@ Newsletter.propTypes = {
 };
 
 Newsletter.defaultProps = {
-  description: "To get all latest news and updates",
-  title: "Subscribe",
+  description: undefined,
+  title: undefined,
   enterEmailPlaceholder: "Please Enter your email",
 };
 

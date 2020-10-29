@@ -14,10 +14,13 @@ import PromiseCriteria from "./PromiseCriteria";
 import useStyles from "./useStyles";
 
 function AboutPage({
+  actNow,
   content,
   criteria,
   description,
   featuredImage,
+  footer,
+  navigation,
   partners,
   title,
   ...props
@@ -32,6 +35,8 @@ function AboutPage({
   return (
     <ContentPage
       {...props}
+      footer={footer}
+      navigation={navigation}
       title={title}
       content={
         <>
@@ -74,6 +79,7 @@ function AboutPage({
         />
       </div>
       <ActNow
+        {...actNow}
         classes={{
           section: classes.section,
           root: classes.actNow,
@@ -84,6 +90,7 @@ function AboutPage({
 }
 
 AboutPage.propTypes = {
+  actNow: PropTypes.shape({}),
   content: PropTypes.string,
   criteria: PropTypes.shape({
     items: PropTypes.arrayOf(PropTypes.shape({})),
@@ -91,6 +98,8 @@ AboutPage.propTypes = {
   }),
   description: PropTypes.string,
   featuredImage: PropTypes.string,
+  footer: PropTypes.shape({}),
+  navigation: PropTypes.shape({}),
   partners: PropTypes.shape({
     items: PropTypes.arrayOf(PropTypes.shape({})),
   }),
@@ -98,10 +107,13 @@ AboutPage.propTypes = {
 };
 
 AboutPage.defaultProps = {
+  actNow: undefined,
   content: undefined,
   criteria: undefined,
   description: undefined,
   featuredImage: undefined,
+  footer: undefined,
+  navigation: undefined,
   partners: undefined,
   title: undefined,
 };

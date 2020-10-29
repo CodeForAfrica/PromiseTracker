@@ -12,9 +12,9 @@ import Page from "@/promisetracker/components/Page";
 import Partners from "@/promisetracker/components/Partners";
 import Subscribe from "@/promisetracker/components/Newsletter";
 
-import { getSitePage } from "@/promisetracker/cms";
 import config from "@/promisetracker/config";
 import check from "@/promisetracker/lib/check";
+import wp from "@/promisetracker/lib/wp";
 
 import articleImage from "@/promisetracker/assets/article-thumb-01.png";
 import promiseCarouselImage from "@/promisetracker/assets/promise-carusel-01.png";
@@ -36,7 +36,7 @@ const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
   },
 }));
 
-function Index({ actNow, page, subscribe, ...props }) {
+function Index({ actNow, footer, navigation, partners, subscribe, ...props }) {
   const classes = useStyles(props);
   const theme = useTheme();
   const randomYear = () => {
@@ -50,7 +50,9 @@ function Index({ actNow, page, subscribe, ...props }) {
 
   return (
     <Page
-      page={page}
+      {...props}
+      footer={footer}
+      navigation={navigation}
       classes={{ section: classes.section, footer: classes.footer }}
     >
       <Hero
@@ -145,7 +147,7 @@ function Index({ actNow, page, subscribe, ...props }) {
         }}
       />
       <Partners
-        items={config.partners}
+        {...partners}
         title="Partners"
         classes={{
           section: classes.section,
@@ -163,28 +165,23 @@ function Index({ actNow, page, subscribe, ...props }) {
 
 Index.propTypes = {
   actNow: PropTypes.shape({}),
-  page: PropTypes.shape({}),
+  footer: PropTypes.shape({}),
+  navigation: PropTypes.shape({}),
+  partners: PropTypes.shape({}),
   subscribe: PropTypes.shape({}),
 };
 
 Index.defaultProps = {
   actNow: undefined,
-  page: undefined,
+  footer: undefined,
+  navigation: undefined,
+  partners: undefined,
   subscribe: undefined,
 };
 
-export default Index;
-
 export async function getStaticProps({ query = {} }) {
-  const { lang: pageLanguage } = query;
-  const lang = pageLanguage || config.DEFAULT_LANG;
-  const page = await getSitePage("analysis-articles", lang);
-  const posts = page.page.posts.map((post) => ({
-    image: post.featured_image,
-    description: post.post_content.replace(/(<([^>]+)>)/gi, ""),
-    date: new Date(post.post_date).toLocaleDateString(),
-    title: post.post_title,
-  }));
+  const { lang } = query;
+  const page = await wp().pages({ slug: "index", lang }).first;
   const promises = await check("pesacheck-promise-tracker").promises({
     limit: 6,
     query: `{ "projects": ["2831"] }`,
@@ -197,13 +194,12 @@ export async function getStaticProps({ query = {} }) {
 
   return {
     props: {
-      actNow: page.page.actNow,
-      page: page.page,
+      ...page,
       promises,
       promisesByCategories,
-      posts,
-      subscribe: page.page.subscribe,
     },
     revalidate: 2 * 60, // seconds
   };
 }
+
+export default Index;

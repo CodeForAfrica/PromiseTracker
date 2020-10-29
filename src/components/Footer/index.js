@@ -23,14 +23,12 @@ import ptLogo from "@/promisetracker/assets/footer-pt-logo.png";
 import useStyles from "./useStyles";
 
 function MainFooter({
-  page: {
-    about,
-    social_media: SocialMedia,
-    legal_links: legalLinksProp,
-    organization_logo: organizationLogoProp,
-    quick_links: quickLinksProp,
-    copyright_logo: copyright,
-  },
+  about,
+  copyright,
+  legalLinks: legalLinksProp,
+  organizationLogo: organizationLogoProp,
+  quickLinks: quickLinksProp,
+  socialMedia,
   ...otherProps
 }) {
   const classes = useStyles(otherProps);
@@ -40,9 +38,9 @@ function MainFooter({
   const organizationLogo = {
     image: {
       url: organizationLogoProp.image || cfaLogo,
-      alt: organizationLogoProp.alt,
+      alt: organizationLogoProp.alt || "Code for Africa",
     },
-    url: organizationLogoProp.link,
+    url: organizationLogoProp.link || "//codeforafrica.org",
   };
   const legalLinks = {
     linkComponent: Link,
@@ -88,7 +86,11 @@ function MainFooter({
     <div className={classes.root}>
       <div className={classes.primary}>
         <Section classes={{ root: classes.section }}>
-          <FooterLogo hasDivider={false} {...organizationLogo} />
+          <FooterLogo
+            hasDivider={false}
+            {...organizationLogo}
+            classes={{ organization: classes.organization }}
+          />
           <Grid container>
             <Grid item xs={12} lg={8}>
               <FooterAbout
@@ -156,7 +158,7 @@ function MainFooter({
               <div className={classes.legalContainer}>
                 {!isDesktop && (
                   <FooterStayInTouch
-                    socialMedia={SocialMedia}
+                    socialMedia={socialMedia}
                     options={{
                       socialMedia: {
                         color: "textSecondary",
@@ -200,7 +202,7 @@ function MainFooter({
             {isDesktop && (
               <Grid item xs={12} lg={6} className={classes.secondaryGridItem}>
                 <FooterStayInTouch
-                  socialMedia={SocialMedia}
+                  socialMedia={socialMedia}
                   options={{
                     socialMedia: {
                       color: "textSecondary",
@@ -228,17 +230,23 @@ function MainFooter({
 }
 
 MainFooter.propTypes = {
-  page: PropTypes.shape({
-    about: PropTypes.shape({
-      initiative: PropTypes.string,
-      about: PropTypes.string,
-    }),
-    social_media: PropTypes.arrayOf(PropTypes.shape({})),
-    copyright_logo: PropTypes.shape({}),
-    legal_links: PropTypes.arrayOf(PropTypes.shape({})),
-    quick_links: PropTypes.arrayOf(PropTypes.shape({})),
-    organization_logo: PropTypes.shape({}),
-  }).isRequired,
+  about: PropTypes.shape({
+    initiative: PropTypes.string,
+    about: PropTypes.string,
+  }),
+  copyright: PropTypes.shape({}),
+  legalLinks: PropTypes.arrayOf(PropTypes.shape({})),
+  organizationLogo: PropTypes.shape({}),
+  quickLinks: PropTypes.arrayOf(PropTypes.shape({})),
+  socialMedia: PropTypes.arrayOf(PropTypes.shape({})),
+};
+MainFooter.defaultProps = {
+  about: undefined,
+  copyright: undefined,
+  legalLinks: undefined,
+  organizationLogo: undefined,
+  quickLinks: undefined,
+  socialMedia: undefined,
 };
 
 export default MainFooter;
