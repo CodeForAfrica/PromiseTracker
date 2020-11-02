@@ -18,6 +18,12 @@ const useStyles = makeStyles(({ breakpoints, typography }) => ({
       paddingTop: typography.pxToRem(16),
     },
   },
+  gridItem: {
+    [breakpoints.up("lg")]: {
+      paddingRight: "1rem",
+      paddingLeft: "1rem",
+    },
+  },
 }));
 
 export default useStyles;
