@@ -13,7 +13,7 @@ import Partners from "@/promisetracker/components/Partners";
 import Subscribe from "@/promisetracker/components/Newsletter";
 
 import config from "@/promisetracker/config";
-import check from "@/promisetracker/lib/check";
+import check, { groupPromisesByStatus } from "@/promisetracker/lib/check";
 import wp from "@/promisetracker/lib/wp";
 
 import articleImage from "@/promisetracker/assets/article-thumb-01.png";
@@ -41,6 +41,7 @@ function Index({
   partners,
   promises,
   keyPromises,
+  promisesByStatuses,
   subscribe,
   ...props
 }) {
@@ -57,6 +58,7 @@ function Index({
           items: config.promiseStatuses,
           title: "What do the ratings mean?",
         }}
+        promisesByStatuses={promisesByStatuses}
         name="Mike “Sonko” Mbuvi"
         position="Nairobi Governor"
         title="Campaign promises made by Mike Mbuvi"
@@ -126,6 +128,7 @@ Index.propTypes = {
   partners: PropTypes.shape({}),
   promises: PropTypes.arrayOf(PropTypes.shape({})),
   keyPromises: PropTypes.arrayOf(PropTypes.shape({})),
+  promisesByStatuses: PropTypes.arrayOf(PropTypes.shape({})),
   subscribe: PropTypes.shape({}),
 };
 
@@ -136,6 +139,7 @@ Index.defaultProps = {
   partners: undefined,
   promises: undefined,
   keyPromises: undefined,
+  promisesByStatuses: undefined,
   subscribe: undefined,
 };
 
@@ -151,18 +155,12 @@ export async function getStaticProps({ query = {} }) {
     query: `{ "projects": ["4691"] }`,
   });
 
-  const promisesByCategories = await check(
-    "pesacheck-promise-tracker"
-  ).promisesByCategories({
-    team: "pesacheck-promise-tracker",
-  });
-
   return {
     props: {
       ...page,
-      promises,
+      promises: promises.slice(0, 6),
       keyPromises,
-      promisesByCategories,
+      promisesByStatuses: groupPromisesByStatus(promises),
     },
     revalidate: 2 * 60, // seconds
   };
