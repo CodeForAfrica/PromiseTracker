@@ -160,7 +160,7 @@ function MainFooter({
                 alt="promise Tracker"
               />
               <div className={classes.legalContainer}>
-                {!isDesktop && (
+                {!isDesktop && socialMedia?.length && (
                   <FooterStayInTouch
                     socialMedia={socialMedia}
                     options={{
@@ -191,19 +191,20 @@ function MainFooter({
                     text: classes.copyrightText,
                   }}
                 />
-
-                <FooterLegalLinks
-                  variant="button"
-                  {...legalLinks}
-                  classes={{
-                    root: classes.legalLinksRoot,
-                    list: classes.legalLinks,
-                    link: classes.legalLink,
-                  }}
-                />
+                {legalLinksProp?.length && (
+                  <FooterLegalLinks
+                    variant="button"
+                    {...legalLinks}
+                    classes={{
+                      root: classes.legalLinksRoot,
+                      list: classes.legalLinks,
+                      link: classes.legalLink,
+                    }}
+                  />
+                )}
               </div>
             </Grid>
-            {isDesktop && (
+            {isDesktop && socialMedia?.length && (
               <Grid item xs={12} lg={6} className={classes.secondaryGridItem}>
                 <FooterStayInTouch
                   socialMedia={socialMedia}
