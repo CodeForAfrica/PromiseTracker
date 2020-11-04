@@ -24,10 +24,6 @@ import PromiseKeptChart from "@/promisetracker/components/Hero/ProfileChart/Desk
 import UncertainChart from "@/promisetracker/components/Hero/ProfileChart/DesktopChart/UncertainChart";
 import PromiseNotKeptChart from "@/promisetracker/components/Hero/ProfileChart/DesktopChart/PromiseNotKeptChart";
 
-import MobilePromiseKeptChart from "@/promisetracker/components/Hero/ProfileChart/MobileChart/MobilePromiseKeptChart";
-import MobilePromiseNotKeptChart from "@/promisetracker/components/Hero/ProfileChart/MobileChart/MobilePromiseNotKeptChart";
-import MobileUncertainChart from "@/promisetracker/components/Hero/ProfileChart/MobileChart/MobileUncertainChart";
-
 import RectChart from "@/promisetracker/components/Hero/ProfileChart/RectChart";
 
 import DesktopInfoStatusPopover from "./DesktopInfoStatusPopover";
@@ -160,11 +156,7 @@ function ProfileDetails({ criteria, name, position, ...props }) {
             )}
           </DesktopChart>
         ) : (
-          <MobileChart>
-            <MobilePromiseKeptChart name="Promise Kept" />
-            <MobileUncertainChart name="Uncertain" />
-            <MobilePromiseNotKeptChart name="Promise Not Kept" />
-          </MobileChart>
+          <MobileChart />
         )}
       </>
     </>
