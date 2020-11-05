@@ -13,7 +13,8 @@ import Partners from "@/promisetracker/components/Partners";
 import Subscribe from "@/promisetracker/components/Newsletter";
 
 import config from "@/promisetracker/config";
-import check, { groupPromisesByStatus } from "@/promisetracker/lib/check";
+import check from "@/promisetracker/lib/check";
+import { groupPromisesByStatus } from "@/promisetracker/utils";
 import wp from "@/promisetracker/lib/wp";
 
 import articleImage from "@/promisetracker/assets/article-thumb-01.png";
