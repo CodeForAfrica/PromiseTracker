@@ -18,6 +18,7 @@ function KeyPromise({
   image,
   date,
   statuses,
+  status,
   title,
   ...props
 }) {
@@ -80,6 +81,7 @@ function KeyPromise({
         <PromiseTimeline
           events={events}
           date={date}
+          status={status}
           statuses={statuses}
           classes={{ root: classes.timeline }}
         />
@@ -95,6 +97,7 @@ KeyPromise.propTypes = {
   events: PropTypes.arrayOf(PropTypes.shape({})),
   image: PropTypes.string.isRequired,
   statuses: PropTypes.arrayOf(PropTypes.shape({})),
+  status: PropTypes.shape({}),
   title: PropTypes.string.isRequired,
 };
 
@@ -103,6 +106,7 @@ KeyPromise.defaultProps = {
   description: undefined,
   events: undefined,
   statuses: undefined,
+  status: undefined,
 };
 
 export default KeyPromise;
