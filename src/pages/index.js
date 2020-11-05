@@ -148,7 +148,7 @@ export async function getStaticProps({ query = {} }) {
   const { lang } = query;
   const page = await wp().pages({ slug: "index", lang }).first;
   const promises = await check("pesacheck-promise-tracker").promises({
-    limit: 6,
+    limit: 10000,
     query: `{ "projects": ["2831"] }`,
   });
   const keyPromises = await check("pesacheck-promise-tracker").promises({
