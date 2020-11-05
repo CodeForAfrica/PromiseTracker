@@ -28,6 +28,7 @@ function wp(site) {
         title: acf.act_now.title,
       };
     }
+    const promiseStatuses = acf.promiseStatuses || null;
     const footer = {
       about: acf.about || null,
       copyright: acf.copyright || null,
@@ -49,6 +50,7 @@ function wp(site) {
       footer,
       navigation: acf.navigation || null,
       partners: acf.partners ? { items: acf.partners } : null,
+      promiseStatuses,
       subscribe: acf.subscribe || null,
     };
     return data;
@@ -78,6 +80,27 @@ function wp(site) {
     const data = res.ok ? res.json() : {};
     return data;
   }
+  function createPageFrom(resource, options, lang) {
+    const { acf } = resource;
+    let criteria = null;
+    if (acf.criteria?.show) {
+      criteria = {
+        title: acf.criteria.title || null,
+        items: options.promiseStatuses,
+      };
+    }
+    acf.criteria = null;
+    const page = {
+      ...acf,
+      ...resource,
+      ...options,
+      criteria,
+      content: resource.content?.rendered,
+      title: resource.title?.rendered,
+      languge: lang,
+    };
+    return page;
+  }
   async function getPagesByParentId(parent, lang, order, orderBy) {
     const children = await getResourcesByParentId(
       "pages",
@@ -87,13 +110,7 @@ function wp(site) {
       orderBy
     );
     const options = children.length && (await getOptions(lang));
-    const data = children.map((child) => ({
-      ...options,
-      ...child,
-      content: child.content?.rendered,
-      languge: lang,
-      title: child.title?.rendered,
-    }));
+    const data = children.map((child) => createPageFrom(child, options, lang));
     return data;
   }
   async function getPagesByParentSlug(slug, lang, order, orderBy) {
@@ -113,15 +130,7 @@ function wp(site) {
       return resource;
     }
     const options = await getOptions(lang);
-    const page = {
-      ...options,
-      ...resource,
-      ...resource.acf,
-      content: resource.content?.rendered,
-      title: resource.title?.rendered,
-      languge: lang,
-    };
-    return page;
+    return createPageFrom(resource, options, lang);
   }
   async function getPageById(id, lang) {
     const resource = await getResourceById("pages", id, lang);
@@ -129,15 +138,7 @@ function wp(site) {
       return resource;
     }
     const options = await getOptions(lang);
-    const page = {
-      ...options,
-      ...resource,
-      ...resource.acf,
-      content: resource.content?.rendered,
-      title: resource.title?.rendered,
-      languge: lang,
-    };
-    return page;
+    return createPageFrom(resource, options, lang);
   }
   async function getPostBySlug(slug, lang) {
     const resources = await getResourcesBySlug("posts", slug, lang, {
