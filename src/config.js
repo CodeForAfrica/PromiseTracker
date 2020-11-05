@@ -8,12 +8,6 @@ import linkedIn from "@/promisetracker/assets/footer-social-ln.svg";
 import github from "@/promisetracker/assets/footer-social-gh.svg";
 import instagram from "@/promisetracker/assets/footer-social-ig.svg";
 import cc from "@/promisetracker/assets/cc.svg";
-import partner1 from "@/promisetracker/assets/partner-logo@2x.png";
-import partner2 from "@/promisetracker/assets/partner-logo_1@2x.png";
-import partner3 from "@/promisetracker/assets/partner-logo_2@2x.png";
-import partner4 from "@/promisetracker/assets/partner-logo_3@2x.png";
-import partner5 from "@/promisetracker/assets/partner-logo_4@2x.png";
-import partner6 from "@/promisetracker/assets/partner-logo_5@2x.png";
 
 import logo from "@/promisetracker/assets/logo-C4A.svg";
 
@@ -189,50 +183,6 @@ const config = {
     title: "Analysis",
     url: "/analysis",
   },
-  partners: [
-    {
-      description:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.",
-      href: "//pesacheck.org",
-      logo: partner1,
-      name: "PesaCheck",
-    },
-    {
-      description:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.",
-      href: "//the-star.co.ke",
-      logo: partner2,
-      name: "The Star",
-    },
-    {
-      description:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.",
-      href: "//pigafirimbi.africauncensored.online",
-      logo: partner3,
-      name: "Piga Firimbi",
-    },
-    {
-      description:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.",
-      href: "//www.dw.com/en/dw-akademie/about-us/s-9519",
-      logo: partner4,
-      name: "DW Akademie",
-    },
-    {
-      description:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.",
-      href: "//meedan.com",
-      logo: partner5,
-      name: "Meedan",
-    },
-    {
-      description:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.",
-      href: "//aws.amazon.com",
-      logo: partner6,
-      name: "AWS",
-    },
-  ],
   pages: {
     about: {
       pages: {
@@ -274,10 +224,6 @@ const config = {
       },
     },
   },
-};
-
-config.pages.about.pages.partners.partners = {
-  items: config.partners,
 };
 
 export default config;
