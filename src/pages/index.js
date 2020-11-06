@@ -42,7 +42,7 @@ function Index({
   partners,
   promises,
   keyPromises,
-  promisesByStatuses,
+  promisesByStatus,
   subscribe,
   ...props
 }) {
@@ -59,7 +59,7 @@ function Index({
           items: config.promiseStatuses,
           title: "What do the ratings mean?",
         }}
-        promisesByStatuses={promisesByStatuses}
+        promisesByStatus={promisesByStatus}
         name="Mike “Sonko” Mbuvi"
         position="Nairobi Governor"
         title="Campaign promises made by Mike Mbuvi"
@@ -129,7 +129,7 @@ Index.propTypes = {
   partners: PropTypes.shape({}),
   promises: PropTypes.arrayOf(PropTypes.shape({})),
   keyPromises: PropTypes.arrayOf(PropTypes.shape({})),
-  promisesByStatuses: PropTypes.arrayOf(PropTypes.shape({})),
+  promisesByStatus: PropTypes.arrayOf(PropTypes.shape({})),
   subscribe: PropTypes.shape({}),
 };
 
@@ -140,7 +140,7 @@ Index.defaultProps = {
   partners: undefined,
   promises: undefined,
   keyPromises: undefined,
-  promisesByStatuses: undefined,
+  promisesByStatus: undefined,
   subscribe: undefined,
 };
 
@@ -161,7 +161,7 @@ export async function getStaticProps({ query = {} }) {
       ...page,
       promises: promises.slice(0, 6),
       keyPromises,
-      promisesByStatuses: groupPromisesByStatus(promises),
+      promisesByStatus: groupPromisesByStatus(promises),
     },
     revalidate: 2 * 60, // seconds
   };

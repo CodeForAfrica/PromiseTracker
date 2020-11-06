@@ -78,7 +78,7 @@ function ProfileDetails({
   criteria,
   name,
   position,
-  promisesByStatuses,
+  promisesByStatus,
   ...props
 }) {
   const classes = useStyles(props);
@@ -100,7 +100,7 @@ function ProfileDetails({
             <Typography variant="h1">{name}</Typography>
           </Hidden>
           <Typography variant="body2">
-            {position} {name} <b>{promisesByStatuses.count} promises </b>at a
+            {position} {name} <b>{promisesByStatus.count} promises </b>at a
             glance
           </Typography>
         </Grid>
@@ -155,40 +155,42 @@ function ProfileDetails({
               <Fade in={clicked}>
                 <div className={classes.rect}>
                   <RectChart
-                    totalPromises={promisesByStatuses.count}
+                    totalPromises={promisesByStatus.count}
                     inProgress={
-                      promisesByStatuses.statuses["In Progress"]?.length
+                      promisesByStatus.statusHistory["In Progress"]?.length
                     }
-                    completed={promisesByStatuses.statuses.Completed?.length}
-                    inconclusive={promisesByStatuses.statuses.Unrated?.length}
-                    unstarted={promisesByStatuses.statuses.Unstarted?.length}
-                    stalled={promisesByStatuses.statuses.Stalled?.length}
-                    delayed={promisesByStatuses.statuses.Delayed?.length}
+                    completed={promisesByStatus.statusHistory.Completed?.length}
+                    inconclusive={
+                      promisesByStatus.statusHistory.Unrated?.length
+                    }
+                    unstarted={promisesByStatus.statusHistory.Unstarted?.length}
+                    stalled={promisesByStatus.statusHistory.Stalled?.length}
+                    delayed={promisesByStatus.statusHistory.Delayed?.length}
                   />
                 </div>
               </Fade>
             ) : (
               <>
                 <PromiseKeptChart
-                  totalPromises={promisesByStatuses.count}
+                  totalPromises={promisesByStatus.count}
                   inProgress={
-                    promisesByStatuses.statuses["In Progress"]?.length
+                    promisesByStatus.statusHistory["In Progress"]?.length
                   }
-                  completed={promisesByStatuses.statuses.Completed?.length}
+                  completed={promisesByStatus.statusHistory.Completed?.length}
                   name="Promises Kept"
                 />
                 <Divider orientation="vertical" className={classes.divider} />
                 <UncertainChart
-                  totalPromises={promisesByStatuses.count}
-                  inconclusive={promisesByStatuses.statuses.Unrated?.length}
-                  unstarted={promisesByStatuses.statuses.Unstarted?.length}
+                  totalPromises={promisesByStatus.count}
+                  inconclusive={promisesByStatus.statusHistory.Unrated?.length}
+                  unstarted={promisesByStatus.statusHistory.Unstarted?.length}
                   name="Uncertain"
                 />
                 <Divider orientation="vertical" className={classes.divider} />
                 <PromiseNotKeptChart
-                  totalPromises={promisesByStatuses.count}
-                  stalled={promisesByStatuses.statuses.Stalled?.length}
-                  delayed={promisesByStatuses.statuses.Delayed?.length}
+                  totalPromises={promisesByStatus.count}
+                  stalled={promisesByStatus.statusHistory.Stalled?.length}
+                  delayed={promisesByStatus.statusHistory.Delayed?.length}
                   name="Promises Not Kept"
                 />
               </>
@@ -197,21 +199,21 @@ function ProfileDetails({
         ) : (
           <MobileChart>
             <MobilePromiseKeptChart
-              totalPromises={promisesByStatuses.count}
-              inProgress={promisesByStatuses.statuses["In Progress"]?.length}
-              completed={promisesByStatuses.statuses.Completed?.length}
+              totalPromises={promisesByStatus.count}
+              inProgress={promisesByStatus.statusHistory["In Progress"]?.length}
+              completed={promisesByStatus.statusHistory.Completed?.length}
               name="Promise Kept"
             />
             <MobileUncertainChart
-              totalPromises={promisesByStatuses.count}
-              inconclusive={promisesByStatuses.statuses.Unrated?.length}
-              unstarted={promisesByStatuses.statuses.Unstarted?.length}
+              totalPromises={promisesByStatus.count}
+              inconclusive={promisesByStatus.statusHistory.Unrated?.length}
+              unstarted={promisesByStatus.statusHistory.Unstarted?.length}
               name="Uncertain"
             />
             <MobilePromiseNotKeptChart
-              totalPromises={promisesByStatuses.count}
-              stalled={promisesByStatuses.statuses.Stalled?.length}
-              delayed={promisesByStatuses.statuses.Delayed?.length}
+              totalPromises={promisesByStatus.count}
+              stalled={promisesByStatus.statusHistory.Stalled?.length}
+              delayed={promisesByStatus.statusHistory.Delayed?.length}
               name="Promise Not Kept"
             />
           </MobileChart>
@@ -228,9 +230,9 @@ ProfileDetails.propTypes = {
   }),
   name: PropTypes.string.isRequired,
   position: PropTypes.string.isRequired,
-  promisesByStatuses: PropTypes.shape({
+  promisesByStatus: PropTypes.shape({
     count: PropTypes.number,
-    statuses: PropTypes.PropTypes.shape({
+    statusHistory: PropTypes.PropTypes.shape({
       "In Progress": PropTypes.arrayOf(PropTypes.shape({})),
       Completed: PropTypes.arrayOf(PropTypes.shape({})),
       Unrated: PropTypes.arrayOf(PropTypes.shape({})),
@@ -243,7 +245,7 @@ ProfileDetails.propTypes = {
 
 ProfileDetails.defaultProps = {
   criteria: undefined,
-  promisesByStatuses: undefined,
+  promisesByStatus: undefined,
 };
 
 export default ProfileDetails;
