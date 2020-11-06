@@ -99,7 +99,7 @@ export async function getStaticProps({ query = {} }) {
     description: post.post_content.replace(/(<([^>]+)>)/gi, ""),
     date: new Date(post.post_date).toLocaleDateString(),
     title: post.post_title,
-    status: config.promiseStatusHistory[i % config.promiseStatusHistory.length],
+    status: config.promiseStatuses[i % config.promiseStatuses.length],
   }));
 
   return {
