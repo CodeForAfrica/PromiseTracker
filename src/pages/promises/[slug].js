@@ -8,6 +8,7 @@ import Promise from "@/promisetracker/components/Promise";
 import RelatedPromises from "@/promisetracker/components/Promises";
 import Subscribe from "@/promisetracker/components/Newsletter";
 
+import i18n from "@/promisetracker/lib/i18n";
 import wp from "@/promisetracker/lib/wp";
 
 import promiseImage from "@/promisetracker/assets/promise-thumb-01@2x.png";
@@ -39,6 +40,11 @@ const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
   },
 }));
 
+/**
+ * see: /pages/analysis/articles/[slug]#NO_RTICLES_SLUG
+ */
+const NO_PROMISES_SLUG = "not_found";
+
 function PromisePage({
   footer,
   navigation,
@@ -54,7 +60,7 @@ function PromisePage({
     <Page
       {...props}
       footer={footer}
-      navigaiton={navigation}
+      navigation={navigation}
       title={title}
       classes={{ section: classes.section, footer: classes.footer }}
     >
@@ -121,41 +127,49 @@ PromisePage.defaultProps = {
 export async function getStaticPaths() {
   const fallback = false;
   const page = await wp().pages({ slug: "promises" }).first;
-  const posts = page.acf?.posts?.length ? page.acf.posts : [{ post_name: "" }];
-  const paths = posts.map((post) => ({
+  const posts = page.acf?.posts?.length
+    ? page.acf.posts
+    : [{ post_name: NO_PROMISES_SLUG }];
+  const unlocalizedPaths = posts.map((post) => ({
     params: { slug: post.post_name },
   }));
+  const paths = i18n().localizePaths(unlocalizedPaths);
 
   return { fallback, paths };
 }
 
-export async function getStaticProps({ params: { slug: slugParam } }) {
+export async function getStaticProps({ params: { slug: slugParam }, locale }) {
   const slug = slugParam.toLowerCase();
-  const page = await wp().pages({ slug: "promises" }).first;
-  const post = await wp().posts({ slug }).first;
-  const errorCode = post ? null : 404;
-  let promise = null;
-  if (post) {
-    promise = {
-      ...post,
-      image: post.featured_media.source_url,
-      description: post.content.replace(/(<([^>]+)>)/gi, "").substring(0, 200),
-      date: new Date(post.date).toDateString({ dateStyle: "short" }),
-      status: {
-        color: "#FFB322",
-        textColor: "#202020",
-        title: "delayed",
-      },
-      attribution: {
-        title: post.acf.source_attribution.title,
-        description: post.acf.source_attribution.description.replace(
-          /(<([^>]+)>)/gi,
-          ""
-        ),
-      },
-      narrative: post.acf.narrative,
+  const post =
+    slug !== NO_PROMISES_SLUG ? await wp().posts({ slug, locale }).first : null;
+  const notFound = !post;
+  if (notFound) {
+    return {
+      notFound,
     };
   }
+
+  const errorCode = notFound ? 404 : null;
+  const page = await wp().pages({ slug: "promises", locale }).first;
+  const promise = {
+    ...post,
+    image: post.featured_media.source_url || null,
+    description: post.content.replace(/(<([^>]+)>)/gi, "").substring(0, 200),
+    date: new Date(post.date).toDateString({ dateStyle: "short" }),
+    status: {
+      color: "#FFB322",
+      textColor: "#202020",
+      title: "delayed",
+    },
+    attribution: {
+      title: post.acf.source_attribution.title,
+      description: post.acf.source_attribution.description.replace(
+        /(<([^>]+)>)/gi,
+        ""
+      ),
+    },
+    narrative: post.acf.narrative,
+  };
 
   return {
     props: {

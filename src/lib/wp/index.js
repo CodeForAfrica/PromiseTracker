@@ -4,8 +4,8 @@ import config from "@/promisetracker/config";
 
 function wp(site) {
   const SITE = site?.length ? `${site.trim().toUpperCase()}_` : "";
-  const DEFAULT_LANG =
-    process.env[`${SITE}DEFAULT_LANG`] || config.DEFAULT_LANG;
+  const DEFAULT_LOCALE =
+    process.env[`${SITE}DEFAULT_LOCALE`] || config.DEFAULT_LOCALE;
   const WP_DASHBOARD_URL =
     process.env[`${SITE}WP_DASHBOARD_URL`] || config.WP_DASHBOARD_URL;
   const WP_DASHBOARD_API_URL = `${WP_DASHBOARD_URL}/wp-json/wp/v2`;
@@ -48,7 +48,8 @@ function wp(site) {
       actNow,
       footer,
       navigation: acf.navigation || null,
-      partners: acf.partners ? { items: acf.partners } : null,
+      partnerList: acf.partnerList || null,
+      promiseStatuses: acf.promiseStatuses || null,
       subscribe: acf.subscribe || null,
     };
     return data;
@@ -78,6 +79,36 @@ function wp(site) {
     const data = res.ok ? res.json() : {};
     return data;
   }
+  function createPageFrom(resource, options, lang) {
+    const { acf } = resource;
+    let criteria = null;
+    if (acf.criteria?.show) {
+      criteria = {
+        title: acf.criteria.title || null,
+        items: options.promiseStatuses,
+      };
+    }
+    acf.criteria = null;
+    let partners = null;
+    if (acf.partners?.show) {
+      partners = {
+        title: acf.partners.title || null,
+        items: options.partnerList,
+      };
+    }
+    acf.partners = null;
+    const page = {
+      ...acf,
+      ...resource,
+      ...options,
+      criteria,
+      content: resource.content?.rendered,
+      partners,
+      title: resource.title?.rendered,
+      languge: lang,
+    };
+    return page;
+  }
   async function getPagesByParentId(parent, lang, order, orderBy) {
     const children = await getResourcesByParentId(
       "pages",
@@ -87,13 +118,7 @@ function wp(site) {
       orderBy
     );
     const options = children.length && (await getOptions(lang));
-    const data = children.map((child) => ({
-      ...options,
-      ...child,
-      content: child.content?.rendered,
-      languge: lang,
-      title: child.title?.rendered,
-    }));
+    const data = children.map((child) => createPageFrom(child, options, lang));
     return data;
   }
   async function getPagesByParentSlug(slug, lang, order, orderBy) {
@@ -113,15 +138,7 @@ function wp(site) {
       return resource;
     }
     const options = await getOptions(lang);
-    const page = {
-      ...options,
-      ...resource,
-      ...resource.acf,
-      content: resource.content?.rendered,
-      title: resource.title?.rendered,
-      languge: lang,
-    };
-    return page;
+    return createPageFrom(resource, options, lang);
   }
   async function getPageById(id, lang) {
     const resource = await getResourceById("pages", id, lang);
@@ -129,15 +146,7 @@ function wp(site) {
       return resource;
     }
     const options = await getOptions(lang);
-    const page = {
-      ...options,
-      ...resource,
-      ...resource.acf,
-      content: resource.content?.rendered,
-      title: resource.title?.rendered,
-      languge: lang,
-    };
-    return page;
+    return createPageFrom(resource, options, lang);
   }
   async function getPostBySlug(slug, lang) {
     const resources = await getResourcesBySlug("posts", slug, lang, {
@@ -163,17 +172,17 @@ function wp(site) {
     pages: ({
       id,
       slug,
-      lang = DEFAULT_LANG,
+      locale = DEFAULT_LOCALE,
       order = "asc",
       orderBy = "menu_order",
     }) => ({
       get first() {
         return (async () => {
           if (id) {
-            return getPageById(id, lang);
+            return getPageById(id, locale);
           }
           if (slug) {
-            return getPageBySlug(slug, lang);
+            return getPageBySlug(slug, locale);
           }
           return {};
         })();
@@ -181,20 +190,20 @@ function wp(site) {
       get children() {
         return (async () => {
           if (id) {
-            return getPagesByParentId(id, lang, order, orderBy);
+            return getPagesByParentId(id, locale, order, orderBy);
           }
           if (slug) {
-            return getPagesByParentSlug(slug, lang, order, orderBy);
+            return getPagesByParentSlug(slug, locale, order, orderBy);
           }
           return [];
         })();
       },
     }),
-    posts: ({ slug, lang = DEFAULT_LANG }) => ({
+    posts: ({ slug, locale = DEFAULT_LOCALE }) => ({
       get first() {
         return (async () => {
           if (slug) {
-            return getPostBySlug(slug, lang);
+            return getPostBySlug(slug, locale);
           }
           return undefined;
         })();

@@ -12,8 +12,8 @@ import Page from "@/promisetracker/components/Page";
 import Partners from "@/promisetracker/components/Partners";
 import Subscribe from "@/promisetracker/components/Newsletter";
 
-import config from "@/promisetracker/config";
 import check from "@/promisetracker/lib/check";
+import i18n from "@/promisetracker/lib/i18n";
 import wp from "@/promisetracker/lib/wp";
 
 import articleImage from "@/promisetracker/assets/article-thumb-01.png";
@@ -37,9 +37,11 @@ const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
 
 function Index({
   actNow,
+  criteria,
   footer,
   navigation,
   partners,
+  promiseStatuses,
   promises,
   subscribe,
   ...props
@@ -63,10 +65,7 @@ function Index({
       classes={{ section: classes.section, footer: classes.footer }}
     >
       <Hero
-        criteria={{
-          items: config.promiseStatuses,
-          title: "What do the ratings mean?",
-        }}
+        criteria={criteria}
         name="Mike “Sonko” Mbuvi"
         position="Nairobi Governor"
         title="Campaign promises made by Mike Mbuvi"
@@ -100,7 +99,7 @@ function Index({
             title: `Codification of national sports and athletics law ${i + 1}`,
             statuses: [
               {
-                ...config.promiseStatuses[i % config.promiseStatuses.length],
+                ...promiseStatuses[i % promiseStatuses.length],
                 year: randomYear(),
               },
             ],
@@ -161,32 +160,45 @@ function Index({
 
 Index.propTypes = {
   actNow: PropTypes.shape({}),
+  criteria: PropTypes.shape({}),
   footer: PropTypes.shape({}),
   navigation: PropTypes.shape({}),
   partners: PropTypes.shape({}),
+  promiseStatuses: PropTypes.arrayOf(PropTypes.shape({})),
   promises: PropTypes.arrayOf(PropTypes.shape({})),
   subscribe: PropTypes.shape({}),
 };
 
 Index.defaultProps = {
   actNow: undefined,
+  criteria: undefined,
   footer: undefined,
   navigation: undefined,
   partners: undefined,
+  promiseStatuses: undefined,
   promises: undefined,
   subscribe: undefined,
 };
 
-export async function getStaticProps({ query = {} }) {
-  const { lang } = query;
-  const page = await wp().pages({ slug: "index", lang }).first;
-  const promises = await check("pesacheck-promise-tracker").promises({
+export async function getStaticProps({ locale }) {
+  // Skip generating pages for unsuported locales
+  if (!i18n().locales.includes(locale)) {
+    return {
+      notFound: true,
+    };
+  }
+
+  const page = await wp().pages({ slug: "index", locale }).first;
+  const { promiseStatuses } = page;
+  const checkApi = check({
+    promiseStatuses,
+    team: "pesacheck-promise-tracker",
+  });
+  const promises = await checkApi.promises({
     limit: 6,
     query: `{ "projects": ["2831"] }`,
   });
-  const promisesByCategories = await check(
-    "pesacheck-promise-tracker"
-  ).promisesByCategories({
+  const promisesByCategories = await checkApi.promisesByCategories({
     team: "pesacheck-promise-tracker",
   });
 
