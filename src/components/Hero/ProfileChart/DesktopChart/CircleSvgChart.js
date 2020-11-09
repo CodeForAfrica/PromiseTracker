@@ -3,7 +3,6 @@ import React from "react";
 import PropTypes from "prop-types";
 
 import { Typography } from "@material-ui/core";
-
 import { makeStyles } from "@material-ui/core/styles";
 
 const useStyles = makeStyles(({ typography, palette }) => ({
@@ -74,25 +73,14 @@ function CircleSvgChart({
 }
 
 CircleSvgChart.propTypes = {
-  cx: PropTypes.number,
-  cy: PropTypes.number,
-  size: PropTypes.number,
-  fill: PropTypes.string,
-  stroke: PropTypes.string,
-  strokeWidth: PropTypes.number,
-  currentStatusNumber: PropTypes.number,
-  status: PropTypes.string,
-};
-
-CircleSvgChart.defaultProps = {
-  cx: undefined,
-  cy: undefined,
-  size: undefined,
-  fill: undefined,
-  stroke: undefined,
-  strokeWidth: undefined,
-  currentStatusNumber: undefined,
-  status: undefined,
+  cx: PropTypes.number.isRequired,
+  cy: PropTypes.number.isRequired,
+  size: PropTypes.number.isRequired,
+  fill: PropTypes.string.isRequired,
+  stroke: PropTypes.string.isRequired,
+  strokeWidth: PropTypes.number.isRequired,
+  currentStatusNumber: PropTypes.number.isRequired,
+  status: PropTypes.string.isRequired,
 };
 
 export default CircleSvgChart;

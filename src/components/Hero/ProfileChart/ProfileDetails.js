@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import PropTypes from "prop-types";
 
 import {
-  Divider,
   Fade,
   Grid,
   Hidden,
@@ -19,14 +18,6 @@ import share from "@/promisetracker/assets/hero-icon-share.svg";
 
 import MobileChart from "@/promisetracker/components/Hero/ProfileChart/MobileChart";
 import DesktopChart from "@/promisetracker/components/Hero/ProfileChart/DesktopChart";
-
-import PromiseKeptChart from "@/promisetracker/components/Hero/ProfileChart/DesktopChart/PromiseKeptChart";
-import UncertainChart from "@/promisetracker/components/Hero/ProfileChart/DesktopChart/UncertainChart";
-import PromiseNotKeptChart from "@/promisetracker/components/Hero/ProfileChart/DesktopChart/PromiseNotKeptChart";
-
-import MobilePromiseKeptChart from "@/promisetracker/components/Hero/ProfileChart/MobileChart/MobilePromiseKeptChart";
-import MobilePromiseNotKeptChart from "@/promisetracker/components/Hero/ProfileChart/MobileChart/MobilePromiseNotKeptChart";
-import MobileUncertainChart from "@/promisetracker/components/Hero/ProfileChart/MobileChart/MobileUncertainChart";
 
 import RectChart from "@/promisetracker/components/Hero/ProfileChart/RectChart";
 
@@ -142,7 +133,7 @@ function ProfileDetails({ criteria, name, position, ...props }) {
       </Grid>
       <>
         {isDesktop ? (
-          <DesktopChart>
+          <div>
             {clicked ? (
               <Fade in={clicked}>
                 <div className={classes.rect}>
@@ -150,21 +141,11 @@ function ProfileDetails({ criteria, name, position, ...props }) {
                 </div>
               </Fade>
             ) : (
-              <>
-                <PromiseKeptChart name="Promises Kept" />
-                <Divider orientation="vertical" className={classes.divider} />
-                <UncertainChart name="Uncertain" />
-                <Divider orientation="vertical" className={classes.divider} />
-                <PromiseNotKeptChart name="Promises Not Kept" />
-              </>
+              <DesktopChart />
             )}
-          </DesktopChart>
+          </div>
         ) : (
-          <MobileChart>
-            <MobilePromiseKeptChart name="Promise Kept" />
-            <MobileUncertainChart name="Uncertain" />
-            <MobilePromiseNotKeptChart name="Promise Not Kept" />
-          </MobileChart>
+          <MobileChart />
         )}
       </>
     </>
