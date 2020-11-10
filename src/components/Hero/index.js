@@ -23,7 +23,6 @@ const useStyles = makeStyles(({ breakpoints, typography }) => ({
 
 function Hero({ criteria, name, position, promisesByStatus, title, ...props }) {
   const classes = useStyles(props);
-
   return (
     <div className={classes.root}>
       <Section classes={{ root: classes.section }}>

@@ -8,7 +8,7 @@ import Page from "@/promisetracker/components/Page";
 import Promises from "@/promisetracker/components/Promises";
 import Subscribe from "@/promisetracker/components/Newsletter";
 
-import config from "@/promisetracker/config";
+import i18n from "@/promisetracker/lib/i18n";
 import wp from "@/promisetracker/lib/wp";
 
 const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
@@ -91,16 +91,23 @@ PromisesPage.defaultProps = {
   title: undefined,
 };
 
-export async function getStaticProps({ query = {} }) {
-  const { lang } = query;
-  const page = await wp().pages({ slug: "promises", lang }).first;
-  const promises = page.posts.map((post, i) => ({
-    image: post.featured_image,
-    description: post.post_content.replace(/(<([^>]+)>)/gi, ""),
-    date: new Date(post.post_date).toLocaleDateString(),
-    title: post.post_title,
-    status: config.promiseStatuses[i % config.promiseStatuses.length],
-  }));
+export async function getStaticProps({ locale }) {
+  if (!i18n().locales.includes(locale)) {
+    return {
+      notFound: true,
+    };
+  }
+
+  const page = await wp().pages({ slug: "promises", locale }).first;
+  const { promiseStatuses } = page;
+  const promises =
+    page.posts?.map((post, i) => ({
+      image: post.featured_image,
+      description: post.post_content.replace(/(<([^>]+)>)/gi, ""),
+      date: new Date(post.post_date).toLocaleDateString(),
+      title: post.post_title,
+      status: promiseStatuses[i % promiseStatuses.length],
+    })) || null;
 
   return {
     props: {

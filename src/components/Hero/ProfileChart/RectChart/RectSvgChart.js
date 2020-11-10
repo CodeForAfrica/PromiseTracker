@@ -80,25 +80,14 @@ function RectSvgChart({
 }
 
 RectSvgChart.propTypes = {
-  containerWidth: PropTypes.number,
-  fill: PropTypes.string,
-  stroke: PropTypes.string,
-  height: PropTypes.number,
-  strokeWidth: PropTypes.number,
-  currentStatusNumber: PropTypes.number,
-  totalPromises: PropTypes.number,
-  status: PropTypes.string,
-};
-
-RectSvgChart.defaultProps = {
-  containerWidth: undefined,
-  fill: undefined,
-  stroke: undefined,
-  height: undefined,
-  strokeWidth: undefined,
-  currentStatusNumber: undefined,
-  totalPromises: undefined,
-  status: undefined,
+  containerWidth: PropTypes.number.isRequired,
+  fill: PropTypes.string.isRequired,
+  stroke: PropTypes.string.isRequired,
+  height: PropTypes.number.isRequired,
+  strokeWidth: PropTypes.number.isRequired,
+  currentStatusNumber: PropTypes.number.isRequired,
+  status: PropTypes.string.isRequired,
+  totalPromises: PropTypes.number.isRequired,
 };
 
 export default RectSvgChart;

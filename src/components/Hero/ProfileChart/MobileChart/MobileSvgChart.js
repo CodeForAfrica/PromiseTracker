@@ -13,6 +13,7 @@ const useStyles = makeStyles(({ typography }) => ({
     fontWeight: "normal",
     textTransform: "capitalize",
     padding: "0rem 0.5rem",
+    whiteSpace: "nowrap",
     fontSize: typography.pxToRem(13),
   },
   h3: {
@@ -25,15 +26,18 @@ function MobileSvgChart({
   stroke,
   strokeWidth,
   statusNumber,
-  statusPercentage,
+  totalPromises,
   status,
   ...props
 }) {
   const classes = useStyles(props);
+  const statusPercentage = (statusNumber / totalPromises) * 100;
+
   return (
     <Grid
       container
       direction="row"
+      xs={12}
       item
       jusify="space-between"
       alignItems="flex-start"
@@ -60,7 +64,7 @@ function MobileSvgChart({
 
       <Grid item xs={3}>
         <Typography variant="h3" className={classes.h3}>
-          {statusPercentage}
+          ({statusPercentage}%)
         </Typography>
       </Grid>
 
@@ -74,21 +78,12 @@ function MobileSvgChart({
 }
 
 MobileSvgChart.propTypes = {
-  fill: PropTypes.string,
-  stroke: PropTypes.string,
-  strokeWidth: PropTypes.number,
-  statusNumber: PropTypes.number,
-  status: PropTypes.string,
-  statusPercentage: PropTypes.string,
-};
-
-MobileSvgChart.defaultProps = {
-  fill: undefined,
-  stroke: undefined,
-  strokeWidth: undefined,
-  statusNumber: undefined,
-  status: undefined,
-  statusPercentage: undefined,
+  fill: PropTypes.string.isRequired,
+  stroke: PropTypes.string.isRequired,
+  strokeWidth: PropTypes.number.isRequired,
+  statusNumber: PropTypes.number.isRequired,
+  status: PropTypes.string.isRequired,
+  totalPromises: PropTypes.number.isRequired,
 };
 
 export default MobileSvgChart;

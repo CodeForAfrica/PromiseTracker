@@ -10,7 +10,7 @@ import createApolloClient from "./createApolloClient";
 const UNSPECIFIED_TEAM = "unspecified";
 const CLIENT_PER_TEAM = new Map();
 
-function check(team = undefined, initialState = {}) {
+function check({ team = undefined, promiseStatuses = {}, initialState = {} }) {
   const clientTeam = team || UNSPECIFIED_TEAM;
   const existingClient = CLIENT_PER_TEAM.get(clientTeam);
   const client = existingClient || createApolloClient(initialState, team);
@@ -82,7 +82,7 @@ function check(team = undefined, initialState = {}) {
 
   function getStatusHistory(node) {
     const logs = node.log?.edges;
-    const defaultStatus = config.promiseStatuses.find(
+    const defaultStatus = promiseStatuses.find(
       (status) => status.title === "Unrated"
     );
     const statusLogs = logs.filter(
@@ -109,7 +109,7 @@ function check(team = undefined, initialState = {}) {
         const status = JSON.parse(statusLog?.node.object_changes_json)
           .value[1].replace(/[^\w\s]/gi, "")
           .trim();
-        let matchingStatus = config.promiseStatuses.find(
+        let matchingStatus = promiseStatuses.find(
           (currentStatus) => currentStatus.title === status
         );
         matchingStatus = matchingStatus || defaultStatus;
