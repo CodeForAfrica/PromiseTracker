@@ -29,7 +29,7 @@ const useStyles = makeStyles(({ typography }) => ({
   },
 }));
 
-function ProgressChart({ progressStatuses, caption, ...props }) {
+function ProgressChart({ progressStatuses, caption, totalPromises, ...props }) {
   const classes = useStyles({ color: null, borderBottom: null, ...props });
   return (
     <Grid item xs={3} className={classes.root}>
@@ -48,7 +48,8 @@ function ProgressChart({ progressStatuses, caption, ...props }) {
             fill={progressStatus.color}
             stroke="#1D1D1B"
             strokeWidth={1}
-            currentStatusNumber={progressStatus.count}
+            statusNumber={progressStatus.count || 0}
+            totalPromises={totalPromises}
             status={progressStatus.title}
           />
         ))}
@@ -60,6 +61,7 @@ function ProgressChart({ progressStatuses, caption, ...props }) {
 ProgressChart.propTypes = {
   caption: PropTypes.string.isRequired,
   progressStatuses: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+  totalPromises: PropTypes.number.isRequired,
 };
 
 export default ProgressChart;

@@ -36,14 +36,14 @@ function CircleSvgChart({
   fill,
   stroke,
   strokeWidth,
-  currentStatusNumber,
+  statusNumber,
   status,
+  totalPromises,
   ...props
 }) {
   const classes = useStyles(props);
-  const totalStatus = 510;
-  const currentStatusPercentage = (currentStatusNumber / totalStatus) * 100;
-  const radius = (currentStatusNumber * size) / 130 / 2;
+  const currentStatusPercentage = (statusNumber / totalPromises) * 100;
+  const radius = (currentStatusPercentage * size) / 200;
 
   return (
     <div>
@@ -59,7 +59,7 @@ function CircleSvgChart({
       </svg>
       <div className={classes.typography}>
         <Typography variant="h6" className={classes.h6}>
-          {currentStatusNumber}
+          {statusNumber}
         </Typography>
         <Typography variant="h4" className={classes.h4}>
           {status}
@@ -79,8 +79,9 @@ CircleSvgChart.propTypes = {
   fill: PropTypes.string.isRequired,
   stroke: PropTypes.string.isRequired,
   strokeWidth: PropTypes.number.isRequired,
-  currentStatusNumber: PropTypes.number.isRequired,
+  statusNumber: PropTypes.number.isRequired,
   status: PropTypes.string.isRequired,
+  totalPromises: PropTypes.string.isRequired,
 };
 
 export default CircleSvgChart;

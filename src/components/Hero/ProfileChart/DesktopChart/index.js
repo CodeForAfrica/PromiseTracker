@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 
 import { Grid, Divider } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
@@ -25,7 +26,7 @@ const useStyles = makeStyles(({ typography }) => ({
   },
 }));
 
-function DesktopChart(props) {
+function DesktopChart({ promisesByStatus, ...props }) {
   const classes = useStyles(props);
   return (
     <Grid
@@ -39,15 +40,16 @@ function DesktopChart(props) {
         color="#145BD5"
         borderBottom="1px solid #145BD5"
         caption="Promise Kept"
+        totalPromises={promisesByStatus.count}
         progressStatuses={[
           {
             color: "#005DFD",
-            count: 130,
+            count: promisesByStatus.statusHistory.Completed?.length,
             title: "Completed",
           },
           {
             color: "#90DAFF",
-            count: 90,
+            count: promisesByStatus.statusHistory["In Progress"]?.length,
             title: "In Progress",
           },
         ]}
@@ -57,15 +59,16 @@ function DesktopChart(props) {
         color="#909090"
         borderBottom="1px solid #909090"
         caption="Uncertain"
+        totalPromises={promisesByStatus.count}
         progressStatuses={[
           {
             color: "#909090",
-            count: 70,
+            count: promisesByStatus.statusHistory.Unrated?.length,
             title: "Inconclusive",
           },
           {
             color: "#EBEBEB",
-            count: 50,
+            count: promisesByStatus.statusHistory.Unstarted?.length,
             title: "Unstarted",
           },
         ]}
@@ -76,15 +79,16 @@ function DesktopChart(props) {
         color="#FF5255"
         borderBottom="1px solid #FF5255"
         caption="Promise Not Kept"
+        totalPromises={promisesByStatus.count}
         progressStatuses={[
           {
             color: "#FFB322",
-            count: 60,
+            count: promisesByStatus.statusHistory.Delayed?.length,
             title: "Delayed",
           },
           {
             color: "#FF5154",
-            count: 110,
+            count: promisesByStatus.statusHistory.Stalled?.length,
             title: "Stalled",
           },
         ]}
@@ -92,5 +96,23 @@ function DesktopChart(props) {
     </Grid>
   );
 }
+
+DesktopChart.propTypes = {
+  promisesByStatus: PropTypes.shape({
+    count: PropTypes.number,
+    statusHistory: PropTypes.PropTypes.shape({
+      "In Progress": PropTypes.arrayOf(PropTypes.shape({})),
+      Completed: PropTypes.arrayOf(PropTypes.shape({})),
+      Unrated: PropTypes.arrayOf(PropTypes.shape({})),
+      Unstarted: PropTypes.arrayOf(PropTypes.shape({})),
+      Stalled: PropTypes.arrayOf(PropTypes.shape({})),
+      Delayed: PropTypes.arrayOf(PropTypes.shape({})),
+    }),
+  }),
+};
+
+DesktopChart.defaultProps = {
+  promisesByStatus: undefined,
+};
 
 export default DesktopChart;

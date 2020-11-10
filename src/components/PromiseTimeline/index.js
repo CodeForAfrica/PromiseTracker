@@ -12,14 +12,17 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
-function PromiseTimeline({ events, interval, statuses, ...props }) {
+function PromiseTimeline({
+  events,
+  date,
+  status,
+  statusHistory: StatusHistoryProps,
+  ...props
+}) {
   const classes = useStyles(props);
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
-
-  if (interval?.length !== 2) {
-    return null;
-  }
+  const statusHistory = isDesktop ? StatusHistoryProps : [status];
   return (
     <svg width="100%" height="100" className={classes.root}>
       <rect
@@ -34,36 +37,44 @@ function PromiseTimeline({ events, interval, statuses, ...props }) {
       {isDesktop &&
         events?.map((event) => (
           <>
-            <PromiseEvent key={event.label} interval={interval} {...event} />
+            <PromiseEvent key={event.label} {...event} />
           </>
         ))}
-      {statuses?.map((status) => (
-        <PromiseStatus key={status.title} interval={interval} {...status}>
-          <rect
-            x="8"
-            y="69"
-            width="99%"
-            height="1"
-            style={{
-              fill: "#EBEBEB",
-            }}
-          />
+      {statusHistory?.map((currentStatus, idx) => (
+        <PromiseStatus
+          key={currentStatus.title}
+          isOdd={idx % 2 === 1}
+          {...currentStatus}
+        >
+          {idx === 0 && (
+            <rect
+              x="8"
+              y="69"
+              width="99%"
+              height="1"
+              style={{
+                fill: "#EBEBEB",
+              }}
+            />
+          )}
         </PromiseStatus>
       ))}
-      <Labels interval={interval} />
+      <Labels />
     </svg>
   );
 }
 
 PromiseTimeline.propTypes = {
   events: PropTypes.arrayOf(PropTypes.shape({})),
-  interval: PropTypes.arrayOf(PropTypes.number),
-  statuses: PropTypes.arrayOf(PropTypes.shape({})),
+  date: PropTypes.string,
+  status: PropTypes.shape({}),
+  statusHistory: PropTypes.arrayOf(PropTypes.shape({})),
 };
 PromiseTimeline.defaultProps = {
-  interval: undefined,
-  events: undefined,
-  statuses: undefined,
+  date: undefined,
+  events: [],
+  status: undefined,
+  statusHistory: undefined,
 };
 
 export default PromiseTimeline;

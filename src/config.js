@@ -183,6 +183,7 @@ const config = {
     title: "Analysis",
     url: "/analysis",
   },
+  promiseInterval: [2017, 2022],
   pages: {
     about: {
       pages: {
