@@ -148,8 +148,9 @@ Index.defaultProps = {
 };
 
 export async function getStaticProps({ locale }) {
-  // Skip generating pages for unsuported locales
-  if (!i18n().locales.includes(locale)) {
+  const _ = i18n();
+  // Skip generating pages for unsupported locales
+  if (!_.locales.includes(locale)) {
     return {
       notFound: true,
     };
@@ -169,12 +170,14 @@ export async function getStaticProps({ locale }) {
     limit: 6,
     query: `{ "projects": ["4691"] }`,
   });
+  const languageAlternates = _.languageAlternates();
 
   return {
     props: {
       ...page,
-      promises: promises.slice(0, 6),
       keyPromises,
+      languageAlternates,
+      promises: promises.slice(0, 6),
       promisesByStatus: groupPromisesByStatus(promises),
     },
     revalidate: 2 * 60, // seconds
