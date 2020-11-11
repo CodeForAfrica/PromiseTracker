@@ -28,7 +28,7 @@ const useStyles = makeStyles(({ typography }) => ({
   },
 }));
 
-function ProgressChart({ progressStatuses, caption, ...props }) {
+function ProgressChart({ progressStatuses, caption, totalPromises, ...props }) {
   const classes = useStyles({ color: null, borderRight: null, ...props });
   return (
     <Grid
@@ -58,7 +58,8 @@ function ProgressChart({ progressStatuses, caption, ...props }) {
             fill={progressStatus.color}
             stroke="1D1D1B"
             strokeWidth={1}
-            statusNumber={progressStatus.count}
+            totalPromises={totalPromises}
+            statusNumber={progressStatus.count || 0}
             statusPercentage={progressStatus.percentage}
             status={progressStatus.title}
           />
@@ -70,6 +71,7 @@ function ProgressChart({ progressStatuses, caption, ...props }) {
 ProgressChart.propTypes = {
   caption: PropTypes.string.isRequired,
   progressStatuses: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+  totalPromises: PropTypes.number.isRequired,
 };
 
 export default ProgressChart;

@@ -10,7 +10,7 @@ import createApolloClient from "./createApolloClient";
 const UNSPECIFIED_TEAM = "unspecified";
 const CLIENT_PER_TEAM = new Map();
 
-function check({ team = undefined, promiseStatuses, initialState = {} }) {
+function check({ team = undefined, promiseStatuses = {}, initialState = {} }) {
   const clientTeam = team || UNSPECIFIED_TEAM;
   const existingClient = CLIENT_PER_TEAM.get(clientTeam);
   const client = existingClient || createApolloClient(initialState, team);
@@ -48,19 +48,75 @@ function check({ team = undefined, promiseStatuses, initialState = {} }) {
     return filename && id ? getAssetURL(filename, id) : promiseImage;
   }
 
-  function getStatus(node) {
+  function getPromiseDate(node) {
     const items = node.tasks?.edges;
-    const statusTask = findItemByNodeLabel(
+    const startDateTask = findItemByNodeLabel(
       items,
-      "What is the status of the promise?"
+      "When was this promise made?"
     );
-    const promiseStatus = promiseStatuses.find(
-      (status) => status.title === statusTask?.node.first_response_value
+    return startDateTask
+      ? startDateTask.node.first_response_value.split(" ").slice(0, 3).join(" ")
+      : null;
+  }
+  function getPromiseDeadlineEvent(node) {
+    const items = node.tasks?.edges;
+    const deadlineTask = findItemByNodeLabel(
+      items,
+      "What is the deadline for the implementation of the promise?"
     );
+    const duration = Number(
+      deadlineTask?.node.first_response_value?.split("")[0]
+    );
+    const startYear = new Date(getPromiseDate(node)).getFullYear();
+
+    let deadlineEvent = {};
+
+    if (duration && startYear) {
+      deadlineEvent = {
+        title: "Deadline",
+        year: startYear + duration,
+      };
+    }
+    return deadlineEvent;
+  }
+
+  function getStatusHistory(node) {
+    const logs = node.log?.edges;
     const defaultStatus = promiseStatuses.find(
       (status) => status.title === "Unrated"
     );
-    return promiseStatus || defaultStatus;
+    const statusLogs = logs.filter(
+      (item) => item.node.task?.label === "What is the status of the promise?"
+    );
+    const statusHistory = statusLogs
+      .sort((statusA, statusB) =>
+        statusB.node?.created_at.localeCompare(statusA.node?.created_at)
+      )
+      .filter((statusLog, idx) => {
+        const currentStatus = JSON.parse(statusLog.node.object_changes_json)
+          .value[1].replace(/[^\w\s]/gi, "")
+          .trim();
+        const prevStatus =
+          idx > 0
+            ? JSON.parse(statusLogs[idx - 1]?.node.object_changes_json)
+                .value[1].replace(/[^\w\s]/gi, "")
+                .trim()
+            : null;
+        return prevStatus !== currentStatus;
+      })
+      .map((statusLog) => {
+        const date = statusLog.node?.created_at * 1000; // convert from secons to milliseconds
+        const status = JSON.parse(statusLog?.node.object_changes_json)
+          .value[1].replace(/[^\w\s]/gi, "")
+          .trim();
+        let matchingStatus = promiseStatuses.find(
+          (currentStatus) => currentStatus.title === status
+        );
+        matchingStatus = matchingStatus || defaultStatus;
+        return { date, ...matchingStatus };
+      });
+
+    return statusHistory.length ? statusHistory : [defaultStatus];
   }
 
   function handlePromisesResult(res) {
@@ -69,10 +125,10 @@ function check({ team = undefined, promiseStatuses, initialState = {} }) {
       title: node.title,
       image: getImage(node),
       description: node.description,
-      date: new Date(parseInt(node.created_at, 10)).toDateString({
-        dateStyle: "short",
-      }),
-      status: getStatus(node),
+      date: getPromiseDate(node),
+      events: [getPromiseDeadlineEvent(node)],
+      status: getStatusHistory(node)[0],
+      statusHistory: getStatusHistory(node),
     }));
   }
 
