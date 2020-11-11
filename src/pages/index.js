@@ -181,8 +181,9 @@ Index.defaultProps = {
 };
 
 export async function getStaticProps({ locale }) {
-  // Skip generating pages for unsuported locales
-  if (!i18n().locales.includes(locale)) {
+  const _ = i18n();
+  // Skip generating pages for unsupported locales
+  if (!_.locales.includes(locale)) {
     return {
       notFound: true,
     };
@@ -201,10 +202,12 @@ export async function getStaticProps({ locale }) {
   const promisesByCategories = await checkApi.promisesByCategories({
     team: "pesacheck-promise-tracker",
   });
+  const languageAlternates = _.languageAlternates();
 
   return {
     props: {
       ...page,
+      languageAlternates,
       promises,
       promisesByCategories,
     },
