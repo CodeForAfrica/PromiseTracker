@@ -23,7 +23,7 @@
     "next": "^10.0.0",
     "next-google-fonts": "^1.2.1",
     "next-images": "^1.6.2",
-    "next-seo": "^4.15.1",
+    "next-seo": "^4.16.0",
     "prop-types": "^15.7.2",
     "react": "^16.14.0",
     "react-apollo": "^3.1.5",
@@ -33,7 +33,7 @@
     "reading-time": "^1.2.0",
     "simplebar": "^5.1.0",
     "simplebar-react": "^2.1.0",
-    "victory": "^35.3.2",
+    "victory": "^35.3.5",
     "webpack": "^5.3.2"
   },
   "devDependencies": {

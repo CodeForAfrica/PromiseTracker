@@ -163,8 +163,9 @@ Index.defaultProps = {
 };
 
 export async function getStaticProps({ locale }) {
-  // Skip generating pages for unsuported locales
-  if (!i18n().locales.includes(locale)) {
+  const _ = i18n();
+  // Skip generating pages for unsupported locales
+  if (!_.locales.includes(locale)) {
     return {
       notFound: true,
     };
@@ -185,11 +186,14 @@ export async function getStaticProps({ locale }) {
     query: `{ "projects": ["4691"] }`,
   });
   const projectMeta = await checkApi.projectMeta();
+  const languageAlternates = _.languageAlternates();
+
   return {
     props: {
       ...page,
-      promises: promises.slice(0, 6),
       keyPromises,
+      languageAlternates,
+      promises: promises.slice(0, 6),
       promisesByStatus: groupPromisesByStatus(promises),
       projectMeta,
     },
