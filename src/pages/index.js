@@ -43,6 +43,7 @@ function Index({
   partners,
   promiseStatuses,
   promises,
+  projectMeta,
   keyPromises,
   promisesByStatus,
   subscribe,
@@ -59,9 +60,14 @@ function Index({
       <Hero
         promisesByStatus={promisesByStatus}
         criteria={criteria}
-        name="Mike “Sonko” Mbuvi"
-        position="Nairobi Governor"
-        title="Campaign promises made by Mike Mbuvi"
+        name={projectMeta.name}
+        position={projectMeta.position}
+        promiseLabel={projectMeta.promiseLabel}
+        trailText={projectMeta.trailText}
+        updatedAt={new Date(projectMeta.updatedAt).toDateString({
+          dateStyle: "short",
+        })}
+        title={projectMeta.description}
         classes={{ section: classes.section }}
       />
       <KeyPromises
@@ -127,6 +133,14 @@ Index.propTypes = {
   footer: PropTypes.shape({}),
   navigation: PropTypes.shape({}),
   partners: PropTypes.shape({}),
+  projectMeta: PropTypes.shape({
+    name: PropTypes.string,
+    position: PropTypes.string,
+    trailText: PropTypes.string,
+    updatedAt: PropTypes.string,
+    description: PropTypes.string,
+    promiseLabel: PropTypes.string,
+  }),
   promiseStatuses: PropTypes.arrayOf(PropTypes.shape({})),
   promises: PropTypes.arrayOf(PropTypes.shape({})),
   keyPromises: PropTypes.arrayOf(PropTypes.shape({})),
@@ -145,6 +159,7 @@ Index.defaultProps = {
   keyPromises: undefined,
   promisesByStatus: undefined,
   subscribe: undefined,
+  projectMeta: undefined,
 };
 
 export async function getStaticProps({ locale }) {
@@ -170,6 +185,7 @@ export async function getStaticProps({ locale }) {
     limit: 6,
     query: `{ "projects": ["4691"] }`,
   });
+  const projectMeta = await checkApi.projectMeta();
   const languageAlternates = _.languageAlternates();
 
   return {
@@ -179,6 +195,7 @@ export async function getStaticProps({ locale }) {
       languageAlternates,
       promises: promises.slice(0, 6),
       promisesByStatus: groupPromisesByStatus(promises),
+      projectMeta,
     },
     revalidate: 2 * 60, // seconds
   };
