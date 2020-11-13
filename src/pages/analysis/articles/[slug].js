@@ -7,12 +7,11 @@ import { makeStyles } from "@material-ui/core/styles";
 import Article from "@/promisetracker/components/Article";
 import Page from "@/promisetracker/components/Page";
 import Subscribe from "@/promisetracker/components/Newsletter";
-import RelatedArticles from "@/promisetracker/components/Articles";
+import RelatedArticles from "@/promisetracker/components/LatestArticles";
 
 import i18n from "@/promisetracker/lib/i18n";
 import wp from "@/promisetracker/lib/wp";
-
-import articleThumbnail from "@/promisetracker/assets/article-thumb-01.png";
+import { formatDate } from "@/promisetracker/utils";
 
 const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
   section: {
@@ -35,6 +34,12 @@ const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
   },
   footer: {
     marginTop: 0,
+  },
+  subscribe: {
+    marginTop: typography.pxToRem(53),
+    [breakpoints.up("lg")]: {
+      marginTop: typography.pxToRem(28),
+    },
   },
 }));
 
@@ -77,6 +82,7 @@ function Index({
         {...subscribe}
         classes={{
           section: classes.section,
+          root: classes.subscribe,
         }}
       />
     </Page>
@@ -106,17 +112,7 @@ Index.defaultProps = {
   classes: undefined,
   footer: undefined,
   navigation: undefined,
-  relatedArticles: Array(3)
-    .fill(null)
-    .map((_, i) => ({
-      date: "2019-08-10",
-      description: `
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer
-              euismod odio non leo pretium pellentesque.
-            `,
-      image: articleThumbnail,
-      title: `Codification of national sports and athletics law ${i + 1}`,
-    })),
+  relatedArticles: undefined,
   subscribe: undefined,
   title: undefined,
 };
@@ -144,8 +140,11 @@ export async function getStaticProps({ params: { slug: slugParam }, locale }) {
   }
 
   const slug = slugParam.toLowerCase();
+  const wpApi = wp();
   const post =
-    slug !== NO_ARTICLES_SLUG ? await wp().posts({ slug, locale }).first : null;
+    slug !== NO_ARTICLES_SLUG
+      ? await wpApi.posts({ slug, locale }).first
+      : null;
   const notFound = !post;
   if (notFound) {
     return {
@@ -154,12 +153,16 @@ export async function getStaticProps({ params: { slug: slugParam }, locale }) {
   }
 
   const errorCode = notFound ? 404 : null;
-  const page = await wp().pages({ slug: "analysis-articles" }).first;
+  const page = await wpApi.pages({ slug: "analysis-articles" }).first;
+  const posts = await wpApi.pages({ page }).posts;
+  page.posts = null;
+  const articles = posts?.slice(0, 4);
+  const relatedArticles = articles.filter((article) => article.slug !== slug);
   const article = {
     ...post,
     image: post.featured_media.source_url,
     description: post.content.replace(/(<([^>]+)>)/gi, "").substring(0, 200),
-    date: new Date(post.date).toDateString({ dateStyle: "short" }),
+    date: formatDate(post.date),
     readTime: readingTime(post.content).text,
   };
   const languageAlternates = _.languageAlternates(`/analysis/articles/${slug}`);
@@ -170,6 +173,7 @@ export async function getStaticProps({ params: { slug: slugParam }, locale }) {
       article,
       errorCode,
       languageAlternates,
+      relatedArticles,
     },
     revalidate: 2 * 60, // seconds
   };

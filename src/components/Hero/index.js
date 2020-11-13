@@ -67,7 +67,7 @@ Hero.propTypes = {
   position: PropTypes.string.isRequired,
   updatedAt: PropTypes.string.isRequired,
   title: PropTypes.string.isRequired,
-  promisesByStatus: PropTypes.arrayOf(PropTypes.shape({})),
+  promisesByStatus: PropTypes.shape({}),
 };
 
 Hero.defaultProps = {
