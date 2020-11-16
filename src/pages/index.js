@@ -72,6 +72,7 @@ function Index({
       <KeyPromises
         actionLabel="Learn More"
         items={keyPromises}
+        borderBottom="orange"
         title="Key Promises"
         classes={{
           section: classes.section,
