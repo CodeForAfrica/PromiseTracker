@@ -74,6 +74,7 @@ function Index({
       <KeyPromises
         actionLabel="Learn More"
         interval={[2017, 2022]}
+        borderBottom="blue"
         items={Array(6)
           .fill(null)
           .map((_, i) => ({

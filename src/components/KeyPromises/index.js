@@ -21,7 +21,7 @@ function KeyPromises({
   titleProps,
   ...props
 }) {
-  const classes = useStyles(props);
+  const classes = useStyles({ ...props });
   const [activeStep, setActiveStep] = useState(0);
   const stepperRef = useRef();
   useEffect(() => {
@@ -57,6 +57,7 @@ function KeyPromises({
           actionLabel={actionLabel}
           interval={interval}
           {...items[activeStep]}
+          {...props}
         />
         <MobileStepper
           ref={stepperRef}
