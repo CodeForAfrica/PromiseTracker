@@ -1,13 +1,14 @@
 import isEmpty from "lodash/isEmpty";
 
+import server from "@/promisetracker/lib/server";
 import config from "@/promisetracker/config";
+import { formatDate } from "@/promisetracker/utils";
 
 function wp(site) {
-  const SITE = site?.length ? `${site.trim().toUpperCase()}_` : "";
-  const DEFAULT_LOCALE =
-    process.env[`${SITE}DEFAULT_LOCALE`] || config.DEFAULT_LOCALE;
+  const siteServer = server(site);
   const WP_DASHBOARD_URL =
-    process.env[`${SITE}WP_DASHBOARD_URL`] || config.WP_DASHBOARD_URL;
+    process.env[`${siteServer.site}WP_DASHBOARD_URL`] ||
+    config.WP_DASHBOARD_URL;
   const WP_DASHBOARD_API_URL = `${WP_DASHBOARD_URL}/wp-json/wp/v2`;
   const WP_DASHBOARD_ACF_API_URL = `${WP_DASHBOARD_URL}/wp-json/acf/v3`;
 
@@ -172,9 +173,10 @@ function wp(site) {
     pages: ({
       id,
       slug,
-      locale = DEFAULT_LOCALE,
+      locale = siteServer.defaultLocale,
       order = "asc",
       orderBy = "menu_order",
+      page,
     }) => ({
       get first() {
         return (async () => {
@@ -184,13 +186,14 @@ function wp(site) {
           if (slug) {
             return getPageBySlug(slug, locale);
           }
-          return {};
+          return page || {};
         })();
       },
       get children() {
         return (async () => {
-          if (id) {
-            return getPagesByParentId(id, locale, order, orderBy);
+          const parentId = id || page?.id;
+          if (parentId) {
+            return getPagesByParentId(parentId, locale, order, orderBy);
           }
           if (slug) {
             return getPagesByParentSlug(slug, locale, order, orderBy);
@@ -198,8 +201,29 @@ function wp(site) {
           return [];
         })();
       },
+      get posts() {
+        return (async () => {
+          let pageWithPosts;
+          if (id) {
+            pageWithPosts = await getPageById(id, locale);
+          } else if (slug) {
+            pageWithPosts = await getPageBySlug(slug, locale);
+          } else {
+            pageWithPosts = page;
+          }
+          const posts =
+            pageWithPosts?.posts?.map((post) => ({
+              image: post.featured_image,
+              description: post.post_content.replace(/(<([^>]+)>)/gi, ""),
+              date: formatDate(post.post_date),
+              slug: post.post_name,
+              title: post.post_title,
+            })) || null;
+          return posts;
+        })();
+      },
     }),
-    posts: ({ slug, locale = DEFAULT_LOCALE }) => ({
+    posts: ({ slug, locale = siteServer.defaultLocale }) => ({
       get first() {
         return (async () => {
           if (slug) {

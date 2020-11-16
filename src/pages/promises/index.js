@@ -8,6 +8,7 @@ import Page from "@/promisetracker/components/Page";
 import Promises from "@/promisetracker/components/Promises";
 import Subscribe from "@/promisetracker/components/Newsletter";
 
+import check from "@/promisetracker/lib/check";
 import i18n from "@/promisetracker/lib/i18n";
 import wp from "@/promisetracker/lib/wp";
 
@@ -92,7 +93,8 @@ PromisesPage.defaultProps = {
 };
 
 export async function getStaticProps({ locale }) {
-  if (!i18n().locales.includes(locale)) {
+  const _ = i18n();
+  if (!_.locales.includes(locale)) {
     return {
       notFound: true,
     };
@@ -100,18 +102,20 @@ export async function getStaticProps({ locale }) {
 
   const page = await wp().pages({ slug: "promises", locale }).first;
   const { promiseStatuses } = page;
-  const promises =
-    page.posts?.map((post, i) => ({
-      image: post.featured_image,
-      description: post.post_content.replace(/(<([^>]+)>)/gi, ""),
-      date: new Date(post.post_date).toLocaleDateString(),
-      title: post.post_title,
-      status: promiseStatuses[i % promiseStatuses.length],
-    })) || null;
+  const checkApi = check({
+    promiseStatuses,
+    team: "pesacheck-promise-tracker",
+  });
+  const promises = await checkApi.promises({
+    limit: 10000,
+    query: `{ "projects": ["2831"] }`,
+  });
+  const languageAlternates = _.languageAlternates("/promises");
 
   return {
     props: {
       ...page,
+      languageAlternates,
       promises,
     },
     revalidate: 2 * 60, // seconds

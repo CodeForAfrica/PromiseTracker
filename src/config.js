@@ -21,8 +21,10 @@ const config = {
   CHECK_PROJECT_DB_ID: 2831,
   CHECK_PROMISE_MAX_COUNT: 150,
   WP_DASHBOARD_URL: "https://dashboard.hurumap.org/promisetracker",
+  FACT_CHECKS_URL: "https://pesacheck.org",
+  FACT_CHECKS_TAG: "promise-tracker",
   title: "PromiseTracker",
-  url: "https://promisetracker.pesacheck.org/",
+  URL: "https://promisetracker.dev.codeforafrica.org/",
   settings: {
     subscribe: {
       embedCode: `
@@ -183,6 +185,7 @@ const config = {
     title: "Analysis",
     url: "/analysis",
   },
+  promiseInterval: [2017, 2022],
   pages: {
     about: {
       pages: {

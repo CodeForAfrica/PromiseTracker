@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 
 import { Grid } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
@@ -13,7 +14,7 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
-function MobileChart(props) {
+function MobileChart({ promisesByStatus, totalPromises, ...props }) {
   const classes = useStyles(props);
   return (
     <Grid
@@ -27,66 +28,82 @@ function MobileChart(props) {
       className={classes.root}
     >
       <ProgressChart
+        totalPromises={promisesByStatus.count}
         color="#005DFD"
         borderRight="1px solid #005DFD"
         caption="Promise Kept"
         progressStatuses={[
           {
             color: "#005DFD",
-            count: 130,
+            count: promisesByStatus.statusHistory.Completed?.length,
             title: "Completed",
-            percentage: "(25%)",
           },
           {
             color: "#90DAFF",
-            count: 90,
-            title: "In progress",
-            percentage: "(18%)",
+            count: promisesByStatus.statusHistory["In Progress"]?.length,
+            title: "In Progress",
           },
         ]}
       />
 
       <ProgressChart
+        totalPromises={promisesByStatus.count}
         color="#909090"
         borderRight="1px solid #909090"
         caption="Uncertain"
         progressStatuses={[
           {
             color: "#909090",
-            count: 70,
+            count: promisesByStatus.statusHistory.Unrated?.length,
             title: "Inconclusive",
-            percentage: "(14%)",
           },
           {
             color: "#EBEBEB",
-            count: 50,
+            count: promisesByStatus.statusHistory.Unstarted?.length,
             title: "Unstarted",
-            percentage: "(10%)",
           },
         ]}
       />
 
       <ProgressChart
+        totalPromises={promisesByStatus.count}
         color="#FF5255"
         borderRight="1px solid #FF5255"
         caption="Promise Not Kept"
         progressStatuses={[
           {
             color: "#FFB322",
-            count: 60,
+            count: promisesByStatus.statusHistory.Delayed?.length,
             title: "Delayed",
-            percentage: "(12%)",
           },
           {
-            color: "#FF5255",
-            count: 110,
+            color: "#FF5154",
+            count: promisesByStatus.statusHistory.Stalled?.length,
             title: "Stalled",
-            percentage: "(22%)",
           },
         ]}
       />
     </Grid>
   );
 }
+
+MobileChart.propTypes = {
+  promisesByStatus: PropTypes.shape({
+    count: PropTypes.number,
+    statusHistory: PropTypes.PropTypes.shape({
+      "In Progress": PropTypes.arrayOf(PropTypes.shape({})),
+      Completed: PropTypes.arrayOf(PropTypes.shape({})),
+      Unrated: PropTypes.arrayOf(PropTypes.shape({})),
+      Unstarted: PropTypes.arrayOf(PropTypes.shape({})),
+      Stalled: PropTypes.arrayOf(PropTypes.shape({})),
+      Delayed: PropTypes.arrayOf(PropTypes.shape({})),
+    }),
+  }),
+  totalPromises: PropTypes.number.isRequired,
+};
+
+MobileChart.defaultProps = {
+  promisesByStatus: undefined,
+};
 
 export default MobileChart;

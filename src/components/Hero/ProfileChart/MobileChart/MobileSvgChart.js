@@ -26,11 +26,13 @@ function MobileSvgChart({
   stroke,
   strokeWidth,
   statusNumber,
-  statusPercentage,
+  totalPromises,
   status,
   ...props
 }) {
   const classes = useStyles(props);
+  const statusPercentage = (statusNumber / totalPromises) * 100;
+
   return (
     <Grid
       container
@@ -62,7 +64,7 @@ function MobileSvgChart({
 
       <Grid item xs={3}>
         <Typography variant="h3" className={classes.h3}>
-          {statusPercentage}
+          ({statusPercentage}%)
         </Typography>
       </Grid>
 
@@ -81,7 +83,7 @@ MobileSvgChart.propTypes = {
   strokeWidth: PropTypes.number.isRequired,
   statusNumber: PropTypes.number.isRequired,
   status: PropTypes.string.isRequired,
-  statusPercentage: PropTypes.string.isRequired,
+  totalPromises: PropTypes.number.isRequired,
 };
 
 export default MobileSvgChart;

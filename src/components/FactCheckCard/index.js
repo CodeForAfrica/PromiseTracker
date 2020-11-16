@@ -2,18 +2,18 @@ import React from "react";
 import PropTypes from "prop-types";
 
 import PostCard from "@/promisetracker/components/PostCard";
-import Link from "@/promisetracker/components/Link/Button";
+import { A } from "@commons-ui/core";
 
 import useStyles from "./useStyles";
 
-function ArticleCard({ classes: classesProp, slug, ...props }) {
+function FactCheckCard({ classes: classesProp, ...props }) {
   const classes = useStyles({ classes: classesProp });
 
   return (
     <PostCard
       {...props}
-      href={`/analysis/articles/${slug}`}
-      component={Link}
+      component={A}
+      underline="none"
       classes={{
         root: classes.root,
         content: classes.content,
@@ -30,8 +30,9 @@ function ArticleCard({ classes: classesProp, slug, ...props }) {
   );
 }
 
-ArticleCard.propTypes = {
+FactCheckCard.propTypes = {
   children: PropTypes.node,
+  title: PropTypes.string.isRequired,
   classes: PropTypes.shape({
     content: PropTypes.string,
     contentRoot: PropTypes.string,
@@ -45,12 +46,11 @@ ArticleCard.propTypes = {
     title: PropTypes.string,
     titleContainer: PropTypes.string,
   }),
-  slug: PropTypes.string.isRequired,
 };
 
-ArticleCard.defaultProps = {
+FactCheckCard.defaultProps = {
   children: undefined,
   classes: undefined,
 };
 
-export default ArticleCard;
+export default FactCheckCard;

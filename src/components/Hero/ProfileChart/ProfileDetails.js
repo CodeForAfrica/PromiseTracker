@@ -57,6 +57,7 @@ const useStyles = makeStyles(({ breakpoints, palette, typography }) => ({
   },
   rect: {
     padding: "2rem 0rem",
+    width: "100%",
   },
   divider: {
     margin: "2rem 1rem 1rem 1rem",
@@ -64,7 +65,15 @@ const useStyles = makeStyles(({ breakpoints, palette, typography }) => ({
   },
 }));
 
-function ProfileDetails({ criteria, name, position, ...props }) {
+function ProfileDetails({
+  criteria,
+  name,
+  position,
+  promiseLabel,
+  trailText,
+  promisesByStatus,
+  ...props
+}) {
   const classes = useStyles(props);
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
@@ -84,7 +93,11 @@ function ProfileDetails({ criteria, name, position, ...props }) {
             <Typography variant="h1">{name}</Typography>
           </Hidden>
           <Typography variant="body2">
-            {position} {name} <b>510 promises </b>at a glance
+            {position} {name}{" "}
+            <b>
+              {promisesByStatus.count} {promiseLabel}{" "}
+            </b>
+            {trailText}
           </Typography>
         </Grid>
         <Grid
@@ -137,15 +150,27 @@ function ProfileDetails({ criteria, name, position, ...props }) {
             {clicked ? (
               <Fade in={clicked}>
                 <div className={classes.rect}>
-                  <RectChart />
+                  <RectChart
+                    totalPromises={promisesByStatus.count}
+                    inProgress={
+                      promisesByStatus.statusHistory["In Progress"]?.length
+                    }
+                    completed={promisesByStatus.statusHistory.Completed?.length}
+                    inconclusive={
+                      promisesByStatus.statusHistory.Unrated?.length
+                    }
+                    unstarted={promisesByStatus.statusHistory.Unstarted?.length}
+                    stalled={promisesByStatus.statusHistory.Stalled?.length}
+                    delayed={promisesByStatus.statusHistory.Delayed?.length}
+                  />
                 </div>
               </Fade>
             ) : (
-              <DesktopChart />
+              <DesktopChart promisesByStatus={promisesByStatus} />
             )}
           </div>
         ) : (
-          <MobileChart />
+          <MobileChart promisesByStatus={promisesByStatus} />
         )}
       </>
     </>
@@ -159,10 +184,24 @@ ProfileDetails.propTypes = {
   }),
   name: PropTypes.string.isRequired,
   position: PropTypes.string.isRequired,
+  promiseLabel: PropTypes.string.isRequired,
+  trailText: PropTypes.string.isRequired,
+  promisesByStatus: PropTypes.shape({
+    count: PropTypes.number,
+    statusHistory: PropTypes.PropTypes.shape({
+      "In Progress": PropTypes.arrayOf(PropTypes.shape({})),
+      Completed: PropTypes.arrayOf(PropTypes.shape({})),
+      Unrated: PropTypes.arrayOf(PropTypes.shape({})),
+      Unstarted: PropTypes.arrayOf(PropTypes.shape({})),
+      Stalled: PropTypes.arrayOf(PropTypes.shape({})),
+      Delayed: PropTypes.arrayOf(PropTypes.shape({})),
+    }),
+  }),
 };
 
 ProfileDetails.defaultProps = {
   criteria: undefined,
+  promisesByStatus: undefined,
 };
 
 export default ProfileDetails;
