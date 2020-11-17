@@ -49,6 +49,7 @@ function KeyPromises({ actionLabel, items, title, titleProps, ...props }) {
           key={items[activeStep].title}
           actionLabel={actionLabel}
           {...items[activeStep]}
+          {...props}
         />
         <MobileStepper
           ref={stepperRef}

@@ -22,7 +22,7 @@ function KeyPromise({
   title,
   ...props
 }) {
-  const classes = useStyles(props);
+  const classes = useStyles({ borderBottom: null, ...props });
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
   const titleVariant = isDesktop ? "h2" : "h3";
@@ -52,7 +52,7 @@ function KeyPromise({
         <Grid item>
           <RichTypography
             variant={titleVariant}
-            className={classes.keyPromiseTitle}
+            className={`${classes.keyPromiseTitle}`}
           >
             {title}
           </RichTypography>

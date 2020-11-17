@@ -53,7 +53,7 @@ const useStyles = makeStyles(({ breakpoints, typography, palette }) => ({
       order: 2,
     },
   },
-  keyPromiseTitle: {
+  keyPromiseTitle: (props) => ({
     height: typography.pxToRem(32 * 2), // Max 2 lines defined by h3.lineHeight
     marginTop: typography.pxToRem(11),
     maxHeight: typography.pxToRem(32 * 2),
@@ -68,10 +68,10 @@ const useStyles = makeStyles(({ breakpoints, typography, palette }) => ({
         bottom: 0,
         left: 0,
         width: typography.pxToRem(72),
-        borderBottom: `8px solid ${palette.highlight.light}`,
+        borderBottom: `8px solid ${props.borderBottom}`,
       },
     },
-  },
+  }),
   mediaContainer: {
     [breakpoints.up("lg")]: {
       height: typography.pxToRem(387),
