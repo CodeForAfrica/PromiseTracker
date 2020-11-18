@@ -37,7 +37,6 @@ function KeyPromises({ actionLabel, items, title, titleProps, ...props }) {
   const handleBack = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
-
   return (
     <div className={classes.root}>
       <Section
@@ -92,6 +91,11 @@ KeyPromises.propTypes = {
   items: PropTypes.arrayOf(
     PropTypes.shape({
       title: PropTypes.string.isRequired,
+      status: PropTypes.arrayOf(
+        PropTypes.shape({
+          color: PropTypes.string.isRequired,
+        })
+      ),
     })
   ),
   title: PropTypes.string,
