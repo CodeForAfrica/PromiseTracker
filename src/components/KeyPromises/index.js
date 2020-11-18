@@ -46,7 +46,6 @@ function KeyPromises({ actionLabel, items, title, titleProps, ...props }) {
       >
         <KeyPromise
           key={items[activeStep].title}
-          borderBottom={items[activeStep].status.color}
           actionLabel={actionLabel}
           {...items[activeStep]}
           {...props}
