@@ -6,6 +6,7 @@ import { Grid, Hidden, Typography } from "@material-ui/core";
 import { RichTypography, Section } from "@commons-ui/core";
 
 import AuthorAtribution from "@/promisetracker/components/Promise/AuthorAtribution";
+import DataSource from "@/promisetracker/components/DataSource";
 import Link from "@/promisetracker/components/Link";
 import NarativeUpdates from "@/promisetracker/components/Promise/Narative";
 import Radar from "@/promisetracker/components/Promise/Radar";
@@ -21,6 +22,8 @@ function Promise({
   promiseStatusLabel,
   promiseRadarLabel,
   relatedFactChecksLabel,
+  dataSourceEmbedLabel,
+  narrativeUpdatesLabel,
 }) {
   const classes = useStyles({ image: promise.image, classes: classesProp });
 
@@ -58,9 +61,8 @@ function Promise({
               />
             </div>
           </Hidden>
-
           <RichTypography className={classes.promiseBody} variant="body1">
-            {promise.content}
+            {promise.description}
           </RichTypography>
           <Hidden lgUp>
             <Typography className={classes.label} variant="h5">
@@ -68,7 +70,14 @@ function Promise({
             </Typography>
             <Radar />
           </Hidden>
-          <NarativeUpdates {...promise.narrative} />
+          <NarativeUpdates
+            {...promise.narrative}
+            label={narrativeUpdatesLabel}
+          />
+          <DataSource
+            documents={promise.documents}
+            label={dataSourceEmbedLabel}
+          />
           <RichTypography className={classes.promiseBody} variant="body1">
             {promise.content}
           </RichTypography>
@@ -105,6 +114,7 @@ Promise.propTypes = {
     status: PropTypes.shape({}),
     attribution: PropTypes.shape({}),
     narrative: PropTypes.shape({}),
+    documents: PropTypes.arrayOf(PropTypes.shape({})),
   }).isRequired,
   breadcrumb: PropTypes.string,
   classes: PropTypes.shape({
@@ -128,14 +138,22 @@ Promise.propTypes = {
   promiseStatusLabel: PropTypes.string,
   promiseRadarLabel: PropTypes.string,
   relatedFactChecksLabel: PropTypes.string,
+  dataSourceEmbedLabel: PropTypes.string,
+  narrativeUpdatesLabel: PropTypes.string,
+  chartEmbedLabel: PropTypes.string,
+  authorAttributionLabel: PropTypes.string,
 };
 
 Promise.defaultProps = {
   breadcrumb: "Promises",
   classes: undefined,
-  promiseStatusLabel: "Promise rating status:",
-  promiseRadarLabel: "Promise radar:",
-  relatedFactChecksLabel: "Related Fact-Checks:",
+  promiseStatusLabel: undefined,
+  promiseRadarLabel: undefined,
+  relatedFactChecksLabel: undefined,
+  dataSourceEmbedLabel: undefined,
+  narrativeUpdatesLabel: undefined,
+  chartEmbedLabel: undefined,
+  authorAttributionLabel: undefined,
 };
 
 export default Promise;

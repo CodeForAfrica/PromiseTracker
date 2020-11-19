@@ -1,11 +1,13 @@
 import {
   GET_PROMISES,
+  GET_PROMISE,
   GET_PROMISES_BY_CATEGORIES,
   GET_PROJECT_META,
 } from "@/promisetracker/lib/check/gql";
 
 import config from "@/promisetracker/config";
 import promiseImage from "@/promisetracker/assets/promise-thumb-01.png";
+import { slugify } from "@/promisetracker/utils";
 import createApolloClient from "./createApolloClient";
 
 const UNSPECIFIED_TEAM = "unspecified";
@@ -59,6 +61,7 @@ function check({ team = undefined, promiseStatuses = {}, initialState = {} }) {
       ? startDateTask.node.first_response_value.split(" ").slice(0, 3).join(" ")
       : null;
   }
+
   function getPromiseDeadlineEvent(node) {
     const items = node.tasks?.edges;
     const deadlineTask = findItemByNodeLabel(
@@ -120,9 +123,35 @@ function check({ team = undefined, promiseStatuses = {}, initialState = {} }) {
     return statusHistory.length ? statusHistory : [defaultStatus];
   }
 
-  function handlePromisesResult(res) {
-    return res.data.search.medias.edges.map(({ node }) => ({
-      id: node.id,
+  async function getDataSource(node) {
+    const items = node.tasks?.edges;
+    const dataSourceTask = findItemByNodeLabel(
+      items,
+      "Where was this promise documented?"
+    );
+
+    const expression = /(https?:\/\/(?:www\.|(?!www))[^\s.]+\.[^\s]{2,}|www\.[^\s]+\.[^\s]{2,})/gi;
+    const matches = dataSourceTask.node.first_response_value.match(expression);
+    return Promise.all(
+      matches?.map(async (match) => {
+        const result = await fetch(match.replace(".html", ".json"));
+        // get page number from url eg https://localhost#document/p16/a4
+        const pageNumber = Number(
+          match.split("#document/")[1].split("/")[0].substring(1)
+        );
+        const document = await result.json();
+        return { ...document, pageNumber, dataSourceUrl: match };
+      }) || []
+    );
+  }
+
+  async function nodeToPromise(node) {
+    const id = node.dbid;
+    const slug = slugify(node.title);
+    return {
+      id,
+      href: `/promises/${id}/${slug}`,
+      slug,
       title: node.title,
       image: getImage(node),
       description: node.description,
@@ -130,7 +159,23 @@ function check({ team = undefined, promiseStatuses = {}, initialState = {} }) {
       events: [getPromiseDeadlineEvent(node)],
       status: getStatusHistory(node)[0],
       statusHistory: getStatusHistory(node),
-    }));
+      documents: await (getDataSource(node) || []),
+    };
+  }
+
+  async function handlePromisesResult(res) {
+    return Promise.all(
+      res?.data?.search?.medias?.edges.map(({ node }) => nodeToPromise(node)) ||
+        {}
+    );
+  }
+
+  async function handleSinglePromise({ data }) {
+    const node = data?.project_media;
+    if (node) {
+      return nodeToPromise(node);
+    }
+    return null;
   }
 
   function handleMeta({
@@ -174,15 +219,24 @@ function check({ team = undefined, promiseStatuses = {}, initialState = {} }) {
     promises: async (variables) => {
       return client
         .query({ query: GET_PROMISES, variables })
-        .then(handlePromisesResult);
+        .then(handlePromisesResult)
+        .then((response) => {
+          return response;
+        });
     },
     promisesByCategories: async (variables) => {
       return client
         .query({ query: GET_PROMISES_BY_CATEGORIES, variables })
-        .then(handlePromisesCategoryResults);
+        .then(handlePromisesCategoryResults)
+        .then((promise) => promise);
     },
     projectMeta: async () => {
       return client.query({ query: GET_PROJECT_META }).then(handleMeta);
+    },
+    promise: async (variables) => {
+      return client
+        .query({ query: GET_PROMISE, variables })
+        .then(handleSinglePromise);
     },
   };
   return api;

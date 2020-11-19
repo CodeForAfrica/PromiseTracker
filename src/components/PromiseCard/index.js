@@ -5,20 +5,25 @@ import PostCard from "@/promisetracker/components/PostCard";
 import Link from "@/promisetracker/components/Link/Button";
 import Status from "@/promisetracker/components/PromiseStatus";
 
-import { slugify } from "@/promisetracker/utils";
-
 import useStyles from "./useStyles";
 
-function PromiseCard({ classes: classesProp, status, title, ...props }) {
+function PromiseCard({
+  classes: classesProp,
+  status,
+  id,
+  href,
+  title,
+  ...props
+}) {
   const classes = useStyles({ classes: classesProp, status });
 
   return (
     <PostCard
       {...props}
       title={title}
-      as={`/promises/${slugify(title)}`}
+      as={href}
       component={Link}
-      href="/promises/[slug]"
+      href="/promises/[...slug]"
       classes={{
         root: classes.root,
         content: classes.content,
@@ -52,6 +57,8 @@ PromiseCard.propTypes = {
     title: PropTypes.string,
     titleContainer: PropTypes.string,
   }),
+  id: PropTypes.string.isRequired,
+  href: PropTypes.string.isRequired,
   status: PropTypes.shape({}).isRequired,
   title: PropTypes.string.isRequired,
 };
