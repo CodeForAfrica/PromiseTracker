@@ -97,7 +97,7 @@ function Promise({
             <Typography className={classes.label} variant="h5">
               {relatedFactChecksLabel}
             </Typography>
-            <RelatedFactChecks />
+            <RelatedFactChecks factChecks={promise.relatedFactChecks} />
           </Grid>
         </Hidden>
       </Grid>
@@ -115,6 +115,7 @@ Promise.propTypes = {
     attribution: PropTypes.shape({}),
     narrative: PropTypes.shape({}),
     documents: PropTypes.arrayOf(PropTypes.shape({})),
+    relatedFactChecks: PropTypes.arrayOf(PropTypes.shape({})),
   }).isRequired,
   breadcrumb: PropTypes.string,
   classes: PropTypes.shape({
