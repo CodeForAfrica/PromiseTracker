@@ -62,10 +62,15 @@ function Index({
         name={projectMeta.name}
         position={projectMeta.position}
         promiseLabel={projectMeta.promiseLabel}
+        updatedDateLabel={projectMeta.updatedDateLabel}
         trailText={projectMeta.trailText}
-        updatedAt={new Date(projectMeta.updatedAt).toDateString({
-          dateStyle: "short",
-        })}
+        updatedAt={new Date(projectMeta.updatedAt)
+          .toDateString({
+            dateStyle: "short",
+          })
+          .split(" ")
+          .slice(1)
+          .join(" ")}
         title={projectMeta.description}
         classes={{ section: classes.section }}
       />
@@ -128,6 +133,7 @@ Index.propTypes = {
     position: PropTypes.string,
     trailText: PropTypes.string,
     updatedAt: PropTypes.string,
+    updatedDateLabel: PropTypes.string,
     description: PropTypes.string,
     promiseLabel: PropTypes.string,
   }),
