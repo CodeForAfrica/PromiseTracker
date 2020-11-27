@@ -13,6 +13,7 @@ import logo from "@/promisetracker/assets/logo-C4A.svg";
 
 const config = {
 	MAPIT_URL: "https://mapit.hurumap.org",
+	MAP_ACCESS_TOKEN: process.env.MAP_ACCESS_TOKEN,
 	LANGUAGE_BY_LOCALE: { ar: "عربى" },
 	LOCALES: ["en", "am", "fr", "ar"],
 	DEFAULT_LOCALE: "en",
