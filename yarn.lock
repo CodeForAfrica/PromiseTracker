@@ -368,12 +368,21 @@
     prop-types "^15.7.2"
     shortid "^2.2.15"
 
-"@hurumap-ui/core@^0.3.5-alpha.40":
-  version "0.3.5-alpha.40"
-  resolved "https://registry.yarnpkg.com/@hurumap-ui/core/-/core-0.3.5-alpha.40.tgz#611f598829df8df69f653f40b4d5cf06034bba19"
-  integrity sha512-tkV+rscxEEWrR3K3W+bWBZqA6B12id7Q1YeP9B4TBE+Sw+WILO4QlOhxtRK0cMdFs7EwwrbM3eOFaEGLeMM0ZA==
+"@hurumap-ui/charts@^0.3.5-alpha.41":
+  version "0.3.5-alpha.41"
+  resolved "https://registry.yarnpkg.com/@hurumap-ui/charts/-/charts-0.3.5-alpha.41.tgz#7f37fbf18bb8e9c0eb1ae2bea6083db54b28d91e"
+  integrity sha512-agSVgiFomkJOACTgKeb8+i2sT4Vryv6I2q/jlrGGSGk71n6RGzHuWuPxSTS22PykewXVRph4tuNt4BIZmbtq8A==
   dependencies:
-    "@hurumap-ui/charts" "^0.3.5-alpha.36"
+    "@material-ui/utils" "^4.10.2"
+    prop-types "^15.7.2"
+    shortid "^2.2.15"
+
+"@hurumap-ui/core@^0.3.5-alpha.41":
+  version "0.3.5-alpha.41"
+  resolved "https://registry.yarnpkg.com/@hurumap-ui/core/-/core-0.3.5-alpha.41.tgz#ab2b3fde3267f8f7b413d0f12eb96d34746991ea"
+  integrity sha512-UO5pUFgr/msgyYfMJ4omkrlQ6TsXfN7mmDzR5wqWMpLfRCnvrrOgKzj00n2meGz+jm5kCLMg7g9RbhwsXiXfuQ==
+  dependencies:
+    "@hurumap-ui/charts" "^0.3.5-alpha.41"
     classnames "^2.2.6"
     dequal "^1.0.0"
     dom-to-image "^2.6.0"
