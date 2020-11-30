@@ -54,6 +54,9 @@ const useStyles = makeStyles(({ typography }) => ({
   pageNavigation: {
     marginTop: `-${typography.pxToRem(20)}`,
   },
+  searchContainer: {
+    paddingLeft: "1rem",
+  },
 }));
 
 function DesktopNavigation(props) {
@@ -71,11 +74,16 @@ function DesktopNavigation(props) {
       <Grid item xs={12} className={classes.root}>
         <Section classes={{ root: classes.section }}>
           <Grid container justify="flex-start" alignItems="center">
-            <Grid item lg={3}>
+            <Grid item lg={4}>
               <Logo />
             </Grid>
-
-            <Grid item lg={5} container justify="flex-end" alignItems="center">
+            <Grid
+              item
+              lg={4}
+              container
+              justify="flex-start"
+              alignItems="center"
+            >
               <Grid item>
                 <MenuButton
                   active={currentPageUrl === "/promises"}
@@ -114,12 +122,12 @@ function DesktopNavigation(props) {
               </Grid>
             </Grid>
 
-            <Grid item lg={3}>
+            <Grid className={classes.searchContainer} item lg={3}>
               <Search />
             </Grid>
 
             <Grid item lg={1} direction="column" container justify="flex-start">
-              <Grid item>
+              <Grid item container justify="flex-end">
                 {locales.slice(0, 2).map((locale) => (
                   <Button
                     key={locale}
@@ -135,7 +143,7 @@ function DesktopNavigation(props) {
                 ))}
               </Grid>
 
-              <Grid item>
+              <Grid item container justify="flex-end">
                 {locales.slice(2, 4).map((locale, i) => (
                   <Button
                     key={locale}

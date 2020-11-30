@@ -8,6 +8,7 @@ import {
 import config from "@/promisetracker/config";
 import promiseImage from "@/promisetracker/assets/promise-thumb-01.png";
 import { slugify } from "@/promisetracker/utils";
+import pc from "@/promisetracker/lib/pc";
 import createApolloClient from "./createApolloClient";
 
 const UNSPECIFIED_TEAM = "unspecified";
@@ -122,6 +123,20 @@ function check({ team = undefined, promiseStatuses = {}, initialState = {} }) {
 
     return statusHistory.length ? statusHistory : [defaultStatus];
   }
+  async function getRelatedFactCheckUrls(node) {
+    const items = node.tasks?.edges;
+    const relatedFactCheckTasks = findItemByNodeLabel(
+      items,
+      "What are the fact checks related to the promise?"
+    );
+    const expression = /(https?:\/\/(?:www\.|(?!www))[^\s.]+\.[^\s]{2,}|www\.[^\s]+\.[^\s]{2,})/gi;
+    const matches =
+      relatedFactCheckTasks?.node.first_response_value?.match(expression) || [];
+    const factCheckAPI = pc();
+    const relatedFactChecks = await factCheckAPI.factChecks({ urls: matches })
+      .list;
+    return relatedFactChecks || [];
+  }
 
   async function getDataSource(node) {
     const items = node.tasks?.edges;
@@ -160,6 +175,7 @@ function check({ team = undefined, promiseStatuses = {}, initialState = {} }) {
       status: getStatusHistory(node)[0],
       statusHistory: getStatusHistory(node),
       documents: await (getDataSource(node) || []),
+      relatedFactChecks: await (getRelatedFactCheckUrls(node) || []),
     };
   }
 
@@ -187,15 +203,16 @@ function check({ team = undefined, promiseStatuses = {}, initialState = {} }) {
   }) {
     const descriptionArr = description.split("|");
     const position = descriptionArr[2];
-    const promiseLabel = descriptionArr[3];
-    const trailText = descriptionArr[4];
-
+    const updatedAtLabel = descriptionArr[3];
+    const promiseLabel = descriptionArr[4];
+    const trailText = descriptionArr[5];
     return {
       updatedAt: Number(updatedAt) * 1000,
       description: descriptionArr[0],
       position,
       promiseLabel,
       trailText,
+      updatedAtLabel,
       name: descriptionArr[1],
       tags: tags.edges.map((tag) => tag.node),
     };

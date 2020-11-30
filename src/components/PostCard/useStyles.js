@@ -22,6 +22,9 @@ const useStyles = makeStyles(({ breakpoints, typography }) => ({
   contentRoot: {
     height: "100%",
     padding: "2rem 1rem",
+    "&:hover": {
+      backgroundColor: "inherit",
+    },
   },
   date: {
     lineHeight: 14 / 10,
@@ -54,16 +57,9 @@ const useStyles = makeStyles(({ breakpoints, typography }) => ({
     },
   },
   share: {
-    display: "none",
-    fontSize: "1rem",
-    padding: "1rem",
-    marginRight: "-1rem",
-    "&:hover": {
-      backgroundColor: "inherit",
-    },
-    [breakpoints.up("lg")]: {
-      display: "flex",
-    },
+    position: "absolute",
+    right: 0,
+    zIndex: 999,
   },
   title: {},
   titleContainer: {

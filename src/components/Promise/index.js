@@ -14,11 +14,14 @@ import NarativeUpdates from "@/promisetracker/components/Promise/Narative";
 import RelatedFactChecks from "@/promisetracker/components/Promise/RelatedFactChecks";
 import Status from "@/promisetracker/components/PromiseStatus";
 
-const Radar = dynamic(() => import("@/promisetracker/components/Promise/Radar"), {
-  ssr: false,
-});
-
 import useStyles from "./useStyles";
+
+const Radar = dynamic(
+  () => import("@/promisetracker/components/Promise/Radar"),
+  {
+    ssr: false,
+  }
+);
 
 function Promise({
   promise,
@@ -82,6 +85,7 @@ function Promise({
           <DataSource
             documents={promise.documents}
             label={dataSourceEmbedLabel}
+            promise={promise}
           />
           <RichTypography className={classes.promiseBody} variant="body1">
             {promise.content}
@@ -102,7 +106,7 @@ function Promise({
             <Typography className={classes.label} variant="h5">
               {relatedFactChecksLabel}
             </Typography>
-            <RelatedFactChecks />
+            <RelatedFactChecks factChecks={promise.relatedFactChecks} />
           </Grid>
         </Hidden>
       </Grid>
@@ -120,6 +124,7 @@ Promise.propTypes = {
     attribution: PropTypes.shape({}),
     narrative: PropTypes.shape({}),
     documents: PropTypes.arrayOf(PropTypes.shape({})),
+    relatedFactChecks: PropTypes.arrayOf(PropTypes.shape({})),
   }).isRequired,
   breadcrumb: PropTypes.string,
   classes: PropTypes.shape({

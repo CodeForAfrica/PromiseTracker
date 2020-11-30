@@ -7,6 +7,7 @@ import { useTheme } from "@material-ui/core/styles";
 import { RichTypography } from "@commons-ui/core";
 
 import CtAButton from "@/promisetracker/components/CtAButton";
+import Button from "@/promisetracker/components/Link/Button";
 import PromiseTimeline from "@/promisetracker/components/PromiseTimeline";
 
 import useStyles from "./useStyles";
@@ -15,6 +16,7 @@ function KeyPromise({
   actionLabel,
   description,
   events,
+  href,
   image,
   date,
   statusHistory,
@@ -68,6 +70,9 @@ function KeyPromise({
         {actionLabel && (
           <CtAButton
             color="primary"
+            component={Button}
+            as={href}
+            href="/promises/[...slug]"
             classes={{
               root: classes.keyPromiseCta,
               button: classes.keyPromiseCtaButton,
@@ -95,6 +100,7 @@ KeyPromise.propTypes = {
   date: PropTypes.string.isRequired,
   description: PropTypes.string,
   events: PropTypes.arrayOf(PropTypes.shape({})),
+  href: PropTypes.string.isRequired,
   image: PropTypes.string.isRequired,
   statusHistory: PropTypes.arrayOf(PropTypes.shape({})),
   status: PropTypes.shape({}),
