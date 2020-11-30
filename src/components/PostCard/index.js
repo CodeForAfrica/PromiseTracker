@@ -7,14 +7,12 @@ import {
   CardActionArea,
   CardContent,
   CardMedia,
-  IconButton,
   Grid,
 } from "@material-ui/core";
 
 import { RichTypography } from "@commons-ui/core";
-
-import ShareIcon from "@/promisetracker/icons/Share";
-
+import Share from "@/promisetracker/components/Share";
+import server from "@/promisetracker/lib/server";
 import useStyles from "./useStyles";
 
 function PostCard({
@@ -24,13 +22,14 @@ function PostCard({
   description,
   image,
   title,
+  as,
   ...props
 }) {
   const classes = useStyles({ classes: classesProp });
-
+  const siteServer = server();
   return (
     <Card square variant="outlined" className={classes.root}>
-      <CardActionArea {...props} className={classes.contentRoot}>
+      <CardActionArea as={as} {...props} className={classes.contentRoot}>
         <CardContent classes={{ root: classes.content }}>
           <Box
             display="flex"
@@ -48,9 +47,11 @@ function PostCard({
               </RichTypography>
             </Grid>
             <Grid item>
-              <IconButton aria-label="share" className={classes.share}>
-                <ShareIcon fontSize="inherit" />
-              </IconButton>
+              <Share
+                classes={{ root: classes.share }}
+                link={siteServer.url + (as || "")}
+                title={title}
+              />
             </Grid>
           </Grid>
         </CardContent>
@@ -94,12 +95,16 @@ PostCard.propTypes = {
   description: PropTypes.string,
   image: PropTypes.string.isRequired,
   title: PropTypes.string.isRequired,
+  href: PropTypes.string,
+  as: PropTypes.string,
 };
 
 PostCard.defaultProps = {
   children: undefined,
   classes: undefined,
   description: undefined,
+  href: undefined,
+  as: undefined,
 };
 
 export default PostCard;
