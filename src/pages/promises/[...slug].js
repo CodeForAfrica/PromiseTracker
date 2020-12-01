@@ -12,8 +12,6 @@ import check from "@/promisetracker/lib/check";
 import i18n from "@/promisetracker/lib/i18n";
 import wp from "@/promisetracker/lib/wp";
 
-import promiseImage from "@/promisetracker/assets/promise-thumb-01@2x.png";
-
 const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
   section: {
     padding: `0 ${typography.pxToRem(23)}`,
@@ -103,22 +101,7 @@ PromisePage.defaultProps = {
   labels: undefined,
   navigation: undefined,
   promise: undefined,
-  relatedPromises: Array(3)
-    .fill(null)
-    .map((_, i) => ({
-      date: "2019-08-10",
-      description: `
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer
-              euismod odio non leo pretium pellentesque.
-            `,
-      image: promiseImage,
-      status: {
-        color: "#FFB322",
-        textColor: "#202020",
-        title: "delayed",
-      },
-      title: `Codification of national sports and athletics law ${i + 1}`,
-    })),
+  relatedPromises: undefined,
   title: undefined,
 };
 
@@ -165,6 +148,17 @@ export async function getStaticProps({ params: { slug: slugParam }, locale }) {
     id,
   });
 
+  const otherPromises = await checkApi.promises({
+    limit: 100,
+    query: `{ "projects": ["2831"] }`,
+  });
+
+  const relatedPromises = otherPromises.filter(
+    (p) =>
+      p.id !== promisePost.id &&
+      promisePost.tags.some((v) => p.tags.includes(v))
+  );
+
   const notFound = !promisePost;
   if (notFound) {
     return {
@@ -202,6 +196,7 @@ export async function getStaticProps({ params: { slug: slugParam }, locale }) {
       errorCode,
       languageAlternates,
       promise,
+      relatedPromises: relatedPromises.slice(0, 3),
     },
     revalidate: 2 * 60, // seconds
   };

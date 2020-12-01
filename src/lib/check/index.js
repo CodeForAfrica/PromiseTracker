@@ -176,6 +176,8 @@ function check({ team = undefined, promiseStatuses = {}, initialState = {} }) {
       statusHistory: getStatusHistory(node),
       documents: await (getDataSource(node) || []),
       relatedFactChecks: await (getRelatedFactCheckUrls(node) || []),
+      tags:
+        node?.tags?.edges?.map(({ node: { tag_text: text } }) => text) || [],
     };
   }
 
