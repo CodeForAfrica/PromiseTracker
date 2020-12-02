@@ -16,12 +16,7 @@ import Status from "@/promisetracker/components/PromiseStatus";
 
 import useStyles from "./useStyles";
 
-const Radar = dynamic(
-  () => import("@/promisetracker/components/Promise/Radar"),
-  {
-    ssr: false,
-  }
-);
+const Radar = dynamic(() => import("./Radar"), { ssr: false });
 
 function Promise({
   promise,
