@@ -1,7 +1,8 @@
 import React from "react";
 import PropTypes from "prop-types";
 
-import { Grid, Hidden, Typography } from "@material-ui/core";
+import { Grid, Hidden, Typography, useMediaQuery } from "@material-ui/core";
+import { useTheme } from "@material-ui/core/styles";
 
 import { RichTypography, Section } from "@commons-ui/core";
 
@@ -9,10 +10,10 @@ import AuthorAtribution from "@/promisetracker/components/Promise/AuthorAtributi
 import DataSource from "@/promisetracker/components/DataSource";
 import Link from "@/promisetracker/components/Link";
 import NarativeUpdates from "@/promisetracker/components/Promise/Narative";
-import Radar from "@/promisetracker/components/Promise/Radar";
 import RelatedFactChecks from "@/promisetracker/components/Promise/RelatedFactChecks";
 import Status from "@/promisetracker/components/PromiseStatus";
 
+import Radar from "./Radar";
 import useStyles from "./useStyles";
 
 function Promise({
@@ -26,6 +27,8 @@ function Promise({
   narrativeUpdatesLabel,
 }) {
   const classes = useStyles({ image: promise.image, classes: classesProp });
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
 
   return (
     <Section classes={{ root: classes.section }}>
@@ -68,7 +71,7 @@ function Promise({
             <Typography className={classes.label} variant="h5">
               {promiseRadarLabel}
             </Typography>
-            <Radar />
+            {!isDesktop ? <Radar /> : null}
           </Hidden>
           <NarativeUpdates
             {...promise.narrative}
@@ -94,7 +97,7 @@ function Promise({
             <Typography className={classes.label} variant="h5">
               {promiseRadarLabel}
             </Typography>
-            <Radar />
+            {isDesktop ? <Radar /> : null}
             <Typography className={classes.label} variant="h5">
               {relatedFactChecksLabel}
             </Typography>
