@@ -92,18 +92,14 @@ const config = {
       slug: "women-youth-and-people-with-disabilities",
     },
   ],
-  categoryMostRecent: [
-    {
-      name: "Most Recent",
-      slug: "most-recent",
-    },
-  ],
-  categoryDeadline: [
-    {
-      name: "Promise Deadline",
-      slug: "promise-deadline",
-    },
-  ],
+  sortByMostRecent: {
+    name: "Most Recent",
+    slug: "most-recent",
+  },
+  sortByDeadline: {
+    name: "Promise Deadline",
+    slug: "promise-deadline",
+  },
   settings: {
     subscribe: {
       embedCode: `
