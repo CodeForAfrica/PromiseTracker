@@ -26,6 +26,80 @@ const config = {
   FACT_CHECKS_TAG: "promise-tracker",
   title: "PromiseTracker",
   URL: "https://promisetracker.dev.codeforafrica.org",
+  filterStatusItems: [
+    {
+      name: "Completed",
+      slug: "completed",
+    },
+
+    {
+      name: "In Progress",
+      slug: "in-progress",
+    },
+    {
+      name: "Stalled",
+      slug: "stalled",
+    },
+    {
+      name: "Behind",
+      slug: "behind",
+    },
+    {
+      name: "Unrated",
+      slug: "unrated",
+    },
+    {
+      name: "Unstarted",
+      slug: "unstarted",
+    },
+  ],
+
+  filterCategoryItems: [
+    {
+      name: "100 Days",
+      slug: "100-days",
+    },
+    {
+      name: "Environment and Sanitation",
+      slug: "environment-and-sanitation",
+    },
+    {
+      name: "Governance",
+      slug: "governance",
+    },
+    {
+      name: "Health",
+      slug: "health",
+    },
+    {
+      name: "Housing",
+      slug: "housing",
+    },
+    {
+      name: "Jobs and Business Creation",
+      slug: "jobs-and-business-creation",
+    },
+    {
+      name: "Traffic Management",
+      slug: "traffic-management",
+    },
+    {
+      name: "transport",
+      slug: "transport",
+    },
+    {
+      name: "Women,Youth and People With Disabilities",
+      slug: "women-youth-and-people-with-disabilities",
+    },
+  ],
+  sortByMostRecent: {
+    name: "Most Recent",
+    slug: "most-recent",
+  },
+  sortByDeadline: {
+    name: "Promise Deadline",
+    slug: "promise-deadline",
+  },
   settings: {
     subscribe: {
       embedCode: `
