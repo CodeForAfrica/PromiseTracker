@@ -37,10 +37,10 @@ function Promises({ items: itemsProp, title, withFilter, ...props }) {
     setCategoriesFilters((prev) => updateFilters(prev, slug));
   };
   const handleCategoryMostRecent = (value) => {
-    setActiveMostRecent(value);
+    setActiveMostRecent((prev) => (prev !== value ? value : ""));
   };
   const handleCategoryDeadline = (value) => {
-    setActiveDeadline(value);
+    setActiveDeadline((prev) => (prev !== value ? value : ""));
   };
   useEffect(() => {
     const selectedStatuses = statusesFilters
