@@ -21,11 +21,17 @@ const config = {
   PROXY_URL: "https://corsanywhere.devops.codeforafrica.org",
   CHECK_PROJECT_DB_ID: 2831,
   CHECK_PROMISE_MAX_COUNT: 150,
+  CKAN_BACKEND_URL: "https://openafrica.net",
   WP_DASHBOARD_URL: "https://dashboard.hurumap.org/promisetracker",
   FACT_CHECKS_URL: "https://pesacheck.org",
   FACT_CHECKS_TAG: "promise-tracker",
   title: "PromiseTracker",
   URL: "https://promisetracker.dev.codeforafrica.org",
+  DATE_OPTIONS: {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  },
   filterStatusItems: [
     {
       name: "Completed",

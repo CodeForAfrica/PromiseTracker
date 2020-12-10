@@ -63,6 +63,22 @@ function check({ team = undefined, promiseStatuses = {}, initialState = {} }) {
       : null;
   }
 
+  async function getLinkedDataset(node) {
+    const items = node.tasks?.edges;
+    const dataset = findItemByNodeLabel(
+      items,
+      "What data sets are linked to this promise?"
+    );
+    const slug =
+      dataset?.node?.first_response_value?.split("/")[-1] ||
+      "health-facilities-in-africa"; // TODO: sample dataset name needs to be removed
+    const response = await fetch(
+      `${config.CKAN_BACKEND_URL}/api/3/action/package_show?id=${slug}`
+    );
+    const { result } = response.ok ? await response.json() : { result: {} };
+    return result;
+  }
+
   function getPromiseDeadlineEvent(node) {
     const items = node.tasks?.edges;
     const deadlineTask = findItemByNodeLabel(
@@ -191,7 +207,9 @@ function check({ team = undefined, promiseStatuses = {}, initialState = {} }) {
   async function handleSinglePromise({ data }) {
     const node = data?.project_media;
     if (node) {
-      return nodeToPromise(node);
+      const dataset = await (getLinkedDataset(node) || {});
+      const singlePromise = await nodeToPromise(node);
+      return { ...singlePromise, dataset };
     }
     return null;
   }
