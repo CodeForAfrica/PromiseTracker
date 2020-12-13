@@ -14,7 +14,7 @@ describe("Promises page", () => {
     cy.get("[data-cy=promises-section]").contains("Promises by status");
     cy.get("[data-cy=promises-section]").contains("Promises by category");
   });
-  it("filter in progress promises", () => {
+  it("filter in-progress promises", () => {
     cy.get("[data-cy=promises-section]")
       .find("img")
       .its("length")
@@ -83,7 +83,7 @@ describe("Promises page", () => {
     cy.get("[data-cy=filter-buttons]").contains("Governance").click();
   });
 
-  it("filter governance category promises", () => {
+  it("filter health category promises", () => {
     cy.get("[data-cy=promises-section]")
       .find("img")
       .its("length")
