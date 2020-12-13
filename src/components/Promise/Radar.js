@@ -39,7 +39,7 @@ function Radar(props) {
   }, []);
 
   return (
-    <div className={classes.root}>
+    <div className={classes.root} data-cy="promise-radar">
       <MapIt
         height="238.5px"
         width="100%"

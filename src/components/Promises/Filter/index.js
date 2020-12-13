@@ -23,7 +23,7 @@ function Filter({ label, items, onClick, ...props }) {
       <Typography className={classes.label} variant="h6">
         {label}
       </Typography>
-      <div className={classes.filterContainer}>
+      <div data-cy="filter-buttons" className={classes.filterContainer}>
         {items.map((item) => (
           <Button key={item.slug} {...item} onClick={handleClick} />
         ))}

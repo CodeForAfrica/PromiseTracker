@@ -11,7 +11,7 @@ function PromiseChart({ chartLink, title, description }) {
   const iframeSrc = chartLink || null;
 
   return (
-    <Grid className={classes.root}>
+    <Grid className={classes.root} data-cy="promise-chart">
       <Grid container justify="flex-end">
         <Share link={chartLink} description={description} title={title} />
       </Grid>

@@ -72,7 +72,10 @@ function DesktopNavigation(props) {
   return (
     <Grid container>
       <Grid item xs={12} className={classes.root}>
-        <Section classes={{ root: classes.section }}>
+        <Section
+          classes={{ root: classes.section }}
+          data-cy="navigation-buttons"
+        >
           <Grid container justify="flex-start" alignItems="center">
             <Grid item lg={4}>
               <Logo />

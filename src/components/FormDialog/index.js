@@ -41,6 +41,7 @@ function FormDialog({ open, handleFormClose, ...props }) {
       >
         <Typography variant="h2">{petitionTitle}</Typography>
         <IconButton
+          data-cy="close-form"
           disableRipple
           disableFocusRipple
           aria-label="close"

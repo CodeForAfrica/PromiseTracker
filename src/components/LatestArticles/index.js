@@ -22,6 +22,7 @@ function LatestArticles({ actionLabel, items, title, ...props }) {
   }
   return (
     <Section
+      data-cy="latest-articles"
       title={title}
       classes={{ root: classes.section, title: classes.sectionTitle }}
     >

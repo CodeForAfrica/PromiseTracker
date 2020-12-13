@@ -85,7 +85,11 @@ function ActNow({ actionLabel, description, title, ...props }) {
         <Grid container className={classes.content}>
           <Grid item xs={12} lg={6} container alignItems="center">
             <div className={classes.textContainer}>
-              <Typography variant="h1" className={classes.title}>
+              <Typography
+                data-cy="act-now"
+                variant="h1"
+                className={classes.title}
+              >
                 {title}
               </Typography>
               <Typography

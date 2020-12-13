@@ -42,6 +42,7 @@ function Share({ link, title, description, ...props }) {
     <div className={classes.root}>
       <>
         <IconButton
+          data-cy="share-button"
           onClick={handleClick("left")}
           aria-label="share"
           className={classes.share}
@@ -62,6 +63,7 @@ function Share({ link, title, description, ...props }) {
                 <Paper>
                   <Grid container className={classes.socialIconPopper}>
                     <TwitterShareButton
+                      data-cy="twitter"
                       title={title}
                       url={link}
                       additionalProps={{
@@ -79,6 +81,7 @@ function Share({ link, title, description, ...props }) {
                       />
                     </TwitterShareButton>
                     <FacebookShareButton
+                      data-cy="facebook"
                       quote={title}
                       url={link}
                       additionalProps={{
@@ -96,6 +99,7 @@ function Share({ link, title, description, ...props }) {
                       />
                     </FacebookShareButton>
                     <LinkedinShareButton
+                      data-cy="linkedin"
                       title={title}
                       url={link}
                       source={link}

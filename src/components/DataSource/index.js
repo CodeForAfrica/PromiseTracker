@@ -16,7 +16,7 @@ function DataSource({ classes: classesProp, documents, label, promise }) {
     return null;
   }
   return (
-    <div className={classes.root}>
+    <div className={classes.root} data-cy="datasource">
       <div className={classes.titleShareContainer}>
         <Typography className={classes.title} variant="h4">
           {label}

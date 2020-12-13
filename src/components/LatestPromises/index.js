@@ -25,6 +25,7 @@ function LatestPromises({ actionLabel, items, title, ...props }) {
   }
   return (
     <Section
+      data-cy="latest-promises"
       title={title}
       classes={{ root: classes.section, title: classes.sectionTitle }}
     >

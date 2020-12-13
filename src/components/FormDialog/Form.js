@@ -104,7 +104,7 @@ function Form({ ...props }) {
     : "body2";
 
   return (
-    <form>
+    <form data-cy="petition-form">
       <FormTextField
         labelText={petitionLabel}
         helperDescription={petitionHelper}
