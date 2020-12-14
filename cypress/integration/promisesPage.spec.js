@@ -1,11 +1,6 @@
-// Cypress.env();
-
 describe("Promises page", () => {
-  beforeEach(() => {
-    cy.viewport("macbook-16");
-  });
   it("renders Promises page", () => {
-    cy.visit("http://localhost:3000");
+    cy.visit("/");
     cy.get("[data-cy=navigation-buttons]").contains("Promises").click();
     cy.location("pathname", { timeout: 10000 }).should("include", "/promises");
     cy.get("[data-cy=promises-section]").contains("Promises");

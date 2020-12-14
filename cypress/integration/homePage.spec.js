@@ -1,6 +1,6 @@
-describe("Promise Home page", () => {
+describe("Home page", () => {
   it("renders Key Promises", () => {
-    cy.visit("http://localhost:3000");
+    cy.visit("/");
     cy.get("[data-cy=key-promises]").contains("Key Promises");
   });
 
@@ -42,7 +42,7 @@ describe("Promise Home page", () => {
     cy.get("[data-cy=act-now]").contains("Act Now");
   });
 
-  it("renders Partners", () => {
+  it("renders Latest Promises", () => {
     cy.get("[data-cy=latest-promises]").contains("Latest Promises");
   });
 });

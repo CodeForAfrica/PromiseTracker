@@ -1,9 +1,6 @@
 describe("Act Now page", () => {
-  beforeEach(() => {
-    cy.viewport("macbook-16");
-  });
   it("renders Act Now page", () => {
-    cy.visit("http://localhost:3000");
+    cy.visit("/");
     cy.get("[data-cy=navigation-buttons]").contains("Act Now").click();
     cy.location("pathname", { timeout: 10000 }).should("include", "/act-now");
     cy.get("[data-cy=actnow-desc]").contains(

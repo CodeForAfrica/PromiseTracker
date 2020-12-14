@@ -1,11 +1,6 @@
-// Cypress.env();
-
-describe("Promises page", () => {
-  beforeEach(() => {
-    cy.viewport("macbook-16");
-  });
+describe("Single Promise page", () => {
   it("renders promise radar", () => {
-    cy.visit("http://localhost:3000/promises");
+    cy.visit("/promises");
     cy.get("[data-cy=promises-section]").contains("Promises");
     /* eslint-disable cypress/no-unnecessary-waiting */
     cy.get("[data-cy=promises-section").find("a").first().click().wait(20000);
