@@ -63,6 +63,7 @@ function PickPromise({ promises, ...props }) {
                   {pickPromiseDescription}
                 </FormHelperText>
                 <Select
+                  data-cy="promise-select"
                   inputProps={{ id: "select-promise" }}
                   classes={{
                     root: classes.inputSection,
@@ -74,7 +75,11 @@ function PickPromise({ promises, ...props }) {
                   variant="outlined"
                 >
                   {promises.map((promise) => (
-                    <MenuItem key={promise.title} value={promise.title}>
+                    <MenuItem
+                      data-cy="promise-item"
+                      key={promise.title}
+                      value={promise.title}
+                    >
                       {promise.title}
                     </MenuItem>
                   ))}
@@ -87,6 +92,7 @@ function PickPromise({ promises, ...props }) {
           </Grid>
           <Grid item xs={12} className={classes.buttonContainer}>
             <CtAButton
+              data-cy="start-petition"
               color="secondary"
               onClick={handleFormOpen}
               classes={{

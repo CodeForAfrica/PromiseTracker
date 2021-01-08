@@ -21,6 +21,7 @@ function PostCardGrid({ children, component, items, title, ...props }) {
 
   return (
     <Section
+      data-cy="promises-section"
       title={title}
       titleProps={{ component: H1 }}
       classes={{ root: classes.section, title: classes.sectionTitle }}

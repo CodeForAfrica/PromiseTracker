@@ -98,7 +98,12 @@ function Dataset({ dataset, ...props }) {
   const hasHxlTags =
     tags && tags.find((tag) => tag.name.toLowerCase() === "hxl");
   return (
-    <Grid container direction="column" className={classes.root}>
+    <Grid
+      container
+      direction="column"
+      className={classes.root}
+      data-cy="dataset"
+    >
       <A
         href={`${config.CKAN_BACKEND_URL}/dataset/${name}`}
         underline="none"

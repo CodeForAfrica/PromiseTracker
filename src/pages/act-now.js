@@ -99,7 +99,10 @@ function ActNow({
       content={
         description?.length ? (
           <>
-            <RichTypography className={classes.description}>
+            <RichTypography
+              data-cy="actnow-desc"
+              className={classes.description}
+            >
               {description}
             </RichTypography>
           </>

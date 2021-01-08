@@ -40,6 +40,7 @@ function KeyPromises({ actionLabel, items, title, titleProps, ...props }) {
   return (
     <div className={classes.root}>
       <Section
+        data-cy="key-promises"
         title={title}
         titleProps={{ ...DEFAULT_TITLE_PROPS, ...titleProps }}
         classes={{ root: classes.section, title: classes.sectionTitle }}

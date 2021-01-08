@@ -124,7 +124,11 @@ function Newsletter({
           </Grid>
           <Grid item xs={12} lg={4} container alignItems="center">
             <div className={classes.textContainer}>
-              <Typography variant="h1" className={classes.title}>
+              <Typography
+                data-cy="subscribe"
+                variant="h1"
+                className={classes.title}
+              >
                 {title}
               </Typography>
               {description && (
@@ -132,7 +136,10 @@ function Newsletter({
                   {description}
                 </Typography>
               )}
-              <RichTypography classes={{ root: classes.form }}>
+              <RichTypography
+                data-cy="subscribe-register"
+                classes={{ root: classes.form }}
+              >
                 {config.settings.subscribe.embedCode}
               </RichTypography>
             </div>

@@ -81,6 +81,7 @@ function Partners({ items, title, ...props }) {
   return (
     <div className={classes.root}>
       <Section
+        data-cy="partners"
         title={title}
         titleProps={{ variant: "h4" }}
         classes={{ root: classes.section, title: classes.sectionTitle }}

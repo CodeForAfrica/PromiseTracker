@@ -19,6 +19,7 @@ function PromiseCard({
 
   return (
     <PostCard
+      data-cy="promise-card"
       {...props}
       title={title}
       as={href}
