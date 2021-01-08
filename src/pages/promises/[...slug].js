@@ -44,7 +44,6 @@ function PromisePage({
   navigation,
   promise,
   labels,
-  relatedPromises,
   title: titleProp,
   ...props
 }) {
@@ -59,16 +58,20 @@ function PromisePage({
       title={title}
       classes={{ section: classes.section, footer: classes.footer }}
     >
-      {promise ? <Promise promise={promise} {...labels} /> : null}
-      <RelatedPromises
-        items={relatedPromises}
-        title="Related Promises"
-        withFilter={false}
-        classes={{
-          section: classes.section,
-          sectionTitle: classes.sectionTitle,
-        }}
-      />
+      {promise && (
+        <>
+          <Promise promise={promise} {...labels} />
+          <RelatedPromises
+            items={promise?.relatedPromises}
+            title="Related Promises"
+            withFilter={false}
+            classes={{
+              section: classes.section,
+              sectionTitle: classes.sectionTitle,
+            }}
+          />
+        </>
+      )}
       <Subscribe
         classes={{
           section: classes.section,
@@ -91,8 +94,8 @@ PromisePage.propTypes = {
     description: PropTypes.string,
     image: PropTypes.string,
     title: PropTypes.string,
+    relatedPromises: PropTypes.arrayOf(PropTypes.shape({})),
   }),
-  relatedPromises: PropTypes.arrayOf(PropTypes.shape({})),
   title: PropTypes.string,
 };
 
@@ -102,7 +105,6 @@ PromisePage.defaultProps = {
   labels: undefined,
   navigation: undefined,
   promise: undefined,
-  relatedPromises: undefined,
   title: undefined,
 };
 
@@ -147,18 +149,9 @@ export async function getStaticProps({ params: { slug: slugParam }, locale }) {
 
   const promisePost = await checkApi.promise({
     id,
-  });
-
-  const otherPromises = await checkApi.promises({
     limit: 100,
     query: `{ "projects": ["2831"] }`,
   });
-
-  const relatedPromises = otherPromises.filter(
-    (p) =>
-      p.id !== promisePost.id &&
-      promisePost.tags.some((v) => p.tags.includes(v))
-  );
 
   const notFound = !promisePost;
   if (notFound) {
@@ -197,7 +190,6 @@ export async function getStaticProps({ params: { slug: slugParam }, locale }) {
       errorCode,
       languageAlternates,
       promise,
-      relatedPromises: relatedPromises.slice(0, 3),
     },
     revalidate: 2 * 60, // seconds
   };
