@@ -76,6 +76,31 @@ function check({ team = undefined, promiseStatuses = {}, initialState = {} }) {
       : null;
   }
 
+  async function getLinkedDataset(node) {
+    const items = node.tasks?.edges;
+    const dataset = findItemByNodeLabel(
+      items,
+      "What data sets are linked to this promise?"
+    );
+    const slug =
+      dataset?.node?.first_response_value?.split("/")[-1] ||
+      "health-facilities-in-africa"; // TODO: sample dataset name needs to be removed
+    const response = await fetch(
+      `${config.CKAN_BACKEND_URL}/api/3/action/package_show?id=${slug}`
+    );
+    const { result } = response.ok ? await response.json() : { result: {} };
+    return result;
+  }
+
+  function getChartLink(node) {
+    const items = node.tasks?.edges;
+    const chartTask = findItemByNodeLabel(
+      items,
+      "What charts are related to this promise."
+    );
+    return chartTask ? chartTask.node.first_response_value : null;
+  }
+
   function getPromiseDeadlineEvent(node) {
     const items = node.tasks?.edges;
     const deadlineTask = findItemByNodeLabel(items, questions[7]);
@@ -167,6 +192,7 @@ function check({ team = undefined, promiseStatuses = {}, initialState = {} }) {
   async function nodeToPromise(node) {
     const id = node.dbid;
     const slug = slugify(node.title);
+
     return {
       id,
       href: `/promises/${id}/${slug}`,
@@ -174,6 +200,7 @@ function check({ team = undefined, promiseStatuses = {}, initialState = {} }) {
       title: node.title,
       image: getImage(node),
       description: node.description,
+      chartLinks: getChartLink(node),
       date: getPromiseDate(node),
       events: [getPromiseDeadlineEvent(node)],
       status: getStatusHistory(node)[0],
@@ -194,8 +221,24 @@ function check({ team = undefined, promiseStatuses = {}, initialState = {} }) {
 
   async function handleSinglePromise({ data }) {
     const node = data?.project_media;
+
     if (node) {
-      return nodeToPromise(node);
+      const dataset = await (getLinkedDataset(node) || {});
+      const singlePromise = await nodeToPromise(node);
+      const otherPromises = await Promise.all(
+        data?.search?.medias?.edges.map(({ node: n }) => nodeToPromise(n)) || []
+      );
+      const relatedPromises = otherPromises.filter(
+        (p) =>
+          p.id !== singlePromise.id &&
+          singlePromise.tags.some((v) => p.tags.includes(v))
+      );
+
+      return {
+        ...singlePromise,
+        dataset,
+        relatedPromises: relatedPromises.slice(0, 3),
+      };
     }
     return null;
   }

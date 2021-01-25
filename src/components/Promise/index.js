@@ -7,11 +7,13 @@ import { useTheme } from "@material-ui/core/styles";
 import { RichTypography, Section } from "@commons-ui/core";
 
 import AuthorAtribution from "@/promisetracker/components/Promise/AuthorAtribution";
+import Dataset from "@/promisetracker/components/Dataset";
 import DataSource from "@/promisetracker/components/DataSource";
 import Link from "@/promisetracker/components/Link";
 import NarativeUpdates from "@/promisetracker/components/Promise/Narative";
 import RelatedFactChecks from "@/promisetracker/components/Promise/RelatedFactChecks";
 import Status from "@/promisetracker/components/PromiseStatus";
+import PromiseChart from "@/promisetracker/components/PromiseChart";
 
 import Radar from "./Radar";
 import useStyles from "./useStyles";
@@ -85,6 +87,8 @@ function Promise({
           <RichTypography className={classes.promiseBody} variant="body1">
             {promise.content}
           </RichTypography>
+          <PromiseChart {...promise} />
+          <Dataset dataset={promise.dataset} />
           <AuthorAtribution {...promise.attribution} />
         </Grid>
         <Grid item md={1} implementation="css" smDown component={Hidden} />
@@ -115,9 +119,11 @@ Promise.propTypes = {
     description: PropTypes.string,
     image: PropTypes.string,
     title: PropTypes.string,
+    chartLink: PropTypes.string,
     status: PropTypes.shape({}),
     attribution: PropTypes.shape({}),
     narrative: PropTypes.shape({}),
+    dataset: PropTypes.shape({}),
     documents: PropTypes.arrayOf(PropTypes.shape({})),
     relatedFactChecks: PropTypes.arrayOf(PropTypes.shape({})),
   }).isRequired,
