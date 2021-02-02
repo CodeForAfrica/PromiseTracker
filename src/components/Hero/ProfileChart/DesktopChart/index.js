@@ -28,6 +28,7 @@ const useStyles = makeStyles(({ typography }) => ({
 
 function DesktopChart({ promisesByStatus, ...props }) {
   const classes = useStyles(props);
+  console.log(promisesByStatus);
   return (
     <Grid
       container
@@ -44,7 +45,7 @@ function DesktopChart({ promisesByStatus, ...props }) {
         progressStatuses={[
           {
             color: "#005DFD",
-            count: promisesByStatus.statusHistory.Completed?.length,
+            count: promisesByStatus.statusHistory.Complete?.length,
             title: "Complete",
           },
           {
@@ -63,7 +64,7 @@ function DesktopChart({ promisesByStatus, ...props }) {
         progressStatuses={[
           {
             color: "#909090",
-            count: promisesByStatus.statusHistory.Unrated?.length,
+            count: promisesByStatus.statusHistory.Inconclusive?.length,
             title: "Inconclusive",
           },
           {
@@ -83,7 +84,7 @@ function DesktopChart({ promisesByStatus, ...props }) {
         progressStatuses={[
           {
             color: "#FFB322",
-            count: promisesByStatus.statusHistory.Delayed?.length,
+            count: promisesByStatus.statusHistory["Behind Schedule"]?.length,
             title: "Behind Schedule",
           },
           {
@@ -102,11 +103,11 @@ DesktopChart.propTypes = {
     count: PropTypes.number,
     statusHistory: PropTypes.PropTypes.shape({
       "In Progress": PropTypes.arrayOf(PropTypes.shape({})),
-      Completed: PropTypes.arrayOf(PropTypes.shape({})),
-      Unrated: PropTypes.arrayOf(PropTypes.shape({})),
+      Complete: PropTypes.arrayOf(PropTypes.shape({})),
+      Inconclusive: PropTypes.arrayOf(PropTypes.shape({})),
       Unstarted: PropTypes.arrayOf(PropTypes.shape({})),
       Stalled: PropTypes.arrayOf(PropTypes.shape({})),
-      Delayed: PropTypes.arrayOf(PropTypes.shape({})),
+      "Behind Schedule": PropTypes.arrayOf(PropTypes.shape({})),
     }),
   }),
 };
