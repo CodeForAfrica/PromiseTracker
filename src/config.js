@@ -34,8 +34,8 @@ const config = {
   },
   filterStatusItems: [
     {
-      name: "Completed",
-      slug: "completed",
+      name: "Complete",
+      slug: "complete",
     },
 
     {
@@ -47,12 +47,12 @@ const config = {
       slug: "stalled",
     },
     {
-      name: "Behind",
-      slug: "behind",
+      name: "Behind Schedule",
+      slug: "behind-schedule",
     },
     {
-      name: "Unrated",
-      slug: "unrated",
+      name: "Inconclusive",
+      slug: "inconclusive",
     },
     {
       name: "Unstarted",
