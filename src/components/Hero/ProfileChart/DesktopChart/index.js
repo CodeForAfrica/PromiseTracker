@@ -28,7 +28,6 @@ const useStyles = makeStyles(({ typography }) => ({
 
 function DesktopChart({ promisesByStatus, ...props }) {
   const classes = useStyles(props);
-  console.log(promisesByStatus);
   return (
     <Grid
       container
