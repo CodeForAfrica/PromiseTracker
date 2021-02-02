@@ -36,7 +36,7 @@ function MobileChart({ promisesByStatus, totalPromises, ...props }) {
           {
             color: "#005DFD",
             count: promisesByStatus.statusHistory.Completed?.length,
-            title: "Completed",
+            title: "Complete",
           },
           {
             color: "#90DAFF",
@@ -74,7 +74,7 @@ function MobileChart({ promisesByStatus, totalPromises, ...props }) {
           {
             color: "#FFB322",
             count: promisesByStatus.statusHistory.Delayed?.length,
-            title: "Delayed",
+            title: "Behind Schedule",
           },
           {
             color: "#FF5154",
