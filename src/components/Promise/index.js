@@ -60,10 +60,15 @@ function Promise({
               <Typography className={classes.mobileStatusLabel} variant="h5">
                 {promiseStatusLabel}
               </Typography>
-              <Status
-                {...promise.status}
-                classes={{ root: classes.mobileStatus }}
-              />
+              <Grid item className={classes.mobileStatusLabelGrid}>
+                <RichTypography variant="h5" className={classes.statusTitle}>
+                  Promise rating status:
+                </RichTypography>
+                <Status
+                  {...promise.status}
+                  classes={{ root: classes.mobileStatus }}
+                />
+              </Grid>
             </div>
           </Hidden>
           <RichTypography className={classes.promiseBody} variant="body1">
@@ -97,6 +102,9 @@ function Promise({
             <Typography className={classes.label} variant="h5">
               {promiseStatusLabel}
             </Typography>
+            <RichTypography variant="h5" className={classes.statusTitle}>
+              Promise rating status:
+            </RichTypography>
             <Status {...promise.status} classes={{ root: classes.status }} />
             <Typography className={classes.label} variant="h5">
               {promiseRadarLabel}
@@ -132,6 +140,7 @@ Promise.propTypes = {
     promiseBody: PropTypes.string,
     promiseFooter: PropTypes.string,
     date: PropTypes.string,
+    statusTitle: PropTypes.string,
     description: PropTypes.string,
     descriptionContainer: PropTypes.string,
     featuredImageContainer: PropTypes.string,
@@ -139,6 +148,7 @@ Promise.propTypes = {
     mobileStatus: PropTypes.string,
     mobileStatusContainer: PropTypes.string,
     mobileStatusLabel: PropTypes.string,
+    mobileStatusLabelGrid: PropTypes.string,
     root: PropTypes.string,
     section: PropTypes.string,
     status: PropTypes.string,

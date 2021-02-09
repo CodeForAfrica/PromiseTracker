@@ -35,8 +35,8 @@ function MobileChart({ promisesByStatus, totalPromises, ...props }) {
         progressStatuses={[
           {
             color: "#005DFD",
-            count: promisesByStatus.statusHistory.Completed?.length,
-            title: "Completed",
+            count: promisesByStatus.statusHistory.Complete?.length,
+            title: "Complete",
           },
           {
             color: "#90DAFF",
@@ -54,7 +54,7 @@ function MobileChart({ promisesByStatus, totalPromises, ...props }) {
         progressStatuses={[
           {
             color: "#909090",
-            count: promisesByStatus.statusHistory.Unrated?.length,
+            count: promisesByStatus.statusHistory.Inconclusive?.length,
             title: "Inconclusive",
           },
           {
@@ -73,8 +73,8 @@ function MobileChart({ promisesByStatus, totalPromises, ...props }) {
         progressStatuses={[
           {
             color: "#FFB322",
-            count: promisesByStatus.statusHistory.Delayed?.length,
-            title: "Delayed",
+            count: promisesByStatus.statusHistory["Behind Schedule"]?.length,
+            title: "Behind Schedule",
           },
           {
             color: "#FF5154",
@@ -92,11 +92,11 @@ MobileChart.propTypes = {
     count: PropTypes.number,
     statusHistory: PropTypes.PropTypes.shape({
       "In Progress": PropTypes.arrayOf(PropTypes.shape({})),
-      Completed: PropTypes.arrayOf(PropTypes.shape({})),
-      Unrated: PropTypes.arrayOf(PropTypes.shape({})),
+      Complete: PropTypes.arrayOf(PropTypes.shape({})),
+      Inconclusive: PropTypes.arrayOf(PropTypes.shape({})),
       Unstarted: PropTypes.arrayOf(PropTypes.shape({})),
       Stalled: PropTypes.arrayOf(PropTypes.shape({})),
-      Delayed: PropTypes.arrayOf(PropTypes.shape({})),
+      "Behind Schedule": PropTypes.arrayOf(PropTypes.shape({})),
     }),
   }),
   totalPromises: PropTypes.number.isRequired,
