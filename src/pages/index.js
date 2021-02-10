@@ -186,7 +186,6 @@ export async function getStaticProps({ locale }) {
   const articles = posts?.slice(0, 4) || null;
   const projectMeta = await checkApi.projectMeta();
   const languageAlternates = _.languageAlternates();
-
   return {
     props: {
       ...page,
