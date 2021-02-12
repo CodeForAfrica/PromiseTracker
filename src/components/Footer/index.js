@@ -15,6 +15,17 @@ import {
   Section,
 } from "@commons-ui/core";
 
+// import {
+//   A,
+//   FooterAbout,
+//   FooterCopyright,
+//   FooterLegalLinks,
+//   FooterLogo,
+//   FooterQuickLinks,
+//   FooterStayInTouch,
+//   Section,
+// } from "@commonsui";
+
 import Link from "@/promisetracker/components/Link";
 
 import cfaLogo from "@/promisetracker/assets/logo-C4A.svg";
