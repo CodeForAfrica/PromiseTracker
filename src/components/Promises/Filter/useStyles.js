@@ -7,18 +7,20 @@ const useStyles = makeStyles(({ typography, palette, breakpoints }) => ({
       marginBottom: 0,
     },
   },
+  name: {
+    fontSize: typography.pxToRem(9.6),
+    lineHeight: typography.pxToRem(20),
+  },
   button: {
     border: `.122rem solid ${palette.primary.dark}`,
     marginRight: ".6rem",
     marginBottom: ".6rem",
-    padding: ".5rem .5rem",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     "&:hover": {
       marginRight: ".6rem",
       marginBottom: ".6rem",
-      padding: ".5rem .5rem",
       border: `.122rem solid ${palette.primary.dark}`,
     },
   },
@@ -27,7 +29,7 @@ const useStyles = makeStyles(({ typography, palette, breakpoints }) => ({
     display: "flex",
     flexWrap: "wrap",
     marginTop: "1rem",
-    maxWidth: typography.pxToRem(300),
+    maxWidth: typography.pxToRem(500),
   },
   label: {
     color: palette.secondary.dark,
