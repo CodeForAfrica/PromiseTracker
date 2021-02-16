@@ -55,6 +55,7 @@ function wp(site) {
     };
     return data;
   }
+
   async function getResourcesBySlug(type, slug, lang, params) {
     const fields = params?.fields ? `&_fields=${params.fields}` : "";
     const embed = params?.embed ? `&_embed=${params.embed}` : "";
