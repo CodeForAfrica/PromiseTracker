@@ -139,12 +139,48 @@ function wp(site) {
     return [];
   }
 
+  async function getPostBySlug(slug, lang) {
+    const resources = await getResourcesBySlug("posts", slug, lang, {
+      embed: "true",
+    });
+    const resource = resources[0];
+    if (isEmpty(resource)) {
+      return undefined;
+    }
+
+    // eslint-disable-next-line no-underscore-dangle
+    const embedded = resource._embedded;
+
+    const post = {
+      ...resource,
+      author: embedded.author[0],
+      content: resource.content.rendered,
+      featured_media: embedded["wp:featuredmedia"][0],
+      title: resource.title.rendered,
+      // set thumbail from acf | generated thumbnail | Featured Image
+      thumbnail_image:
+        resource.acf.attributes.thumbnail_image ||
+        resource.featured_image_src ||
+        embedded["wp:featuredmedia"][0] ||
+        null,
+    };
+    return post;
+  }
+
   async function getPageBySlug(slug, lang) {
     const resources = await getResourcesBySlug("pages", slug, lang);
     const resource = resources[0] || {};
     if (isEmpty(resource)) {
       return resource;
     }
+    const posts = await Promise.all(
+      resource.acf?.posts?.map((post) =>
+        getPostBySlug(post.post_name, lang, {
+          embed: "true",
+        })
+      )
+    );
+    resource.acf.posts = posts;
     const options = await getOptions(lang);
     return createPageFrom(resource, options, lang);
   }
@@ -164,31 +200,6 @@ function wp(site) {
     );
     return res.ok ? res.json() : null;
   } */
-
-  async function getPostBySlug(slug, lang) {
-    const resources = await getResourcesBySlug("posts", slug, lang, {
-      embed: "true",
-    });
-    const resource = resources[0];
-    if (isEmpty(resource)) {
-      return undefined;
-    }
-
-    const post = {
-      ...resource,
-      // eslint-disable-next-line no-underscore-dangle
-      author: resource._embedded.author[0],
-      content: resource.content.rendered,
-      // eslint-disable-next-line no-underscore-dangle
-      featured_media: resource._embedded["wp:featuredmedia"][0],
-      title: resource.title.rendered,
-      thumbnail_image: resources?.acf?.attributes?.thumbnail_image || null,
-      featured_image_src:
-        resources?.act?.attributes?.featured_image_src || null,
-    };
-    // console.log(post)
-    return post;
-  }
 
   const api = {
     pages: ({
@@ -234,11 +245,11 @@ function wp(site) {
           }
           const posts =
             pageWithPosts?.posts?.map((post) => ({
-              image: post.featured_image,
-              description: post.post_content.replace(/(<([^>]+)>)/gi, ""),
-              date: formatDate(post.post_date),
-              slug: post.post_name,
-              title: post.post_title,
+              image: post.thumbnail_image,
+              description: post.content.replace(/(<([^>]+)>)/gi, ""),
+              date: formatDate(post.date),
+              slug: post.slug,
+              title: post.title,
             })) || null;
           return posts;
         })();
