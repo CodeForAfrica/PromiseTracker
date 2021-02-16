@@ -29,8 +29,6 @@ const useStyles = makeStyles(
       backgroundRepeat: "no-repeat",
       backgroundSize: "cover",
       width: "100%",
-      imageRendering: "pixelated",
-      backgroundPosition: "50% 50%",
       height: typography.pxToRem(210),
       [breakpoints.up("lg")]: {
         height: typography.pxToRem(573),
