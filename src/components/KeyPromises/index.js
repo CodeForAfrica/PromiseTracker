@@ -29,9 +29,8 @@ function KeyPromises({ actionLabel, items, title, titleProps, ...props }) {
       }
     }
   }, [stepperRef, setActiveStep]);
-  const steps = items.length;
-  const newStep = items.length === 1 ? 1 : items.length;
-  console.log(newStep);
+  const steps = items.length === 1 ? 0 : items.length;
+  console.log(steps);
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
@@ -54,7 +53,7 @@ function KeyPromises({ actionLabel, items, title, titleProps, ...props }) {
         />
         <MobileStepper
           ref={stepperRef}
-          steps={newStep}
+          steps={steps}
           position="static"
           variant="dots"
           activeStep={activeStep}
