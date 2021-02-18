@@ -30,7 +30,6 @@ function KeyPromises({ actionLabel, items, title, titleProps, ...props }) {
     }
   }, [stepperRef, setActiveStep]);
   const steps = items.length === 1 ? 0 : items.length;
-  console.log(steps);
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
