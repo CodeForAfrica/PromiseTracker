@@ -49,6 +49,7 @@ function Index({
   ...props
 }) {
   const classes = useStyles(props);
+  const availablePromises = keyPromises.length === 0;
   return (
     <Page
       {...props}
@@ -74,11 +75,11 @@ function Index({
         title={projectMeta.description}
         classes={{ section: classes.section }}
       />
-      {keyPromises.length === 0 ? null : (
+      {availablePromises ? null : (
         <KeyPromises
           actionLabel="Learn More"
           items={keyPromises}
-          title="Key Promises"
+          title={availablePromises ? "Key Promise" : "Key Promises"}
           classes={{
             section: classes.section,
           }}
