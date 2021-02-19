@@ -44,7 +44,7 @@ function KeyPromises({ actionLabel, items, title, titleProps, ...props }) {
       {availableItems ? null : (
         <div className={classes.root}>
           <Section
-            title={availableItems ? "Key Promise" : title}
+            title={items.length === 1 ? "Key Promise" : title}
             titleProps={{ ...DEFAULT_TITLE_PROPS, ...titleProps }}
             classes={{ root: classes.section, title: classes.sectionTitle }}
           >
