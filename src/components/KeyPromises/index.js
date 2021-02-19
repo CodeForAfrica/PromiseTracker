@@ -29,8 +29,9 @@ function KeyPromises({ actionLabel, items, title, titleProps, ...props }) {
       }
     }
   }, [stepperRef, setActiveStep]);
-  const steps = items.length === 1 ? 0 : items.length;
-  const availableItems = items.length === 0;
+
+  const steps = items.length;
+  const availableItems = !items?.length;
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -54,41 +55,43 @@ function KeyPromises({ actionLabel, items, title, titleProps, ...props }) {
               {...items[activeStep]}
               {...props}
             />
-            <MobileStepper
-              ref={stepperRef}
-              steps={steps}
-              position="static"
-              variant="dots"
-              activeStep={activeStep}
-              backButton={
-                steps === 0 ? null : (
-                  <IconButton
-                    onClick={handleBack}
-                    disabled={activeStep === 0}
-                    className={classes.stepperButton}
-                  >
-                    <KeyboardArrowLeft fontSize="inherit" />
-                  </IconButton>
-                )
-              }
-              nextButton={
-                steps === 0 ? null : (
-                  <IconButton
-                    onClick={handleNext}
-                    disabled={activeStep === steps - 1}
-                    className={classes.stepperButton}
-                  >
-                    <KeyboardArrowRight fontSize="inherit" />
-                  </IconButton>
-                )
-              }
-              classes={{
-                root: classes.stepper,
-                dot: classes.stepperDot,
-                dotActive: classes.stepperDotActive,
-                dots: classes.stepperDots,
-              }}
-            />
+            {items.length > 1 ? (
+              <MobileStepper
+                ref={stepperRef}
+                steps={steps}
+                position="static"
+                variant="dots"
+                activeStep={activeStep}
+                backButton={
+                  steps === 0 ? null : (
+                    <IconButton
+                      onClick={handleBack}
+                      disabled={activeStep === 0}
+                      className={classes.stepperButton}
+                    >
+                      <KeyboardArrowLeft fontSize="inherit" />
+                    </IconButton>
+                  )
+                }
+                nextButton={
+                  steps === 0 ? null : (
+                    <IconButton
+                      onClick={handleNext}
+                      disabled={activeStep === steps - 1}
+                      className={classes.stepperButton}
+                    >
+                      <KeyboardArrowRight fontSize="inherit" />
+                    </IconButton>
+                  )
+                }
+                classes={{
+                  root: classes.stepper,
+                  dot: classes.stepperDot,
+                  dotActive: classes.stepperDotActive,
+                  dots: classes.stepperDots,
+                }}
+              />
+            ) : null}
           </Section>
         </div>
       )}
