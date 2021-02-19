@@ -61,6 +61,7 @@ function wp(site) {
     };
     return data;
   }
+
   async function getResourcesBySlug(type, slug, lang, params) {
     const fields = params?.fields ? `&_fields=${params.fields}` : "";
     const embed = params?.embed ? `&_embed=${params.embed}` : "";
@@ -70,6 +71,7 @@ function wp(site) {
     const data = res.ok ? await res.json() : [];
     return data;
   }
+
   async function getResourcesByParentId(type, parent, lang, order, orderBy) {
     const res = await fetch(
       `${WP_DASHBOARD_API_URL}/${type}?parent=${parent}&order=${order}&orderby=${orderBy}&lang=${lang}`
@@ -77,6 +79,7 @@ function wp(site) {
     const data = res.ok ? res.json() : [];
     return data;
   }
+
   async function getResourceById(type, id, lang, params) {
     const fields = params?.fields ? `&_fields=${params.fields}` : "";
     const embed = params?.embed ? `&_embed=${params.embed}` : "";
@@ -86,6 +89,7 @@ function wp(site) {
     const data = res.ok ? res.json() : {};
     return data;
   }
+
   function createPageFrom(resource, options, lang) {
     const { acf } = resource;
     let criteria = null;
@@ -117,6 +121,7 @@ function wp(site) {
     };
     return page;
   }
+
   async function getPagesByParentId(parent, lang, order, orderBy) {
     const children = await getResourcesByParentId(
       "pages",
@@ -129,6 +134,7 @@ function wp(site) {
     const data = children.map((child) => createPageFrom(child, options, lang));
     return data;
   }
+
   async function getPagesByParentSlug(slug, lang, order, orderBy) {
     const resources = await getResourcesBySlug("pages", slug, lang, {
       fields: "id",
@@ -139,42 +145,80 @@ function wp(site) {
     }
     return [];
   }
+
+  async function getPostBySlug(slug, lang) {
+    const resources = await getResourcesBySlug("posts", slug, lang, {
+      embed: "true",
+    });
+    const resource = resources[0];
+    if (isEmpty(resource)) {
+      return undefined;
+    }
+
+    // eslint-disable-next-line no-underscore-dangle
+    const embedded = resource._embedded;
+
+    const post = {
+      ...resource,
+      author: embedded.author[0],
+      content: resource.content.rendered,
+      featured_media: embedded["wp:featuredmedia"][0],
+      title: resource.title.rendered,
+      // set thumbail from acf | generated thumbnail | Featured Image
+      thumbnail_image:
+        resource.acf.attributes.thumbnail_image ||
+        resource.featured_image_src ||
+        embedded["wp:featuredmedia"][0] ||
+        null,
+    };
+    return post;
+  }
+
   async function getPageBySlug(slug, lang) {
     const resources = await getResourcesBySlug("pages", slug, lang);
     const resource = resources[0] || {};
     if (isEmpty(resource)) {
       return resource;
     }
+    if (resource.acf?.posts) {
+      const posts = await Promise.all(
+        resource.acf?.posts?.map((post) =>
+          getPostBySlug(post.post_name, lang, {
+            embed: "true",
+          })
+        )
+      );
+      resource.acf.posts = posts || [];
+    }
     const options = await getOptions(lang);
     return createPageFrom(resource, options, lang);
   }
+
   async function getPageById(id, lang) {
     const resource = await getResourceById("pages", id, lang);
     if (isEmpty(resource)) {
       return resource;
     }
+    if (resource.acf?.posts) {
+      const posts = await Promise.all(
+        resource.acf?.posts?.map((post) =>
+          getPostBySlug(post.post_name, lang, {
+            embed: "true",
+          })
+        )
+      );
+      resource.acf.posts = posts || [];
+    }
     const options = await getOptions(lang);
     return createPageFrom(resource, options, lang);
   }
-  async function getPostBySlug(slug, lang) {
-    const resources = await getResourcesBySlug("posts", slug, lang, {
-      embed: 1,
-    });
-    const resource = resources[0];
-    if (isEmpty(resource)) {
-      return undefined;
-    }
-    const post = {
-      ...resource,
-      // eslint-disable-next-line no-underscore-dangle
-      author: resource._embedded.author[0],
-      content: resource.content.rendered,
-      // eslint-disable-next-line no-underscore-dangle
-      featured_media: resource._embedded["wp:featuredmedia"][0],
-      title: resource.title.rendered,
-    };
-    return post;
-  }
+
+  /*  export async function getPostById(type, id, lang) {
+    const res = await fetch(
+      `${config.WP_BACKEND_URL}/wp-json/wp/v2/${type}/${id}?lang=${lang}`
+    );
+    return res.ok ? res.json() : null;
+  } */
 
   const api = {
     pages: ({
@@ -220,11 +264,11 @@ function wp(site) {
           }
           const posts =
             pageWithPosts?.posts?.map((post) => ({
-              image: post.featured_image,
-              description: post.post_content.replace(/(<([^>]+)>)/gi, ""),
-              date: formatDate(post.post_date),
-              slug: post.post_name,
-              title: post.post_title,
+              image: post.thumbnail_image,
+              description: post.content.replace(/(<([^>]+)>)/gi, ""),
+              date: formatDate(post.date),
+              slug: post.slug,
+              title: post.title,
             })) || null;
           return posts;
         })();
