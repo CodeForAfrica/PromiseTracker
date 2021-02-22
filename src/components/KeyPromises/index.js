@@ -29,7 +29,10 @@ function KeyPromises({ actionLabel, items, title, titleProps, ...props }) {
       }
     }
   }, [stepperRef, setActiveStep]);
+
   const steps = items.length;
+  const availableItems = !items?.length;
+
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
@@ -38,51 +41,61 @@ function KeyPromises({ actionLabel, items, title, titleProps, ...props }) {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
   return (
-    <div className={classes.root}>
-      <Section
-        title={title}
-        titleProps={{ ...DEFAULT_TITLE_PROPS, ...titleProps }}
-        classes={{ root: classes.section, title: classes.sectionTitle }}
-      >
-        <KeyPromise
-          key={items[activeStep].title}
-          actionLabel={actionLabel}
-          {...items[activeStep]}
-          {...props}
-        />
-        <MobileStepper
-          ref={stepperRef}
-          steps={steps}
-          position="static"
-          variant="dots"
-          activeStep={activeStep}
-          backButton={
-            <IconButton
-              onClick={handleBack}
-              disabled={activeStep === 0}
-              className={classes.stepperButton}
-            >
-              <KeyboardArrowLeft fontSize="inherit" />
-            </IconButton>
-          }
-          nextButton={
-            <IconButton
-              onClick={handleNext}
-              disabled={activeStep === steps - 1}
-              className={classes.stepperButton}
-            >
-              <KeyboardArrowRight fontSize="inherit" />
-            </IconButton>
-          }
-          classes={{
-            root: classes.stepper,
-            dot: classes.stepperDot,
-            dotActive: classes.stepperDotActive,
-            dots: classes.stepperDots,
-          }}
-        />
-      </Section>
-    </div>
+    <>
+      {availableItems ? null : (
+        <div className={classes.root}>
+          <Section
+            title={items.length === 1 ? "Key Promise" : title}
+            titleProps={{ ...DEFAULT_TITLE_PROPS, ...titleProps }}
+            classes={{ root: classes.section, title: classes.sectionTitle }}
+          >
+            <KeyPromise
+              key={items[activeStep].title}
+              actionLabel={actionLabel}
+              {...items[activeStep]}
+              {...props}
+            />
+            {items.length > 1 ? (
+              <MobileStepper
+                ref={stepperRef}
+                steps={steps}
+                position="static"
+                variant="dots"
+                activeStep={activeStep}
+                backButton={
+                  steps === 0 ? null : (
+                    <IconButton
+                      onClick={handleBack}
+                      disabled={activeStep === 0}
+                      className={classes.stepperButton}
+                    >
+                      <KeyboardArrowLeft fontSize="inherit" />
+                    </IconButton>
+                  )
+                }
+                nextButton={
+                  steps === 0 ? null : (
+                    <IconButton
+                      onClick={handleNext}
+                      disabled={activeStep === steps - 1}
+                      className={classes.stepperButton}
+                    >
+                      <KeyboardArrowRight fontSize="inherit" />
+                    </IconButton>
+                  )
+                }
+                classes={{
+                  root: classes.stepper,
+                  dot: classes.stepperDot,
+                  dotActive: classes.stepperDotActive,
+                  dots: classes.stepperDots,
+                }}
+              />
+            ) : null}
+          </Section>
+        </div>
+      )}
+    </>
   );
 }
 
