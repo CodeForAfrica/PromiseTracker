@@ -19,6 +19,29 @@ Run the following to get started locally:
 
 **Note:** Reach out to your team lead for directions on how to receive the `CHECK_ACCESS_TOKEN`
 
+#### Working with CommonsUI Locally
+
+[CommonsUI](https://github.com/CodeForAfrica/COMMONS-UI) is a library, developed and maintained by CfA, that packages React components used to develop various UIs.
+
+To build and run the project with COMMONS-UI submodule locally, run:
+
+```sh
+  yarn dev:commons
+```
+
+COMMONS-UI is now ready to be tested locally. To get started, check out to the branch you want to test:
+
+```sh
+  cd COMMONS-UI
+  git checkout <desired-branch>
+```
+
+To remove COMMONS-UI, run:
+
+```sh
+  yarn remove:commons
+```
+
 ## Attribution
 
 Promise Tracker is modelled on [Rouhani Meter](https://rouhanimeter.com) and made possible thank you to the generous support of DW Akademie and Meedan. Built by the Code for Africa Tech team and content courtesy of PesaCheck and ANCIR's iLab teams.

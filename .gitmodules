@@ -1,0 +1,4 @@
+
+[submodule "COMMONS-UI"]
+	path = COMMONS-UI
+	url = git@github.com:CodeForAfrica/COMMONS-UI.git
