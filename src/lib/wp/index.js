@@ -124,7 +124,8 @@ function wp(site) {
   }
 
   function createPageFrom(resource, options, lang) {
-    const { acf } = resource;
+    let { acf } = resource;
+    acf = acf || {};
     let criteria = null;
     if (acf.criteria?.show) {
       criteria = {
