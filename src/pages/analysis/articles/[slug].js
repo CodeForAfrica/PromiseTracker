@@ -131,7 +131,12 @@ export async function getStaticPaths() {
   return { fallback, paths };
 }
 
-export async function getStaticProps({ params: { slug: slugParam }, locale }) {
+export async function getStaticProps({
+  params: { slug: slugParam },
+  locale,
+  preview = false,
+  previewData,
+}) {
   const _ = i18n();
   if (!_.locales.includes(locale)) {
     return {
@@ -141,10 +146,16 @@ export async function getStaticProps({ params: { slug: slugParam }, locale }) {
 
   const slug = slugParam.toLowerCase();
   const wpApi = wp();
-  const post =
-    slug !== NO_ARTICLES_SLUG
-      ? await wpApi.posts({ slug, locale }).first
-      : null;
+  let post;
+  if (preview && previewData) {
+    post = await wpApi.revisions(previewData.query).post;
+  } else {
+    post =
+      slug !== NO_ARTICLES_SLUG
+        ? await wpApi.posts({ slug, locale }).first
+        : null;
+  }
+
   const notFound = !post;
   if (notFound) {
     return {
@@ -157,7 +168,8 @@ export async function getStaticProps({ params: { slug: slugParam }, locale }) {
   const posts = await wpApi.pages({ page }).posts;
   page.posts = null;
   const articles = posts?.slice(0, 4);
-  const relatedArticles = articles.filter((article) => article.slug !== slug);
+  const relatedArticles =
+    articles?.filter((article) => article.slug !== slug) || [];
   const article = {
     ...post,
     image: post.featured_media.source_url,
@@ -165,8 +177,8 @@ export async function getStaticProps({ params: { slug: slugParam }, locale }) {
     date: formatDate(post.date),
     readTime: readingTime(post.content).text,
   };
-  const languageAlternates = _.languageAlternates(`/analysis/articles/${slug}`);
 
+  const languageAlternates = _.languageAlternates(`/analysis/articles/${slug}`);
   return {
     props: {
       ...page,
