@@ -97,7 +97,6 @@ function wp(site) {
       {
         headers: {
           Authorization: `Bearer ${token}`,
-          // 'Content-Type': 'application/x-www-form-urlencoded',
         },
       }
     );
@@ -264,12 +263,12 @@ function wp(site) {
       lang
     );
 
-    const author = await getResourceById("users", resource.author, lang);
-    const thumbnail = await getResourceById("media", thumbnailId, lang);
-
     if (isEmpty(resource)) {
       return undefined;
     }
+
+    const author = await getResourceById("users", resource.author, lang);
+    const thumbnail = await getResourceById("media", thumbnailId, lang);
 
     const post = {
       ...resource,
