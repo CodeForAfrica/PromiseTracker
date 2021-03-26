@@ -279,9 +279,9 @@ function wp(site) {
       ...resource,
       author,
       content: resource.content.rendered,
-      featured_media: thumbnail,
+      featured_media: thumbnail || null,
       title: resource.title.rendered,
-      thumbnail_image: thumbnail.source_url,
+      thumbnail_image: thumbnail.source_url || "",
     };
     return post;
   }

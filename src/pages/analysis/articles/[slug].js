@@ -180,7 +180,7 @@ export async function getStaticProps({
     articles?.filter((article) => article.slug !== slug) || [];
   const article = {
     ...post,
-    image: post.featured_media.source_url,
+    image: post.featured_media?.source_url || null,
     description: post.content.replace(/(<([^>]+)>)/gi, "").substring(0, 200),
     date: formatDate(post.date),
     readTime: readingTime(post.content).text,
