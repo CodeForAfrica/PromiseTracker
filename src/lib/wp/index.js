@@ -238,7 +238,7 @@ function wp(site) {
       lang
     );
     if (isEmpty(resource)) {
-      return resource;
+      return null;
     }
     const thumbnail = await getResourceById("media", thumbnailId, lang);
 
