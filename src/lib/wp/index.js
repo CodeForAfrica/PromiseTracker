@@ -90,19 +90,19 @@ function wp(site) {
     return data;
   }
 
-  async function getRevisionById(type, id, revisionId, token, lang, params) {
+  async function getLatestRevision(type, id, token, lang, params) {
     const fields = params?.fields ? `&_fields=${params.fields}` : "";
     const embed = params?.embed ? `&_embed=${params.embed}` : "";
     const res = await fetch(
-      `${WP_DASHBOARD_API_URL}/${type}/${id}/revisions/${revisionId}?lang=${lang}${fields}${embed}`,
+      `${WP_DASHBOARD_API_URL}/${type}/${id}/revisions/?lang=${lang}${fields}${embed}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       }
     );
-    const data = res.ok ? res.json() : {};
-    return data;
+    const data = res.ok ? await res.json() : {};
+    return data[0];
   }
 
   function createPageFrom(resource, options, lang) {
@@ -136,6 +136,13 @@ function wp(site) {
       languge: lang,
     };
     return page;
+  }
+
+  function getImageUrlFromId(id) {
+    if (!id) {
+      return "";
+    }
+    return `${WP_DASHBOARD_URL}/wp-json/hurumap/v1/thumbnail/${id}`;
   }
 
   async function getPagesByParentId(parent, lang, order, orderBy) {
@@ -229,20 +236,13 @@ function wp(site) {
     return createPageFrom(resource, options, lang);
   }
 
-  async function getPageRevisionById(id, revisionId, thumbnailId, token, lang) {
-    const resource = await getRevisionById(
-      "pages",
-      id,
-      revisionId,
-      token,
-      lang
-    );
+  async function getPageRevisionById(id, thumbnailId, token, lang) {
+    const resource = await getLatestRevision("pages", id, token, lang);
     if (isEmpty(resource)) {
       return null;
     }
-    const thumbnail = await getResourceById("media", thumbnailId, lang);
 
-    resource.featured_image_src = thumbnail?.source_url || null;
+    resource.featured_image_src = getImageUrlFromId(thumbnailId);
 
     if (resource.acf?.posts) {
       const posts = await Promise.all(
@@ -259,29 +259,19 @@ function wp(site) {
     return createPageFrom(resource, options, lang);
   }
 
-  async function getPostRevisionById(id, revisionId, thumbnailId, token, lang) {
-    const resource = await getRevisionById(
-      "posts",
-      id,
-      revisionId,
-      token,
-      lang
-    );
+  async function getPostRevisionById(id, thumbnailId, token, lang) {
+    const resource = await getLatestRevision("posts", id, token, lang);
 
     if (isEmpty(resource)) {
       return undefined;
     }
 
-    const author = await getResourceById("users", resource.author, lang);
-    const thumbnail = await getResourceById("media", thumbnailId, lang);
-
     const post = {
       ...resource,
-      author,
       content: resource.content.rendered,
-      featured_media: thumbnail || null,
+      featured_media: { source_url: getImageUrlFromId(thumbnailId) },
       title: resource.title.rendered,
-      thumbnail_image: thumbnail.source_url || "",
+      thumbnail_image: getImageUrlFromId(thumbnailId),
     };
     return post;
   }
@@ -359,35 +349,22 @@ function wp(site) {
     }),
     revisions: ({
       id,
-      revisionId,
       thumbnailId,
       token,
       locale = siteServer.defaultLocale,
     }) => ({
       get page() {
         return (async () => {
-          if (id && revisionId) {
-            return getPageRevisionById(
-              id,
-              revisionId,
-              thumbnailId,
-              token,
-              locale
-            );
+          if (id) {
+            return getPageRevisionById(id, thumbnailId, token, locale);
           }
           return undefined;
         })();
       },
       get post() {
         return (async () => {
-          if (id && revisionId) {
-            return getPostRevisionById(
-              id,
-              revisionId,
-              thumbnailId,
-              token,
-              locale
-            );
+          if (id) {
+            return getPostRevisionById(id, thumbnailId, token, locale);
           }
           return undefined;
         })();
