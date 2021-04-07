@@ -14,6 +14,7 @@ import NarativeUpdates from "@/promisetracker/components/Promise/Narative";
 import RelatedFactChecks from "@/promisetracker/components/Promise/RelatedFactChecks";
 import Status from "@/promisetracker/components/PromiseStatus";
 import PromiseChart from "@/promisetracker/components/PromiseChart";
+import ActNowCard from "@/promisetracker/components/ActNowCard";
 
 import Radar from "./Radar";
 import useStyles from "./useStyles";
@@ -27,6 +28,7 @@ function Promise({
   relatedFactChecksLabel,
   dataSourceEmbedLabel,
   narrativeUpdatesLabel,
+  ...props
 }) {
   const classes = useStyles({ image: promise.image, classes: classesProp });
   const theme = useTheme();
@@ -55,6 +57,7 @@ function Promise({
           <RichTypography variant="h1" className={classes.promiseTitle}>
             {promise.title}
           </RichTypography>
+          <ActNowCard {...props} />
           <Hidden lgUp>
             <div className={classes.mobileStatusContainer}>
               <Typography className={classes.mobileStatusLabel} variant="h5">
