@@ -1,13 +1,15 @@
 import React from "react";
 import PropTypes from "prop-types";
 
-import { Grid, IconButton, Button } from "@material-ui/core";
+import { Grid, IconButton } from "@material-ui/core";
 import InstagramIcon from "@material-ui/icons/Instagram";
 import LinkIcon from "@material-ui/icons/Link";
 import CodeIcon from "@material-ui/icons/Code";
 import TwitterIcon from "@material-ui/icons/Twitter";
 import FacebookIcon from "@material-ui/icons/Facebook";
 import BaseContent from "./BaseContent";
+
+const strayConst = 9;
 
 import useStyles from "./useStyles";
 
