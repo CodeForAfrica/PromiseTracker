@@ -70,7 +70,7 @@
     "format": "yarn prettier --write --ignore-path './.gitignore' \"**/*.+(json|md|yml)\" './'",
     "format-staged": "prettier --write",
     "lint": "yarn eslint --fix --ignore-path './.gitignore' './'",
-    "lint-staged": "yarn eslint --fix --ext '.js,.json,.md,.yml'",
+    "lint-staged": "yarn eslint --fix --ext '../.js,../.json,../.md,../.yml'",
     "start": "next start",
     "setup:commons": "node ./scripts/commons-ui-add.js && yarn && git restore package.json && git restore yarn.lock",
     "dev:commons": "yarn submodule && yarn setup:commons && yarn dev",
