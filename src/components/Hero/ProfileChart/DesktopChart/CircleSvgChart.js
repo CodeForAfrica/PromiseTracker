@@ -81,7 +81,7 @@ CircleSvgChart.propTypes = {
   strokeWidth: PropTypes.number.isRequired,
   statusNumber: PropTypes.number.isRequired,
   status: PropTypes.string.isRequired,
-  totalPromises: PropTypes.string.isRequired,
+  totalPromises: PropTypes.number.isRequired,
 };
 
 export default CircleSvgChart;

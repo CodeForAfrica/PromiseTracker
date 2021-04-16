@@ -14,7 +14,7 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
-function MobileChart({ promisesByStatus, totalPromises, ...props }) {
+function MobileChart({ promisesByStatus, ...props }) {
   const classes = useStyles(props);
 
   return (
@@ -100,7 +100,6 @@ MobileChart.propTypes = {
       "Behind Schedule": PropTypes.arrayOf(PropTypes.shape({})),
     }),
   }),
-  totalPromises: PropTypes.number.isRequired,
 };
 
 MobileChart.defaultProps = {

@@ -71,7 +71,8 @@ Hero.propTypes = {
   }),
   name: PropTypes.string.isRequired,
   position: PropTypes.string.isRequired,
-  updatedAt: PropTypes.string.isRequired,
+  updatedAt: PropTypes.oneOfType([PropTypes.number, PropTypes.string])
+    .isRequired,
   title: PropTypes.string.isRequired,
   updatedAtLabel: PropTypes.string.isRequired,
   promisesByStatus: PropTypes.shape({}),
