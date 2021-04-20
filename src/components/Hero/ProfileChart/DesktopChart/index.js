@@ -39,7 +39,7 @@ function DesktopChart({ promisesByStatus, ...props }) {
       <ProgressChart
         color="#145BD5"
         borderBottom="1px solid #145BD5"
-        caption="Promise Kept"
+        caption="Promise kept"
         totalPromises={promisesByStatus.count}
         progressStatuses={[
           {
@@ -78,7 +78,7 @@ function DesktopChart({ promisesByStatus, ...props }) {
       <ProgressChart
         color="#FF5255"
         borderBottom="1px solid #FF5255"
-        caption="Promise Not Kept"
+        caption="Promise not kept"
         totalPromises={promisesByStatus.count}
         progressStatuses={[
           {

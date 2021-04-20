@@ -31,10 +31,6 @@ const useStyles = makeStyles(({ breakpoints, typography, palette }) => ({
   },
   keyPromiseCtaButton: {
     minWidth: typography.pxToRem(158),
-    "&:hover": {
-      // Generated from palette.highlight.main using https://material-ui.com/customization/color/
-      backgroundColor: "#337dfd",
-    },
   },
   keyPromiseDescription: {
     fontSize: typography.pxToRem(13),
@@ -84,12 +80,19 @@ const useStyles = makeStyles(({ breakpoints, typography, palette }) => ({
       width: "calc(((100vw - 100%) / 2) + 100%)",
     },
   },
-  media: {
+  media: (props) => ({
+    background: `linear-gradient(to right, ${props.status?.color}, ${props.status?.color}), url(${props.image}) no-repeat top center`,
+    backgroundBlendMode: "soft-light",
+    backgroundSize: "100%",
+    // NOTE(kilemensi): Since this useStyles is shared between KeyPromises
+    //                  and KeyPromise, props.status will be null when
+    //                  called in KeyPromises, and hence ?
+    border: `8px solid ${props.status?.color}`,
     display: "block",
-    objectFit: "cover",
     marginTop: typography.pxToRem(25),
-    maxHeight: typography.pxToRem(155),
+    minHeight: typography.pxToRem(155),
     maxWidth: typography.pxToRem(314),
+    objectFit: "cover",
     width: "100%",
     [breakpoints.up("lg")]: {
       display: "block",
@@ -103,7 +106,7 @@ const useStyles = makeStyles(({ breakpoints, typography, palette }) => ({
       top: 0,
       width: "100%",
     },
-  },
+  }),
   stepper: {
     background: "inherit",
     justifyContent: "center",

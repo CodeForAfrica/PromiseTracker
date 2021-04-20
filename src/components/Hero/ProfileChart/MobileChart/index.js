@@ -14,8 +14,9 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
-function MobileChart({ promisesByStatus, totalPromises, ...props }) {
+function MobileChart({ promisesByStatus, ...props }) {
   const classes = useStyles(props);
+
   return (
     <Grid
       container
@@ -31,7 +32,7 @@ function MobileChart({ promisesByStatus, totalPromises, ...props }) {
         totalPromises={promisesByStatus.count}
         color="#005DFD"
         borderRight="1px solid #005DFD"
-        caption="Promise Kept"
+        caption="Promise kept"
         progressStatuses={[
           {
             color: "#005DFD",
@@ -69,7 +70,7 @@ function MobileChart({ promisesByStatus, totalPromises, ...props }) {
         totalPromises={promisesByStatus.count}
         color="#FF5255"
         borderRight="1px solid #FF5255"
-        caption="Promise Not Kept"
+        caption="Promise not kept"
         progressStatuses={[
           {
             color: "#FFB322",
@@ -99,7 +100,6 @@ MobileChart.propTypes = {
       "Behind Schedule": PropTypes.arrayOf(PropTypes.shape({})),
     }),
   }),
-  totalPromises: PropTypes.number.isRequired,
 };
 
 MobileChart.defaultProps = {

@@ -18,10 +18,27 @@ const useStyles = makeStyles(
     contentSection: {
       padding: `${typography.pxToRem(64)} 0 ${typography.pxToRem(96)} 0`,
       backgroundColor: palette.background.default,
+      [breakpoints.up("lg")]: {
+        position: "relative",
+      },
     },
     contentSectionGrid: {
       marginTop: 0,
       paddingBottom: 0,
+    },
+    contentSectionAsideBackground: {
+      display: "none",
+      [breakpoints.up("lg")]: {
+        display: "flex",
+        marginTop: typography.pxToRem(0),
+        maxWidth: typography.pxToRem(526),
+        minWidth: typography.pxToRem(526),
+        opacity: 0.2,
+        position: "absolute",
+        right: 0,
+        top: 0,
+        width: typography.pxToRem(526),
+      },
     },
     criteria: {},
     criteriaItems: {
@@ -35,25 +52,16 @@ const useStyles = makeStyles(
     },
     grid: {
       paddingBottom: typography.pxToRem(40),
-      [breakpoints.up("lg")]: {
-        position: "relative",
-      },
     },
     gridAside: {},
     gridContent: {},
     featuredImage: {
-      display: "flex",
-      margin: `0 auto`,
       minWidth: typography.pxToRem(314),
       width: typography.pxToRem(314),
       [breakpoints.up("lg")]: {
-        // Assumes image size of 440 x 350
-        bottom: `-${typography.pxToRem(350 / 2)}`,
         marginTop: typography.pxToRem(0),
         maxWidth: typography.pxToRem(440),
         minWidth: typography.pxToRem(440),
-        position: "absolute",
-        right: 0,
         width: typography.pxToRem(440),
       },
     },
