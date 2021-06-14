@@ -6,12 +6,12 @@ import { useTheme } from "@material-ui/core/styles";
 
 import {
   A,
-  FooterAbout,
-  FooterCopyright,
-  FooterLegalLinks,
-  FooterLogo,
-  FooterQuickLinks,
-  FooterStayInTouch,
+  AboutOrganization,
+  Copyright,
+  LegalLinks,
+  Logo,
+  QuickLinks,
+  StayInTouch,
   Section,
 } from "@commons-ui/core";
 
@@ -37,7 +37,7 @@ function MainFooter({
 
   const organizationLogo = {
     image: {
-      url: organizationLogoProp?.image || cfaLogo,
+      src: organizationLogoProp?.image || cfaLogo,
       alt: organizationLogoProp?.alt || "Code for Africa",
     },
     url: organizationLogoProp?.link || "//codeforafrica.org",
@@ -86,14 +86,10 @@ function MainFooter({
     <div className={classes.root}>
       <div className={classes.primary}>
         <Section classes={{ root: classes.section }}>
-          <FooterLogo
-            hasDivider={false}
-            {...organizationLogo}
-            classes={{ organization: classes.organization }}
-          />
+          <Logo {...organizationLogo} classes={{ root: classes.logo }} />
           <Grid container>
             <Grid item xs={12} lg={8}>
-              <FooterAbout
+              <AboutOrganization
                 options={{
                   about: {
                     variant: "body2",
@@ -106,14 +102,14 @@ function MainFooter({
                 initiative={about?.initiative}
               >
                 {about?.about}
-              </FooterAbout>
+              </AboutOrganization>
             </Grid>
             <Grid item lg={1} implementation="css" smDown component={Hidden} />
             {quickLinks?.length && (
               <>
                 <Grid item xs={6} lg={2} className={classes.quickLinksMore}>
                   <div className={classes.links}>
-                    <FooterQuickLinks
+                    <QuickLinks
                       options={{
                         link: {
                           variant: "h6",
@@ -130,7 +126,7 @@ function MainFooter({
                 </Grid>
                 <Grid item xs={6} lg={1} className={classes.quickLinksContact}>
                   <div className={classes.links}>
-                    <FooterQuickLinks
+                    <QuickLinks
                       options={{
                         link: {
                           variant: "h6",
@@ -157,23 +153,12 @@ function MainFooter({
               <img
                 className={classes.ptLogo}
                 src={ptLogo}
-                alt="promise Tracker"
+                alt="PromiseTracker"
               />
               <div className={classes.legalContainer}>
                 {!isDesktop && socialMedia?.length && (
-                  <FooterStayInTouch
+                  <StayInTouch
                     socialMedia={socialMedia}
-                    options={{
-                      socialMedia: {
-                        color: "textSecondary",
-                      },
-                      support: {
-                        color: "textSecondary",
-                      },
-                      title: {
-                        variant: "button",
-                      },
-                    }}
                     classes={{
                       root: classes.stayInTouch,
                       links: classes.stayInTouchLinks,
@@ -183,7 +168,7 @@ function MainFooter({
                   />
                 )}
 
-                <FooterCopyright
+                <Copyright
                   {...copyright}
                   variant="button"
                   classes={{
@@ -192,7 +177,7 @@ function MainFooter({
                   }}
                 />
                 {legalLinksProp?.length && (
-                  <FooterLegalLinks
+                  <LegalLinks
                     variant="button"
                     {...legalLinks}
                     classes={{
@@ -206,7 +191,7 @@ function MainFooter({
             </Grid>
             {isDesktop && socialMedia?.length && (
               <Grid item xs={12} lg={6} className={classes.secondaryGridItem}>
-                <FooterStayInTouch
+                <StayInTouch
                   socialMedia={socialMedia}
                   options={{
                     socialMedia: {
