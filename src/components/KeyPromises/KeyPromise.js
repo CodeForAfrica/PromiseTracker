@@ -1,16 +1,14 @@
-import React from "react";
-import PropTypes from "prop-types";
-
+import { RichTypography } from "@commons-ui/core";
 import { Grid, useMediaQuery } from "@material-ui/core";
 import { useTheme } from "@material-ui/core/styles";
+import PropTypes from "prop-types";
+import React from "react";
 
-import { RichTypography } from "@commons-ui/core";
+import useStyles from "./useStyles";
 
 import CtAButton from "@/promisetracker/components/CtAButton";
 import Button from "@/promisetracker/components/Link/Button";
 import PromiseTimeline from "@/promisetracker/components/PromiseTimeline";
-
-import useStyles from "./useStyles";
 
 function KeyPromise({
   actionLabel,

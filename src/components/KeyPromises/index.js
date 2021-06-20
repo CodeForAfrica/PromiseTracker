@@ -1,10 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
-import PropTypes from "prop-types";
-
+import { Section } from "@commons-ui/core";
 import { IconButton, MobileStepper } from "@material-ui/core";
 import { KeyboardArrowLeft, KeyboardArrowRight } from "@material-ui/icons";
-
-import { Section } from "@commons-ui/core";
+import PropTypes from "prop-types";
+import React, { useEffect, useRef, useState } from "react";
 
 import KeyPromise from "./KeyPromise";
 import useStyles from "./useStyles";
