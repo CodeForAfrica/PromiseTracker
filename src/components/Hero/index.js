@@ -31,11 +31,12 @@ function Hero({
   ...props
 }) {
   const classes = useStyles(props);
+
   return (
     <div className={classes.root}>
       <Section classes={{ root: classes.section }}>
         <Grid container direction="row" justify="space-between">
-          <Hidden lgUp>
+          <Hidden lgUp implementation="css">
             <Grid item xs={12}>
               <Typography variant="h1">{name}</Typography>
             </Grid>
