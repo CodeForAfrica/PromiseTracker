@@ -1,13 +1,14 @@
-import React from "react";
-import PropTypes from "prop-types";
-import { makeStyles } from "@material-ui/core/styles";
 import { Grid } from "@material-ui/core";
+import { makeStyles } from "@material-ui/core/styles";
+import Image from "next/image";
+import PropTypes from "prop-types";
+import React from "react";
 
-import sharelink from "@/promisetracker/assets/share-link.svg";
 import download from "@/promisetracker/assets/share-download.svg";
 import embed from "@/promisetracker/assets/share-embed.svg";
 import facebook from "@/promisetracker/assets/share-facebook.svg";
 import instagram from "@/promisetracker/assets/share-instagram.svg";
+import sharelink from "@/promisetracker/assets/share-link.svg";
 import twitter from "@/promisetracker/assets/share-twitter.svg";
 
 const useStyles = makeStyles(({ palette }) => ({
@@ -21,7 +22,7 @@ const useStyles = makeStyles(({ palette }) => ({
     width: "3.75rem",
     borderRadius: "50%",
     margin: ".2rem",
-    background: palette.secondary.light,
+    background: palette.secondary.main,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -39,7 +40,7 @@ function Share({ platforms, ...props }) {
         {platforms.map((platform) => (
           <Grid key={platform.image.url} item xs={4}>
             <span className={classes.platform}>
-              <img src={platform.image.url} alt={platform.image.alt} />
+              <Image src={platform.image.url} alt={platform.image.alt} />
             </span>
           </Grid>
         ))}

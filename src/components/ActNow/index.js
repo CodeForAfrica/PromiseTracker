@@ -1,14 +1,14 @@
-import React from "react";
-import PropTypes from "prop-types";
-
-import { Grid, Typography, useMediaQuery } from "@material-ui/core";
-import { makeStyles, useTheme } from "@material-ui/core/styles";
-
 import { Section } from "@commons-ui/core";
+import { Box, Grid, Typography, useMediaQuery } from "@material-ui/core";
+import { makeStyles, useTheme } from "@material-ui/core/styles";
+import Head from "next/head";
+import Image from "next/image";
+import PropTypes from "prop-types";
+import React from "react";
 
-import H1 from "@/promisetracker/components/H1";
-import CtAButton from "@/promisetracker/components/CtAButton";
+import actNowLogo from "@/promisetracker/assets/Component 121 – 1@2x.png";
 import actNowImg from "@/promisetracker/assets/illo-aboutTheProject@2x.png";
+import CtAButton from "@/promisetracker/components/CtAButton";
 
 const useStyles = makeStyles(({ breakpoints, palette, typography }) => ({
   section: {},
@@ -36,11 +36,9 @@ const useStyles = makeStyles(({ breakpoints, palette, typography }) => ({
   },
   content: {
     alignItems: "center",
-    flexDirection: "column-reverse",
     justifyContent: "center",
     [breakpoints.up("lg")]: {
       alignItems: "stretch",
-      flexDirection: "row",
       justifyContent: "space-between",
     },
   },
@@ -65,19 +63,33 @@ const useStyles = makeStyles(({ breakpoints, palette, typography }) => ({
       lineHeight: "1.875rem",
     },
   },
-  image: {
-    maxWidth: typography.pxToRem(314),
-    minWidth: typography.pxToRem(314),
-    objectFit: "cover",
+  logoFigure: {
+    height: typography.pxToRem(105.5),
+    margin: 0,
+    position: "relative",
+    width: typography.pxToRem(208.36),
     [breakpoints.up("lg")]: {
-      maxWidth: typography.pxToRem(484),
-      minWidth: typography.pxToRem(484),
+      height: typography.pxToRem(140.63),
+      width: typography.pxToRem(277.74),
     },
   },
-  textContainer: {
-    marginTop: typography.pxToRem(19),
+  figure: {
+    height: typography.pxToRem(272),
+    margin: 0,
+    position: "relative",
+    width: typography.pxToRem(314),
     [breakpoints.up("lg")]: {
-      marginTop: 0,
+      height: typography.pxToRem(350),
+      width: typography.pxToRem(440),
+    },
+  },
+  image: {
+    objectFit: "contain",
+  },
+  textContainer: {
+    alignItems: "center",
+    [breakpoints.up("lg")]: {
+      alignItems: "flex-start",
     },
   },
 }));
@@ -91,13 +103,25 @@ function ActNow({ actionLabel, description, title, ...props }) {
 
   return (
     <div className={classes.root}>
+      <Head>
+        <link key="act-now" rel="preload" href={actNowImg.src} as="image" />
+      </Head>
       <Section classes={{ root: classes.section }}>
         <Grid container className={classes.content}>
           <Grid item xs={12} lg={6} container alignItems="center">
-            <div className={classes.textContainer}>
-              <H1 variant="h2" className={classes.title}>
-                {title}
-              </H1>
+            <Box
+              display="flex"
+              flexDirection="column"
+              className={classes.textContainer}
+            >
+              <figure className={classes.logoFigure}>
+                <Image
+                  src={actNowLogo}
+                  layout="fill"
+                  alt="actNOW"
+                  className={classes.image}
+                />
+              </figure>
               <Typography
                 variant={descriptionVariant}
                 className={classes.description}
@@ -113,10 +137,17 @@ function ActNow({ actionLabel, description, title, ...props }) {
               >
                 {actionLabel}
               </CtAButton>
-            </div>
+            </Box>
           </Grid>
-          <Grid item xs={12} lg={5}>
-            <img src={actNowImg} alt="Act Now" className={classes.image} />
+          <Grid item>
+            <figure className={classes.figure}>
+              <Image
+                src={actNowImg}
+                layout="fill"
+                alt={actionLabel}
+                className={classes.image}
+              />
+            </figure>
           </Grid>
         </Grid>
       </Section>

@@ -1,6 +1,5 @@
-import { deepmerge } from "@material-ui/utils";
-
 import createTheme from "@hurumap-ui/charts/styles/createTheme";
+import { deepmerge } from "@material-ui/utils";
 
 const FONT_FAMILY_HEADING = '"Amiri", "serif"';
 const FONT_FAMILY_TEXT_PRIMARY = '"Merriweather", "serif"';
@@ -168,16 +167,18 @@ deepmerge(
       lineHeight: 40 / 32,
       fontWeight: 700,
       [breakpoints.up("lg")]: {
-        fontSize: pxToRem(38),
-        lineHeight: 56 / 38,
+        fontSize: pxToRem(36),
+        lineHeight: 56 / 36,
+        padding: `${pxToRem(12)} 0`,
       },
     },
     h2: {
       fontSize: pxToRem(32),
       lineHeight: 48 / 32,
+      padding: `${pxToRem(12)} 0`,
       [breakpoints.up("lg")]: {
         fontSize: pxToRem(36),
-        lineHeight: 56 / 36,
+        lineHeight: 40 / 36,
       },
     },
     h3: {

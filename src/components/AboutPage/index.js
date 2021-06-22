@@ -1,19 +1,17 @@
-import React from "react";
-import PropTypes from "prop-types";
-
-import clsx from "clsx";
-
 import { RichTypography } from "@commons-ui/core";
+import clsx from "clsx";
+import Image from "next/image";
+import PropTypes from "prop-types";
+import React from "react";
 
-import ActNow from "@/promisetracker/components/ActNow";
-import ContentPage from "@/promisetracker/components/ContentPage";
-import ContentSection from "@/promisetracker/components/ContentPage/Section";
-
-import background from "@/promisetracker/assets/about-bg.png";
-// import background from "@/promisetracker/assets/copy-bg@2400x.png";
 import Partners from "./Partners";
 import PromiseCriteria from "./PromiseCriteria";
 import useStyles from "./useStyles";
+
+import background from "@/promisetracker/assets/copy-bg@2400x@2x.png";
+import ActNow from "@/promisetracker/components/ActNow";
+import ContentPage from "@/promisetracker/components/ContentPage";
+import ContentSection from "@/promisetracker/components/ContentPage/Section";
 
 function AboutPage({
   actNow,
@@ -31,7 +29,14 @@ function AboutPage({
 
   const aside =
     (featuredImage?.length && (
-      <img src={featuredImage} alt="About" className={classes.featuredImage} />
+      <figure className={classes.featuredFigure}>
+        <Image
+          src={featuredImage}
+          layout="fill"
+          alt="About"
+          className={classes.featuredImage}
+        />
+      </figure>
     )) ||
     undefined;
   return (
@@ -49,7 +54,9 @@ function AboutPage({
           )}
         </>
       }
+      contentProps={{ lg: 6 }}
       aside={aside}
+      asideProps={{ lg: 5 }}
       classes={{
         section: classes.section,
         sectionTitle: classes.sectionTitle,
@@ -62,11 +69,14 @@ function AboutPage({
       <div className={classes.contentSection}>
         <ContentSection
           aside={
-            <img
-              src={background}
-              alt="Background"
-              className={classes.contentSectionAsideBackground}
-            />
+            <figure className={classes.contentSectionAsideBackground}>
+              <Image
+                src={background}
+                layout="fill"
+                alt="Background"
+                className={classes.contentSectionAsideBackgroundImage}
+              />
+            </figure>
           }
           content={
             <>

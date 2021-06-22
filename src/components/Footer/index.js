@@ -1,26 +1,24 @@
-import React from "react";
-import PropTypes from "prop-types";
-
-import { Grid, Hidden, useMediaQuery } from "@material-ui/core";
-import { useTheme } from "@material-ui/core/styles";
-
 import {
   A,
   AboutOrganization,
-  Copyright,
   LegalLinks,
-  Logo,
   QuickLinks,
   StayInTouch,
   Section,
 } from "@commons-ui/core";
+import { Grid, Hidden, useMediaQuery } from "@material-ui/core";
+import { useTheme } from "@material-ui/core/styles";
+import Image from "next/image";
+import PropTypes from "prop-types";
+import React from "react";
 
-import Link from "@/promisetracker/components/Link";
-
-import cfaLogo from "@/promisetracker/assets/logo-C4A.svg";
-import ptLogo from "@/promisetracker/assets/footer-pt-logo.png";
-
+import Copyright from "./Copyright";
+import Logo from "./Logo";
 import useStyles from "./useStyles";
+
+import ptLogo from "@/promisetracker/assets/footer-pt-logo.png";
+import cfaLogo from "@/promisetracker/assets/logo-C4A.svg";
+import Link from "@/promisetracker/components/Link";
 
 function MainFooter({
   about,
@@ -86,8 +84,10 @@ function MainFooter({
     <div className={classes.root}>
       <div className={classes.primary}>
         <Section classes={{ root: classes.section }}>
-          <Logo {...organizationLogo} classes={{ root: classes.logo }} />
           <Grid container>
+            <Grid item xs={12} container className={classes.logoContainer}>
+              <Logo {...organizationLogo} classes={{ root: classes.logo }} />
+            </Grid>
             <Grid item xs={12} lg={8}>
               <AboutOrganization
                 options={{
@@ -150,11 +150,14 @@ function MainFooter({
         <Section classes={{ root: classes.section }}>
           <Grid container>
             <Grid item xs={12} lg={6} className={classes.secondaryGridItem}>
-              <img
-                className={classes.ptLogo}
-                src={ptLogo}
-                alt="PromiseTracker"
-              />
+              <figure className={classes.logoFigure}>
+                <Image
+                  className={classes.logoImage}
+                  src={ptLogo}
+                  layout="fill"
+                  alt="PromiseTracker"
+                />
+              </figure>
               <div className={classes.legalContainer}>
                 {!isDesktop && socialMedia?.length && (
                   <StayInTouch
@@ -170,9 +173,8 @@ function MainFooter({
 
                 <Copyright
                   {...copyright}
-                  variant="button"
                   classes={{
-                    copyright: classes.copyright,
+                    root: classes.copyright,
                     text: classes.copyrightText,
                   }}
                 />

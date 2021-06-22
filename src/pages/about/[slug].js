@@ -1,7 +1,6 @@
 import React from "react";
 
 import AboutPage from "@/promisetracker/components/AboutPage";
-
 import i18n from "@/promisetracker/lib/i18n";
 import wp from "@/promisetracker/lib/wp";
 

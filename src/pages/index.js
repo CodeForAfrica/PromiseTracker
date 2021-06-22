@@ -1,17 +1,15 @@
-import React from "react";
-import PropTypes from "prop-types";
-
 import { makeStyles } from "@material-ui/core/styles";
+import PropTypes from "prop-types";
+import React from "react";
 
-import Hero from "@/promisetracker/components/Hero";
 import ActNow from "@/promisetracker/components/ActNow";
+import Hero from "@/promisetracker/components/Hero";
 import KeyPromises from "@/promisetracker/components/KeyPromises";
 import LatestArticles from "@/promisetracker/components/LatestArticles";
 import LatestPromises from "@/promisetracker/components/LatestPromises";
+import Subscribe from "@/promisetracker/components/Newsletter";
 import Page from "@/promisetracker/components/Page";
 import Partners from "@/promisetracker/components/Partners";
-import Subscribe from "@/promisetracker/components/Newsletter";
-
 import check from "@/promisetracker/lib/check";
 import i18n from "@/promisetracker/lib/i18n";
 import wp from "@/promisetracker/lib/wp";

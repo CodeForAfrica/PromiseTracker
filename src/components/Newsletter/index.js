@@ -1,29 +1,26 @@
-import React from "react";
-import PropTypes from "prop-types";
-
+import { RichTypography, Section } from "@commons-ui/core";
 import { Grid, Typography } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
+import Image from "next/image";
+import PropTypes from "prop-types";
+import React from "react";
 
-import { RichTypography, Section } from "@commons-ui/core";
-
+import subscribeImg from "@/promisetracker/assets/illo-subscribe@2400x.png";
 import email from "@/promisetracker/assets/subscribe-email.svg";
 import config from "@/promisetracker/config";
-import subscribeImg from "@/promisetracker/assets/illo-subscribe@2400x.png";
 
 const useStyles = makeStyles(({ breakpoints, typography }) => ({
   section: {},
   root: {
-    backgroundColor: "#90DAFF",
-    width: "100%",
-    display: "flex",
     alignItems: "center",
+    backgroundColor: "#90DAFF",
+    display: "flex",
     justifyContent: "center",
+    padding: `${typography.pxToRem(36)} 0 ${typography.pxToRem(49)}`,
+    width: "100%",
     [breakpoints.up("lg")]: {
       padding: `${typography.pxToRem(25)} 0`,
     },
-  },
-  contents: {
-    minWidth: typography.pxToRem(314),
   },
   title: {
     padding: 0,
@@ -66,27 +63,28 @@ const useStyles = makeStyles(({ breakpoints, typography }) => ({
     "& #mc_embed_signup .button": {
       background: "none",
       outline: "none",
-      backgroundImage: `url(${email})`,
+      backgroundImage: `url(${email.src})`,
       backgroundRepeat: "no-repeat",
-      backgroundSize: "40px 40px",
+      backgroundSize: `${email.width} ${email.height}`,
       border: "none",
-      height: 55,
-      paddingLeft: typography.pxToRem(50),
+      height: email.height,
+      padding: 0,
+      width: email.width,
       "&:hover": {
         background: "none",
         cursor: "pointer",
         outline: "none",
-        backgroundImage: `url(${email})`,
+        backgroundImage: `url(${email.src})`,
         backgroundRepeat: "no-repeat",
-        backgroundSize: "40px 40px",
+        backgroundSize: `${email.width} ${email.height}`,
         border: "none",
       },
       "&:focus": {
         background: "none",
         outline: "none",
-        backgroundImage: `url(${email})`,
+        backgroundImage: `url(${email.src})`,
         backgroundRepeat: "no-repeat",
-        backgroundSize: "40px 40px",
+        backgroundSize: `${email.width} ${email.height}`,
         border: "none",
       },
     },
@@ -94,15 +92,20 @@ const useStyles = makeStyles(({ breakpoints, typography }) => ({
   description: {
     fontSize: typography.pxToRem(18),
   },
-  image: {
-    marginTop: typography.pxToRem(42),
-    minWidth: typography.pxToRem(317),
-    width: typography.pxToRem(317),
+  figure: {
+    height: typography.pxToRem(250),
+    margin: 0,
+    width: typography.pxToRem(314),
+    position: "relative",
     [breakpoints.up("lg")]: {
+      height: typography.pxToRem(350),
       marginTop: 0,
       marginLeft: typography.pxToRem(54),
       width: typography.pxToRem(458),
     },
+  },
+  image: {
+    objectFit: "contain",
   },
 }));
 
@@ -120,9 +123,16 @@ function Newsletter({
   return (
     <div className={classes.root}>
       <Section classes={{ root: classes.section }}>
-        <Grid container alignItems="stretch" className={classes.contents}>
-          <Grid item xs={12} lg={8}>
-            <img src={subscribeImg} alt="Subscribe" className={classes.image} />
+        <Grid container justify="space-between" alignItems="stretch">
+          <Grid item>
+            <figure className={classes.figure}>
+              <Image
+                src={subscribeImg}
+                layout="fill"
+                alt="Subscribe"
+                className={classes.image}
+              />
+            </figure>
           </Grid>
           <Grid item xs={12} lg={4} container alignItems="center">
             <div className={classes.textContainer}>
