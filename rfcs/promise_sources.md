@@ -1,4 +1,6 @@
-- Feature Name: Add support for different Promises Sources
+# RFC 1
+
+- Feature Name: Add multiple promise sources as libraries
 - Start Date: 2021-07-27
 
 # Summary
@@ -13,7 +15,7 @@ A single PromiseTracker instance will choose which source to use (but only 1 sou
 
 [motivation]: #motivation
 
-As of now, we can only pull promises from the check platform. However, the platform keeps on changing their API and thus we need to keep updating our code. We would like to be able to use other promise sources which will make it fast for individual PromiseTracker instances to be spun up without having to rely on the check platform.
+As of now, we can only pull promises from the **check platform**. However, the platform keeps on changing their API and thus we need to keep updating our code. We would like to be able to use other promise sources which will make it fast for individual PromiseTracker instances to be spun up without having to rely on the check platform.
 
 # Guide-level explanation
 
@@ -42,7 +44,7 @@ Once the libraries have been defined, we can have some configuration variables t
 
 [reference-level-explanation]: #reference-level-explanation
 
-Using _google sheet library_ as an example, a **PromiseTracker** instance will set the _PROMISES_SOURCE_ environment variable to _GOOGLE_SHEET_.
+Using _google sheet library_ as an example, a **PromiseTracker** instance will set the _PROMISES_SOURCE_environment variable to_GOOGLE_SHEET_.
 **PromiseTracker** will then instantiate it like
 
 ```
@@ -54,18 +56,34 @@ api_provider = promises_sources[process.env.PROMISES_SOURCE]
 **NOTE**
 We should define a single Interface that defines what every class that inherits it should implement. This will enable us to use the returned `api_provider` without worrying which library it came from.
 
+## Promise Library Interface
+
+```
+class PromiseLibrary{
+    function get_promises(){
+        // Every library will implement it's own get_promises method
+    }
+    function get_single_promise(promise_id) {
+
+    }
+}
+```
+
 # Drawbacks
 
 [drawbacks]: #drawbacks
 
-Having all these libraries inside PromiseTracker will make the project huge and also incase one of the platforms we are using e.g check platform changes their APIs then everyone will have to update the libraries inorder to get the new changes as oposed to if we are running the libraries in a different service which we control and thus we can do the updates from there.
+1. Having all these libraries inside PromiseTracker will make the project huge
+2. Incase one of the platforms we are using e.g check platform changes their APIs, then everyone will have to update the libraries inorder to get the new changes we will implement
 
 # Rationale and alternatives
 
 [rationale-and-alternatives]: #rationale-and-alternatives
 
 - Why is this design the best in the space of possible designs?
-  > Individuals will be able to easily deploy their own PromiseTracker instances without having to deploy another extra service.
+
+  > 1. Individuals will be able to easily deploy their own PromiseTracker instances without having to deploy another extra service.
+
 - What other designs have been considered and what is the rationale for not choosing them?
   > Running the libraries as a service. One reason why we might not use this is Users will have to deploy 2 systems inorder to fully use PromiseTracker
 
@@ -75,4 +93,4 @@ Having all these libraries inside PromiseTracker will make the project huge and 
 
 # Future possibilities
 
-[future-possibilities]: #future-possibilities
+Packaging the libralies and distributing them as npm packages.
