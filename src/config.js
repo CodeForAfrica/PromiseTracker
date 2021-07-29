@@ -23,6 +23,7 @@ const config = {
   WP_DASHBOARD_URL: "https://dashboard.hurumap.org/promisetracker",
   FACT_CHECKS_URL: "https://pesacheck.org",
   FACT_CHECKS_TAG: "promise-tracker",
+  ACTNOW_URL: "https://actnow.dev.codeforafrica.org",
   title: "PromiseTracker",
   name: "Promise Tracker",
   URL: "https://promisetracker.dev.codeforafrica.org",
@@ -307,71 +308,6 @@ const config = {
       },
     },
   },
-  petitions: [
-    {
-      id: 1,
-      status: "closed",
-      title: "Codification of national sports and athletics law",
-      supporters: "145 Supporters",
-      author: "Author name",
-      description:
-        "Lorem ipsum dolor sit amet consectetur adipiscing elit ultricies suspendisse dictumst eros convallis dapibus, nisi facilisis torquent vel himenaeos ad leo diam tortor posuere neque.",
-    },
-    {
-      id: 2,
-      status: "closed",
-      title: "Codification of national sports and athletics law",
-      supporters: "145 Supporters",
-      author: "Author name",
-      description:
-        "Lorem ipsum dolor sit amet consectetur adipiscing elit ultricies suspendisse dictumst eros convallis dapibus, nisi facilisis torquent vel himenaeos ad leo diam tortor posuere neque.",
-    },
-    {
-      id: 3,
-      status: "closed",
-      title: "Codification of national sports and athletics law",
-      supporters: "145 Supporters",
-      author: "Author name",
-      description:
-        "Lorem ipsum dolor sit amet consectetur adipiscing elit ultricies suspendisse dictumst eros convallis dapibus, nisi facilisis torquent vel himenaeos ad leo diam tortor posuere neque.",
-    },
-    {
-      id: 4,
-      status: "closed",
-      title: "Codification of national sports and athletics law",
-      supporters: "145 Supporters",
-      author: "Author name",
-      description:
-        "Lorem ipsum dolor sit amet consectetur adipiscing elit ultricies suspendisse dictumst eros convallis dapibus, nisi facilisis torquent vel himenaeos ad leo diam tortor posuere neque.",
-    },
-    {
-      id: 5,
-      status: "closed",
-      title: "Codification of national sports and athletics law",
-      supporters: "145 Supporters",
-      author: "Author name",
-      description:
-        "Lorem ipsum dolor sit amet consectetur adipiscing elit ultricies suspendisse dictumst eros convallis dapibus, nisi facilisis torquent vel himenaeos ad leo diam tortor posuere neque.",
-    },
-    {
-      id: 6,
-      status: "closed",
-      title: "Codification of national sports and athletics law",
-      supporters: "145 Supporters",
-      author: "Author name",
-      description:
-        "Lorem ipsum dolor sit amet consectetur adipiscing elit ultricies suspendisse dictumst eros convallis dapibus, nisi facilisis torquent vel himenaeos ad leo diam tortor posuere neque.",
-    },
-    {
-      id: 7,
-      status: "closed",
-      title: "Codification of national sports and athletics law",
-      supporters: "145 Supporters",
-      author: "Author name",
-      description:
-        "Lorem ipsum dolor sit amet consectetur adipiscing elit ultricies suspendisse dictumst eros convallis dapibus, nisi facilisis torquent vel himenaeos ad leo diam tortor posuere neque.",
-    },
-  ],
 };
 
 export default config;
