@@ -8,7 +8,7 @@ import Page from "@/promisetracker/components/Page";
 import Promise from "@/promisetracker/components/Promise";
 import RelatedPromises from "@/promisetracker/components/Promises";
 import PromiseTimeline from "@/promisetracker/components/PromiseTimeline";
-import check from "@/promisetracker/lib/check";
+import promisesApi from "@/promisetracker/lib/api";
 import i18n from "@/promisetracker/lib/i18n";
 import wp from "@/promisetracker/lib/wp";
 
@@ -145,11 +145,13 @@ export async function getStaticPaths() {
   const wpApi = wp();
   const page = await wpApi.pages({ slug: "promises" }).first;
   const { promiseStatuses } = page;
-  const checkApi = check({
+
+  const api = promisesApi({
     promiseStatuses,
     team: "pesacheck-promise-tracker",
   });
-  const promises = await checkApi.promises({
+
+  const promises = await api.promises({
     limit: 10000,
     query: `{ "projects": ["2831"] }`,
   });
@@ -176,12 +178,11 @@ export async function getStaticProps({ params: { slug: slugParam }, locale }) {
 
   const { promiseStatuses } = page;
 
-  const checkApi = check({
+  const api = promisesApi({
     promiseStatuses,
     team: "pesacheck-promise-tracker",
   });
-
-  const promisePost = await checkApi.promise({
+  const promisePost = await api.promise({
     id,
     limit: 100,
     query: `{ "projects": ["2831"] }`,
