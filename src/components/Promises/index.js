@@ -56,14 +56,15 @@ function Promises({
         ?.filter((filter) => filter.active)
         .map((filter) => filter.slug);
       const hasCategory = (item) => {
-        const promiseCategories = item?.tags.map((tag) => slugify(tag));
+        const promiseCategories = item?.categories.map((c) => slugify(c.name));
         return selectedCategories.every((c) => promiseCategories.includes(c));
       };
       const filteredItems = itemsProp.filter(hasStatus).filter(hasCategory);
       const hasFilters = selectedStatuses.length || selectedCategories.length;
       setItems(hasFilters ? filteredItems : itemsProp);
     }
-  }, [statusesFilters, categoriesFilters, itemsProp]);
+  }, [statusesFilters, categoriesFilters, itemsProp, withFilter]);
+
   useEffect(() => {
     if (withFilter) {
       let sortedItems = items;
@@ -78,7 +79,7 @@ function Promises({
       }
       setItems(sortedItems);
     }
-  }, [sortBy]);
+  }, [sortBy, items, sortByDeadline, sortByMostRecent, withFilter]);
 
   return (
     <PostCardGrid

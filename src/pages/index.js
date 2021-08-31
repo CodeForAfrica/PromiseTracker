@@ -10,7 +10,7 @@ import LatestPromises from "@/promisetracker/components/LatestPromises";
 import Subscribe from "@/promisetracker/components/Newsletter";
 import Page from "@/promisetracker/components/Page";
 import Partners from "@/promisetracker/components/Partners";
-import promisesApi from "@/promisetracker/lib/api";
+import backendFn from "@/promisetracker/lib/backend";
 import i18n from "@/promisetracker/lib/i18n";
 import wp from "@/promisetracker/lib/wp";
 import { groupPromisesByStatus } from "@/promisetracker/utils";
@@ -58,11 +58,11 @@ function Index({
       <Hero
         promisesByStatus={promisesByStatus}
         criteria={criteria}
+        fullName={projectMeta.fullName}
         name={projectMeta.name}
         position={projectMeta.position}
         promiseLabel={projectMeta.promiseLabel}
         updatedAtLabel={projectMeta.updatedAtLabel}
-        trailText={projectMeta.trailText}
         updatedAt={new Date(projectMeta.updatedAt)
           .toDateString({
             dateStyle: "short",
@@ -70,7 +70,9 @@ function Index({
           .split(" ")
           .slice(1)
           .join(" ")}
+        tagline={projectMeta.tagline}
         title={projectMeta.description}
+        trailText={projectMeta.trailText}
         classes={{ section: classes.section }}
       />
       <KeyPromises
@@ -127,13 +129,15 @@ Index.propTypes = {
   navigation: PropTypes.shape({}),
   partners: PropTypes.shape({}),
   projectMeta: PropTypes.shape({
+    description: PropTypes.string,
+    fullName: PropTypes.string,
     name: PropTypes.string,
     position: PropTypes.string,
-    trailText: PropTypes.string,
+    promiseLabel: PropTypes.string,
     updatedAt: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
     updatedAtLabel: PropTypes.string,
-    description: PropTypes.string,
-    promiseLabel: PropTypes.string,
+    tagline: PropTypes.string,
+    trailText: PropTypes.string,
   }),
   promiseStatuses: PropTypes.arrayOf(PropTypes.shape({})),
   promises: PropTypes.arrayOf(PropTypes.shape({})),
@@ -167,24 +171,29 @@ export async function getStaticProps({ locale }) {
   }
   const wpApi = wp();
   const page = await wpApi.pages({ slug: "index", locale }).first;
-  const { promiseStatuses } = page;
+  // const { promiseStatuses } = page;
+  const backend = backendFn();
+  const promisesApi = backend.promises();
+  // const api = promisesApi({
+  //   promiseStatuses,
+  //   team: "pesacheck-promise-tracker",
+  // });
 
-  const api = promisesApi({
-    promiseStatuses,
-    team: "pesacheck-promise-tracker",
-  });
-
-  const promises = await api.promises({
-    limit: 10000,
-    query: `{ "projects": ["2831"] }`,
-  });
-  const keyPromises = await api.keyPromises({
-    limit: 6,
-    query: `{ "projects": ["4691"] }`,
-  });
+  const promises = await promisesApi.all;
+  // const promises = await api.promises({
+  //   limit: 10000,
+  //   query: `{ "projects": ["2831"] }`,
+  // });
+  const keyPromises = await promisesApi.key;
+  // const keyPromises = await api.keyPromises({
+  //   limit: 6,
+  //   query: `{ "projects": ["4691"] }`,
+  // });
   const posts = await wpApi.pages({ slug: "analysis-articles", locale }).posts;
   const articles = posts?.slice(0, 4) || null;
-  const projectMeta = await api.projectMeta();
+  // const projectMeta = await api.projectMeta();
+  const projectApi = backend.project();
+  const projectMeta = await projectApi.meta;
   const languageAlternates = _.languageAlternates();
 
   return {
