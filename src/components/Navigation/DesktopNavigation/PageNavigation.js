@@ -66,7 +66,7 @@ function PageNavigation({
         <Grid
           container
           direction="row"
-          justify="space-between"
+          justify="space-around"
           className={classes.navigation}
         >
           {navigation.map((menu) => (
@@ -82,7 +82,7 @@ function PageNavigation({
                   [classes.buttonCurrent]: menu.href.startsWith(navigationUrl),
                 })}
               >
-                {menu.name}
+                {menu.title}
               </LinkButton>
             </Grid>
           ))}
@@ -93,12 +93,7 @@ function PageNavigation({
 }
 
 PageNavigation.propTypes = {
-  navigation: PropTypes.arrayOf(
-    PropTypes.shape({
-      name: PropTypes.string.isRequired,
-      href: PropTypes.string.isRequired,
-    })
-  ).isRequired,
+  navigation: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
   asPath: PropTypes.string,
   pathname: PropTypes.string,
 };
