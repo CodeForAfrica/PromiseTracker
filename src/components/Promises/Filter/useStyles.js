@@ -6,6 +6,9 @@ const useStyles = makeStyles(({ typography, palette, breakpoints }) => ({
     [breakpoints.up("lg")]: {
       marginBottom: 0,
     },
+    display: "flex",
+    alignItems: "center",
+    gap: "1rem",
   },
   name: {
     fontSize: typography.pxToRem(9.6),

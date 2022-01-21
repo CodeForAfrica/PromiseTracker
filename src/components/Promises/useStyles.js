@@ -16,9 +16,9 @@ const useStyles = makeStyles(({ typography, palette, breakpoints }) => ({
     paddingRight: "0.5rem",
   },
   sortItems: {
-    alignItems: "flex-start",
+    alignItems: "flex-end",
     display: "flex",
-    flexDirection: "column",
+    flexDirection: "row",
     marginTop: "1rem",
     [breakpoints.up("lg")]: {
       alignItems: "flex-end",
@@ -26,6 +26,13 @@ const useStyles = makeStyles(({ typography, palette, breakpoints }) => ({
   },
   sectionTitle: {
     margin: "2rem 0rem",
+  },
+  chips: {
+    marginTop: typography.pxToRem(26),
+  },
+  chip: {
+    borderRadius: 0,
+    marginRight: typography.pxToRem(16),
   },
 }));
 
