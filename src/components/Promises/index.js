@@ -1,4 +1,4 @@
-import { Grid, Typography } from "@material-ui/core";
+import { Grid, Typography, Chip } from "@material-ui/core";
 import PropTypes from "prop-types";
 import React, { useState, useEffect } from "react";
 
@@ -26,18 +26,38 @@ function Promises({
   const filterCategoryItems = projectMeta?.tags;
   const filterStatusItems = promiseStatuses;
   const [items, setItems] = useState(itemsProp);
-  const [statusesFilters, setStatusesFilters] = useState(filterStatusItems);
-  const [categoriesFilters, setCategoriesFilters] =
-    useState(filterCategoryItems);
+  const [selectedFilters, setSelectedFilters] = useState([]);
   const [sortBy, setSortBy] = useState(sortByMostRecent?.slug);
+  const [filterBy, setFilterBy] = useState("status");
 
-  const updateFilters = (filters, slug) =>
-    filters.map((f) => (f.slug === slug ? { ...f, active: !f.active } : f));
-  const handleStatusClick = (slug) => {
-    setStatusesFilters((prev) => updateFilters(prev, slug));
+  const getFilter = (slug) => {
+    const filters = [];
+    if (filterBy === "status") {
+      filters.push(...filterStatusItems);
+    } else {
+      filters.push(...filterCategoryItems);
+    }
+    return filters.find((f) => f.slug === slug);
   };
-  const handleCategoryClick = (slug) => {
-    setCategoriesFilters((prev) => updateFilters(prev, slug));
+  const handleFilterClick = (slug) => {
+    setSelectedFilters((prev) => {
+      if (prev.find((f) => f.slug === slug)) {
+        return prev;
+      }
+
+      return [...prev, getFilter(slug)];
+    });
+  };
+  const handleFilterByClick = (slug) => {
+    setFilterBy(slug);
+    setSelectedFilters([]);
+  };
+
+  const handleChipDelete = (slug) => () => {
+    setSelectedFilters((prev) => prev.filter((f) => f.slug !== slug));
+  };
+  const handleDeleteAllFilters = () => {
+    setSelectedFilters([]);
   };
   const handleSortClicked = (slug) => {
     setSortBy(slug);
@@ -45,25 +65,25 @@ function Promises({
 
   useEffect(() => {
     if (withFilter) {
-      const selectedStatuses = statusesFilters
-        ?.filter((filter) => filter.active)
-        .map((filter) => filter.slug);
       const hasStatus = (item) => {
         const promiseSlug = slugify(item.status.title);
-        return selectedStatuses.every((c) => c === promiseSlug);
+        return selectedFilters.some((c) => c.slug === promiseSlug);
       };
-      const selectedCategories = categoriesFilters
-        ?.filter((filter) => filter.active)
-        .map((filter) => filter.slug);
       const hasCategory = (item) => {
         const promiseCategories = item?.categories.map((c) => slugify(c.name));
-        return selectedCategories.every((c) => promiseCategories.includes(c));
+        return selectedFilters.every((c) => promiseCategories.includes(c.slug));
       };
-      const filteredItems = itemsProp.filter(hasStatus).filter(hasCategory);
-      const hasFilters = selectedStatuses.length || selectedCategories.length;
+      let filteredItems;
+      if (filterBy === "status") {
+        filteredItems = itemsProp.filter(hasStatus);
+      }
+      if (filterBy === "category") {
+        filteredItems = itemsProp.filter(hasCategory);
+      }
+      const hasFilters = selectedFilters?.length;
       setItems(hasFilters ? filteredItems : itemsProp);
     }
-  }, [statusesFilters, categoriesFilters, itemsProp, withFilter]);
+  }, [selectedFilters, filterBy, itemsProp, withFilter]);
 
   useEffect(() => {
     if (withFilter) {
@@ -95,24 +115,57 @@ function Promises({
         <Grid className={classes.filterGrid} container justify="space-between">
           <Grid item xs={12} lg={4}>
             <Filter
-              label="Promises by status"
-              items={statusesFilters}
-              onClick={handleStatusClick}
+              label="Filter By"
+              items={[
+                {
+                  name: "Status",
+                  slug: "status",
+                  active: filterBy === "status",
+                },
+                {
+                  name: "Category",
+                  slug: "category",
+                  active: filterBy === "category",
+                },
+              ]}
+              onClick={handleFilterByClick}
+              variant="outline"
             />
-          </Grid>
-          <Grid item xs={12} lg={6}>
             <Filter
-              label="Promises by category"
-              items={categoriesFilters}
-              onClick={handleCategoryClick}
+              label=""
+              items={
+                filterBy === "category"
+                  ? filterCategoryItems
+                  : filterStatusItems
+              }
+              onClick={handleFilterClick}
+              variant="text"
             />
           </Grid>
-          <Grid item xs={12} lg={2} className={classes.sortItems}>
+
+          <Grid item xs={12} lg="auto" className={classes.sortItems}>
             <Typography className={classes.label} variant="h6">
               Sort By
             </Typography>
             <Sort {...sortByMostRecent} onClick={handleSortClicked} />
             <Sort {...sortByDeadline} onClick={handleSortClicked} />
+          </Grid>
+          <Grid item xs={12} className={classes.chips}>
+            {selectedFilters?.map((filterItem) => (
+              <Chip
+                className={classes.chip}
+                value={filterItem.slug}
+                label={filterItem.name}
+                onDelete={handleChipDelete(filterItem.slug)}
+              />
+            ))}
+            {selectedFilters?.length > 0 && (
+              <Chip
+                className={classes.chip}
+                label="Delete All"
+                onDelete={handleDeleteAllFilters}
+              />
+            )}
           </Grid>
         </Grid>
       )}

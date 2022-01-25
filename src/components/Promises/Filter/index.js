@@ -5,7 +5,9 @@ import React from "react";
 import Button from "./FilterButton";
 import useStyles from "./useStyles";
 
-function Filter({ label, items, onClick, ...props }) {
+import Sort from "@/promisetracker/components/Promises/Sort";
+
+function Filter({ label, items, onClick, variant, ...props }) {
   const classes = useStyles(props);
 
   const handleClick = (slug) => {
@@ -19,13 +21,29 @@ function Filter({ label, items, onClick, ...props }) {
   }
   return (
     <div className={classes.root}>
-      <Typography className={classes.label} variant="h6">
-        {label}
-      </Typography>
+      {label && (
+        <Typography className={classes.label} variant="h6">
+          {label}
+        </Typography>
+      )}
       <div className={classes.filterContainer}>
-        {items.map((item) => (
-          <Button key={item.slug} {...item} onClick={handleClick} />
-        ))}
+        {variant === "text"
+          ? items.map((item) => (
+              <Sort
+                key={item.slug}
+                onClick={handleClick}
+                name={item.name}
+                slug={item.slug}
+              />
+            ))
+          : items.map((item) => (
+              <Button
+                variant={variant}
+                key={item.slug}
+                {...item}
+                onClick={handleClick}
+              />
+            ))}
       </div>
     </div>
   );
@@ -38,6 +56,7 @@ Filter.propTypes = {
   items: PropTypes.arrayOf(PropTypes.shape({})),
   label: PropTypes.string,
   onClick: PropTypes.func,
+  variant: PropTypes.string,
 };
 
 Filter.defaultProps = {
@@ -45,6 +64,7 @@ Filter.defaultProps = {
   items: undefined,
   label: undefined,
   onClick: undefined,
+  variant: undefined,
 };
 
 export default Filter;
