@@ -30,7 +30,6 @@ const useStyles = makeStyles(({ typography, breakpoints }) => ({
 }));
 
 function Radar({ lat, long, ...props }) {
-  console.log(lat, long);
   const classes = useStyles({ ...props });
   const [tileLayer, setTileLayer] = useState();
   const { MAPIT_URL } = config;

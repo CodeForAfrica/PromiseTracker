@@ -168,6 +168,7 @@ export async function getStaticProps({ params: { slug: slugParam }, locale }) {
   const actNowPage = await wpApi.pages({ slug: "act-now", locale }).first;
 
   const backend = backendFn();
+  const factChecks = await backend.factChecks().all;
   const promisePost = await backend.promises({ id }).first;
   const promiseStatuses = await backend.promises({ id }).statuses;
   const site = await backend.sites().current;
@@ -183,6 +184,7 @@ export async function getStaticProps({ params: { slug: slugParam }, locale }) {
 
   const promise = {
     ...promisePost,
+    relatedFactChecks: factChecks,
     attribution: {
       title: "",
       description: "",

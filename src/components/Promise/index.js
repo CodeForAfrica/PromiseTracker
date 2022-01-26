@@ -68,7 +68,7 @@ function Promise({
             <Typography className={classes.label} variant="h5">
               {promiseRadarLabel}
             </Typography>
-            <Radar />
+            <Radar {...formatLocation(promise.location)} />
           </Hidden>
           <NarativeUpdates
             {...promise.narrative}
