@@ -29,6 +29,11 @@ function Promise({
 }) {
   const classes = useStyles({ image: promise.image, classes: classesProp });
 
+  const formatLocation = (latlng) => {
+    const formatted = latlng.split(",");
+    return { lat: parseFloat(formatted[0]), long: parseFloat(formatted[1]) };
+  };
+
   return (
     <Section classes={{ root: classes.section }}>
       <Grid container>
@@ -91,7 +96,7 @@ function Promise({
             <Typography className={classes.label} variant="h5">
               {promiseRadarLabel}
             </Typography>
-            <Radar />
+            <Radar {...formatLocation(promise.location)} />
             <Typography className={classes.label} variant="h5">
               {relatedFactChecksLabel}
             </Typography>
@@ -104,47 +109,48 @@ function Promise({
 }
 
 Promise.propTypes = {
-  promise: PropTypes.shape({
-    content: PropTypes.string,
-    description: PropTypes.string,
-    image: PropTypes.string,
-    title: PropTypes.string,
-    chartLink: PropTypes.string,
-    status: PropTypes.shape({}),
-    attribution: PropTypes.shape({}),
-    narrative: PropTypes.shape({}),
-    dataset: PropTypes.shape({}),
-    documents: PropTypes.arrayOf(PropTypes.shape({})),
-    relatedFactChecks: PropTypes.arrayOf(PropTypes.shape({})),
-  }).isRequired,
+  authorAttributionLabel: PropTypes.string,
   breadcrumb: PropTypes.string,
+  chartEmbedLabel: PropTypes.string,
   classes: PropTypes.shape({
-    promiseBody: PropTypes.string,
-    promiseFooter: PropTypes.string,
     date: PropTypes.string,
-    statusLabel: PropTypes.string,
     description: PropTypes.string,
     descriptionContainer: PropTypes.string,
     featuredImageContainer: PropTypes.string,
+    label: PropTypes.string,
     link: PropTypes.string,
     mobileStatus: PropTypes.string,
     mobileStatusContainer: PropTypes.string,
     mobileStatusLabel: PropTypes.string,
     mobileStatusLabelGrid: PropTypes.string,
+    promiseBody: PropTypes.string,
+    promiseFooter: PropTypes.string,
+    promiseTitle: PropTypes.string,
+    promisesLabel: PropTypes.string,
     root: PropTypes.string,
     section: PropTypes.string,
     status: PropTypes.string,
-    label: PropTypes.string,
-    promisesLabel: PropTypes.string,
-    promiseTitle: PropTypes.string,
+    statusLabel: PropTypes.string,
   }),
-  promiseStatusLabel: PropTypes.string,
-  promiseRadarLabel: PropTypes.string,
-  relatedFactChecksLabel: PropTypes.string,
   dataSourceEmbedLabel: PropTypes.string,
   narrativeUpdatesLabel: PropTypes.string,
-  chartEmbedLabel: PropTypes.string,
-  authorAttributionLabel: PropTypes.string,
+  promise: PropTypes.shape({
+    attribution: PropTypes.shape({}),
+    chartLink: PropTypes.string,
+    content: PropTypes.string,
+    dataset: PropTypes.shape({}),
+    description: PropTypes.string,
+    documents: PropTypes.arrayOf(PropTypes.shape({})),
+    image: PropTypes.string,
+    location: PropTypes.string,
+    narrative: PropTypes.shape({}),
+    relatedFactChecks: PropTypes.arrayOf(PropTypes.shape({})),
+    status: PropTypes.shape({}),
+    title: PropTypes.string,
+  }).isRequired,
+  promiseRadarLabel: PropTypes.string,
+  promiseStatusLabel: PropTypes.string,
+  relatedFactChecksLabel: PropTypes.string,
 };
 
 Promise.defaultProps = {
