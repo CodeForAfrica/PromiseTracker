@@ -30,6 +30,7 @@ function Promise({
   const classes = useStyles({ image: promise.image, classes: classesProp });
 
   const formatLocation = (latlng) => {
+    if (!latlng) return {};
     const formatted = latlng.split(",");
     return { lat: parseFloat(formatted[0]), long: parseFloat(formatted[1]) };
   };
