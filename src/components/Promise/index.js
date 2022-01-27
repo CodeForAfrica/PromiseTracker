@@ -30,9 +30,9 @@ function Promise({
   const classes = useStyles({ image: promise.image, classes: classesProp });
 
   const formatLocation = (latlng) => {
-    if (!latlng) return {};
+    if (!latlng) return undefined;
     const formatted = latlng.split(",");
-    return { lat: parseFloat(formatted[0]), long: parseFloat(formatted[1]) };
+    return [parseFloat(formatted[0]), parseFloat(formatted[1])];
   };
 
   return (
@@ -69,7 +69,7 @@ function Promise({
             <Typography className={classes.label} variant="h5">
               {promiseRadarLabel}
             </Typography>
-            <Radar {...formatLocation(promise.location)} />
+            <Radar location={formatLocation(promise.location)} />
           </Hidden>
           <NarativeUpdates
             {...promise.narrative}
@@ -97,7 +97,7 @@ function Promise({
             <Typography className={classes.label} variant="h5">
               {promiseRadarLabel}
             </Typography>
-            <Radar {...formatLocation(promise.location)} />
+            <Radar location={formatLocation(promise.location)} />
             <Typography className={classes.label} variant="h5">
               {relatedFactChecksLabel}
             </Typography>

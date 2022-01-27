@@ -29,7 +29,11 @@ const useStyles = makeStyles(({ typography, breakpoints }) => ({
   },
 }));
 
-function Radar({ lat, long, ...props }) {
+function Radar({ location: locationProps, ...props }) {
+  const location = locationProps || [
+    process.en.NEXT_PUBLIC_PROMISE_LAT,
+    process.en.NEXT_PUBLIC_PROMISE_LONG,
+  ];
   const classes = useStyles({ ...props });
   const [tileLayer, setTileLayer] = useState();
   const { MAPIT_URL } = config;
@@ -54,8 +58,8 @@ function Radar({ lat, long, ...props }) {
           zoom={4}
           tolerance={0.001}
           tileLayer={tileLayer}
-          latLng={[lat || -1.28333, long || 36.81667]}
-          center={[lat || 9.082, long || 8.6753]}
+          latLng={location}
+          center={location}
           drawProfile
           drawChildren
           codeType="KEN"
@@ -76,13 +80,11 @@ function Radar({ lat, long, ...props }) {
 }
 
 Radar.propTypes = {
-  lat: PropTypes.number,
-  long: PropTypes.number,
+  location: PropTypes.arrayOf(PropTypes.number),
 };
 
 Radar.defaultProps = {
-  lat: undefined,
-  long: undefined,
+  location: undefined,
 };
 
 export default Radar;
