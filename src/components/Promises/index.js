@@ -93,10 +93,10 @@ function Promises({
       } else if (sortBy === sortByDeadline.slug) {
         sortedItems = items.sort((a, b) => {
           const aDeadline = a?.promiseDeadline
-            ? new Date(a?.promiseDeadline).getTime()
+            ? new Date(a.promiseDeadline).getTime()
             : a.events?.[0]?.year ?? 0;
           const bDeadline = b?.promiseDeadline
-            ? new Date(b?.promiseDeadline).getTime()
+            ? new Date(b.promiseDeadline).getTime()
             : b.events?.[0]?.year ?? 0;
           return bDeadline - aDeadline;
         });
