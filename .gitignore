@@ -303,4 +303,5 @@ public/data/*
 
 # End of Customizations
 
+# Vercel
 .vercel

@@ -143,6 +143,9 @@ const useStyles = makeStyles(
         backgroundColor: palette.google.main,
       },
     },
+    subtitle: {
+      marginTop: typography.pxToRem(20),
+    },
     accountButton: {
       backgroundColor: palette.background.default,
       color: palette.text.primary,
@@ -172,6 +175,9 @@ const useStyles = makeStyles(
     accountLogout: {},
     actNowSummary: {
       paddingBottom: typography.pxToRem(43),
+    },
+    loginContainer: {
+      marginTop: typography.pxToRem(100),
     },
   })
 );

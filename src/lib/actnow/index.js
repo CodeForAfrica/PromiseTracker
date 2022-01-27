@@ -21,6 +21,25 @@ function actnow(site) {
     return response.json();
   }
 
+  async function loginUser(user) {
+    const headers = new Headers({
+      "content-type": "application/x-www-form-urlencoded",
+      "cache-control": "no-cache",
+    });
+    const body = new URLSearchParams({
+      grant_type: "password",
+      ...user,
+      client_id: process.env.ACTNOW_CLIENT_ID,
+      client_secret: process.env.ACTNOW_CLIENT_SECRET,
+    });
+    const response = await fetch(`${process.env.ACTNOW_URL}/o/token/`, {
+      method: "POST",
+      headers,
+      body: body.toString(),
+    });
+    return response.json();
+  }
+
   async function getPetitions() {
     const url = `${ACTNOW_URL}/v1/petitions/?format=json`;
     const response = await fetch(url);
@@ -36,6 +55,11 @@ function actnow(site) {
         create: (user) => {
           return (async () => {
             return createAccount(user);
+          })();
+        },
+        login: (user) => {
+          return (async () => {
+            return loginUser(user);
           })();
         },
       };
