@@ -168,9 +168,16 @@ export async function getStaticProps({ params: { slug: slugParam }, locale }) {
   const actNowPage = await wpApi.pages({ slug: "act-now", locale }).first;
 
   const backend = backendFn();
-  const factChecks = await backend.factChecks().all;
+
   const promisePost = await backend.promises({ id }).first;
+  let factChecks = await backend.factChecks().all;
+  factChecks = factChecks.filter((factCheck) =>
+    promisePost.categories.some(
+      (category) => factCheck.category === category.name
+    )
+  );
   const promiseStatuses = await backend.promises({ id }).statuses;
+
   const site = await backend.sites().current;
 
   const notFound = !promisePost;
