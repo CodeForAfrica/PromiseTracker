@@ -29,12 +29,6 @@ function Promise({
 }) {
   const classes = useStyles({ image: promise.image, classes: classesProp });
 
-  const formatLocation = (latlng) => {
-    if (!latlng) return undefined;
-    const formatted = latlng.split(",");
-    return [parseFloat(formatted[0]), parseFloat(formatted[1])];
-  };
-
   return (
     <Section classes={{ root: classes.section }}>
       <Grid container>
@@ -69,7 +63,7 @@ function Promise({
             <Typography className={classes.label} variant="h5">
               {promiseRadarLabel}
             </Typography>
-            <Radar location={formatLocation(promise.location)} />
+            <Radar location={promise.location} />
           </Hidden>
           <NarativeUpdates
             {...promise.narrative}
@@ -97,7 +91,7 @@ function Promise({
             <Typography className={classes.label} variant="h5">
               {promiseRadarLabel}
             </Typography>
-            <Radar location={formatLocation(promise.location)} />
+            <Radar location={promise.location} />
             <Typography className={classes.label} variant="h5">
               {relatedFactChecksLabel}
             </Typography>

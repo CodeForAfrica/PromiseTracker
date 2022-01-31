@@ -29,11 +29,7 @@ const useStyles = makeStyles(({ typography, breakpoints }) => ({
   },
 }));
 
-function Radar({ location: locationProps, ...props }) {
-  const location = locationProps || [
-    process.en.NEXT_PUBLIC_PROMISE_LAT,
-    process.en.NEXT_PUBLIC_PROMISE_LONG,
-  ];
+function Radar({ location, ...props }) {
   const classes = useStyles({ ...props });
   const [tileLayer, setTileLayer] = useState();
   const { MAPIT_URL } = config;
