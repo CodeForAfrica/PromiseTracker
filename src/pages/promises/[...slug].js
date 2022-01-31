@@ -173,7 +173,7 @@ export async function getStaticProps({ params: { slug: slugParam }, locale }) {
   let factChecks = await backend.factChecks().all;
   factChecks = factChecks.filter((factCheck) =>
     promisePost.categories.some(
-      (category) => factCheck.category.indexOf(category.name) !== -1
+      (category) => factCheck?.categories?.indexOf(category.name) !== -1
     )
   );
   const promiseStatuses = await backend.promises({ id }).statuses;

@@ -55,10 +55,13 @@ function jsonQL(promises) {
     getPromise({ id, ...others } = {}) {
       const filteredPromises = api.getPromises(others);
       if (id) {
-        return filteredPromises.find((p) => equalsIgnoreCase(p.id, id));
+        const foundPromise = filteredPromises.find((p) =>
+          equalsIgnoreCase(p.id, id)
+        );
+        foundPromise.location = formatLocation(foundPromise.location);
+        return foundPromise;
       }
       const [promise] = filteredPromises;
-      promise.location = formatLocation(promise.location);
       return promise;
     },
     getStatuses() {
