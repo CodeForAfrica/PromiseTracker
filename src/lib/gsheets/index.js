@@ -26,6 +26,9 @@ function gsheets(server) {
   const promisesEventsSheetId = server.env("GSHEETS_PROMISES_EVENTS_SHEET_ID");
   const articlesSheetId = server.env("GSHEETS_ARTICLES_SHEET_ID");
   const factChecksSheetId = server.env("GSHEETS_FACTCHECKS_SHEET_ID");
+  const factChecksCategoriesSheetId = server.env(
+    "GSHEETS_FACTCHECKS_CATEGORIES_SHEET_ID"
+  );
 
   const papaOptions = {
     header: true,
@@ -57,6 +60,11 @@ function gsheets(server) {
       `${SPREADSHEETS_URL}d/${spreadsheetId}/export?format=csv&gid=${sheetId}`
     );
     return papaPromise(response.body, options);
+  }
+
+  function reduceByName(acc, current) {
+    acc[camelCase(current.name)] = current;
+    return acc;
   }
 
   async function fetchSitesNavigationsSheet() {
@@ -218,18 +226,36 @@ function gsheets(server) {
       .map(({ photo, ...others }) => ({ ...others, photo, image: photo }));
   }
 
+  async function fetchfactCheckCategories() {
+    const categories = (await fetchCategories()).reduce(reduceByName, {});
+    const pcSheet = await fetchSheet(factChecksCategoriesSheetId);
+    return pcSheet
+      .filter((row) => row.factCheck && row.category)
+      .map(({ category, factCheck }) => {
+        return { ...categories[camelCase(category)], factCheck };
+      });
+  }
+
   async function fetchFactChecks(cache) {
     const { data: site } = await cache.site;
     const factChecksSheet = await fetchSheet(factChecksSheetId);
+    const factChecksCategories = await fetchfactCheckCategories();
 
     return factChecksSheet
       .filter((row) => equalsIgnoreCase(row.site, site.slug))
-      .map(({ photo, ...others }) => ({ ...others, photo, image: photo }));
-  }
-
-  function reduceByName(acc, current) {
-    acc[camelCase(current.name)] = current;
-    return acc;
+      .map(({ photo, ...others }) => ({
+        ...others,
+        categories: factChecksCategories.flatMap(
+          ({ factCheck, ...category }) => {
+            if (equalsIgnoreCase(factCheck, others.title)) {
+              return [category];
+            }
+            return [];
+          }
+        ),
+        photo,
+        image: photo,
+      }));
   }
 
   function extractIdFromEntityPromise(promise) {
