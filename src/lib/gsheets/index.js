@@ -228,8 +228,8 @@ function gsheets(server) {
 
   async function fetchfactCheckCategories() {
     const categories = (await fetchCategories()).reduce(reduceByName, {});
-    const pcSheet = await fetchSheet(factChecksCategoriesSheetId);
-    return pcSheet
+    const fcSheet = await fetchSheet(factChecksCategoriesSheetId);
+    return fcSheet
       .filter((row) => row.factCheck && row.category)
       .map(({ category, factCheck }) => {
         return { ...categories[camelCase(category)], factCheck };
