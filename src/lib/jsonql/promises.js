@@ -1,9 +1,14 @@
 import { equalsIgnoreCase, slugify } from "@/promisetracker/utils";
 
 const formatLocation = (latlng) => {
-  if (!latlng) return [process.env.DEFAULT_LAT, process.env.DEFAULT_LONG];
-  const formatted = latlng.split(",");
-  return [parseFloat(formatted[0]), parseFloat(formatted[1])];
+  if (latlng) {
+    const formatted = latlng.split(",");
+    return [parseFloat(formatted[0]), parseFloat(formatted[1])];
+  }
+  if (process.env.DEFAULT_LAT && process.env.DEFAULT_LONG) {
+    return [process.env.DEFAULT_LAT, process.env.DEFAULT_LONG];
+  }
+  return null;
 };
 
 function jsonQL(promises) {

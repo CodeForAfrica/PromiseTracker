@@ -52,7 +52,7 @@ RelatedFactChecks.propTypes = {
 
 RelatedFactChecks.defaultProps = {
   classes: undefined,
-  factChecks: [],
+  factChecks: undefined,
 };
 
 export default RelatedFactChecks;
