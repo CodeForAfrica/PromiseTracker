@@ -182,7 +182,7 @@ export async function getStaticProps({ params: { slug: slugParam }, locale }) {
 
   const promiseStatuses = await backend.promises({ id }).statuses;
 
-  const site = await backend.sites().current;
+  const { navigation, site } = await backend.sites().current;
 
   const notFound = !promisePost;
   if (notFound) {
@@ -221,6 +221,7 @@ export async function getStaticProps({ params: { slug: slugParam }, locale }) {
       ...page,
       ...site,
       ...actNowPage,
+      navigation,
       errorCode,
       languageAlternates,
       promise,
