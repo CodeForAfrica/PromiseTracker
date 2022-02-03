@@ -24,6 +24,9 @@ const useStyles = makeStyles(({ palette }) => ({
 function RelatedFactChecks({ factChecks, classes: classesProp }) {
   const classes = useStyles({ classes: classesProp });
 
+  if (!factChecks?.length) {
+    return null;
+  }
   return (
     <div className={classes.root}>
       {factChecks.map(({ title, date, href }) => (
@@ -52,11 +55,7 @@ RelatedFactChecks.propTypes = {
 
 RelatedFactChecks.defaultProps = {
   classes: undefined,
-  factChecks: [
-    { title: "Western Australia by Camper Van", date: "16 April 2020" },
-    { title: "Steelhead and Spines in Alaska", date: "16 April 2020" },
-    { title: "Arctic Surfing in Lofoten", date: "16 June 2020" },
-  ],
+  factChecks: undefined,
 };
 
 export default RelatedFactChecks;
