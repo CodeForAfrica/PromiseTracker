@@ -155,37 +155,35 @@ function ProfileDetails({
           </Grid>
         </Grid>
       </Grid>
-      <>
-        {isDesktop ? (
-          <div className={classes.popoverContainer}>
-            {clicked ? (
-              <Fade in={clicked}>
-                <div className={classes.rect}>
-                  <RectChart
-                    totalPromises={promisesByStatus.count}
-                    inProgress={
-                      promisesByStatus.statusHistory["In Progress"]?.length
-                    }
-                    completed={promisesByStatus.statusHistory.Completed?.length}
-                    inconclusive={
-                      promisesByStatus.statusHistory.Inconclusive?.length
-                    }
-                    unstarted={promisesByStatus.statusHistory.Unstarted?.length}
-                    stalled={promisesByStatus.statusHistory.Stalled?.length}
-                    behindSchedule={
-                      promisesByStatus.statusHistory["Behind Schedule"]?.length
-                    }
-                  />
-                </div>
-              </Fade>
-            ) : (
-              <DesktopChart promisesByStatus={promisesByStatus} />
-            )}
-          </div>
-        ) : (
-          <MobileChart promisesByStatus={promisesByStatus} />
-        )}
-      </>
+      {isDesktop ? (
+        <div className={classes.popoverContainer}>
+          {clicked ? (
+            <Fade in={clicked}>
+              <div className={classes.rect}>
+                <RectChart
+                  totalPromises={promisesByStatus.count}
+                  inProgress={
+                    promisesByStatus.statusHistory["In Progress"]?.length
+                  }
+                  completed={promisesByStatus.statusHistory.Completed?.length}
+                  inconclusive={
+                    promisesByStatus.statusHistory.Inconclusive?.length
+                  }
+                  unstarted={promisesByStatus.statusHistory.Unstarted?.length}
+                  stalled={promisesByStatus.statusHistory.Stalled?.length}
+                  behindSchedule={
+                    promisesByStatus.statusHistory["Behind Schedule"]?.length
+                  }
+                />
+              </div>
+            </Fade>
+          ) : (
+            <DesktopChart promisesByStatus={promisesByStatus} />
+          )}
+        </div>
+      ) : (
+        <MobileChart promisesByStatus={promisesByStatus} />
+      )}
     </>
   );
 }
