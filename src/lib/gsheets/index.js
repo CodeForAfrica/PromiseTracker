@@ -23,12 +23,26 @@ function gsheets(server) {
   const promisesCategoriesSheetId = server.env(
     "GSHEETS_PROMISES_CATEGORIES_SHEET_ID"
   );
+  const articlesCategoriesSheetId = server.env(
+    "GSHEETS_ARTICLES_CATEGORIES_SHEET_ID"
+  );
   const promisesEventsSheetId = server.env("GSHEETS_PROMISES_EVENTS_SHEET_ID");
   const articlesSheetId = server.env("GSHEETS_ARTICLES_SHEET_ID");
   const factChecksSheetId = server.env("GSHEETS_FACTCHECKS_SHEET_ID");
 
   const defaultLat = server.env("DEFAULT_LAT");
   const defaultLng = server.env("DEFAULT_LONG");
+
+  function reduceByName(acc, current) {
+    acc[camelCase(current.name)] = current;
+    return acc;
+  }
+
+  function extractIdFromEntity(entity) {
+    // idET = (promise) id, (entity) Name and (promise) Title
+    const idNT = entity.split("/");
+    return idNT.length > 1 ? idNT[0]?.trim() : undefined;
+  }
 
   const papaOptions = {
     header: true,
@@ -212,13 +226,36 @@ function gsheets(server) {
     };
   }
 
+  async function fetchArticlesCategories() {
+    const categories = (await fetchCategories()).reduce(reduceByName, {});
+    const articleCategoriesSheet = await fetchSheet(articlesCategoriesSheetId);
+    return articleCategoriesSheet
+      .filter((row) => row.article && row.category)
+      .map(({ article, category }) => {
+        const id = extractIdFromEntity(article);
+        return {
+          ...categories[camelCase(category)],
+          article: { id },
+        };
+      })
+      .filter((row) => row.article.id);
+  }
+
   async function fetchArticles(cache) {
     const { data: site } = await cache.site;
     const articlesSheet = await fetchSheet(articlesSheetId);
+    const articleCategories = await fetchArticlesCategories();
 
     return articlesSheet
       .filter((row) => equalsIgnoreCase(row.site, site.slug))
-      .map(({ photo, ...others }) => ({ ...others, photo, image: photo }));
+      .map(({ photo, ...others }) => ({
+        ...others,
+        photo,
+        categories: articleCategories.filter(({ article }) =>
+          equalsIgnoreCase(article.id, others.id)
+        ),
+        image: photo,
+      }));
   }
 
   async function fetchFactChecks(cache) {
@@ -230,17 +267,6 @@ function gsheets(server) {
       .map(({ photo, ...others }) => ({ ...others, photo, image: photo }));
   }
 
-  function reduceByName(acc, current) {
-    acc[camelCase(current.name)] = current;
-    return acc;
-  }
-
-  function extractIdFromEntityPromise(promise) {
-    // idET = (promise) id, (entity) Name and (promise) Title
-    const idNT = promise.split("/");
-    return idNT.length > 1 ? idNT[0]?.trim() : undefined;
-  }
-
   async function fetchPromisesCategories() {
     const categories = (await fetchCategories()).reduce(reduceByName, {});
     const pcSheet = await fetchSheet(promisesCategoriesSheetId);
@@ -248,7 +274,7 @@ function gsheets(server) {
     return pcSheet
       .filter((row) => row.promise && row.category)
       .map(({ promise, category }) => {
-        const id = extractIdFromEntityPromise(promise);
+        const id = extractIdFromEntity(promise);
         return { ...categories[camelCase(category)], promise: { id } };
       })
       .filter((row) => row.promise.id);
@@ -260,7 +286,7 @@ function gsheets(server) {
     return peSheet
       .filter((row) => row.promise && row.name && row.date)
       .map(({ promise, ...event }) => {
-        const id = extractIdFromEntityPromise(promise);
+        const id = extractIdFromEntity(promise);
         return { ...event, promise: { id } };
       })
       .filter((row) => row.promise.id);
@@ -425,7 +451,8 @@ function gsheets(server) {
         get first() {
           return (async () => {
             const ql = await promisesQL();
-            return ql.getPromise(options);
+            const articles = (await articlesQL()).getArticles();
+            return ql.getPromise({ articles, ...options });
           })();
         },
         get key() {
