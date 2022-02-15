@@ -1,6 +1,6 @@
 import { Box, Button } from "@material-ui/core";
 import clsx from "clsx";
-import { signOut, useSession } from "next-auth/client";
+import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
 import PropTypes from "prop-types";
 import React from "react";
@@ -21,7 +21,7 @@ function ActNowLoggedInPage({
   ...props
 }) {
   const classes = useStyles(props);
-  const session = useSession();
+  const { data: session } = useSession();
   const started = petitions?.filter(
     (petition) => petition.owner.id === session.user.id
   );
