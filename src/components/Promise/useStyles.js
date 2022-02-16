@@ -42,7 +42,7 @@ const useStyles = makeStyles(
       maxHeight: typography.pxToRem(40 * 3),
       [breakpoints.up("lg")]: {
         marginTop: typography.pxToRem(27),
-        maxHeight: typography.pxToRem(56 * 2),
+        maxHeight: typography.pxToRem(60 * 2),
         position: "relative",
         "&:after": {
           content: '""',
@@ -50,12 +50,15 @@ const useStyles = makeStyles(
           bottom: 0,
           left: 0,
           width: typography.pxToRem(72),
-          borderBottom: `8px solid ${palette.highlight.light}`,
+          borderBottom: (props) => `8px solid ${props?.status?.color}`,
         },
       },
     },
     featuredImageContainer: {
-      backgroundImage: (props) => `url(${props.image})`,
+      background: (props) =>
+        `linear-gradient(to right, ${props.status?.color}, ${props.status?.color}), url(${props.image}) no-repeat center/cover`,
+      border: (props) => `10px solid ${props.status?.color}`,
+      backgroundBlendMode: "soft-light",
       backgroundRepeat: "no-repeat",
       backgroundSize: "cover",
       width: "100%",

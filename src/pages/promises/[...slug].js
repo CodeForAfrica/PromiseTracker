@@ -71,6 +71,7 @@ function PromisePage({
     return null;
   }
   const { events, date, status, statusHistory } = promise;
+
   return (
     <Page
       {...props}
@@ -127,7 +128,9 @@ PromisePage.propTypes = {
     events: PropTypes.arrayOf(PropTypes.shape({})),
     image: PropTypes.string,
     title: PropTypes.string,
-    status: PropTypes.shape({}),
+    status: PropTypes.shape({
+      color: PropTypes.string,
+    }),
     statusHistory: PropTypes.arrayOf(PropTypes.shape({})),
     relatedPromises: PropTypes.arrayOf(PropTypes.shape({})),
     relatedArticles: PropTypes.arrayOf(PropTypes.shape({})),

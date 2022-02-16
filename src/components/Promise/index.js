@@ -27,7 +27,11 @@ function Promise({
   narrativeUpdatesLabel,
   ...props
 }) {
-  const classes = useStyles({ image: promise.image, classes: classesProp });
+  const classes = useStyles({
+    image: promise.image,
+    classes: classesProp,
+    status: promise.status,
+  });
 
   const { location } = promise;
   return (
@@ -111,7 +115,9 @@ Promise.propTypes = {
     image: PropTypes.string,
     title: PropTypes.string,
     chartLink: PropTypes.string,
-    status: PropTypes.shape({}),
+    status: PropTypes.shape({
+      color: PropTypes.string,
+    }),
     attribution: PropTypes.shape({}),
     narrative: PropTypes.shape({}),
     dataset: PropTypes.shape({}),
@@ -120,6 +126,7 @@ Promise.propTypes = {
     relatedFactChecks: PropTypes.arrayOf(PropTypes.shape({})),
   }).isRequired,
   breadcrumb: PropTypes.string,
+  status: PropTypes.string,
   classes: PropTypes.shape({
     promiseBody: PropTypes.string,
     promiseFooter: PropTypes.string,
@@ -159,6 +166,7 @@ Promise.defaultProps = {
   narrativeUpdatesLabel: undefined,
   chartEmbedLabel: undefined,
   authorAttributionLabel: undefined,
+  status: undefined,
 };
 
 export default Promise;
