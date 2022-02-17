@@ -6,7 +6,7 @@ export function slugify(string) {
   const p = new RegExp(a.split("").join("|"), "g");
 
   return string
-    .toString()
+    ?.toString()
     .toLowerCase()
     .replace(/\s+/g, "-") // Replace spaces with -
     .replace(p, (c) => b.charAt(a.indexOf(c))) // Replace special characters
