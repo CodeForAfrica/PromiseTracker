@@ -21,7 +21,6 @@ function jsonQL(articles) {
       return article;
     },
   };
-
   return api;
 }
 

@@ -47,13 +47,8 @@ function gsheets(server) {
   const papaOptions = {
     header: true,
     skipEmptyLines: "greedy",
-    dynamicTyping: true,
     transformHeader: (header) => camelCase(header.trim()),
     transform: (value) => value?.trim(),
-    complete(results, file) {
-      console.log(results);
-      console.log(file);
-    },
   };
 
   const papaPromise = (readableStream, options = papaOptions) => {
@@ -64,24 +59,7 @@ function gsheets(server) {
       const data = [];
       parseStream.on("data", (chunk) => {
         data.push(chunk);
-        console.log(
-          data.map((dataItems) =>
-            dataItems.map((item) => {
-              const getResult = Object.fromEntries(
-                Object.entries(item)
-                  .map(([key, value]) => [
-                    key,
-                    Array.isArray(value) ? value.filter((v) => v) : value,
-                  ])
-                  .filter(
-                    ([, value]) =>
-                      value && (!Array.isArray(value) || value.length)
-                  )
-              );
-              return getResult;
-            })
-          )
-        );
+        console.log(data);
       });
       parseStream.on("end", () => {
         resolve(data);
@@ -268,6 +246,7 @@ function gsheets(server) {
     const { data: site } = await cache.site;
     const articlesSheet = await fetchSheet(articlesSheetId);
     const articleCategories = await fetchArticlesCategories();
+    console.log(articleCategories);
 
     return articlesSheet
       .filter((row) => equalsIgnoreCase(row.site, site.slug))
