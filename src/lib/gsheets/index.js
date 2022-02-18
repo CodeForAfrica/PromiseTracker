@@ -47,8 +47,13 @@ function gsheets(server) {
   const papaOptions = {
     header: true,
     skipEmptyLines: "greedy",
+    dynamicTyping: true,
     transformHeader: (header) => camelCase(header.trim()),
     transform: (value) => value?.trim(),
+    complete(results, file) {
+      console.log(results);
+      console.log(file);
+    },
   };
 
   const papaPromise = (readableStream, options = papaOptions) => {
@@ -59,6 +64,24 @@ function gsheets(server) {
       const data = [];
       parseStream.on("data", (chunk) => {
         data.push(chunk);
+        console.log(
+          data.map((dataItems) =>
+            dataItems.map((item) => {
+              const getResult = Object.fromEntries(
+                Object.entries(item)
+                  .map(([key, value]) => [
+                    key,
+                    Array.isArray(value) ? value.filter((v) => v) : value,
+                  ])
+                  .filter(
+                    ([, value]) =>
+                      value && (!Array.isArray(value) || value.length)
+                  )
+              );
+              return getResult;
+            })
+          )
+        );
       });
       parseStream.on("end", () => {
         resolve(data);
