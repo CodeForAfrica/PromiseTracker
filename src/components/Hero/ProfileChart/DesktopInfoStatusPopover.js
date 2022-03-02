@@ -1,5 +1,10 @@
-import { RichTypography } from "@commons-ui/core";
-import { Paper, Fade, IconButton } from "@material-ui/core";
+import {
+  IconButton,
+  Dialog,
+  DialogContent,
+  Typography,
+  DialogTitle as MuiDialogTitle,
+} from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 import CloseIcon from "@material-ui/icons/Close";
 import Image from "next/image";
@@ -26,18 +31,21 @@ const useStyles = makeStyles(({ palette, typography }) => ({
   },
   paper: {
     position: "absolute",
-    top: "0",
+    top: "15rem",
     // Make it higher than any other component on the page
     zIndex: 1,
-    left: 0,
+    left: "46rem",
     height: "32.5rem",
     overflowY: "auto",
     width: "41.5rem",
   },
+  container: {
+    background: "#fafafa",
+  },
   paperTitle: {
     padding: "1.5rem",
   },
-  paperContent: {
+  dialogContent: {
     padding: "1rem 2rem",
   },
   typo: {
@@ -47,14 +55,18 @@ const useStyles = makeStyles(({ palette, typography }) => ({
     fontSize: typography.pxToRem(13),
   },
 }));
-function PaperTitle({ children, onClose, ...other }) {
+function DialogTitle({ children, onClose, ...other }) {
   const classes = useStyles();
 
   return (
-    <div className={classes.paperTitle} {...other}>
-      <RichTypography variant="h5" className={classes.typo}>
+    <MuiDialogTitle
+      disableTypography
+      classes={{ root: classes.dialogContent }}
+      {...other}
+    >
+      <Typography variant="h5" className={classes.title}>
         {children}
-      </RichTypography>
+      </Typography>
       {onClose ? (
         <IconButton
           disableRipple
@@ -66,36 +78,13 @@ function PaperTitle({ children, onClose, ...other }) {
           <CloseIcon />
         </IconButton>
       ) : null}
-    </div>
+    </MuiDialogTitle>
   );
 }
 
-PaperTitle.propTypes = {
-  children: PropTypes.oneOfType([
-    PropTypes.arrayOf(PropTypes.node),
-    PropTypes.node,
-  ]).isRequired,
-  onClose: PropTypes.func,
-};
-
-PaperTitle.defaultProps = {
-  onClose: undefined,
-};
-
-function PaperContent({ children, ...other }) {
-  const classes = useStyles();
-  return (
-    <div className={classes.paperContent} {...other}>
-      {children}
-    </div>
-  );
-}
-
-PaperContent.propTypes = {
-  children: PropTypes.oneOfType([
-    PropTypes.arrayOf(PropTypes.node),
-    PropTypes.node,
-  ]).isRequired,
+DialogTitle.propTypes = {
+  children: PropTypes.node.isRequired,
+  onClose: PropTypes.func.isRequired,
 };
 
 function DesktopInfoStatusPopover({ items, title, ...props }) {
@@ -124,21 +113,32 @@ function DesktopInfoStatusPopover({ items, title, ...props }) {
       >
         <Image src={info} alt="Info" className={classes.infoIcon} />
       </IconButton>
-      <Fade in={open}>
-        <Paper elevation={4} className={classes.paper}>
-          {title?.length && (
-            <PaperTitle onClose={handleClose}>{title}</PaperTitle>
-          )}
-          {items?.length && (
-            <PaperContent>
-              <PromiseStatusList
-                items={items}
-                classes={{ description: classes.description }}
-              />
-            </PaperContent>
-          )}
-        </Paper>
-      </Fade>
+
+      <Dialog
+        aria-labelledby="promise-ratings"
+        onClose={handleClose}
+        open={open}
+        scroll="paper"
+        classes={{
+          root: classes.root,
+          paper: classes.paper,
+          container: classes.container,
+        }}
+      >
+        {title && (
+          <DialogTitle id="promise-ratings" onClose={handleClose}>
+            {title}
+          </DialogTitle>
+        )}
+        {items?.length && (
+          <DialogContent classes={{ root: classes.dialogContent }}>
+            <PromiseStatusList
+              items={items}
+              classes={{ description: classes.description }}
+            />
+          </DialogContent>
+        )}
+      </Dialog>
     </div>
   );
 }

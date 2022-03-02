@@ -18,6 +18,9 @@ const useStyles = makeStyles(({ palette, typography }) => ({
   root: {
     overflowY: "auto",
   },
+  container: {
+    background: "#fafafa",
+  },
   closeButton: {
     color: palette.primary.main,
     position: "absolute",
@@ -114,7 +117,11 @@ function MobileInfoStatusPopover({ items, title, ...props }) {
         onClose={handleClose}
         open={open}
         scroll="paper"
-        classes={{ root: classes.root, paper: classes.paper }}
+        classes={{
+          root: classes.root,
+          paper: classes.paper,
+          container: classes.container,
+        }}
       >
         {title && (
           <DialogTitle id="promise-ratings" onClose={handleClose}>
