@@ -63,6 +63,7 @@ const useStyles = makeStyles(
     gridContent: {
       order: 0,
       [breakpoints.up("lg")]: {
+        marginTop: typography.pxToRem(368),
         order: 0,
       },
     },
