@@ -25,28 +25,28 @@ const useStyles = makeStyles(({ palette, typography }) => ({
   iconButton: {},
   closeButton: {
     position: "absolute",
-    right: "1rem",
+    right: typography.pxToRem(16),
     top: 10,
     color: palette.secondary.main,
   },
   paper: {
     position: "absolute",
-    top: "15rem",
+    top: typography.pxToRem(15),
     // Make it higher than any other component on the page
     zIndex: 1,
-    left: "46rem",
-    height: "32.5rem",
+    left: typography.pxToRem(46),
+    height: typography.pxToRem(32.5),
     overflowY: "auto",
-    width: "41.5rem",
+    width: typography.pxToRem(41.5),
   },
   container: {
     background: "#fafafa",
   },
   paperTitle: {
-    padding: "1.5rem",
+    padding: typography.pxToRem(24),
   },
   dialogContent: {
-    padding: "1rem 2rem",
+    padding: `${typography.pxToRem(16)} ${typography.pxToRem(32)}`,
   },
   typo: {
     color: palette.primary.main,
