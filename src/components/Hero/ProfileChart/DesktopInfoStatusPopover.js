@@ -31,13 +31,13 @@ const useStyles = makeStyles(({ palette, typography }) => ({
   },
   paper: {
     position: "absolute",
-    top: typography.pxToRem(15),
+    top: typography.pxToRem(240),
     // Make it higher than any other component on the page
     zIndex: 1,
-    left: typography.pxToRem(46),
-    height: typography.pxToRem(32.5),
+    left: typography.pxToRem(736),
+    height: typography.pxToRem(520),
     overflowY: "auto",
-    width: typography.pxToRem(41.5),
+    width: typography.pxToRem(664),
   },
   container: {
     background: "#fafafa",
