@@ -12,7 +12,9 @@ const useStyles = makeStyles(
         width: typography.pxToRem(widths.values.lg),
       },
     },
-    sectionTitle: {},
+    sectionTitle: {
+      marginBottom: typography.pxToRem(40),
+    },
     actNow: {},
     content: {},
     contentSection: {
@@ -51,7 +53,7 @@ const useStyles = makeStyles(
       },
     },
     grid: {
-      alignItems: "center",
+      alignItems: "start",
       paddingBottom: typography.pxToRem(40),
     },
     gridAside: {
@@ -178,6 +180,15 @@ const useStyles = makeStyles(
     },
     loginContainer: {
       marginTop: typography.pxToRem(100),
+    },
+    tabs: {
+      marginTop: typography.pxToRem(100),
+    },
+    tab: {
+      borderBottom: "5px solid",
+    },
+    petitionsContainer: {
+      marginTop: typography.pxToRem(40),
     },
   })
 );
