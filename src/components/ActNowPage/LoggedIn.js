@@ -7,11 +7,32 @@ import React from "react";
 
 import useStyles from "./useStyles";
 
-import actNowLogo from "@/promisetracker/assets/Component 121 – 1@2x.png";
+import actNowLogo from "@/promisetracker/assets/actNowLogo2x.png";
 import ContentPage from "@/promisetracker/components/ContentPage";
+import Section from "@/promisetracker/components/ContentPage/Section";
+import Petitions from "@/promisetracker/components/Petitions";
+import Tabs from "@/promisetracker/components/Tabs";
 
-function ActNowLoggedInPage({ footer, title, navigation, ...props }) {
+function ActNowLoggedInPage({
+  footer,
+  title,
+  navigation,
+  signedPetitions,
+  ownedPetitions,
+  ...props
+}) {
   const classes = useStyles(props);
+
+  const formatedItems = [
+    { title: "Signed", petitions: signedPetitions },
+    { title: "Started", petitions: ownedPetitions },
+  ].map((item) => {
+    return {
+      label: `${item.title} (${item.petitions?.length || 0})`,
+      href: `#${item.title}`,
+      children: <Petitions items={item.petitions} />,
+    };
+  });
 
   const aside = (
     <Box display="flex" justifyContent="flex-end">
@@ -59,19 +80,41 @@ function ActNowLoggedInPage({ footer, title, navigation, ...props }) {
         gridAside: classes.gridAside,
         gridContent: classes.gridContent,
       }}
-    />
+    >
+      <Section
+        classes={{
+          section: classes.section,
+          sectionTitle: classes.sectionTitle,
+        }}
+        title="My Petitions"
+        content={
+          <Tabs
+            name="signed-started-actnow"
+            items={formatedItems}
+            classes={{
+              root: classes.tabs,
+              tab: classes.tab,
+            }}
+          />
+        }
+      />
+    </ContentPage>
   );
 }
 
 ActNowLoggedInPage.propTypes = {
   footer: PropTypes.shape({}),
   navigation: PropTypes.shape({}),
+  signedPetitions: PropTypes.arrayOf(PropTypes.shape({})),
+  ownedPetitions: PropTypes.arrayOf(PropTypes.shape({})),
   title: PropTypes.string,
 };
 
 ActNowLoggedInPage.defaultProps = {
   footer: undefined,
   navigation: undefined,
+  ownedPetitions: undefined,
+  signedPetitions: undefined,
   title: undefined,
 };
 
