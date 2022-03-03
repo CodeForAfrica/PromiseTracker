@@ -1,16 +1,13 @@
 import { makeStyles } from "@material-ui/core/styles";
 import PropTypes from "prop-types";
 import React from "react";
-import readingTime from "reading-time";
 
-import Article from "@/promisetracker/components/Article";
-import RelatedArticles from "@/promisetracker/components/LatestArticles";
-import Subscribe from "@/promisetracker/components/Newsletter";
 import Page from "@/promisetracker/components/Page";
+import Petition from "@/promisetracker/components/Petition";
+import actnow from "@/promisetracker/lib/actnow";
 import backendFn from "@/promisetracker/lib/backend";
 import i18n from "@/promisetracker/lib/i18n";
 import wp from "@/promisetracker/lib/wp";
-import { formatDate } from "@/promisetracker/utils";
 
 const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
   section: {
@@ -46,12 +43,11 @@ const useStyles = makeStyles(({ breakpoints, typography, widths }) => ({
  * Since we wnat /analysis/articles to be different from /analysis/articles/[slug],
  * we need to make sure [slug] doesn't return "" from getStaticPaths.
  */
-const NO_ARTICLES_SLUG = "not_found";
-
 function Index({
   article,
   footer,
   navigation,
+  petition,
   relatedArticles,
   subscribe,
   title: titleProp,
@@ -68,22 +64,7 @@ function Index({
       title={title}
       classes={{ section: classes.section, footer: classes.footer }}
     >
-      {article ? <Article article={article} /> : null}
-      <RelatedArticles
-        items={relatedArticles}
-        title="Related Articles"
-        classes={{
-          section: classes.section,
-          sectionTitle: classes.sectionTitle,
-        }}
-      />
-      <Subscribe
-        {...subscribe}
-        classes={{
-          section: classes.section,
-          root: classes.subscribe,
-        }}
-      />
+      <Petition petitionPost={petition} {...props} />
     </Page>
   );
 }
@@ -102,6 +83,7 @@ Index.propTypes = {
   footer: PropTypes.shape({}),
   navigation: PropTypes.shape({}),
   subscribe: PropTypes.shape({}),
+  petition: PropTypes.shape({}),
   relatedArticles: PropTypes.arrayOf(PropTypes.shape({})),
   title: PropTypes.string,
 };
@@ -114,90 +96,38 @@ Index.defaultProps = {
   relatedArticles: undefined,
   subscribe: undefined,
   title: undefined,
+  petition: undefined,
 };
 
 export async function getStaticPaths() {
   const fallback = true;
-  const page = await wp().pages({ slug: "analysis-articles" }).first;
-  const posts = page.acf?.posts?.length
-    ? page.acf.posts
-    : [{ slug: NO_ARTICLES_SLUG }];
-  const unlocalizedPaths = posts.map((post) => ({
-    params: { slug: post.slug },
+  const petitions = await actnow().petitions().list;
+
+  const unlocalizedPaths = petitions.map((petition) => ({
+    params: { slug: `${petition.id}` },
   }));
+
   const paths = i18n().localizePaths(unlocalizedPaths);
 
   return { fallback, paths };
 }
 
-export async function getStaticProps({
-  params: { slug: slugParam },
-  locale,
-  preview = false,
-  previewData,
-}) {
-  const _ = i18n();
-  if (!_.locales.includes(locale)) {
-    return {
-      notFound: true,
-    };
-  }
-
-  const slug = slugParam.toLowerCase();
-  const wpApi = wp();
-  let post;
-  if (preview && previewData) {
-    post = await wpApi.revisions(previewData.query).post;
-  } else {
-    post =
-      slug !== NO_ARTICLES_SLUG
-        ? await wpApi.posts({ slug, locale }).first
-        : null;
-  }
-
-  const notFound = !post;
-  if (notFound && preview) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: "/preview-error",
-      },
-    };
-  }
-  if (notFound) {
-    return {
-      notFound,
-    };
-  }
-
+export async function getStaticProps({ params: { slug: slugParam }, locale }) {
   const backend = backendFn();
-  const site = await backend.sites().current;
-  const errorCode = notFound ? 404 : null;
-  const page = await wpApi.pages({ slug: "analysis-articles" }).first;
-  const posts = await wpApi.pages({ page }).posts;
-  page.posts = null;
-  const articles = posts?.slice(0, 4);
-  const relatedArticles =
-    articles?.filter((article) => article.slug !== slug) || [];
-  const article = {
-    ...post,
-    image: post.featured_media.source_url,
-    description: post.content.replace(/(<([^>]+)>)/gi, "").substring(0, 200),
-    date: formatDate(post.date),
-    readTime: readingTime(post.content).text,
-  };
+  const wpApi = wp();
 
-  const languageAlternates = _.languageAlternates(`/analysis/articles/${slug}`);
+  const petition = await actnow().petition(slugParam).lists;
+  const page = await wpApi.pages({ slug: "promises", locale }).first;
+  const actNowPage = await wpApi.pages({ slug: "act-now", locale }).first;
+  const site = await backend.sites().current;
+
   return {
     props: {
       ...page,
+      ...actNowPage,
       ...site,
-      article,
-      errorCode,
-      languageAlternates,
-      relatedArticles,
+      petition,
     },
-    revalidate: 2 * 60, // seconds
   };
 }
 
