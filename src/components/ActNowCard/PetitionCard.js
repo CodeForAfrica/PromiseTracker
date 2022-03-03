@@ -1,4 +1,6 @@
 import { Grid } from "@material-ui/core";
+import { useSession } from "next-auth/react";
+import Router from "next/router";
 import PropTypes, { string } from "prop-types";
 import React, { useState } from "react";
 
@@ -18,11 +20,17 @@ function PetitionCard({ closeCard, promiseActNow, ...props }) {
 
   const { petitionJoin, petitionTitle: petitionStart } = props;
   const [open, setOpen] = useState(false);
+  const { data: session } = useSession();
 
   const classes = useStyles();
 
   const handleFormOpen = () => {
     setOpen(true);
+
+    if (!session) {
+      setOpen(false);
+      Router.push("/login");
+    }
   };
 
   const handleFormClose = () => {
