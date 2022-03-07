@@ -24,18 +24,18 @@ const useStyles = makeStyles(() => ({
   },
   socialLink: {
     display: "inline-flex",
-    marginRight: "0.5rem",
     padding: "0.5rem !important",
-  },
-  socialIcon: {
-    color: "#909090",
   },
   share: {
     fontSize: "1rem",
-    textAlign: "right",
+    textAlign: "center",
     "&:hover": {
       cursor: "pointer",
     },
+  },
+  svgIcon: {
+    width: "1rem",
+    height: "1rem",
   },
 }));
 
