@@ -1,14 +1,37 @@
 import { useSession } from "next-auth/react";
-import React from "react";
+import React, { useEffect } from "react";
 
 import ActNowPage from "@/promisetracker/components/ActNowPage";
 import ActNowLoggedInPage from "@/promisetracker/components/ActNowPage/LoggedIn";
+import actnow from "@/promisetracker/lib/actnow";
 import backendFn from "@/promisetracker/lib/backend";
 import i18n from "@/promisetracker/lib/i18n";
 import wp from "@/promisetracker/lib/wp";
 
-function ActNow(props) {
+function ActNow({ ...props }) {
   const { data: session, status } = useSession();
+  const [signedPetitions, setSignedPetitions] = React.useState([]);
+  const [ownedPetitions, setOwnedPetitions] = React.useState([]);
+
+  /**
+   * Note: Using session in frontend is a workaround for Next.js SSR file system bug.(Tracked here https://www.pivotaltracker.com/story/show/181432688)
+   */
+  useEffect(() => {
+    if (session) {
+      actnow()
+        .petitions(
+          new URLSearchParams({
+            individual_signatories: session?.user?.profile?.id,
+          }).toString()
+        )
+        .list.then((res) => setSignedPetitions(res));
+      actnow()
+        .petitions(
+          new URLSearchParams({ owner: session?.user?.profile?.id }).toString()
+        )
+        .list.then((res) => setOwnedPetitions(res));
+    }
+  }, [session]);
 
   // When rendering client side don't display anything until loading is complete
   if (typeof window !== "undefined" && status === "loading") return null;
@@ -19,7 +42,13 @@ function ActNow(props) {
   }
 
   // If session exists, display logged in page
-  return <ActNowLoggedInPage {...props} />;
+  return (
+    <ActNowLoggedInPage
+      signedPetitions={signedPetitions}
+      ownedPetitions={ownedPetitions}
+      {...props}
+    />
+  );
 }
 
 export async function getStaticProps({ locale }) {
@@ -42,6 +71,7 @@ export async function getStaticProps({ locale }) {
 
   const page = await wp().pages({ slug: "act-now", locale }).first;
   const { actNow = {} } = page;
+  const petitions = await actnow().petitions().list;
 
   const languageAlternates = _.languageAlternates("/act-now");
   actNow.url = process.env.ACTNOW_URL ?? null;
@@ -63,8 +93,8 @@ export async function getStaticProps({ locale }) {
       actNow,
       languageAlternates,
       promises,
+      petitions,
     },
-    revalidate: 2 * 60, // seconds
   };
 }
 

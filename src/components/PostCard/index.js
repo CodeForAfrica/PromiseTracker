@@ -13,6 +13,7 @@ import React from "react";
 import useStyles from "./useStyles";
 
 import Share from "@/promisetracker/components/Share";
+import ShareIcon from "@/promisetracker/icons/Share";
 import site from "@/promisetracker/utils/site";
 
 function PostCard({
@@ -49,10 +50,16 @@ function PostCard({
             </Grid>
             <Grid item>
               <Share
-                classes={{ root: classes.share }}
+                classes={{
+                  root: classes.share,
+                  socialLink: classes.socialLink,
+                }}
                 link={site.url + (as || "")}
                 title={title}
-              />
+                {...props}
+              >
+                <ShareIcon fontSize="inherit" className={classes.shareIcon} />
+              </Share>
             </Grid>
           </Grid>
         </CardContent>

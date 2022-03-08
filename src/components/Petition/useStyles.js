@@ -23,19 +23,16 @@ const useStyles = makeStyles(
       borderBottom: `.1rem solid ${palette.secondary.light}`,
       padding: ".5rem 0",
     },
-    mobileStatusLabel: {
-      marginRight: "1rem",
-    },
     mobileStatusLabelGrid: {
       display: "flex",
       justifyContent: "space-between",
       width: "100%",
       alignItems: "center",
     },
-    promiseBody: {
+    petitionBody: {
       margin: "2rem 0",
     },
-    promiseTitle: {
+    petitionTitle: {
       fontWeight: 600,
       marginTop: "1rem",
       marginBottom: "2rem",
@@ -48,15 +45,12 @@ const useStyles = makeStyles(
           bottom: 0,
           left: 0,
           width: typography.pxToRem(72),
-          borderBottom: (props) => `8px solid ${props?.status?.color}`,
+          borderBottom: `8px solid ${palette.highlight.light}`,
         },
       },
     },
     featuredImageContainer: {
-      background: (props) =>
-        `linear-gradient(to right, ${props.status?.color}, ${props.status?.color}), url(${props.image}) no-repeat center/cover`,
-      border: (props) => `10px solid ${props.status?.color}`,
-      backgroundBlendMode: "soft-light",
+      backgroundImage: (props) => `url(${props.image})`,
       backgroundRepeat: "no-repeat",
       backgroundSize: "cover",
       width: "100%",
@@ -65,22 +59,77 @@ const useStyles = makeStyles(
         height: typography.pxToRem(477),
       },
     },
-    link: {
-      color: "unset",
-      "&:hover": {
-        textDecoration: "none",
-        color: "unset",
-      },
-    },
     label: {
       marginTop: "2rem",
       marginBottom: "1rem",
+      width: typography.pxToRem(171),
+      fontWeight: "bold",
 
       color: palette.primary.main,
+      "& span": {
+        color: "#005DFD",
+      },
     },
-    promisesLabel: {
-      marginBottom: "1rem",
-      marginTop: "2rem",
+    progressBar: {
+      background: "#EBEBEB",
+      height: typography.pxToRem(15),
+    },
+    barColor: {
+      background: "#005DFD",
+    },
+    owner: {
+      margin: `${typography.pxToRem(40)} 0`,
+      display: "inline",
+      position: "relative",
+      top: "5px",
+      fontSize: typography.pxToRem(24),
+      "& span": {
+        fontWeight: "bold",
+        textTransform: "capitalize",
+      },
+    },
+    ownerSection: {
+      marginTop: typography.pxToRem(20),
+    },
+    shareTitle: {
+      marginBottom: typography.pxToRem(20),
+    },
+    flexItem: {
+      display: "flex",
+      flexWrap: "wrap",
+    },
+    iconButton: {
+      backgroundColor: "#EBEBEB",
+      margin: `0 ${typography.pxToRem(20)} ${typography.pxToRem(20)} 0`,
+      padding: "3%",
+      width: "60px",
+      height: "60px",
+    },
+    usericonButton: {
+      backgroundColor: "#EBEBEB",
+      marginRight: typography.pxToRem(10),
+      padding: "3%",
+      width: "40px",
+      height: "40px",
+    },
+    petition: {
+      marginTop: typography.pxToRem(60),
+    },
+    petitionContainer: {
+      background: "#F7F7F7",
+      padding: `${typography.pxToRem(56)} 0`,
+      marginBottom: typography.pxToRem(96),
+    },
+    cardButtonRoot: {
+      margin: 0,
+    },
+    cardButton: {
+      marginTop: typography.pxToRem(10),
+      border: `1px solid #005DFD`,
+      background: "#fff",
+      [breakpoints.up("sm")]: {
+        marginTop: 0,
+      },
     },
     status: {
       fontSize: "1rem",

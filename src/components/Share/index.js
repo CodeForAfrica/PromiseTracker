@@ -4,9 +4,9 @@ import {
   Paper,
   Popper,
   IconButton,
+  SvgIcon,
   ClickAwayListener,
 } from "@material-ui/core";
-import Image from "next/image";
 import PropTypes from "prop-types";
 import React from "react";
 import {
@@ -17,12 +17,11 @@ import {
 
 import useStyles from "./useStyles";
 
-import facebook from "@/promisetracker/assets/footer-social-fb.svg";
-import linkedIn from "@/promisetracker/assets/footer-social-ln.svg";
-import twitter from "@/promisetracker/assets/footer-social-tw.svg";
-import ShareIcon from "@/promisetracker/icons/Share";
+import { ReactComponent as FacebookIcon } from "@/promisetracker/assets/footer-social-fb.svg";
+import { ReactComponent as LinkedInIcon } from "@/promisetracker/assets/footer-social-ln.svg";
+import { ReactComponent as TwitterIcon } from "@/promisetracker/assets/footer-social-tw.svg";
 
-function Share({ link, title, description, ...props }) {
+function Share({ link, title, description, children, ...props }) {
   const classes = useStyles(props);
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [placement, setPlacement] = React.useState(null);
@@ -44,8 +43,10 @@ function Share({ link, title, description, ...props }) {
         onClick={handleClick("left")}
         aria-label="share"
         className={classes.share}
+        disableFocusRipple
+        disableRipple
       >
-        <ShareIcon fontSize="inherit" className={classes.shareIcon} />
+        {children}
       </IconButton>
       <Popper
         open={open}
@@ -71,10 +72,13 @@ function Share({ link, title, description, ...props }) {
                     }}
                     className={classes.socialLink}
                   >
-                    <Image
-                      src={twitter}
+                    <SvgIcon
+                      component={TwitterIcon}
+                      viewBox="0 0 20 16"
                       alt="Twitter"
-                      className={classes.socialIcon}
+                      classes={{
+                        root: classes.svgIcon,
+                      }}
                     />
                   </TwitterShareButton>
                   <FacebookShareButton
@@ -88,10 +92,13 @@ function Share({ link, title, description, ...props }) {
                     }}
                     className={classes.socialLink}
                   >
-                    <Image
-                      src={facebook}
+                    <SvgIcon
+                      component={FacebookIcon}
+                      viewBox="0 0 10 20"
                       alt="Facebook"
-                      className={classes.socialIcon}
+                      classes={{
+                        root: classes.svgIcon,
+                      }}
                     />
                   </FacebookShareButton>
                   <LinkedinShareButton
@@ -106,10 +113,13 @@ function Share({ link, title, description, ...props }) {
                     }}
                     className={classes.socialLink}
                   >
-                    <Image
-                      src={linkedIn}
+                    <SvgIcon
+                      component={LinkedInIcon}
+                      viewBox="0 0 15.288 15.287"
                       alt="LinkedIn"
-                      className={classes.socialIcon}
+                      classes={{
+                        root: classes.svgIcon,
+                      }}
                     />
                   </LinkedinShareButton>
                 </Grid>

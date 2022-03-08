@@ -131,7 +131,7 @@ function MobileNavigation({ navigation, ...props }) {
               edge="start"
               className={classes.searchButton}
             >
-              <Image src={searchIcon} />
+              <Image src={searchIcon} width={21.561} height={21.561} />
             </IconButton>
             <IconButton
               aria-label="Open drawer"
@@ -139,7 +139,7 @@ function MobileNavigation({ navigation, ...props }) {
               onClick={handleClickOpen}
               className={classes.menuButton}
             >
-              <Image src={hamburgerIcon} />
+              <Image src={hamburgerIcon} width={25} height={18} />
             </IconButton>
           </Grid>
 
