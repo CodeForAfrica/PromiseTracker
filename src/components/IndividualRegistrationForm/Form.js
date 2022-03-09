@@ -107,8 +107,6 @@ function Form({
             name="bio"
             multiline
             placeholder={fields?.bio?.placeholder}
-            rowsMin={4}
-            rows={4}
           />
           <FormHelperText id={`${name}-bio-helper-text`} error={errors?.bio}>
             <ErrorMessage name="bio" />
@@ -123,8 +121,6 @@ function Form({
             name="location"
             multiline
             placeholder={fields?.location?.placeholder}
-            rowsMin={4}
-            rows={4}
           />
           <FormHelperText
             id={`${name}-location-helper-text`}
