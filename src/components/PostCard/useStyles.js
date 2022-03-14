@@ -41,7 +41,6 @@ const useStyles = makeStyles(({ breakpoints, typography }) => ({
       marginTop: typography.pxToRem(30 - 7),
     },
   },
-
   media: {
     backgroundSize: "contain",
     display: "block",
@@ -62,12 +61,18 @@ const useStyles = makeStyles(({ breakpoints, typography }) => ({
     right: 0,
     zIndex: 999,
   },
+  socialLink: {
+    margin: 0,
+  },
   title: {},
   titleContainer: {
     height: typography.pxToRem(24 * 2), // Max 2 lines defined by h4.lineHeight
     maxHeight: typography.pxToRem(24 * 2),
     overflow: "hidden",
     alignItems: "flex-start",
+  },
+  socialIcon: {
+    color: "#909090",
   },
 }));
 
