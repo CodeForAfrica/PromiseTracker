@@ -9,7 +9,7 @@ import i18n from "@/promisetracker/lib/i18n";
 import wp from "@/promisetracker/lib/wp";
 
 const individualRegistrationDialogArgs = {
-  title: "Register an Individual",
+  title: "Edit account details",
   fields: {
     agree: {
       label: "Agree to our terms and conditions",
@@ -38,7 +38,7 @@ const individualRegistrationDialogArgs = {
     },
     phoneNumber: { label: "Phone number", placeholder: "" },
     socialMedia: { label: "Social media link", placeholder: "" },
-    submit: { label: "Submit" },
+    submit: { label: "Update" },
   },
 };
 
