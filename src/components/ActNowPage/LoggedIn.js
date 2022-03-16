@@ -17,6 +17,7 @@ function ActNowLoggedInPage({
   footer,
   title,
   navigation,
+  onClick,
   signedPetitions,
   ownedPetitions,
   ...props
@@ -46,6 +47,7 @@ function ActNowLoggedInPage({
 
       <Button
         variant="outlined"
+        onClick={onClick}
         className={clsx(classes.accountButton, classes.accountEdit)}
       >
         Edit
@@ -108,6 +110,7 @@ ActNowLoggedInPage.propTypes = {
   signedPetitions: PropTypes.arrayOf(PropTypes.shape({})),
   ownedPetitions: PropTypes.arrayOf(PropTypes.shape({})),
   title: PropTypes.string,
+  onClick: PropTypes.func,
 };
 
 ActNowLoggedInPage.defaultProps = {
@@ -116,6 +119,7 @@ ActNowLoggedInPage.defaultProps = {
   ownedPetitions: undefined,
   signedPetitions: undefined,
   title: undefined,
+  onClick: undefined,
 };
 
 export default ActNowLoggedInPage;
