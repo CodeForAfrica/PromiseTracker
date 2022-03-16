@@ -8,6 +8,40 @@ import backendFn from "@/promisetracker/lib/backend";
 import i18n from "@/promisetracker/lib/i18n";
 import wp from "@/promisetracker/lib/wp";
 
+const individualRegistrationDialogArgs = {
+  title: "Register an Individual",
+  fields: {
+    agree: {
+      label: "Agree to our terms and conditions",
+      error: "You must agree to our terms and conditions to continue",
+    },
+    bio: {
+      label: "About me / bio",
+      placeholder: "",
+    },
+    email: {
+      label: "Email*",
+      placeholder: "",
+      error: "Required and must be a valid email address",
+    },
+    firstName: { label: "First name*", placeholder: "", error: "Required" },
+    lastName: { label: "Last name*", placeholder: "", error: "Required" },
+    location: {
+      label: "Location (County, & Town, City, Country)*",
+      placeholder: "",
+      error: "Required",
+    },
+    password: {
+      label: "Password*",
+      placeholder: "",
+      error: "Required",
+    },
+    phoneNumber: { label: "Phone number", placeholder: "" },
+    socialMedia: { label: "Social media link", placeholder: "" },
+    submit: { label: "Submit" },
+  },
+};
+
 function ActNow({ ...props }) {
   const { data: session, status } = useSession();
   const [signedPetitions, setSignedPetitions] = React.useState([]);
@@ -46,6 +80,7 @@ function ActNow({ ...props }) {
     <ActNowLoggedInPage
       signedPetitions={signedPetitions}
       ownedPetitions={ownedPetitions}
+      individualRegistrationDialogArgs={individualRegistrationDialogArgs}
       {...props}
     />
   );
