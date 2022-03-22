@@ -26,6 +26,19 @@ function actnow(site) {
     return response.json();
   }
 
+  async function updateLoggeduser(user) {
+    const headers = new Headers({
+      "Content-Type": "application/json",
+      Authorization: `Token ${ACTNOW_API_KEY}`,
+    });
+    const response = await fetch(`${ACTNOW_URL}/v1/accounts/`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify(user),
+    }); /// isaiah should be able to give me this details
+    return response.json();
+  }
+
   async function fetchToken(url, params) {
     const Authorization = `Basic ${Buffer.from(
       `${ACTNOW_CLIENT_ID}:${ACTNOW_CLIENT_SECRET}`
@@ -124,6 +137,11 @@ function actnow(site) {
         refresh: (token) => {
           return (async () => {
             return refreshLoggedInUser(token);
+          })();
+        },
+        update: (user) => {
+          return (async () => {
+            return updateLoggeduser(user);
           })();
         },
       };
