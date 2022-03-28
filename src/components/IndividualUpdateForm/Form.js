@@ -25,7 +25,7 @@ function Form({
   ...props
 }) {
   const classes = useStyles(props);
-  const name = nameProp || "individual-registration-form";
+  const name = nameProp || "individual-update-form";
 
   return (
     <FForm className={classes.root}>
