@@ -19,20 +19,10 @@ const individualRegistrationDialogArgs = {
       label: "About me / bio",
       placeholder: "",
     },
-    email: {
-      label: "Email*",
-      placeholder: "",
-      error: "Required and must be a valid email address",
-    },
     firstName: { label: "First name*", placeholder: "", error: "Required" },
     lastName: { label: "Last name*", placeholder: "", error: "Required" },
     location: {
       label: "Location (County, & Town, City, Country)*",
-      placeholder: "",
-      error: "Required",
-    },
-    password: {
-      label: "Password*",
       placeholder: "",
       error: "Required",
     },

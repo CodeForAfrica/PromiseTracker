@@ -10,7 +10,7 @@ import useStyles from "./useStyles";
 import actNowLogo from "@/promisetracker/assets/actNowLogo2x.png";
 import ContentPage from "@/promisetracker/components/ContentPage";
 import Section from "@/promisetracker/components/ContentPage/Section";
-import IndividualRegistrationDialog from "@/promisetracker/components/IndividualRegistrationDialog";
+import IndividualUpdateFormDialog from "@/promisetracker/components/IndividualUpdateFormDialog";
 import Petitions from "@/promisetracker/components/Petitions";
 import Tabs from "@/promisetracker/components/Tabs";
 
@@ -71,7 +71,7 @@ function ActNowLoggedInPage({
         Edit
       </Button>
 
-      <IndividualRegistrationDialog
+      <IndividualUpdateFormDialog
         {...individualRegistrationDialogArgs}
         key={openDialog === "individual"}
         onClose={handleClose}
