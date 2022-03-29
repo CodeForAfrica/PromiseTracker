@@ -104,8 +104,25 @@ function actnow(site) {
     const url = `${ACTNOW_URL}/v1/petitions/${id}/?format=json`;
     const response = await fetch(url);
     const petition = (await response.json()) || [];
-
+    if (petition?.image) {
+      petition.image = petition.image.split("?")?.[0];
+    }
     return petition;
+  }
+
+  async function createPetition(session, data) {
+    const url = `${ACTNOW_URL}/v1/petitions/`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${session?.accessToken}`,
+      },
+      body: data,
+    });
+    if (response.ok) {
+      return response.json();
+    }
+    throw new Error(response.statusText);
   }
 
   const api = {
@@ -128,20 +145,22 @@ function actnow(site) {
         },
       };
     },
-    petitions: (queryParam) => {
+
+    petitions: () => {
       return {
-        get list() {
+        fetchAll: (queryParam) => {
           return (async () => {
             return getPetitions(queryParam);
           })();
         },
-      };
-    },
-    petition: (id) => {
-      return {
-        get lists() {
+        petition: (id) => {
           return (async () => {
             return getPetition(id);
+          })();
+        },
+        create: (session, data) => {
+          return (async () => {
+            return createPetition(session, data);
           })();
         },
       };

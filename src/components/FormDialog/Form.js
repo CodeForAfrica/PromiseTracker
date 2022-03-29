@@ -17,7 +17,12 @@ import useStyles from "./useStyles";
 
 import CtAButton from "@/promisetracker/components/CtAButton";
 
-function Form({ ...props }) {
+function Form({
+  values,
+  onChange: handleFormChange,
+  onSubmit: handleSubmit,
+  ...props
+}) {
   const classes = useStyles(props);
   const theme = useTheme();
 
@@ -28,13 +33,9 @@ function Form({ ...props }) {
   const {
     petitionLabel,
     petitionHelper,
-    categoryLabel,
-    categoryHelper,
     recipientLabel,
     recipientDescription,
-    recipientNameLabel,
     recipientEmailLabel,
-    recipientSocialLabel,
     issueLabel,
     issueHelper,
     imageLabel,
@@ -61,9 +62,18 @@ function Form({ ...props }) {
   const onFileChange = (e) => {
     const file = URL.createObjectURL(e.target.files[0]);
     const fileSize = e.target.files[0].size;
-
     if (handleFileValidation(fileSize)) return;
 
+    const reader = new FileReader();
+    reader.onload = function loadFiles(readerEvt) {
+      const newValues = { ...values };
+      newValues.image = {
+        name: e.target.files[0].name,
+        binary: readerEvt.target.result,
+      };
+      handleFormChange(newValues);
+    };
+    reader.readAsBinaryString(e.target.files[0]);
     setImages([file]);
   };
 
@@ -98,23 +108,34 @@ function Form({ ...props }) {
     fileInput.current.click();
   };
 
+  const handleChange = (event, name) => {
+    const newValues = { ...values };
+    newValues[name] = event.target.value;
+    handleFormChange(newValues);
+  };
+
   const helperVariant = useMediaQuery(theme.breakpoints.up("lg"))
     ? "body1"
     : "body2";
 
   return (
-    <form>
+    <form id="form-data" onSubmit={handleSubmit}>
       <FormTextField
+        required
         labelText={petitionLabel}
         helperDescription={petitionHelper}
         elemId="petition-input"
+        onChange={(event) => handleChange(event, "title")}
+        value={values.title}
       />
       <FormTextField
-        labelText={categoryLabel}
-        helperDescription={categoryHelper}
-        elemId="category-input"
+        required
+        labelText="Petition Description"
+        helperDescription="Short and precise description"
+        elemId="petition-descriptioninput"
+        onChange={(event) => handleChange(event, "description")}
+        value={values.description}
       />
-
       <Typography classes={{ root: classes.label, body1: classes.body1 }}>
         {recipientLabel}
       </Typography>
@@ -125,20 +146,23 @@ function Form({ ...props }) {
       >
         {recipientDescription}
       </Typography>
-
       <FormTextField
-        labelText={recipientNameLabel}
-        elemId="recipient-name-input"
-      />
-      <FormTextField
+        required
+        type="email"
         labelText={recipientEmailLabel}
         elemId="recipient-email-input"
+        value={values.recipients}
+        onChange={(event) => handleChange(event, "recipients")}
       />
       <FormTextField
-        labelText={recipientSocialLabel}
-        elemId="recipient-social-input"
+        required
+        type="url"
+        labelText="Petition Source"
+        helperDescription="Link to describe this petition"
+        elemId="petition-source-input"
+        onChange={(event) => handleChange(event, "source")}
+        value={values.source}
       />
-
       <FormControl classes={{ root: classes.formControl }}>
         <InputLabel htmlFor="issue-input" classes={{ root: classes.label }}>
           {issueLabel}
@@ -151,7 +175,8 @@ function Form({ ...props }) {
         </FormHelperText>
 
         <TextareaAutosize
-          rowsMin={10}
+          onChange={(event) => handleChange(event, "problemStatement")}
+          minRows={10}
           aria-label="maximum height"
           aria-describedby="issue-helper-text"
           classes={{ root: classes.textArea }}
@@ -170,10 +195,6 @@ function Form({ ...props }) {
           <Typography variant={helperVariant}>{imageHelper}</Typography>
         </FormHelperText>
         <div className={classes.imageContainer}>
-          <Grid container classes={{ root: classes.gridContainer }}>
-            <p className={classes.inputText}>{uploadInstruction}</p>
-          </Grid>
-
           <Input
             inputRef={fileInput}
             type="file"
@@ -189,38 +210,45 @@ function Form({ ...props }) {
             onDragLeave={handleDrag}
             onDrop={handleDrop}
           />
-          <CtAButton
-            color="secondary"
-            onClick={handleClick}
-            classes={{
-              button: classes.uploadButton,
-              root: classes.button,
-            }}
-          >
-            {uploadText}
-          </CtAButton>
-          <div>
-            {images.map((image) => {
-              return (
-                // next/image doesn't support blob URL
-                // see: https://github.com/vercel/next.js/pull/23622
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={image}
-                  src={image}
-                  alt=""
-                  className={classes.imageThumbnail}
-                />
-              );
-            })}
-          </div>
+
+          <Grid container classes={{ root: classes.gridContainer }}>
+            <p className={classes.inputText}>{uploadInstruction}</p>
+            <CtAButton
+              color="secondary"
+              onClick={handleClick}
+              classes={{
+                button: classes.uploadButton,
+                root: classes.button,
+              }}
+            >
+              {uploadText}
+            </CtAButton>
+            <div>
+              {images.map((image) => {
+                return (
+                  // next/image doesn't support blob URL
+                  // see: https://github.com/vercel/next.js/pull/23622
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={image}
+                    src={image}
+                    alt=""
+                    className={classes.imageThumbnail}
+                  />
+                );
+              })}
+            </div>
+          </Grid>
         </div>
       </FormControl>
 
       <FormTextField
+        required
+        type="number"
         labelText={signatureLabel}
         helperDescription={signatureHelper}
         elemId="signature-input"
+        onChange={(event) => handleChange(event, "numberOfSignaturesRequired")}
       />
 
       <Typography
@@ -234,28 +262,38 @@ function Form({ ...props }) {
 }
 
 Form.propTypes = {
-  mandatoryText: PropTypes.string,
-  petitionLabel: PropTypes.string,
-  petitionHelper: PropTypes.string,
-  categoryLabel: PropTypes.string,
   categoryHelper: PropTypes.string,
-  recipientLabel: PropTypes.string,
-  recipientDescription: PropTypes.string,
-  recipientNameLabel: PropTypes.string,
-  recipientEmailLabel: PropTypes.string,
-  recipientSocialLabel: PropTypes.string,
-  issueLabel: PropTypes.string,
-  issueHelper: PropTypes.string,
-  imageLabel: PropTypes.string,
+  categoryLabel: PropTypes.string,
   imageHelper: PropTypes.string,
+  imageLabel: PropTypes.string,
+  issueHelper: PropTypes.string,
+  issueLabel: PropTypes.string,
+  mandatoryText: PropTypes.string,
+  onChange: PropTypes.func,
+  onSubmit: PropTypes.func,
+  petitionHelper: PropTypes.string,
+  petitionLabel: PropTypes.string,
+  recipientDescription: PropTypes.string,
+  recipientEmailLabel: PropTypes.string,
+  recipientLabel: PropTypes.string,
+  recipientNameLabel: PropTypes.string,
+  recipientSocialLabel: PropTypes.string,
+  signatureHelper: PropTypes.string,
+  signatureLabel: PropTypes.string,
   uploadInstruction: PropTypes.string,
   uploadText: PropTypes.string,
-  signatureLabel: PropTypes.string,
-  signatureHelper: PropTypes.string,
+  values: PropTypes.shape({
+    description: PropTypes.string,
+    recipients: PropTypes.string,
+    title: PropTypes.string,
+    source: PropTypes.string,
+  }),
 };
 
 Form.defaultProps = {
   mandatoryText: null,
+  onChange: null,
+  onSubmit: null,
   petitionLabel: null,
   petitionHelper: null,
   categoryLabel: null,
@@ -273,6 +311,7 @@ Form.defaultProps = {
   uploadText: null,
   signatureLabel: null,
   signatureHelper: null,
+  values: null,
 };
 
 export default Form;
