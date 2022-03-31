@@ -1,12 +1,5 @@
-import {
-  Button,
-  FormControlLabel,
-  FormHelperText,
-  Grid,
-  Typography,
-} from "@material-ui/core";
-import { ErrorMessage, Form as FForm, Field } from "formik";
-import { Checkbox } from "formik-material-ui";
+import { Button, FormHelperText, Grid } from "@material-ui/core";
+import { ErrorMessage, Form as FForm } from "formik";
 import PropTypes from "prop-types";
 import React from "react";
 
@@ -127,32 +120,6 @@ function Form({
             error={errors?.socialMedia}
           >
             <ErrorMessage name="socialMedia" />
-          </FormHelperText>
-        </Grid>
-        <Grid item xs={12}>
-          <FormControlLabel
-            error={errors?.agree}
-            control={
-              <Field
-                component={Checkbox}
-                color="primary"
-                type="checkbox"
-                name="agree"
-                classes={{
-                  root: classes.checkbox,
-                }}
-              />
-            }
-            label={
-              <Typography variant="overline">{fields?.agree?.label}</Typography>
-            }
-            className={classes.checkboxLabelAgree}
-          />
-          <FormHelperText
-            id={`${name}-agree-helper-text`}
-            error={errors?.agree}
-          >
-            <ErrorMessage name="agree" />
           </FormHelperText>
         </Grid>
         <Grid item xs={12}>
