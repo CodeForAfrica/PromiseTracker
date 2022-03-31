@@ -81,6 +81,7 @@ function IndividualRegistrationForm({
               headers,
               body: JSON.stringify(body),
             });
+
             const responseJson = await response.json();
             if (response.status === 201) {
               setStatus({ children: undefined });

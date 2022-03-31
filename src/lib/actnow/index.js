@@ -14,7 +14,6 @@ function actnow(site) {
   const ACTNOW_URL = server.env("ACTNOW_URL");
 
   async function createAccount(user) {
-    console.log(user);
     const headers = new Headers({
       "Content-Type": "application/json",
       Authorization: `Token ${ACTNOW_API_KEY}`,
@@ -24,19 +23,6 @@ function actnow(site) {
       headers,
       body: JSON.stringify(user),
     });
-    return response.json();
-  }
-
-  async function updateLoggeduser(user) {
-    const headers = new Headers({
-      "Content-Type": "application/json",
-      Authorization: `Token ${ACTNOW_API_KEY}`,
-    });
-    const response = await fetch(`${ACTNOW_URL}/v1/profiles/users/`, {
-      method: "PATCH",
-      headers,
-      body: JSON.stringify(user),
-    }); /// isaiah should be able to give me this details
     return response.json();
   }
 
@@ -103,6 +89,26 @@ function actnow(site) {
     } catch (error) {
       return null;
     }
+  }
+
+  async function updateLoggeduser(user) {
+    const loginUserTokens = loginUser();
+    const { accessToken } = loginUserTokens;
+
+    const headers = new Headers({
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    });
+
+    const response = await fetch(
+      `${ACTNOW_URL}/v1/profiles/users/${user?.profile?.id}`,
+      {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify(user),
+      }
+    );
+    return response.json();
   }
 
   async function getPetitions(query) {
