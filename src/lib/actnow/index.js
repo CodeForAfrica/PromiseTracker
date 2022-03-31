@@ -92,12 +92,9 @@ function actnow(site) {
   }
 
   async function updateLoggeduser(user) {
-    const loginUserTokens = loginUser();
-    const { accessToken } = loginUserTokens;
-
     const headers = new Headers({
       "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
+      Authorization: `Token ${ACTNOW_API_KEY}`,
     });
 
     const response = await fetch(
