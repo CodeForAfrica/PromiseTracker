@@ -8,7 +8,7 @@ import backendFn from "@/promisetracker/lib/backend";
 import i18n from "@/promisetracker/lib/i18n";
 import wp from "@/promisetracker/lib/wp";
 
-const individualRegistrationDialogArgs = {
+const individualUpdateDialogArgs = {
   title: "Edit account details",
   fields: {
     agree: {
@@ -70,7 +70,7 @@ function ActNow({ ...props }) {
     <ActNowLoggedInPage
       signedPetitions={signedPetitions}
       ownedPetitions={ownedPetitions}
-      individualRegistrationDialogArgs={individualRegistrationDialogArgs}
+      individualUpdateDialogArgs={individualUpdateDialogArgs}
       {...props}
     />
   );

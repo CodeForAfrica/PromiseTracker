@@ -22,7 +22,7 @@ function ActNowLoggedInPage({
   onClick,
   signedPetitions,
   open: openProp,
-  individualRegistrationDialogArgs,
+  individualUpdateDialogArgs,
   ownedPetitions,
   ...props
 }) {
@@ -72,7 +72,7 @@ function ActNowLoggedInPage({
       </Button>
 
       <IndividualUpdateFormDialog
-        {...individualRegistrationDialogArgs}
+        {...individualUpdateDialogArgs}
         key={openDialog === "individual"}
         onClose={handleClose}
         open={openDialog === "individual"}
@@ -134,7 +134,7 @@ ActNowLoggedInPage.propTypes = {
   navigation: PropTypes.shape({}),
   signedPetitions: PropTypes.arrayOf(PropTypes.shape({})),
   ownedPetitions: PropTypes.arrayOf(PropTypes.shape({})),
-  individualRegistrationDialogArgs: PropTypes.shape({}),
+  individualUpdateDialogArgs: PropTypes.shape({}),
   open: PropTypes.bool,
   title: PropTypes.string,
   onClick: PropTypes.func,
@@ -150,7 +150,7 @@ ActNowLoggedInPage.defaultProps = {
   onClick: undefined,
   onClose: undefined,
   open: undefined,
-  individualRegistrationDialogArgs: undefined,
+  individualUpdateDialogArgs: undefined,
 };
 
 export default ActNowLoggedInPage;
