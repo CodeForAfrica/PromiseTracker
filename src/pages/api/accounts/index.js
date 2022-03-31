@@ -16,6 +16,4 @@ async function handleAccounts(req, res) {
   return res.status(403).json();
 }
 
-// create update here
-
 export default handleAccounts;

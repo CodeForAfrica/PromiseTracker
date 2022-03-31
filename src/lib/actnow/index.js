@@ -14,6 +14,7 @@ function actnow(site) {
   const ACTNOW_URL = server.env("ACTNOW_URL");
 
   async function createAccount(user) {
+    console.log(user);
     const headers = new Headers({
       "Content-Type": "application/json",
       Authorization: `Token ${ACTNOW_API_KEY}`,
@@ -31,7 +32,7 @@ function actnow(site) {
       "Content-Type": "application/json",
       Authorization: `Token ${ACTNOW_API_KEY}`,
     });
-    const response = await fetch(`${ACTNOW_URL}/v1/accounts/`, {
+    const response = await fetch(`${ACTNOW_URL}/v1/profiles/users/`, {
       method: "PATCH",
       headers,
       body: JSON.stringify(user),
