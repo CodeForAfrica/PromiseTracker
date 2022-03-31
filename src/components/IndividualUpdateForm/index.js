@@ -16,11 +16,9 @@ function IndividualRegistrationForm({
     <Formik
       initialValues={{
         agree: false,
-        email: "",
         firstName: "",
         lastName: "",
         location: "",
-        password: "",
       }}
       validate={(values) => {
         const errors = {};
@@ -29,16 +27,6 @@ function IndividualRegistrationForm({
         }
         if (!values.lastName) {
           errors.lastName = fields?.lastName?.error;
-        }
-        if (!values.email) {
-          errors.email = fields?.email?.error;
-        } else if (
-          !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(values.email)
-        ) {
-          errors.email = fields?.email?.error;
-        }
-        if (!values.password) {
-          errors.password = fields?.password?.error;
         }
         if (!values.location) {
           errors.location = fields?.location?.error;
@@ -49,23 +37,12 @@ function IndividualRegistrationForm({
         return errors;
       }}
       onSubmit={async (
-        {
-          firstName,
-          lastName,
-          email,
-          password,
-          bio,
-          location,
-          phoneNumber,
-          socialMedia,
-        },
+        { firstName, lastName, bio, location, phoneNumber, socialMedia },
         { setErrors, setSubmitting }
       ) => {
         const body = {
           first_name: firstName,
           last_name: lastName,
-          email,
-          password,
           bio,
           location,
           phone_number: phoneNumber,
@@ -120,13 +97,9 @@ IndividualRegistrationForm.propTypes = {
     agree: PropTypes.shape({
       error: PropTypes.string,
     }),
-    email: PropTypes.shape({
-      error: PropTypes.string,
-    }),
     firstName: PropTypes.shape({ error: PropTypes.string }),
     lastName: PropTypes.shape({ error: PropTypes.string }),
     location: PropTypes.shape({ error: PropTypes.string }),
-    password: PropTypes.shape({ error: PropTypes.string }),
   }),
   onSubmit: PropTypes.func,
   submitUrl: PropTypes.string,
