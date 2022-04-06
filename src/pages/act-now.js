@@ -36,6 +36,7 @@ function ActNow({ ...props }) {
   const { data: session, status } = useSession();
   const [signedPetitions, setSignedPetitions] = React.useState([]);
   const [ownedPetitions, setOwnedPetitions] = React.useState([]);
+  console.log(session);
   const submitUrl = `https://actnow.dev.codeforafrica.org/v1/profiles/users/${session?.user?.profile?.id}/`;
   /** ss
    * Note: Using session in frontend is a workaround for Next.js SSR file system bug.(Tracked here https://www.pivotaltracker.com/story/show/181432688)
