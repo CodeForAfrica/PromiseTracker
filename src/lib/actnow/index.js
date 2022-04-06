@@ -94,7 +94,7 @@ function actnow(site) {
   async function updateLoggeduser(user) {
     const headers = new Headers({
       "Content-Type": "application/json",
-      Authorization: `Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwiZXhwIjoxNjQ4NzYxMjIzLCJhdWQiOiJjc01MbTZmTjRXVDJZckhrMjRyN0RlaDBVRmlpSmJLUzVrNG83TFBwIiwiaXNzIjoiYWN0Tk9XIiwic3ViIjoxOH0.vP5qxBe7trLKvbpCXqlrQoff6qveAGT-vxZkhjcjhbMPzpBE_qbymDWaNwyfqC71Si86JD-hloEXAf1JEZw2P8u8b4nUr5oj63as9PNW3IENXp6YFdWec8m-IY8rmc_vzw7W7DH0Jf2qcMPjZQHMGtkCRsX1tt6JJ8RFJhAdDpLIyaR-KSrfFI5mtlmP1gcKEQtOfVz3Auyqs4lEOebnFOx4rQ6rL2hwgGAn11Gk26s_qz1kcF5Eb3qH3mqoTch5hDs-l1zEYk6h8Gm3EvxrLMhwap_jRV75j5w339KrUexmtbGTLxEugSTM6Lt1mg98o8ocIW2D3sL9Pz0szMMm8d7admL67xRQYeIXw4Dcs9n8nNPcyo-M6hNDFzD5TM10GM83uF_WEpc-5UijLtfZx7ztSpWyr2-unZ9L0Obda3cc48N73lR-lQM1FPmRkA876kLUSLzsckhJiKlXRhITzWRZ7cwEBCm4tgd3_AKAXxCr64xVX0BQqLgxbdNDRVMooZmS5NgUbfWKHLNzPk1GU6MPwuSyonVnd2mS9P3SxSHgM2Qn6xHNcCx-lSkAbOeAjxenwb4JH38msr1PAHedexmdSb2zmnQX2F51wSBOzG0EcCFsl4h58qoLVKf-WzLc5ZWTGV2NQySEfp9u5PpjxEZ-IwaAxa5XizxWF9qMQ4s`,
+      Authorization: `Token ${ACTNOW_API_KEY}`,
     });
 
     const response = await fetch(
