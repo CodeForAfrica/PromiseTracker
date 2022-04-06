@@ -36,9 +36,8 @@ function ActNow({ ...props }) {
   const { data: session, status } = useSession();
   const [signedPetitions, setSignedPetitions] = React.useState([]);
   const [ownedPetitions, setOwnedPetitions] = React.useState([]);
-  console.log(session);
   const submitUrl = `https://actnow.dev.codeforafrica.org/v1/profiles/users/${session?.user?.profile?.id}/`;
-  /** ss
+  /**
    * Note: Using session in frontend is a workaround for Next.js SSR file system bug.(Tracked here https://www.pivotaltracker.com/story/show/181432688)
    */
   useEffect(() => {
@@ -104,12 +103,12 @@ export async function getStaticProps({ locale }) {
 
   const languageAlternates = _.languageAlternates("/act-now");
   actNow.url = process.env.ACTNOW_URL ?? null;
-  console.log(actNow.url);
 
   const headers = new Headers({
     "Content-Type": "application/json",
     Authorization: `Token ${process.env.ACTNOW_API_KEY}`,
   });
+
   const actnowSummary = await fetch(`${actNow.url}/v1/`, {
     method: "GET",
     headers,

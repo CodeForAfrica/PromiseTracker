@@ -10,7 +10,7 @@ async function updateUserDetails(req, res) {
 }
 
 async function updateAccount(req, res) {
-  if (req.method === "PATCH") {
+  if (req.method === "PUT") {
     return updateUserDetails(req, res);
   }
   return res.status(403).json();

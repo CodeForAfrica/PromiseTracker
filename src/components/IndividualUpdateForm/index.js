@@ -15,10 +15,12 @@ function IndividualRegistrationForm({
   return (
     <Formik
       initialValues={{
-        agree: false,
         firstName: "",
         lastName: "",
         location: "",
+        bio: "",
+        phoneNumber: "",
+        socialMedia: "",
       }}
       validate={(values) => {
         const errors = {};
@@ -31,18 +33,35 @@ function IndividualRegistrationForm({
         if (!values.location) {
           errors.location = fields?.location?.error;
         }
-        if (!values.agree) {
-          errors.agree = fields?.agree?.error;
+        if (!values.bio) {
+          errors.bio = fields?.bio?.error;
+        }
+        if (!values.phoneNumber) {
+          errors.phoneNumber = fields?.phoneNumber?.error;
+        }
+        if (!values.socialMedia) {
+          errors.socialMedia = fields?.socialMedia?.error;
         }
         return errors;
       }}
       onSubmit={async (
-        { firstName, lastName, bio, location, phoneNumber, socialMedia },
+        {
+          firstName,
+          lastName,
+          email,
+          password,
+          bio,
+          location,
+          phoneNumber,
+          socialMedia,
+        },
         { setErrors, setSubmitting }
       ) => {
         const body = {
           first_name: firstName,
           last_name: lastName,
+          email,
+          password,
           bio,
           location,
           phone_number: phoneNumber,
@@ -53,11 +72,12 @@ function IndividualRegistrationForm({
             const headers = new Headers({
               "Content-Type": "application/json",
             });
-            const response = await fetch(`/api/accounts/update`, {
-              method: "PATCH",
+            const response = await fetch(`/api/accounts`, {
+              method: "POST",
               headers,
               body: JSON.stringify(body),
             });
+
             const responseJson = await response.json();
             if (response.status === 201) {
               setStatus({ children: undefined });
@@ -94,12 +114,12 @@ function IndividualRegistrationForm({
 IndividualRegistrationForm.propTypes = {
   defaultErrorMessage: PropTypes.string,
   fields: PropTypes.shape({
-    agree: PropTypes.shape({
-      error: PropTypes.string,
-    }),
     firstName: PropTypes.shape({ error: PropTypes.string }),
     lastName: PropTypes.shape({ error: PropTypes.string }),
     location: PropTypes.shape({ error: PropTypes.string }),
+    bio: PropTypes.shape({ error: PropTypes.string }),
+    phoneNumber: PropTypes.shape({ error: PropTypes.string }),
+    socialMedia: PropTypes.shape({ error: PropTypes.string }),
   }),
   onSubmit: PropTypes.func,
   submitUrl: PropTypes.string,

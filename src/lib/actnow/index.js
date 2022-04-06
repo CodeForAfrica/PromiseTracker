@@ -1,4 +1,5 @@
 import jwtDecode from "jwt-decode";
+import { useSession } from "next-auth/react";
 
 import serverFn from "@/promisetracker/lib/server";
 
@@ -91,16 +92,17 @@ function actnow(site) {
     }
   }
 
-  async function updateLoggeduser(user) {
+  async function UpdateLoggedUser(user) {
+    const { data: session } = useSession();
     const headers = new Headers({
       "Content-Type": "application/json",
-      Authorization: `Token ${ACTNOW_API_KEY}`,
+      Authorization: `Bearer ${session?.accessToken}`,
     });
 
     const response = await fetch(
       `${ACTNOW_URL}/v1/profiles/users/${user?.profile?.id}`,
       {
-        method: "PATCH",
+        method: "PUT",
         headers,
         body: JSON.stringify(user),
       }
@@ -145,7 +147,7 @@ function actnow(site) {
         },
         update: (user) => {
           return (async () => {
-            return updateLoggeduser(user);
+            return UpdateLoggedUser(user);
           })();
         },
       };

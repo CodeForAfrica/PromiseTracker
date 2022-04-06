@@ -66,7 +66,6 @@ function ActNow({
   const submitUrl = actNow?.url;
   const summary = actNow?.summary;
 
-  console.log(submitUrl, "submitUrl");
   const handleRegister = () => {
     setOpen(true);
   };
