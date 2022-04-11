@@ -75,7 +75,7 @@
     "build": "next build",
     "dev": "yarn dev:next",
     "dev:next": "next dev",
-    "export": "yarn run build && next export",
+    "export": "yarn run build && next start",
     "format": "yarn prettier --write --ignore-path './.gitignore' '**/*.+(json|md|yml)' '.'",
     "format-staged": "yarn prettier --write '**/*.+(json|md|yml)'",
     "codemod": "yarn codemod-staged-optimal-imports './src' && yarn codemod-staged-top-level-imports './src'",
