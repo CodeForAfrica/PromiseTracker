@@ -1,4 +1,5 @@
 import { Box, Button } from "@material-ui/core";
+import Alert from "@material-ui/lab/Alert";
 import clsx from "clsx";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
@@ -39,6 +40,7 @@ function ActNowLoggedInPage({
     }
   };
 
+  console.log(individualUpdateDialogArgs);
   const handleClickIndividual = () => setOpenDialog("individual");
 
   const formatedItems = [
@@ -53,31 +55,42 @@ function ActNowLoggedInPage({
   });
 
   const aside = (
-    <Box display="flex" justifyContent="flex-end">
-      <Button
-        variant="outlined"
-        onClick={() => signOut()}
-        className={clsx(classes.accountButton, classes.accountLogout)}
-      >
-        Logout
-      </Button>
+    <div>
+      <Box display="flex" justifyContent="flex-end">
+        <Button
+          variant="outlined"
+          onClick={() => signOut()}
+          className={clsx(classes.accountButton, classes.accountLogout)}
+        >
+          Logout
+        </Button>
 
-      <Button
-        variant="outlined"
-        open={open}
-        onClick={handleClickIndividual}
-        className={clsx(classes.accountButton, classes.accountEdit)}
-      >
-        Edit
-      </Button>
+        <Button
+          variant="outlined"
+          open={open}
+          onClick={handleClickIndividual}
+          className={clsx(classes.accountButton, classes.accountEdit)}
+        >
+          Edit
+        </Button>
 
-      <IndividualUpdateFormDialog
-        {...individualUpdateDialogArgs}
-        key={openDialog === "individual"}
-        onClose={handleClose}
-        open={openDialog === "individual"}
-      />
-    </Box>
+        <IndividualUpdateFormDialog
+          {...individualUpdateDialogArgs}
+          key={openDialog === "individual"}
+          onClose={handleClose}
+          open={openDialog === "individual"}
+        />
+      </Box>
+      <div>
+        {open === false ? (
+          <Alert severity="success">
+            Your Profile details have been updated!
+          </Alert>
+        ) : (
+          ""
+        )}
+      </div>
+    </div>
   );
   return (
     <ContentPage
