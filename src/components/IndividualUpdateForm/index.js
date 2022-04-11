@@ -1,4 +1,5 @@
 import { Formik } from "formik";
+import { useSession } from "next-auth/react";
 import PropTypes from "prop-types";
 import React, { useState } from "react";
 
@@ -10,6 +11,7 @@ function IndividualRegistrationForm({
   onSubmit,
   submitUrl,
 }) {
+  const { data: session } = useSession();
   const [status, setStatus] = useState({});
 
   return (
@@ -45,35 +47,33 @@ function IndividualRegistrationForm({
         return errors;
       }}
       onSubmit={async (
-        {
-          firstName,
-          lastName,
-          email,
-          password,
-          bio,
-          location,
-          phoneNumber,
-          socialMedia,
-        },
+        { firstName, lastName, bio, location, phoneNumber, socialMedia },
         { setErrors, setSubmitting }
       ) => {
         const body = {
           first_name: firstName,
           last_name: lastName,
-          email,
-          password,
           bio,
           location,
           phone_number: phoneNumber,
           social_media_link: socialMedia,
         };
+        console.log(body);
         if (submitUrl) {
+          const {
+            accessToken,
+            user: {
+              profile: { id },
+            },
+          } = session;
           try {
             const headers = new Headers({
               "Content-Type": "application/json",
+              Accept: "application/json",
+              Authorization: `Bearer ${accessToken}`,
             });
-            const response = await fetch(`/api/accounts`, {
-              method: "POST",
+            const response = await fetch(`/api/accounts/update/${id}`, {
+              method: "PATCH",
               headers,
               body: JSON.stringify(body),
             });

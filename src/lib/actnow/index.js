@@ -1,5 +1,4 @@
 import jwtDecode from "jwt-decode";
-import { useSession } from "next-auth/react";
 
 import serverFn from "@/promisetracker/lib/server";
 
@@ -92,22 +91,27 @@ function actnow(site) {
     }
   }
 
-  async function UpdateLoggedUser(user) {
-    const { data: session } = useSession();
+  async function updateUser(profile, session) {
+    const {
+      accessToken,
+      user: {
+        profile: { id },
+      },
+    } = session;
+
     const headers = new Headers({
       "Content-Type": "application/json",
-      Authorization: `Bearer ${session?.accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
     });
 
-    const response = await fetch(
-      `${ACTNOW_URL}/v1/profiles/users/${user?.profile?.id}`,
-      {
-        method: "PUT",
-        headers,
-        body: JSON.stringify(user),
-      }
-    );
-    return response.json();
+    console.log(profile, session);
+
+    const responseData = await fetch(`${ACTNOW_URL}/v1/profiles/users/${id}/`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify(profile),
+    }).then(async (response) => response.json());
+    return responseData;
   }
 
   async function getPetitions(query) {
@@ -145,9 +149,9 @@ function actnow(site) {
             return refreshLoggedInUser(token);
           })();
         },
-        update: (user) => {
+        updateUserDetails: (profile, session) => {
           return (async () => {
-            return UpdateLoggedUser(user);
+            return updateUser(profile, session);
           })();
         },
       };
