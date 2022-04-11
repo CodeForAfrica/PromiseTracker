@@ -119,7 +119,7 @@ Index.defaultProps = {
   title: undefined,
 };
 
-export async function getServerSideProps({ locale }) {
+export async function getStaticProps({ locale }) {
   const _ = i18n();
   if (!_.locales.includes(locale)) {
     return {
@@ -148,6 +148,7 @@ export async function getServerSideProps({ locale }) {
       languageAlternates,
       petitions,
     },
+    revalidate: 60,
   };
 }
 
