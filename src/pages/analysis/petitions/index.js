@@ -148,7 +148,6 @@ export async function getServerSideProps({ locale }) {
       languageAlternates,
       petitions,
     },
-    revalidate: 2 * 60, // seconds
   };
 }
 
