@@ -91,6 +91,26 @@ function actnow(site) {
     }
   }
 
+  async function getUserProfile(profile, session) {
+    const {
+      accessToken,
+      user: {
+        profile: { id },
+      },
+    } = session;
+
+    const headers = new Headers({
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    });
+    const responseData = await fetch(`${ACTNOW_URL}/v1/profiles/users/${id}/`, {
+      method: "GET",
+      headers,
+      body: JSON.stringify(profile),
+    }).then(async (response) => response.json());
+    return responseData;
+  }
+
   async function updateUser(profile, session) {
     const {
       accessToken,
@@ -103,9 +123,6 @@ function actnow(site) {
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
     });
-
-    console.log(profile, session);
-
     const responseData = await fetch(`${ACTNOW_URL}/v1/profiles/users/${id}/`, {
       method: "PATCH",
       headers,
@@ -147,6 +164,11 @@ function actnow(site) {
         refresh: (token) => {
           return (async () => {
             return refreshLoggedInUser(token);
+          })();
+        },
+        getUserDetails: (profile, session) => {
+          return (async () => {
+            return getUserProfile(profile, session);
           })();
         },
         updateUserDetails: (profile, session) => {

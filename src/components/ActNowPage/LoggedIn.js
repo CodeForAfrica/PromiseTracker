@@ -40,7 +40,6 @@ function ActNowLoggedInPage({
     }
   };
 
-  console.log(individualUpdateDialogArgs);
   const handleClickIndividual = () => setOpenDialog("individual");
 
   const formatedItems = [
