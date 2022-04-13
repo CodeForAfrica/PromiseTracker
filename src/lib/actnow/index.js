@@ -91,7 +91,7 @@ function actnow(site) {
     }
   }
 
-  async function getUserProfile(profile, session) {
+  async function getUserProfile(session) {
     const {
       accessToken,
       user: {
@@ -106,7 +106,6 @@ function actnow(site) {
     const responseData = await fetch(`${ACTNOW_URL}/v1/profiles/users/${id}/`, {
       method: "GET",
       headers,
-      body: JSON.stringify(profile),
     }).then(async (response) => response.json());
     return responseData;
   }
@@ -166,9 +165,9 @@ function actnow(site) {
             return refreshLoggedInUser(token);
           })();
         },
-        getUserDetails: (profile, session) => {
+        getUserDetails: (session) => {
           return (async () => {
-            return getUserProfile(profile, session);
+            return getUserProfile(session);
           })();
         },
         updateUserDetails: (profile, session) => {

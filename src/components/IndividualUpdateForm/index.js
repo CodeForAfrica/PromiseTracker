@@ -58,7 +58,6 @@ function IndividualRegistrationForm({
           phone_number: phoneNumber,
           social_media_link: socialMedia,
         };
-        console.log(body);
         if (submitUrl) {
           const {
             accessToken,
