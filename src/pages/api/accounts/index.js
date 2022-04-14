@@ -13,9 +13,6 @@ async function handleAccounts(req, res) {
   if (req.method === "POST") {
     return registerNewUser(req, res);
   }
-  if (req.method === "GET") {
-    return registerNewUser(req, res);
-  }
   return res.status(403).json();
 }
 

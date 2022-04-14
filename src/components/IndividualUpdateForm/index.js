@@ -27,7 +27,7 @@ function IndividualRegistrationForm({
       Accept: "application/json",
       Authorization: `Bearer ${accessToken}`,
     });
-    const response = await fetch(`/api/accounts/getProfile/${id}`, {
+    const response = await fetch(`/api/accounts/profile/${id}`, {
       method: "GET",
       headers,
     });
@@ -94,7 +94,7 @@ function IndividualRegistrationForm({
               Accept: "application/json",
               Authorization: `Bearer ${accessToken}`,
             });
-            const response = await fetch(`/api/accounts/update/${id}`, {
+            const response = await fetch(`/api/accounts/profile/${id}`, {
               method: "PATCH",
               headers,
               body: JSON.stringify(body),
