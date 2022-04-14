@@ -14,16 +14,39 @@ function IndividualRegistrationForm({
   const { data: session } = useSession();
   const [status, setStatus] = useState({});
 
+  const getAccountDetails = async () => {
+    const {
+      accessToken,
+      user: {
+        profile: { id },
+      },
+    } = session;
+
+    const headers = new Headers({
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    });
+    const response = await fetch(`/api/accounts/getProfile/${id}`, {
+      method: "GET",
+      headers,
+    });
+    const responseJson = await response.json();
+    return responseJson;
+  };
+
   return (
     <Formik
-      initialValues={{
-        firstName: "",
-        lastName: "",
-        location: "",
-        bio: "",
-        phoneNumber: "",
-        socialMedia: "",
-      }}
+      initialValues={getAccountDetails().then((profile) => {
+        return {
+          firstName: `${profile.first_name}`,
+          lastName: `${profile.last_name}`,
+          location: `${profile.location}`,
+          bio: `${profile.bio}`,
+          phoneNumber: `${profile.phone_number}`,
+          socialMedia: `${profile.social_media_link}`,
+        };
+      })}
       validate={(values) => {
         const errors = {};
         if (!values.firstName) {
