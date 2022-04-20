@@ -36,7 +36,7 @@ function ActNowLoggedInPage({
     if (onClose) {
       onClose();
     } else {
-      setOpen(false);
+      setOpen(true);
     }
   };
 
