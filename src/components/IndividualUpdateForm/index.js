@@ -39,12 +39,12 @@ function IndividualRegistrationForm({
     <Formik
       initialValues={getAccountDetails().then((profile) => {
         return {
-          firstName: `${profile.first_name}`,
-          lastName: `${profile.last_name}`,
+          firstName: `${profile?.first_name}`,
+          lastName: `${profile?.last_name}`,
           location: `${profile.location}`,
-          bio: `${profile.bio}`,
-          phoneNumber: `${profile.phone_number}`,
-          socialMedia: `${profile.social_media_link}`,
+          bio: `${profile?.bio}`,
+          phoneNumber: `${profile?.phone_number}`,
+          socialMedia: `${profile?.social_media_link}`,
         };
       })}
       validate={(values) => {
