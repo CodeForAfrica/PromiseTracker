@@ -8,7 +8,7 @@ const moduleExports = {
     dirs: ["src"],
   },
   i18n: {
-    locales: ["am", "ar", "en", "fr"],
+    locales: ["en"],
     defaultLocale: "en",
   },
   images: {
