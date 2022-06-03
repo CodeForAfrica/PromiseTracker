@@ -39,9 +39,9 @@ ARG NEXT_TELEMETRY_DISABLED=1 \
 
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry
-ENV NEXT_TELEMETRY_DISABLED=${NEXT_TELEMETRY_DISABLED} 
 
-ENV BACKEND=${BACKEND} \
+ENV NEXT_TELEMETRY_DISABLED=${NEXT_TELEMETRY_DISABLED} \
+    BACKEND=${BACKEND} \
     APP_SLUG=${APP_SLUG} \
     IMAGE_DOMAINS=${IMAGE_DOMAINS} \
     ACTNOW_URL=${ACTNOW_URL} \
