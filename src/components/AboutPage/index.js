@@ -4,7 +4,6 @@ import Image from "next/image";
 import PropTypes from "prop-types";
 import React from "react";
 
-import Partners from "./Partners";
 import PromiseCriteria from "./PromiseCriteria";
 import useStyles from "./useStyles";
 
@@ -79,7 +78,6 @@ function AboutPage({
           }
           content={
             <>
-              <Partners {...partners} />
               <PromiseCriteria {...criteria} />
               {content?.length > 0 && (
                 <RichTypography variant="body2" className={classes.content}>

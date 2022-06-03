@@ -18,6 +18,9 @@ import useStyles from "./useStyles";
 
 import ptLogo from "@/promisetracker/assets/footer-pt-logo.png";
 import cfaLogo from "@/promisetracker/assets/logo-C4A.svg";
+import facebook from "@/promisetracker/assets/share-facebook.svg";
+import instagram from "@/promisetracker/assets/share-instagram.svg";
+import twitter from "@/promisetracker/assets/share-twitter.svg";
 import Link from "@/promisetracker/components/Link";
 
 function MainFooter({
@@ -26,9 +29,31 @@ function MainFooter({
   legalLinks: legalLinksProp,
   organizationLogo: organizationLogoProp,
   quickLinks: quickLinksProp,
-  socialMedia,
   ...otherProps
 }) {
+  const socialMedia = [
+    {
+      url: "https://www.facebook.com/citezw/",
+      image: {
+        url: facebook,
+        alt: "",
+      },
+    },
+    {
+      url: "https://twitter.com/citezw?ref_src=twsrc%5Egoogle%7Ctwcamp%5Eserp%7Ctwgr%5EShare",
+      image: {
+        url: twitter,
+        alt: "",
+      },
+    },
+    {
+      url: "https://www.instagram.com/citezw/",
+      image: {
+        url: instagram,
+        alt: "",
+      },
+    },
+  ];
   const classes = useStyles(otherProps);
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));

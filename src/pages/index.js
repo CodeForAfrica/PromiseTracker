@@ -9,7 +9,6 @@ import LatestArticles from "@/promisetracker/components/LatestArticles";
 import LatestPromises from "@/promisetracker/components/LatestPromises";
 import Subscribe from "@/promisetracker/components/Newsletter";
 import Page from "@/promisetracker/components/Page";
-import Partners from "@/promisetracker/components/Partners";
 import backendFn from "@/promisetracker/lib/backend";
 import i18n from "@/promisetracker/lib/i18n";
 import wp from "@/promisetracker/lib/wp";
@@ -105,12 +104,6 @@ function Index({
         actionLabel="See All"
         items={articles}
         title="Latest Articles"
-        classes={{
-          section: classes.section,
-        }}
-      />
-      <Partners
-        {...partners}
         classes={{
           section: classes.section,
         }}
