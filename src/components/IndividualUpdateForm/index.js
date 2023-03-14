@@ -1,4 +1,5 @@
 import { Formik } from "formik";
+import { useSession } from "next-auth/react";
 import PropTypes from "prop-types";
 import React, { useState } from "react";
 
@@ -10,18 +11,42 @@ function IndividualRegistrationForm({
   onSubmit,
   submitUrl,
 }) {
+  const { data: session } = useSession();
   const [status, setStatus] = useState({});
+
+  const getAccountDetails = async () => {
+    const {
+      accessToken,
+      user: {
+        profile: { id },
+      },
+    } = session;
+
+    const headers = new Headers({
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    });
+    const response = await fetch(`/api/accounts/profile/${id}`, {
+      method: "GET",
+      headers,
+    });
+    const responseJson = await response.json();
+    return responseJson;
+  };
 
   return (
     <Formik
-      initialValues={{
-        agree: false,
-        email: "",
-        firstName: "",
-        lastName: "",
-        location: "",
-        password: "",
-      }}
+      initialValues={getAccountDetails().then((profile) => {
+        return {
+          firstName: `${profile?.first_name}`,
+          lastName: `${profile?.last_name}`,
+          location: `${profile.location}`,
+          bio: `${profile?.bio}`,
+          phoneNumber: `${profile?.phone_number}`,
+          socialMedia: `${profile?.social_media_link}`,
+        };
+      })}
       validate={(values) => {
         const errors = {};
         if (!values.firstName) {
@@ -30,58 +55,50 @@ function IndividualRegistrationForm({
         if (!values.lastName) {
           errors.lastName = fields?.lastName?.error;
         }
-        if (!values.email) {
-          errors.email = fields?.email?.error;
-        } else if (
-          !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(values.email)
-        ) {
-          errors.email = fields?.email?.error;
-        }
-        if (!values.password) {
-          errors.password = fields?.password?.error;
-        }
         if (!values.location) {
           errors.location = fields?.location?.error;
         }
-        if (!values.agree) {
-          errors.agree = fields?.agree?.error;
+        if (!values.bio) {
+          errors.bio = fields?.bio?.error;
+        }
+        if (!values.phoneNumber) {
+          errors.phoneNumber = fields?.phoneNumber?.error;
+        }
+        if (!values.socialMedia) {
+          errors.socialMedia = fields?.socialMedia?.error;
         }
         return errors;
       }}
       onSubmit={async (
-        {
-          firstName,
-          lastName,
-          email,
-          password,
-          bio,
-          location,
-          phoneNumber,
-          socialMedia,
-        },
+        { firstName, lastName, bio, location, phoneNumber, socialMedia },
         { setErrors, setSubmitting }
       ) => {
         const body = {
           first_name: firstName,
           last_name: lastName,
-          email,
-          password,
           bio,
           location,
           phone_number: phoneNumber,
           social_media_link: socialMedia,
         };
         if (submitUrl) {
+          const {
+            accessToken,
+            user: {
+              profile: { id },
+            },
+          } = session;
           try {
             const headers = new Headers({
               "Content-Type": "application/json",
+              Accept: "application/json",
+              Authorization: `Bearer ${accessToken}`,
             });
-            const response = await fetch(`/api/accounts`, {
-              method: "POST",
+            const response = await fetch(`/api/accounts/profile/${id}`, {
+              method: "PATCH",
               headers,
               body: JSON.stringify(body),
             });
-
             const responseJson = await response.json();
             if (response.status === 201) {
               setStatus({ children: undefined });
@@ -118,16 +135,12 @@ function IndividualRegistrationForm({
 IndividualRegistrationForm.propTypes = {
   defaultErrorMessage: PropTypes.string,
   fields: PropTypes.shape({
-    agree: PropTypes.shape({
-      error: PropTypes.string,
-    }),
-    email: PropTypes.shape({
-      error: PropTypes.string,
-    }),
     firstName: PropTypes.shape({ error: PropTypes.string }),
     lastName: PropTypes.shape({ error: PropTypes.string }),
     location: PropTypes.shape({ error: PropTypes.string }),
-    password: PropTypes.shape({ error: PropTypes.string }),
+    bio: PropTypes.shape({ error: PropTypes.string }),
+    phoneNumber: PropTypes.shape({ error: PropTypes.string }),
+    socialMedia: PropTypes.shape({ error: PropTypes.string }),
   }),
   onSubmit: PropTypes.func,
   submitUrl: PropTypes.string,

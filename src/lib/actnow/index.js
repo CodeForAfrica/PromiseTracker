@@ -91,6 +91,45 @@ function actnow(site) {
     }
   }
 
+  async function getUserProfile(session) {
+    const {
+      accessToken,
+      user: {
+        profile: { id },
+      },
+    } = session;
+
+    const headers = new Headers({
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    });
+    const responseData = await fetch(`${ACTNOW_URL}/v1/profiles/users/${id}/`, {
+      method: "GET",
+      headers,
+    }).then(async (response) => response.json());
+    return responseData;
+  }
+
+  async function updateUser(profile, session) {
+    const {
+      accessToken,
+      user: {
+        profile: { id },
+      },
+    } = session;
+
+    const headers = new Headers({
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    });
+    const responseData = await fetch(`${ACTNOW_URL}/v1/profiles/users/${id}/`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify(profile),
+    }).then(async (response) => response.json());
+    return responseData;
+  }
+
   async function getPetitions(query) {
     const url = `${ACTNOW_URL}/v1/petitions/?${`${query}&` || ""}format=json`;
     const response = await fetch(url);
@@ -141,6 +180,16 @@ function actnow(site) {
         refresh: (token) => {
           return (async () => {
             return refreshLoggedInUser(token);
+          })();
+        },
+        getUserDetails: (session) => {
+          return (async () => {
+            return getUserProfile(session);
+          })();
+        },
+        updateUserDetails: (profile, session) => {
+          return (async () => {
+            return updateUser(profile, session);
           })();
         },
       };
