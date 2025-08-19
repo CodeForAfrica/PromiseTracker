@@ -1,10 +1,9 @@
 import { TaskConfig } from 'payload'
 import { getUnprocessedDocuments } from '@/lib/airtable'
 
-const LANGUAGE_MAP: Record<string, 'en' | 'fr' | 'es'> = {
+const LANGUAGE_MAP: Record<string, 'en' | 'fr'> = {
   English: 'en',
   French: 'fr',
-  Spanish: 'es',
 }
 
 export const FetchAirtableDocuments: TaskConfig<'fetchAirtableDocuments'> = {
@@ -24,10 +23,10 @@ export const FetchAirtableDocuments: TaskConfig<'fetchAirtableDocuments'> = {
       ],
     },
   ],
-  handler: async ({ req }) => {
+  handler: async ({ req: { payload } }) => {
     const {
       airtable: { airtableAPIKey, airtableBaseID },
-    } = await req.payload.findGlobal({
+    } = await payload.findGlobal({
       slug: 'settings',
     })
 
@@ -37,7 +36,7 @@ export const FetchAirtableDocuments: TaskConfig<'fetchAirtableDocuments'> = {
 
     const unProcessedDocuments = await getUnprocessedDocuments({ airtableAPIKey })
 
-    const { docs: existingDocs } = await req.payload.find({
+    const { docs: existingDocs } = await payload.find({
       collection: 'documents',
       where: {
         airtableID: {
@@ -56,7 +55,7 @@ export const FetchAirtableDocuments: TaskConfig<'fetchAirtableDocuments'> = {
 
     const createdDocs = await Promise.all(
       docsToCreate.map(async (doc) => {
-        return req.payload.create({
+        return payload.create({
           collection: 'documents',
           data: {
             title: doc.name || doc.id,
