@@ -20,6 +20,13 @@ export const Documents: CollectionConfig = {
       type: 'text',
     },
     {
+      name: 'docURL', // only used to download file from airtable
+      type: 'text',
+      admin: {
+        hidden: true,
+      },
+    },
+    {
       name: 'file',
       type: 'upload',
       relationTo: 'media',
@@ -115,6 +122,9 @@ export const Documents: CollectionConfig = {
     },
     {
       type: 'tabs',
+      admin: {
+        readOnly: true,
+      },
       tabs: [
         {
           label: 'Extracted Text',
@@ -122,6 +132,9 @@ export const Documents: CollectionConfig = {
             {
               name: 'extractedText',
               type: 'richText',
+              admin: {
+                readOnly: true,
+              },
             },
           ],
         },
@@ -153,31 +166,25 @@ export const Documents: CollectionConfig = {
                 },
                 {
                   type: 'row',
-                  admin: {
-                    readOnly: true,
-                  },
                   fields: [
                     {
                       name: 'uniqueId',
                       type: 'text',
-                      // admin: {
-                      //   readOnly: true,
-                      // },
+                      admin: {
+                        hidden: true,
+                      },
                     },
                     {
                       name: 'checkMediaId',
                       type: 'text',
-                      // admin: {
-                      //   readOnly: true,
-                      // },
+                      admin: {
+                        hidden: true,
+                      },
                     },
                     {
                       name: 'checkMediaURL',
                       label: 'CheckMedia URL',
                       type: 'text',
-                      // admin: {
-                      //   readOnly: true,
-                      // },
                     },
                   ],
                 },

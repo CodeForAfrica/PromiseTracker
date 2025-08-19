@@ -186,6 +186,7 @@ export interface Document {
   id: string;
   title: string;
   url?: string | null;
+  docURL?: string | null;
   file?: (string | null) | Media;
   politicalEntity?: string | null;
   country?: string | null;
@@ -468,6 +469,7 @@ export interface MediaSelect<T extends boolean = true> {
 export interface DocumentsSelect<T extends boolean = true> {
   title?: T;
   url?: T;
+  docURL?: T;
   file?: T;
   politicalEntity?: T;
   country?: T;

@@ -57,6 +57,7 @@ export const AISummarizer: TaskConfig<'aiSummarizer'> = {
     - Source field must contain exact quotes from the document text
     - Each promise should have clear supporting evidence in the source quotes
     - Group similar promises under appropriate categories
+    - Reply in the language the document is written in
 
     **Document:**
     

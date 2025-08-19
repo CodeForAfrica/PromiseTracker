@@ -64,6 +64,7 @@ export const DownloadDocuments: TaskConfig<'downloadDocuments'> = {
         },
         select: {
           url: true,
+          docURL: true,
         },
       })
 
@@ -72,14 +73,17 @@ export const DownloadDocuments: TaskConfig<'downloadDocuments'> = {
       for (const doc of documents) {
         try {
           logger.debug('Processing document', { id: doc.id })
-          const { url } = doc
+          const { url, docURL } = doc
 
-          if (!url) {
+          // priritize file uploaded to airtable
+          const urlToFetch = docURL || url
+
+          if (!urlToFetch) {
             logger.warn('Document has no URL', { id: doc.id })
             continue
           }
 
-          const res = await fetch(url)
+          const res = await fetch(urlToFetch)
 
           if (!res.ok) {
             throw new Error(`Failed to fetch document: ${res.status} ${res.statusText}`)

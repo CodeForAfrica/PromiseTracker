@@ -1,7 +1,7 @@
 import { TaskConfig } from 'payload'
 import { createFactCheckClaim } from '@/lib/meedan'
 import { markDocumentAsProcessed } from '@/lib/airtable'
-import { Document } from '@/payload-types'
+import { Document, Media } from '@/payload-types'
 
 export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
   slug: 'uploadToMeedan',
@@ -38,7 +38,7 @@ export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
           },
         },
         limit: -1,
-        depth: 0,
+        depth: 2,
       })
 
       logger.info(`Found ${documents.length} documents to process`)
@@ -106,6 +106,8 @@ export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
               ${extraction.source}
               `.trim()
 
+              const downloadedFile = doc.file as Media
+
               const response = await createFactCheckClaim({
                 apiKey: meedanAPIKey,
                 teamId,
@@ -114,7 +116,7 @@ export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
                 claimDescription: extraction.summary,
                 factCheck: {
                   title: extraction.summary,
-                  url: doc.url || '',
+                  url: doc.url || downloadedFile.url || doc.docURL || '',
                   language: doc.language || '',
                   publish_report: false,
                 },

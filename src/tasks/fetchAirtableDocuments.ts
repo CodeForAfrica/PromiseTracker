@@ -68,7 +68,8 @@ export const FetchAirtableDocuments: TaskConfig<'fetchAirtableDocuments'> = {
             yearFrom: doc.yearFrom,
             yearTo: doc.yearTo,
             airtableID: doc.id,
-            url: doc.document.length ? doc.document[0] : doc.uRL,
+            url: doc.uRL,
+            docURL: doc.document[0],
           },
         })
       }),
