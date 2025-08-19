@@ -76,7 +76,6 @@ export const AISummarizer: TaskConfig<'aiSummarizer'> = {
       for (const document of documents) {
         const { extractedText } = document
 
-        // convert extractedText to plain text
         const plainText = extractedText?.root.children
           .map((item) => {
             if (item.type === 'paragraph') {
@@ -87,6 +86,7 @@ export const AISummarizer: TaskConfig<'aiSummarizer'> = {
             return ''
           })
           .join('\n')
+
         try {
           const res = await generateObject({
             model,

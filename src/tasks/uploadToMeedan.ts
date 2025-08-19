@@ -1,5 +1,7 @@
 import { TaskConfig } from 'payload'
 import { createFactCheckClaim } from '@/lib/meedan'
+import { markDocumentAsProcessed } from '@/lib/airtable'
+import { Document } from '@/payload-types'
 
 export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
   slug: 'uploadToMeedan',
@@ -17,12 +19,12 @@ export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
     logger.info('Starting uploadToMeedan task')
 
     try {
-      const settings = await payload.findGlobal({
+      const {
+        airtable: { airtableAPIKey },
+        meedan: { meedanAPIKey, teamId },
+      } = await req.payload.findGlobal({
         slug: 'settings',
       })
-
-      const meedanAPIKey = settings?.meedan?.meedanAPIKey
-      const teamId = settings?.meedan?.teamId
 
       if (!meedanAPIKey || !teamId) {
         throw new Error('Meedan API key or team ID not configured in settings')
@@ -55,12 +57,10 @@ export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
       let errorCount = 0
       const errors: Array<{ documentId: string; error: string }> = []
 
-      // Process each document
       for (const doc of documents) {
         try {
           logger.info(`Processing document: ${doc.id} - ${doc.title}`)
 
-          // Validate that document has AI extraction data
           if (
             !doc.aiExtraction ||
             !Array.isArray(doc.aiExtraction) ||
@@ -70,10 +70,6 @@ export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
             continue
           }
 
-          // Extract and format the AI extraction data
-          const aiTitle = doc.aiTitle || doc.title
-
-          // Filter extractions that haven't been uploaded yet
           const aiExtractions = doc.aiExtraction
             .filter((extraction) => !extraction.checkMediaId)
             .map(({ category, summary, source, uniqueId }) => ({
@@ -91,14 +87,12 @@ export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
           let extractionProcessedCount = 0
           let extractionErrorCount = 0
 
-          // Process each extraction individually
           for (const extraction of aiExtractions) {
             try {
               logger.info(
                 `Uploading extraction ${extraction.uniqueId} from document ${doc.id} to CheckMedia`,
               )
 
-              // Generate tags from document metadata + extraction category
               const tags = [
                 doc.politicalEntity,
                 doc.country,
@@ -134,7 +128,6 @@ export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
                 checkMediaURL,
               })
 
-              // Find and update the extraction by uniqueId instead of index
               const updatedAiExtraction = doc.aiExtraction.map((ext) => {
                 if (ext.uniqueId === extraction.uniqueId) {
                   return {
@@ -172,18 +165,16 @@ export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
             }
           }
 
-          // Check if all extractions have been processed (have checkMediaId)
           const updatedDoc = await payload.findByID({
             collection: 'documents',
             id: doc.id,
           })
 
           const allExtractionsProcessed = updatedDoc.aiExtraction?.every(
-            (extraction: any) => extraction.checkMediaId,
+            (extraction: NonNullable<Document['aiExtraction']>[number]) => extraction.checkMediaId,
           )
 
           if (allExtractionsProcessed) {
-            // Mark document as fully processed
             await payload.update({
               collection: 'documents',
               id: doc.id,
@@ -191,6 +182,12 @@ export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
                 fullyProcessed: true,
               },
             })
+            if (doc.airtableID) {
+              await markDocumentAsProcessed({
+                airtableAPIKey: airtableAPIKey,
+                airtableID: doc.airtableID,
+              })
+            }
             logger.info(`Document ${doc.id} marked as fully processed - all extractions uploaded`)
           }
 

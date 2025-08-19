@@ -97,6 +97,7 @@ export const Documents: CollectionConfig = {
     },
     {
       name: 'airtableID',
+      label: 'Airtable ID',
       type: 'text',
       unique: true,
       admin: {
@@ -152,22 +153,31 @@ export const Documents: CollectionConfig = {
                 },
                 {
                   type: 'row',
+                  admin: {
+                    readOnly: true,
+                  },
                   fields: [
                     {
                       name: 'uniqueId',
                       type: 'text',
-                      admin: {
-                        readOnly: true,
-                      },
+                      // admin: {
+                      //   readOnly: true,
+                      // },
                     },
                     {
                       name: 'checkMediaId',
                       type: 'text',
+                      // admin: {
+                      //   readOnly: true,
+                      // },
                     },
                     {
                       name: 'checkMediaURL',
                       label: 'CheckMedia URL',
                       type: 'text',
+                      // admin: {
+                      //   readOnly: true,
+                      // },
                     },
                   ],
                 },

@@ -1,7 +1,5 @@
 import { TaskConfig } from 'payload'
-import { AirtableTs } from 'airtable-ts'
-import { documentListTable } from '@/types/airtableSchema'
-import { formula } from 'airtable-ts-formula'
+import { getUnprocessedDocuments } from '@/lib/airtable'
 
 const LANGUAGE_MAP: Record<string, 'en' | 'fr' | 'es'> = {
   English: 'en',
@@ -37,13 +35,7 @@ export const FetchAirtableDocuments: TaskConfig<'fetchAirtableDocuments'> = {
       throw new Error('Airtable API key or Base ID not found in settings')
     }
 
-    const db = new AirtableTs({ apiKey: airtableAPIKey })
-    const documentsTable = await db.table(documentListTable)
-
-    const unProcessedDocuments = await db.scan(documentListTable, {
-      // @ts-expect-error: Type 'string | string[]' is not assignable to type 'string'.
-      filterByFormula: formula(documentsTable, ['AND', ['=', { field: 'processed' }, false]]),
-    })
+    const unProcessedDocuments = await getUnprocessedDocuments({ airtableAPIKey })
 
     const { docs: existingDocs } = await req.payload.find({
       collection: 'documents',
