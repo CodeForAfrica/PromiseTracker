@@ -53,6 +53,7 @@ export const Settings: GlobalConfig = {
                   type: 'row',
                   fields: [
                     {
+                      //TODO:(@kelvinkipruto): Explore adding more models.
                       name: 'model',
                       type: 'select',
                       options: [

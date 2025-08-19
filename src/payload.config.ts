@@ -6,20 +6,14 @@ import { buildConfig } from 'payload'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
 
-import { Users } from './collections/Users'
-import { Media } from './collections/Media'
-import { Documents } from './collections/Documents'
-import { Settings } from './globals/Settings'
-import { FetchAirtableDocuments } from './tasks/fetchAirtableDocuments'
-import { airtableWorkflow } from './workflows/airtableWorkflow'
-import { DownloadDocuments } from './tasks/downloadDocuments'
-import { ExtractDocuments } from './tasks/extractDocuments'
-import { AISummarizer } from './tasks/aiSummarizer'
-import { UploadToMeedan } from './tasks/uploadToMeedan'
+import { Users } from '@/collections/Users'
+import { collections } from '@/collections'
+import { globals } from '@/globals'
+import { tasks } from '@/tasks'
+import { workflows } from '@/workflows'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
-// check if is prod env
 const isProd = process.env.NODE_ENV === 'production'
 
 export default buildConfig({
@@ -29,8 +23,8 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Documents],
-  globals: [Settings],
+  collections,
+  globals,
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
@@ -52,15 +46,10 @@ export default buildConfig({
       return defaultJobsCollection
     },
     addParentToTaskLog: true,
-    tasks: [
-      FetchAirtableDocuments,
-      DownloadDocuments,
-      ExtractDocuments,
-      AISummarizer,
-      UploadToMeedan,
-    ],
-    workflows: [airtableWorkflow],
+    tasks,
+    workflows,
     autoRun: [
+      // TODO:(@kelvinkipruto): Use correct schedule.This is for testing only
       {
         cron: '* * * * *',
         queue: 'everyMinute',

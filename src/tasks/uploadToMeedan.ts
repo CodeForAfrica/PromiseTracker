@@ -7,6 +7,7 @@ export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
   slug: 'uploadToMeedan',
   label: 'Upload To Meedan',
   schedule: [
+    // TODO:(@kelvinkipruto): Provide correct schedule: This is for testing only
     {
       cron: '* * * * *',
       queue: 'everyMinute',

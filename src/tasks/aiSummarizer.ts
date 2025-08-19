@@ -88,6 +88,11 @@ export const AISummarizer: TaskConfig<'aiSummarizer'> = {
           })
           .join('\n')
 
+        if (!plainText || plainText === '') {
+          logger.error('No text to process')
+          continue
+        }
+
         try {
           const res = await generateObject({
             model,
