@@ -75,7 +75,7 @@ export const DownloadDocuments: TaskConfig<'downloadDocuments'> = {
           logger.debug('Processing document', { id: doc.id })
           const { url, docURL } = doc
 
-          // priritize file uploaded to airtable
+          // prioritise file uploaded to airtable
           const urlToFetch = docURL || url
 
           if (!urlToFetch) {

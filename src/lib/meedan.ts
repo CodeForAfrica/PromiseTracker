@@ -105,8 +105,8 @@ export const createFactCheckClaim = async ({
   teamId: string
   quote: string
   tags?: string[]
-  claimDescription?: string
-  factCheck?: FactCheck
+  claimDescription: string
+  factCheck: FactCheck
 }) => {
   const input: CreateProjectMediaInput = {
     media_type: 'Claim',

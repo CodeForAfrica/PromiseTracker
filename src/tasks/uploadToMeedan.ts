@@ -37,7 +37,7 @@ const checkAndMarkDocumentComplete = async (doc: Document, payload: BasePayload)
   })
 
   const allExtractionsProcessed = updatedDoc.aiExtraction?.every(
-    (extraction: NonNullable<Document['aiExtraction']>[number]) => extraction.checkMediaId,
+    (extraction) => extraction.checkMediaId,
   )
 
   if (allExtractionsProcessed) {
