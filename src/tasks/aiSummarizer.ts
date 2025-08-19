@@ -1,8 +1,8 @@
 import { TaskConfig } from 'payload'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
-import { generateText, generateObject } from 'ai'
+import { generateObject } from 'ai'
 import { z } from 'zod'
-import { writeFileSync } from 'node:fs'
+import { randomUUID } from 'node:crypto'
 
 export const AISummarizer: TaskConfig<'aiSummarizer'> = {
   slug: 'aiSummarizer',
@@ -23,26 +23,25 @@ export const AISummarizer: TaskConfig<'aiSummarizer'> = {
     const { docs } = input
     const { payload } = req
     const { logger } = payload
+    try {
+      const {
+        ai: { model: defaultModel, apiKey },
+      } = await payload.findGlobal({
+        slug: 'settings',
+      })
 
-    const {
-      ai: { model: defaultModel, apiKey },
-    } = await payload.findGlobal({
-      slug: 'settings',
-    })
-    logger.info(`model: ${defaultModel}, apiKey: ${apiKey}`)
+      const google = createGoogleGenerativeAI({
+        apiKey: apiKey,
+      })
 
-    const google = createGoogleGenerativeAI({
-      apiKey: apiKey,
-    })
+      const model = google(defaultModel)
 
-    const model = google(defaultModel)
-
-    const systemPrompt = `
+      const systemPrompt = `
     You are a helpful assistant that analyzes documents to extract campaign promises and provide structured summaries.
     Your task is to identify and categorize campaign promises, providing direct quotations as sources.
     `
 
-    const prompt = `
+      const prompt = `
     Analyze the following document and extract campaign promises with the following structure:
 
     **Requirements:**
@@ -63,126 +62,95 @@ export const AISummarizer: TaskConfig<'aiSummarizer'> = {
     
     `
 
-    const { docs: documents } = await payload.find({
-      collection: 'documents',
-      where: {
-        id: {
-          in: docs?.map((doc) => doc.id),
-        },
-      },
-    })
-
-    const processedDocs = []
-
-    for (const document of documents) {
-      const { title, extractedText } = document
-
-      // convert extractedText to plain text
-      const plainText = extractedText?.root.children
-        .map((item) => {
-          if (item.type === 'paragraph') {
-            return (item.children as Array<any>)
-              .map((child: any) => (child.type === 'text' ? child.text : ''))
-              .join('')
-          }
-          return ''
-        })
-        .join('\n')
-      console.log({ plainText })
-
-      const res = await generateObject({
-        model,
-        system: systemPrompt,
-        prompt: `${prompt} ${plainText}`,
-        schema: z.object({
-          title: z
-            .string()
-            .describe(
-              'Inferred title from the document content, or the provided document title as fallback',
-            ),
-          promises: z.array(
-            z.object({
-              category: z.string().describe('The thematic category of the promise'),
-              summary: z.string().describe('A concise summary of the promise'),
-              source: z
-                .array(z.string())
-                .describe('Array of direct quotations from the text that support this promise'),
-            }),
-          ),
-        }),
-      })
-      await writeFileSync(`${title}.json`, JSON.stringify(res, null, 2))
-
-      const { object } = res
-
-      logger.info(object)
-
-      const update = await payload.update({
+      const { docs: documents } = await payload.find({
         collection: 'documents',
-        id: document.id,
-        data: {
-          aiTitle: object.title,
-          aiExtraction: object.promises.map((promise) => ({
-            category: promise.category,
-            summary: {
-              root: {
-                type: 'root',
-                children: [
-                  {
-                    type: 'paragraph',
-                    children: [
-                      {
-                        type: 'text',
-                        text: promise.summary,
-                      },
-                    ],
-                  },
-                ],
-              },
-            },
-            source: {
-              root: {
-                type: 'root',
-                indent: 0,
-                children: [
-                  {
-                    indent: 0,
-                    type: 'list',
-                    version: 1,
-                    listType: 'number',
-                    start: 1,
-                    tag: 'ol',
-                    children: promise.source.map((quote, index) => ({
-                      indent: 0,
-                      type: 'listitem',
-                      version: 1,
-                      value: index + 1,
-                      children: [
-                        {
-                          type: 'text',
-                          text: quote,
-                        },
-                      ],
-                    })),
-                  },
-                ],
-              },
-            },
-          })),
+        where: {
+          id: {
+            in: docs?.map((doc) => doc.id),
+          },
         },
       })
 
-      processedDocs.push({
-        id: document.id,
-        title: object.title,
-        promises: object.promises,
-      })
-    }
+      const processedDocs = []
 
-    return {
-      output: {
-        docs: processedDocs,
-      },
+      for (const document of documents) {
+        const { extractedText } = document
+
+        // convert extractedText to plain text
+        const plainText = extractedText?.root.children
+          .map((item) => {
+            if (item.type === 'paragraph') {
+              return (item.children as Array<any>)
+                .map((child: any) => (child.type === 'text' ? child.text : ''))
+                .join('')
+            }
+            return ''
+          })
+          .join('\n')
+        try {
+          const res = await generateObject({
+            model,
+            system: systemPrompt,
+            prompt: `${prompt} ${plainText}`,
+            schema: z.object({
+              title: z
+                .string()
+                .describe(
+                  'Inferred title from the document content, or the provided document title as fallback',
+                ),
+              promises: z.array(
+                z.object({
+                  category: z.string().describe('The thematic category of the promise'),
+                  summary: z.string().describe('A concise summary of the promise'),
+                  source: z
+                    .array(z.string())
+                    .describe('Array of direct quotations from the text that support this promise'),
+                }),
+              ),
+            }),
+            maxRetries: 5,
+          })
+
+          const { object } = res
+
+          logger.info(object)
+
+          const update = await payload.update({
+            collection: 'documents',
+            id: document.id,
+            data: {
+              aiTitle: object.title,
+              aiExtraction: object.promises.map((promise) => ({
+                category: promise.category,
+                summary: promise.summary,
+                source: promise.source.map((quote, index) => `${index + 1}: ${quote}\n`).join('\n'),
+                uniqueId: randomUUID(),
+              })),
+            },
+          })
+
+          processedDocs.push({
+            id: document.id,
+            title: object.title,
+            promises: object.promises,
+          })
+        } catch (error) {
+          logger.error('Error generating AI Response::', { error })
+        }
+      }
+
+      return {
+        output: {
+          docs: processedDocs,
+        },
+      }
+    } catch (error) {
+      logger.error('Error:', { error })
+      return {
+        output: {
+          docs: [],
+        },
+      }
     }
   },
 }

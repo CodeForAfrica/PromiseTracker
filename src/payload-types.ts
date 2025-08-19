@@ -106,6 +106,7 @@ export interface Config {
       downloadDocuments: TaskDownloadDocuments;
       extractDocuments: TaskExtractDocuments;
       aiSummarizer: TaskAiSummarizer;
+      uploadToMeedan: TaskUploadToMeedan;
       inline: {
         input: unknown;
         output: unknown;
@@ -186,6 +187,7 @@ export interface Document {
   title: string;
   url?: string | null;
   file?: (string | null) | Media;
+  politicalEntity?: string | null;
   country?: string | null;
   region?: string | null;
   language?: ('en' | 'fr' | 'es') | null;
@@ -193,6 +195,7 @@ export interface Document {
   yearFrom?: number | null;
   yearTo?: number | null;
   airtableID?: string | null;
+  fullyProcessed?: boolean | null;
   extractedText?: {
     root: {
       type: string;
@@ -212,36 +215,11 @@ export interface Document {
   aiExtraction?:
     | {
         category: string;
-        summary: {
-          root: {
-            type: string;
-            children: {
-              type: string;
-              version: number;
-              [k: string]: unknown;
-            }[];
-            direction: ('ltr' | 'rtl') | null;
-            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-            indent: number;
-            version: number;
-          };
-          [k: string]: unknown;
-        };
-        source: {
-          root: {
-            type: string;
-            children: {
-              type: string;
-              version: number;
-              [k: string]: unknown;
-            }[];
-            direction: ('ltr' | 'rtl') | null;
-            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-            indent: number;
-            version: number;
-          };
-          [k: string]: unknown;
-        };
+        summary: string;
+        source: string;
+        uniqueId?: string | null;
+        checkMediaId?: string | null;
+        checkMediaURL?: string | null;
         id?: string | null;
       }[]
     | null;
@@ -300,7 +278,13 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'fetchAirtableDocuments' | 'downloadDocuments' | 'extractDocuments' | 'aiSummarizer';
+        taskSlug:
+          | 'inline'
+          | 'fetchAirtableDocuments'
+          | 'downloadDocuments'
+          | 'extractDocuments'
+          | 'aiSummarizer'
+          | 'uploadToMeedan';
         taskID: string;
         input?:
           | {
@@ -332,7 +316,14 @@ export interface PayloadJob {
           | null;
         parent?: {
           taskSlug?:
-            | ('inline' | 'fetchAirtableDocuments' | 'downloadDocuments' | 'extractDocuments' | 'aiSummarizer')
+            | (
+                | 'inline'
+                | 'fetchAirtableDocuments'
+                | 'downloadDocuments'
+                | 'extractDocuments'
+                | 'aiSummarizer'
+                | 'uploadToMeedan'
+              )
             | null;
           taskID?: string | null;
         };
@@ -340,7 +331,16 @@ export interface PayloadJob {
       }[]
     | null;
   workflowSlug?: 'airtableWorkflow' | null;
-  taskSlug?: ('inline' | 'fetchAirtableDocuments' | 'downloadDocuments' | 'extractDocuments' | 'aiSummarizer') | null;
+  taskSlug?:
+    | (
+        | 'inline'
+        | 'fetchAirtableDocuments'
+        | 'downloadDocuments'
+        | 'extractDocuments'
+        | 'aiSummarizer'
+        | 'uploadToMeedan'
+      )
+    | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -469,6 +469,7 @@ export interface DocumentsSelect<T extends boolean = true> {
   title?: T;
   url?: T;
   file?: T;
+  politicalEntity?: T;
   country?: T;
   region?: T;
   language?: T;
@@ -476,6 +477,7 @@ export interface DocumentsSelect<T extends boolean = true> {
   yearFrom?: T;
   yearTo?: T;
   airtableID?: T;
+  fullyProcessed?: T;
   extractedText?: T;
   aiTitle?: T;
   aiExtraction?:
@@ -484,6 +486,9 @@ export interface DocumentsSelect<T extends boolean = true> {
         category?: T;
         summary?: T;
         source?: T;
+        uniqueId?: T;
+        checkMediaId?: T;
+        checkMediaURL?: T;
         id?: T;
       };
   updatedAt?: T;
@@ -571,8 +576,12 @@ export interface Setting {
     airtableBaseID: string;
   };
   ai: {
-    model: 'gemini-2.5-pro-preview-03-25';
+    model: 'gemini-2.5-pro';
     apiKey: string;
+  };
+  meedan: {
+    meedanAPIKey: string;
+    teamId: string;
   };
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -611,6 +620,12 @@ export interface SettingsSelect<T extends boolean = true> {
     | {
         model?: T;
         apiKey?: T;
+      };
+  meedan?:
+    | T
+    | {
+        meedanAPIKey?: T;
+        teamId?: T;
       };
   updatedAt?: T;
   createdAt?: T;
@@ -692,6 +707,14 @@ export interface TaskAiSummarizer {
         }[]
       | null;
   };
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskUploadToMeedan".
+ */
+export interface TaskUploadToMeedan {
+  input?: unknown;
   output?: unknown;
 }
 /**

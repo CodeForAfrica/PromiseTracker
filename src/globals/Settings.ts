@@ -57,14 +57,42 @@ export const Settings: GlobalConfig = {
                       type: 'select',
                       options: [
                         {
-                          value: 'gemini-2.5-pro-preview-03-25',
-                          label: 'Gemini 2.5 Pro Preview 03 25',
+                          value: 'gemini-2.5-pro',
+                          label: 'Gemini 2.5 Pro',
                         },
                       ],
                       required: true,
                     },
                     {
                       name: 'apiKey',
+                      type: 'text',
+                      required: true,
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          label: 'Meedan',
+          fields: [
+            {
+              name: 'meedan',
+              type: 'group',
+
+              fields: [
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'meedanAPIKey',
+                      type: 'text',
+                      required: true,
+                      label: 'Meedan API Key',
+                    },
+                    {
+                      name: 'teamId',
                       type: 'text',
                       required: true,
                     },

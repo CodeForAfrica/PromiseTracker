@@ -1,6 +1,5 @@
 // storage-adapter-import-placeholder
 import { mongooseAdapter } from '@payloadcms/db-mongodb'
-import { payloadCloudPlugin } from '@payloadcms/payload-cloud'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'node:path'
 import { buildConfig } from 'payload'
@@ -16,9 +15,12 @@ import { airtableWorkflow } from './workflows/airtableWorkflow'
 import { DownloadDocuments } from './tasks/downloadDocuments'
 import { ExtractDocuments } from './tasks/extractDocuments'
 import { AISummarizer } from './tasks/aiSummarizer'
+import { UploadToMeedan } from './tasks/uploadToMeedan'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
+// check if is prod env
+const isProd = process.env.NODE_ENV === 'production'
 
 export default buildConfig({
   admin: {
@@ -38,10 +40,7 @@ export default buildConfig({
     url: process.env.DATABASE_URI || '',
   }),
   sharp,
-  plugins: [
-    payloadCloudPlugin(),
-    // storage-adapter-placeholder
-  ],
+  plugins: [],
   jobs: {
     // For debugging in Admin
     jobsCollectionOverrides: ({ defaultJobsCollection }) => {
@@ -49,11 +48,17 @@ export default buildConfig({
         defaultJobsCollection.admin = {}
       }
 
-      defaultJobsCollection.admin.hidden = false
+      defaultJobsCollection.admin.hidden = isProd
       return defaultJobsCollection
     },
     addParentToTaskLog: true,
-    tasks: [FetchAirtableDocuments, DownloadDocuments, ExtractDocuments, AISummarizer],
+    tasks: [
+      FetchAirtableDocuments,
+      DownloadDocuments,
+      ExtractDocuments,
+      AISummarizer,
+      UploadToMeedan,
+    ],
     workflows: [airtableWorkflow],
     autoRun: [
       {

@@ -31,6 +31,10 @@ export const Documents: CollectionConfig = {
       },
       fields: [
         {
+          name: 'politicalEntity',
+          type: 'text',
+        },
+        {
           name: 'country',
           type: 'text',
         },
@@ -101,6 +105,14 @@ export const Documents: CollectionConfig = {
       },
     },
     {
+      name: 'fullyProcessed',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        position: 'sidebar',
+      },
+    },
+    {
       type: 'tabs',
       tabs: [
         {
@@ -130,13 +142,34 @@ export const Documents: CollectionConfig = {
                 },
                 {
                   name: 'summary',
-                  type: 'richText',
+                  type: 'text',
                   required: true,
                 },
                 {
                   name: 'source',
-                  type: 'richText',
+                  type: 'textarea',
                   required: true,
+                },
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'uniqueId',
+                      type: 'text',
+                      admin: {
+                        readOnly: true,
+                      },
+                    },
+                    {
+                      name: 'checkMediaId',
+                      type: 'text',
+                    },
+                    {
+                      name: 'checkMediaURL',
+                      label: 'CheckMedia URL',
+                      type: 'text',
+                    },
+                  ],
                 },
               ],
             },

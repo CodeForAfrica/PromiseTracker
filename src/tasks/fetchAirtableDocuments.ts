@@ -68,6 +68,7 @@ export const FetchAirtableDocuments: TaskConfig<'fetchAirtableDocuments'> = {
           collection: 'documents',
           data: {
             title: doc.name || doc.id,
+            politicalEntity: doc.politician,
             country: doc.country,
             region: doc.region,
             language: LANGUAGE_MAP[doc?.language || ''] || '',
