@@ -717,7 +717,10 @@ export interface TaskAiSummarizer {
  */
 export interface TaskUploadToMeedan {
   input?: unknown;
-  output?: unknown;
+  output: {
+    message: string;
+    processed: number;
+  };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

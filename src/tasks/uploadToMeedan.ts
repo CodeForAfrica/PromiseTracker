@@ -1,7 +1,66 @@
-import { TaskConfig } from 'payload'
+import { BasePayload, TaskConfig } from 'payload'
 import { createFactCheckClaim } from '@/lib/meedan'
 import { markDocumentAsProcessed } from '@/lib/airtable'
 import { Document, Media } from '@/payload-types'
+
+const getDocumentsToProcess = async (payload: BasePayload): Promise<Document[]> => {
+  const { docs: documents } = await payload.find({
+    collection: 'documents',
+    where: {
+      fullyProcessed: {
+        equals: false,
+      },
+    },
+    limit: -1,
+    depth: 2,
+  })
+  return documents
+}
+
+const getAIExtractionToUpload = (doc: Document) => {
+  return (
+    doc.aiExtraction
+      ?.filter((extraction) => !extraction.checkMediaId)
+      .map(({ category, summary, source, uniqueId }) => ({
+        category,
+        summary,
+        source,
+        uniqueId,
+      })) || []
+  )
+}
+
+const checkAndMarkDocumentComplete = async (doc: Document, payload: BasePayload): Promise<void> => {
+  const updatedDoc = await payload.findByID({
+    collection: 'documents',
+    id: doc.id,
+  })
+
+  const allExtractionsProcessed = updatedDoc.aiExtraction?.every(
+    (extraction: NonNullable<Document['aiExtraction']>[number]) => extraction.checkMediaId,
+  )
+
+  if (allExtractionsProcessed) {
+    await payload.update({
+      collection: 'documents',
+      id: doc.id,
+      data: { fullyProcessed: true },
+    })
+
+    if (doc.airtableID) {
+      const {
+        airtable: { airtableAPIKey },
+      } = await payload.findGlobal({
+        slug: 'settings',
+      })
+
+      await markDocumentAsProcessed({
+        airtableAPIKey,
+        airtableID: doc.airtableID,
+      })
+    }
+  }
+}
 
 export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
   slug: 'uploadToMeedan',
@@ -21,9 +80,8 @@ export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
 
     try {
       const {
-        airtable: { airtableAPIKey },
         meedan: { meedanAPIKey, teamId },
-      } = await req.payload.findGlobal({
+      } = await payload.findGlobal({
         slug: 'settings',
       })
 
@@ -31,195 +89,97 @@ export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
         throw new Error('Meedan API key or team ID not configured in settings')
       }
 
-      const { docs: documents } = await payload.find({
-        collection: 'documents',
-        where: {
-          fullyProcessed: {
-            equals: false,
-          },
-        },
-        limit: -1,
-        depth: 2,
-      })
-
-      logger.info(`Found ${documents.length} documents to process`)
-
-      if (documents.length === 0) {
-        return {
-          output: {
-            message: 'No documents found that need processing',
-            processed: 0,
-            errors: 0,
-          },
-        }
-      }
+      const documents = await getDocumentsToProcess(payload)
 
       let processedCount = 0
-      let errorCount = 0
-      const errors: Array<{ documentId: string; error: string }> = []
 
       for (const doc of documents) {
-        try {
-          logger.info(`Processing document: ${doc.id} - ${doc.title}`)
+        logger.info(`Processing document: ${doc.id} - ${doc.title}`)
 
-          if (
-            !doc.aiExtraction ||
-            !Array.isArray(doc.aiExtraction) ||
-            doc.aiExtraction.length === 0
-          ) {
-            logger.warn(`Document ${doc.id} has no AI extraction data, skipping`)
-            continue
-          }
+        const aiExtractions = getAIExtractionToUpload(doc)
 
-          const aiExtractions = doc.aiExtraction
-            .filter((extraction) => !extraction.checkMediaId)
-            .map(({ category, summary, source, uniqueId }) => ({
-              category,
-              summary,
-              source,
-              uniqueId,
-            }))
+        if (aiExtractions.length === 0) {
+          logger.info(`Document ${doc.id} has no unprocessed AI extractions, skipping`)
+          continue
+        }
 
-          if (aiExtractions.length === 0) {
-            logger.info(`Document ${doc.id} has no unprocessed AI extractions, skipping`)
-            continue
-          }
+        for (const extraction of aiExtractions) {
+          logger.info(
+            `Uploading extraction ${extraction.uniqueId} from document ${doc.id} to CheckMedia`,
+          )
 
-          let extractionProcessedCount = 0
-          let extractionErrorCount = 0
+          const tags = [
+            doc.politicalEntity,
+            doc.country,
+            doc.region,
+            doc.type?.toUpperCase(),
+            extraction.category,
+          ].filter(Boolean) as string[]
 
-          for (const extraction of aiExtractions) {
-            try {
-              logger.info(
-                `Uploading extraction ${extraction.uniqueId} from document ${doc.id} to CheckMedia`,
-              )
+          const quote = `${extraction.summary} \n\n${extraction.source}`.trim()
 
-              const tags = [
-                doc.politicalEntity,
-                doc.country,
-                doc.region,
-                doc.type?.toUpperCase(),
-                extraction.category,
-              ].filter(Boolean) as string[]
+          const downloadedFile = doc.file as Media
 
-              const quote = `
-              ${extraction.summary} \n
-              ${extraction.source}
-              `.trim()
+          const response = await createFactCheckClaim({
+            apiKey: meedanAPIKey,
+            teamId,
+            quote: quote,
+            tags,
+            claimDescription: extraction.summary,
+            factCheck: {
+              title: extraction.summary,
+              url: doc.url || downloadedFile.url || doc.docURL || '',
+              language: doc.language || '',
+              publish_report: false,
+            },
+          })
 
-              const downloadedFile = doc.file as Media
+          const checkMediaId = response.data.createProjectMedia.project_media.id
+          const checkMediaURL = response.data.createProjectMedia.project_media.full_url
 
-              const response = await createFactCheckClaim({
-                apiKey: meedanAPIKey,
-                teamId,
-                quote: quote,
-                tags,
-                claimDescription: extraction.summary,
-                factCheck: {
-                  title: extraction.summary,
-                  url: doc.url || downloadedFile.url || doc.docURL || '',
-                  language: doc.language || '',
-                  publish_report: false,
-                },
-              })
+          logger.info(`Successfully uploaded extraction ${extraction.uniqueId} to CheckMedia`, {
+            checkMediaId,
+            checkMediaURL,
+          })
 
-              const checkMediaId = response.data.createProjectMedia.project_media.id
-              const checkMediaURL = response.data.createProjectMedia.project_media.full_url
-
-              logger.info(`Successfully uploaded extraction ${extraction.uniqueId} to CheckMedia`, {
+          const updatedAiExtraction = doc.aiExtraction?.map((ext) => {
+            if (ext.uniqueId === extraction.uniqueId) {
+              return {
+                ...ext,
                 checkMediaId,
                 checkMediaURL,
-              })
-
-              const updatedAiExtraction = doc.aiExtraction.map((ext) => {
-                if (ext.uniqueId === extraction.uniqueId) {
-                  return {
-                    ...ext,
-                    checkMediaId,
-                    checkMediaURL,
-                  }
-                }
-                return ext
-              })
-
-              await payload.update({
-                collection: 'documents',
-                id: doc.id,
-                data: {
-                  aiExtraction: updatedAiExtraction,
-                },
-              })
-
-              extractionProcessedCount++
-              logger.info(
-                `Updated extraction ${extraction.uniqueId} in document ${doc.id} with CheckMedia data`,
-              )
-            } catch (error) {
-              extractionErrorCount++
-              const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-              logger.error(
-                `Error uploading extraction ${extraction.uniqueId} from document ${doc.id}:`,
-                error,
-              )
-              errors.push({
-                documentId: `${doc.id}-extraction-${extraction.uniqueId}`,
-                error: errorMessage,
-              })
+              }
             }
-          }
+            return ext
+          })
 
-          const updatedDoc = await payload.findByID({
+          await payload.update({
             collection: 'documents',
             id: doc.id,
+            data: {
+              aiExtraction: updatedAiExtraction,
+            },
           })
 
-          const allExtractionsProcessed = updatedDoc.aiExtraction?.every(
-            (extraction: NonNullable<Document['aiExtraction']>[number]) => extraction.checkMediaId,
-          )
-
-          if (allExtractionsProcessed) {
-            await payload.update({
-              collection: 'documents',
-              id: doc.id,
-              data: {
-                fullyProcessed: true,
-              },
-            })
-            if (doc.airtableID) {
-              await markDocumentAsProcessed({
-                airtableAPIKey: airtableAPIKey,
-                airtableID: doc.airtableID,
-              })
-            }
-            logger.info(`Document ${doc.id} marked as fully processed - all extractions uploaded`)
-          }
-
-          processedCount++
           logger.info(
-            `Processed ${extractionProcessedCount} extractions from document ${doc.id} with ${extractionErrorCount} errors`,
+            `Updated extraction ${extraction.uniqueId} in document ${doc.id} with CheckMedia data`,
           )
-        } catch (error) {
-          errorCount++
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-          logger.error(`Error processing document ${doc.id}:`, error)
-          errors.push({
-            documentId: doc.id,
-            error: errorMessage,
-          })
         }
+
+        await checkAndMarkDocumentComplete(doc, payload)
+
+        processedCount++
       }
 
       const result = {
-        message: `Processed ${processedCount} documents successfully${errorCount > 0 ? ` with ${errorCount} errors` : ''}`,
+        message: `Processed ${processedCount} documents}`,
         processed: processedCount,
-        errors: errorCount,
-        errorDetails: errors.length > 0 ? errors : undefined,
       }
 
       logger.info('uploadToMeedan task completed', result)
 
       return {
-        output: 'result',
+        output: result,
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -229,10 +189,20 @@ export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
         output: {
           message: `Task failed: ${errorMessage}`,
           processed: 0,
-          errors: 1,
-          errorDetails: [{ documentId: 'N/A', error: errorMessage }],
         },
       }
     }
   },
+  outputSchema: [
+    {
+      name: 'message',
+      type: 'text',
+      required: true,
+    },
+    {
+      name: 'processed',
+      type: 'number',
+      required: true,
+    },
+  ],
 }
