@@ -19,7 +19,7 @@ export interface DocumentList extends Item {
 
 export const documentListTable: Table<DocumentList> = {
   name: 'DocumentList',
-  baseId: 'appV6P50gXopHlZDz',
+  baseId: 'appIKVoesJLX6RLPa',
   tableId: 'tblB6GTngv6JuqjYd',
   mappings: {
     name: 'fldfRWeGVokan0kdW', // Original field: "Name"
