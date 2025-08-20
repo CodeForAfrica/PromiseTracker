@@ -10,20 +10,10 @@ export const FetchAirtableDocuments: TaskConfig<'fetchAirtableDocuments'> = {
   retries: 2,
   slug: 'fetchAirtableDocuments',
   label: 'Fetch Airtable Documents',
-  outputSchema: [
-    {
-      name: 'docs',
-      type: 'array',
-      fields: [
-        {
-          name: 'id',
-          type: 'text',
-          required: true,
-        },
-      ],
-    },
-  ],
   handler: async ({ req: { payload } }) => {
+    const { logger } = payload
+    logger.info('fetchAirtableDocuments:: Starting fetching documents from Airtable')
+
     const {
       airtable: { airtableAPIKey, airtableBaseID },
     } = await payload.findGlobal({
@@ -31,53 +21,69 @@ export const FetchAirtableDocuments: TaskConfig<'fetchAirtableDocuments'> = {
     })
 
     if (!airtableAPIKey || !airtableBaseID) {
+      logger.error('fetchAirtableDocuments:: Airtable API Key and Base ID not configured')
       throw new Error('Airtable API key or Base ID not found in settings')
     }
 
-    const unProcessedDocuments = await getUnprocessedDocuments({ airtableAPIKey })
+    try {
+      const unProcessedDocuments = await getUnprocessedDocuments({ airtableAPIKey })
 
-    const { docs: existingDocs } = await payload.find({
-      collection: 'documents',
-      where: {
-        airtableID: {
-          in: unProcessedDocuments.map((doc) => doc.id),
-        },
-      },
-    })
+      if (unProcessedDocuments.length === 0) {
+        logger.info('fetchAirtableDocuments:: No unprocessed documents ')
+        return { output: {} }
+      }
 
-    const docsToCreate = unProcessedDocuments.filter(
-      (doc) => !existingDocs.find((existing) => existing.airtableID === doc.id),
-    )
+      logger.info(`fetchAirtableDocuments:: Unprocessed Documents: ${unProcessedDocuments.length}`)
 
-    if (docsToCreate.length === 0) {
-      return { output: { docs: [] } }
-    }
+      const validUnprocessedDocuments = unProcessedDocuments.filter(
+        (doc) => doc.name && (doc.uRL || doc.document.length > 0),
+      )
 
-    const createdDocs = await Promise.all(
-      docsToCreate.map(async (doc) => {
-        return payload.create({
-          collection: 'documents',
-          data: {
-            title: doc.name || doc.id,
-            politicalEntity: doc.politician,
-            country: doc.country,
-            region: doc.region,
-            language: LANGUAGE_MAP[doc?.language || ''] || '',
-            type: doc.type?.toLowerCase() as 'promise' | 'evidence',
-            yearFrom: doc.yearFrom,
-            yearTo: doc.yearTo,
-            airtableID: doc.id,
-            url: doc.uRL,
-            docURL: doc.document[0],
+      const { docs: existingDocs } = await payload.find({
+        collection: 'documents',
+        where: {
+          airtableID: {
+            in: validUnprocessedDocuments.map((doc) => doc.id),
           },
-        })
-      }),
-    )
+        },
+      })
 
-    return {
-      output: {
-        docs: createdDocs.map((doc) => ({ id: doc.id })),
-      },
+      const docsToCreate = validUnprocessedDocuments.filter(
+        (doc) => !existingDocs.find((existing) => existing.airtableID === doc.id),
+      )
+
+      if (docsToCreate.length === 0) {
+        logger.info('fetchAirtableDocuments:: No new documents to create')
+        return { output: {} }
+      }
+
+      const createdDocs = await Promise.all(
+        docsToCreate.map(async (doc) => {
+          return payload.create({
+            collection: 'documents',
+            data: {
+              title: doc.name || doc.id,
+              politicalEntity: doc.politician,
+              country: doc.country,
+              region: doc.region,
+              language: LANGUAGE_MAP[doc?.language || ''] || '',
+              type: doc.type?.toLowerCase() as 'promise' | 'evidence',
+              yearFrom: doc.yearFrom,
+              yearTo: doc.yearTo,
+              airtableID: doc.id,
+              url: doc.uRL,
+              docURL: doc.document[0],
+            },
+          })
+        }),
+      )
+      logger.info(`fetchAirtableDocuments:: Created ${createdDocs.length} new documents`)
+      return {
+        output: {},
+      }
+    } catch (error) {
+      logger.error('fetchAirtableDocuments:: Error Fetching Document from AIrtable', { error })
+      throw error
     }
   },
 }

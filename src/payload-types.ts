@@ -105,7 +105,7 @@ export interface Config {
       fetchAirtableDocuments: TaskFetchAirtableDocuments;
       downloadDocuments: TaskDownloadDocuments;
       extractDocuments: TaskExtractDocuments;
-      aiSummarizer: TaskAiSummarizer;
+      aiExtractor: TaskAiExtractor;
       uploadToMeedan: TaskUploadToMeedan;
       inline: {
         input: unknown;
@@ -284,7 +284,7 @@ export interface PayloadJob {
           | 'fetchAirtableDocuments'
           | 'downloadDocuments'
           | 'extractDocuments'
-          | 'aiSummarizer'
+          | 'aiExtractor'
           | 'uploadToMeedan';
         taskID: string;
         input?:
@@ -322,7 +322,7 @@ export interface PayloadJob {
                 | 'fetchAirtableDocuments'
                 | 'downloadDocuments'
                 | 'extractDocuments'
-                | 'aiSummarizer'
+                | 'aiExtractor'
                 | 'uploadToMeedan'
               )
             | null;
@@ -338,7 +338,7 @@ export interface PayloadJob {
         | 'fetchAirtableDocuments'
         | 'downloadDocuments'
         | 'extractDocuments'
-        | 'aiSummarizer'
+        | 'aiExtractor'
         | 'uploadToMeedan'
       )
     | null;
@@ -649,66 +649,30 @@ export interface PayloadJobsStatsSelect<T extends boolean = true> {
  */
 export interface TaskFetchAirtableDocuments {
   input?: unknown;
-  output: {
-    docs?:
-      | {
-          id: string;
-        }[]
-      | null;
-  };
+  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "TaskDownloadDocuments".
  */
 export interface TaskDownloadDocuments {
-  input: {
-    docs?:
-      | {
-          id: string;
-        }[]
-      | null;
-  };
-  output: {
-    docs?:
-      | {
-          id?: string | null;
-        }[]
-      | null;
-  };
+  input?: unknown;
+  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "TaskExtractDocuments".
  */
 export interface TaskExtractDocuments {
-  input: {
-    docs?:
-      | {
-          id: string;
-        }[]
-      | null;
-  };
-  output: {
-    docs?:
-      | {
-          id?: string | null;
-        }[]
-      | null;
-  };
+  input?: unknown;
+  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskAiSummarizer".
+ * via the `definition` "TaskAiExtractor".
  */
-export interface TaskAiSummarizer {
-  input: {
-    docs?:
-      | {
-          id?: string | null;
-        }[]
-      | null;
-  };
+export interface TaskAiExtractor {
+  input?: unknown;
   output?: unknown;
 }
 /**
@@ -717,10 +681,7 @@ export interface TaskAiSummarizer {
  */
 export interface TaskUploadToMeedan {
   input?: unknown;
-  output: {
-    message: string;
-    processed: number;
-  };
+  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

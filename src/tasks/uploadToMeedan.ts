@@ -65,18 +65,11 @@ const checkAndMarkDocumentComplete = async (doc: Document, payload: BasePayload)
 export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
   slug: 'uploadToMeedan',
   label: 'Upload To Meedan',
-  schedule: [
-    // TODO:(@kelvinkipruto): Provide correct schedule: This is for testing only
-    {
-      cron: '* * * * *',
-      queue: 'everyMinute',
-    },
-  ],
   handler: async ({ req }) => {
     const { payload } = req
     const { logger } = payload
 
-    logger.info('Starting uploadToMeedan task')
+    logger.info('uploadToMeedan:: Starting uploadToMeedan task')
 
     try {
       const {
@@ -91,21 +84,28 @@ export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
 
       const documents = await getDocumentsToProcess(payload)
 
-      let processedCount = 0
+      if (documents.length === 0) {
+        logger.info('uploadToMeedan:: No documents to upload to Meedan')
+        return { output: {} }
+      }
+
+      logger.info(`uploadToMeedan:; Uploading ${documents.length} to Meedan`)
 
       for (const doc of documents) {
-        logger.info(`Processing document: ${doc.id} - ${doc.title}`)
+        logger.info(`uploadToMeedan:: Processing document: ${doc.id} - ${doc.title}`)
 
         const aiExtractions = getAIExtractionToUpload(doc)
 
         if (aiExtractions.length === 0) {
-          logger.info(`Document ${doc.id} has no unprocessed AI extractions, skipping`)
+          logger.info(
+            `uploadToMeedan:: Document ${doc.id} has no unprocessed AI extractions, skipping`,
+          )
           continue
         }
 
         for (const extraction of aiExtractions) {
           logger.info(
-            `Uploading extraction ${extraction.uniqueId} from document ${doc.id} to CheckMedia`,
+            `uploadToMeedan:: Uploading extraction ${extraction.uniqueId} from document ${doc.id} to CheckMedia`,
           )
 
           const tags = [
@@ -137,10 +137,13 @@ export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
           const checkMediaId = response.data.createProjectMedia.project_media.id
           const checkMediaURL = response.data.createProjectMedia.project_media.full_url
 
-          logger.info(`Successfully uploaded extraction ${extraction.uniqueId} to CheckMedia`, {
-            checkMediaId,
-            checkMediaURL,
-          })
+          logger.info(
+            `uploadToMeedan:: Successfully uploaded extraction ${extraction.uniqueId} to CheckMedia`,
+            {
+              checkMediaId,
+              checkMediaURL,
+            },
+          )
 
           const updatedAiExtraction = doc.aiExtraction?.map((ext) => {
             if (ext.uniqueId === extraction.uniqueId) {
@@ -162,47 +165,19 @@ export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
           })
 
           logger.info(
-            `Updated extraction ${extraction.uniqueId} in document ${doc.id} with CheckMedia data`,
+            `uploadToMeedan:: Updated extraction ${extraction.uniqueId} in document ${doc.id} with CheckMedia data`,
           )
         }
 
         await checkAndMarkDocumentComplete(doc, payload)
-
-        processedCount++
       }
-
-      const result = {
-        message: `Processed ${processedCount} documents}`,
-        processed: processedCount,
-      }
-
-      logger.info('uploadToMeedan task completed', result)
 
       return {
-        output: result,
+        output: {},
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      logger.error('uploadToMeedan task failed:', error)
-
-      return {
-        output: {
-          message: `Task failed: ${errorMessage}`,
-          processed: 0,
-        },
-      }
+      logger.error('uploadToMeedan::  Uploading to Meedan failed:', { error })
+      throw error
     }
   },
-  outputSchema: [
-    {
-      name: 'message',
-      type: 'text',
-      required: true,
-    },
-    {
-      name: 'processed',
-      type: 'number',
-      required: true,
-    },
-  ],
 }

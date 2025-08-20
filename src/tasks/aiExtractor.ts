@@ -4,25 +4,14 @@ import { generateObject } from 'ai'
 import { z } from 'zod'
 import { randomUUID } from 'node:crypto'
 
-export const AISummarizer: TaskConfig<'aiSummarizer'> = {
-  slug: 'aiSummarizer',
-  label: 'AI Summarizer',
-  inputSchema: [
-    {
-      name: 'docs',
-      type: 'array',
-      fields: [
-        {
-          name: 'id',
-          type: 'text',
-        },
-      ],
-    },
-  ],
-  handler: async ({ input, req }) => {
-    const { docs } = input
+export const AIExtractor: TaskConfig<'aiExtractor'> = {
+  slug: 'aiExtractor',
+  label: 'AI Extractor',
+  handler: async ({ req }) => {
     const { payload } = req
     const { logger } = payload
+    logger.info('aiExtractor:: Starting AI Extraction')
+
     try {
       const {
         ai: { model: defaultModel, apiKey },
@@ -63,14 +52,19 @@ export const AISummarizer: TaskConfig<'aiSummarizer'> = {
     
     `
 
-      const { docs: documents } = await payload.find({
+      const { docs: allDocs } = await payload.find({
         collection: 'documents',
-        where: {
-          id: {
-            in: docs?.map((doc) => doc.id),
-          },
-        },
+        limit: -1,
       })
+
+      const documents = allDocs.filter((doc) => doc.aiExtraction?.length === 0)
+
+      if (documents.length === 0) {
+        logger.info('aiExtractor:: No documents to Extract Promises')
+        return { output: { docs: [] } }
+      }
+
+      logger.info(`aiExtractor:: Extracting ${documents.length} documents`)
 
       const processedDocs = []
 
@@ -88,8 +82,8 @@ export const AISummarizer: TaskConfig<'aiSummarizer'> = {
           })
           .join('\n')
 
-        if (!plainText || plainText === '') {
-          logger.error('No text to process')
+        if (!plainText || plainText?.length === 0) {
+          logger.error('aiExtractor:: No text to process')
           continue
         }
 
@@ -121,7 +115,7 @@ export const AISummarizer: TaskConfig<'aiSummarizer'> = {
 
           logger.info(object)
 
-          const update = await payload.update({
+          await payload.update({
             collection: 'documents',
             id: document.id,
             data: {
@@ -141,22 +135,19 @@ export const AISummarizer: TaskConfig<'aiSummarizer'> = {
             promises: object.promises,
           })
         } catch (error) {
-          logger.error('Error generating AI Response::', { error })
+          console.log('Error::', { error })
+          logger.error('aiExtractor:: Error generating AI Response::', { error })
         }
       }
 
+      logger.info(`aiExtractor:: Extracted ${processedDocs.length} documents`)
+
       return {
-        output: {
-          docs: processedDocs,
-        },
+        output: {},
       }
     } catch (error) {
       logger.error('Error:', { error })
-      return {
-        output: {
-          docs: [],
-        },
-      }
+      throw error
     }
   },
 }

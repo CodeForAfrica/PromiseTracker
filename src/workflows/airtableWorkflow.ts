@@ -10,41 +10,21 @@ export const airtableWorkflow: WorkflowConfig = {
       queue: 'everyMinute',
     },
   ],
-  handler: async ({ tasks, req }) => {
-    const { payload } = req
-    const logger = payload.logger
-    const fetchResult = await tasks.fetchAirtableDocuments(randomUUID(), {})
-
-    const docsToDownload = fetchResult?.docs?.map((doc) => ({ id: doc.id })) || []
-    if (docsToDownload.length === 0) {
-      logger.info('No new documents to download')
-      return
-    }
-
-    const downloadResult = await tasks.downloadDocuments(randomUUID(), {
-      input: { docs: docsToDownload },
+  handler: async ({ tasks }) => {
+    await tasks.fetchAirtableDocuments(randomUUID(), {
+      input: [],
     })
-
-    if (!downloadResult?.docs?.length) {
-      logger.info('No documents to extract')
-      return
-    }
-
-    const docsToExtract = downloadResult.docs.filter((doc) => doc.id) as { id: string }[]
-
-    const extractionResult = await tasks.extractDocuments(randomUUID(), {
-      input: { docs: docsToExtract },
+    await tasks.downloadDocuments(randomUUID(), {
+      input: [],
     })
-
-    if (!extractionResult?.docs?.length) {
-      logger.info('No documents to extract')
-      return
-    }
-
-    const aiResult = await tasks.aiSummarizer(randomUUID(), {
-      input: { docs: extractionResult.docs },
+    await tasks.extractDocuments(randomUUID(), {
+      input: [],
     })
-
-    logger.info(`Successfully processed ${docsToExtract.length} documents`)
+    await tasks.aiExtractor(randomUUID(), {
+      input: [],
+    })
+    await tasks.uploadToMeedan(randomUUID(), {
+      input: [],
+    })
   },
 }
