@@ -95,7 +95,7 @@ export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
             claimDescription: extraction.summary,
             factCheck: {
               title: extraction.summary,
-              url: downloadedFile.url || document.docURL || '',
+              url: document.url || document.docURL || downloadedFile.url || '',
               language: document.language || '',
               publish_report: false,
             },
