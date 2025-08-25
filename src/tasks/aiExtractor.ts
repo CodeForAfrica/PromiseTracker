@@ -57,7 +57,7 @@ export const AIExtractor: TaskConfig<'aiExtractor'> = {
         limit: -1,
       })
 
-      const documents = allDocs.filter((doc) => doc.aiExtraction?.length === 0)
+      const documents = allDocs.filter((doc) => !doc.fullyProcessed)
 
       if (documents.length === 0) {
         logger.info('aiExtractor:: No documents to Extract Promises')
@@ -115,19 +115,31 @@ export const AIExtractor: TaskConfig<'aiExtractor'> = {
 
           logger.info(object)
 
-          await payload.update({
-            collection: 'documents',
-            id: document.id,
-            data: {
-              aiTitle: object.title,
-              aiExtraction: object.promises.map((promise) => ({
-                category: promise.category,
-                summary: promise.summary,
-                source: promise.source.map((quote, index) => `${index + 1}: ${quote}\n`).join('\n'),
-                uniqueId: randomUUID(),
-              })),
-            },
-          })
+          if (object.promises.length > 0) {
+            await payload.create({
+              collection: 'aiExtraction',
+              data: {
+                title: object.title,
+                document: document,
+                extractions: object.promises.map((promise) => ({
+                  category: promise.category,
+                  summary: promise.summary,
+                  source: promise.source
+                    .map((quote, index) => `${index + 1}: ${quote}\n`)
+                    .join('\n'),
+                  uniqueId: randomUUID(),
+                })),
+              },
+            })
+
+            await payload.update({
+              collection: 'documents',
+              id: document.id,
+              data: {
+                fullyProcessed: true,
+              },
+            })
+          }
 
           processedDocs.push({
             id: document.id,
