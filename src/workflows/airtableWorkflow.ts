@@ -1,13 +1,14 @@
 import { WorkflowConfig } from 'payload'
 import { randomUUID } from 'node:crypto'
+import { isProd } from '@/utils/utils'
 
 export const airtableWorkflow: WorkflowConfig = {
   slug: 'airtableWorkflow',
   label: 'Airtable Workflow',
   schedule: [
     {
-      cron: '* * * * *',
-      queue: 'everyMinute',
+      cron: isProd ? '0 * * * *' : '* * * * *',
+      queue: isProd ? 'hourly' : 'everyMinute',
     },
   ],
   handler: async ({ tasks }) => {
