@@ -20,6 +20,13 @@ export const Documents: CollectionConfig = {
       type: 'text',
     },
     {
+      name: 'docURL', // only used to download file from airtable
+      type: 'text',
+      admin: {
+        hidden: true,
+      },
+    },
+    {
       name: 'file',
       type: 'upload',
       relationTo: 'media',
@@ -30,6 +37,10 @@ export const Documents: CollectionConfig = {
         position: 'sidebar',
       },
       fields: [
+        {
+          name: 'politicalEntity',
+          type: 'text',
+        },
         {
           name: 'country',
           type: 'text',
@@ -93,6 +104,7 @@ export const Documents: CollectionConfig = {
     },
     {
       name: 'airtableID',
+      label: 'Airtable ID',
       type: 'text',
       unique: true,
       admin: {
@@ -101,7 +113,18 @@ export const Documents: CollectionConfig = {
       },
     },
     {
+      name: 'fullyProcessed',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        position: 'sidebar',
+      },
+    },
+    {
       type: 'tabs',
+      admin: {
+        readOnly: true,
+      },
       tabs: [
         {
           label: 'Extracted Text',
@@ -109,6 +132,9 @@ export const Documents: CollectionConfig = {
             {
               name: 'extractedText',
               type: 'richText',
+              admin: {
+                readOnly: true,
+              },
             },
           ],
         },
@@ -130,13 +156,37 @@ export const Documents: CollectionConfig = {
                 },
                 {
                   name: 'summary',
-                  type: 'richText',
+                  type: 'text',
                   required: true,
                 },
                 {
                   name: 'source',
-                  type: 'richText',
+                  type: 'textarea',
                   required: true,
+                },
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'uniqueId',
+                      type: 'text',
+                      admin: {
+                        hidden: true,
+                      },
+                    },
+                    {
+                      name: 'checkMediaId',
+                      type: 'text',
+                      admin: {
+                        hidden: true,
+                      },
+                    },
+                    {
+                      name: 'checkMediaURL',
+                      label: 'CheckMedia URL',
+                      type: 'text',
+                    },
+                  ],
                 },
               ],
             },
