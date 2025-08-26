@@ -70,6 +70,7 @@ export interface Config {
     users: User;
     media: Media;
     documents: Document;
+    aiExtraction: AiExtraction;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -80,6 +81,7 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     documents: DocumentsSelect<false> | DocumentsSelect<true>;
+    aiExtraction: AiExtractionSelect<false> | AiExtractionSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -212,8 +214,18 @@ export interface Document {
     };
     [k: string]: unknown;
   } | null;
-  aiTitle?: string | null;
-  aiExtraction?:
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "aiExtraction".
+ */
+export interface AiExtraction {
+  id: string;
+  title?: string | null;
+  document: string | Document;
+  extractions?:
     | {
         category: string;
         summary: string;
@@ -377,6 +389,10 @@ export interface PayloadLockedDocument {
         value: string | Document;
       } | null)
     | ({
+        relationTo: 'aiExtraction';
+        value: string | AiExtraction;
+      } | null)
+    | ({
         relationTo: 'payload-jobs';
         value: string | PayloadJob;
       } | null);
@@ -481,8 +497,17 @@ export interface DocumentsSelect<T extends boolean = true> {
   airtableID?: T;
   fullyProcessed?: T;
   extractedText?: T;
-  aiTitle?: T;
-  aiExtraction?:
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "aiExtraction_select".
+ */
+export interface AiExtractionSelect<T extends boolean = true> {
+  title?: T;
+  document?: T;
+  extractions?:
     | T
     | {
         category?: T;

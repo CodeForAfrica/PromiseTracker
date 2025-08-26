@@ -1,25 +1,11 @@
 import { BasePayload, TaskConfig } from 'payload'
 import { createFactCheckClaim } from '@/lib/meedan'
 import { markDocumentAsProcessed } from '@/lib/airtable'
-import { Document, Media } from '@/payload-types'
+import { AiExtraction, Document, Media } from '@/payload-types'
 
-const getDocumentsToProcess = async (payload: BasePayload): Promise<Document[]> => {
-  const { docs: documents } = await payload.find({
-    collection: 'documents',
-    where: {
-      fullyProcessed: {
-        equals: false,
-      },
-    },
-    limit: -1,
-    depth: 2,
-  })
-  return documents
-}
-
-const getAIExtractionToUpload = (doc: Document) => {
+const getAIExtractionToUpload = (doc: AiExtraction) => {
   return (
-    doc.aiExtraction
+    doc.extractions
       ?.filter((extraction) => !extraction.checkMediaId)
       .map(({ category, summary, source, uniqueId }) => ({
         category,
@@ -31,34 +17,17 @@ const getAIExtractionToUpload = (doc: Document) => {
 }
 
 const checkAndMarkDocumentComplete = async (doc: Document, payload: BasePayload): Promise<void> => {
-  const updatedDoc = await payload.findByID({
-    collection: 'documents',
-    id: doc.id,
-  })
-
-  const allExtractionsProcessed = updatedDoc.aiExtraction?.every(
-    (extraction) => extraction.checkMediaId,
-  )
-
-  if (allExtractionsProcessed) {
-    await payload.update({
-      collection: 'documents',
-      id: doc.id,
-      data: { fullyProcessed: true },
+  if (doc.airtableID) {
+    const {
+      airtable: { airtableAPIKey },
+    } = await payload.findGlobal({
+      slug: 'settings',
     })
 
-    if (doc.airtableID) {
-      const {
-        airtable: { airtableAPIKey },
-      } = await payload.findGlobal({
-        slug: 'settings',
-      })
-
-      await markDocumentAsProcessed({
-        airtableAPIKey,
-        airtableID: doc.airtableID,
-      })
-    }
+    await markDocumentAsProcessed({
+      airtableAPIKey,
+      airtableID: doc.airtableID,
+    })
   }
 }
 
@@ -82,17 +51,14 @@ export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
         throw new Error('Meedan API key or team ID not configured in settings')
       }
 
-      const documents = await getDocumentsToProcess(payload)
+      const { docs: allPromises } = await payload.find({
+        collection: 'aiExtraction',
+        limit: -1,
+        depth: 3,
+      })
 
-      if (documents.length === 0) {
-        logger.info('uploadToMeedan:: No documents to upload to Meedan')
-        return { output: {} }
-      }
-
-      logger.info(`uploadToMeedan:; Uploading ${documents.length} to Meedan`)
-
-      for (const doc of documents) {
-        logger.info(`uploadToMeedan:: Processing document: ${doc.id} - ${doc.title}`)
+      for (const doc of allPromises) {
+        logger.info(`uploadToMeedan:: Processing promise: ${doc.id} - ${doc.title}`)
 
         const aiExtractions = getAIExtractionToUpload(doc)
 
@@ -103,22 +69,23 @@ export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
           continue
         }
 
+        const document = doc.document as Document
+
         for (const extraction of aiExtractions) {
           logger.info(
             `uploadToMeedan:: Uploading extraction ${extraction.uniqueId} from document ${doc.id} to CheckMedia`,
           )
-
           const tags = [
-            doc.politicalEntity,
-            doc.country,
-            doc.region,
-            doc.type?.toUpperCase(),
+            document.politicalEntity,
+            document.country,
+            document.region,
+            document.type?.toUpperCase(),
             extraction.category,
           ].filter(Boolean) as string[]
 
           const quote = `${extraction.summary} \n\n${extraction.source}`.trim()
 
-          const downloadedFile = doc.file as Media
+          const downloadedFile = document.file as Media
 
           const response = await createFactCheckClaim({
             apiKey: meedanAPIKey,
@@ -128,8 +95,8 @@ export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
             claimDescription: extraction.summary,
             factCheck: {
               title: extraction.summary,
-              url: doc.url || downloadedFile.url || doc.docURL || '',
-              language: doc.language || '',
+              url: document.url || document.docURL || downloadedFile.url || '',
+              language: document.language || '',
               publish_report: false,
             },
           })
@@ -145,7 +112,7 @@ export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
             },
           )
 
-          const updatedAiExtraction = doc.aiExtraction?.map((ext) => {
+          const updatedAiExtraction = doc.extractions?.map((ext) => {
             if (ext.uniqueId === extraction.uniqueId) {
               return {
                 ...ext,
@@ -157,10 +124,10 @@ export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
           })
 
           await payload.update({
-            collection: 'documents',
+            collection: 'aiExtraction',
             id: doc.id,
             data: {
-              aiExtraction: updatedAiExtraction,
+              extractions: updatedAiExtraction,
             },
           })
 
@@ -169,7 +136,7 @@ export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
           )
         }
 
-        await checkAndMarkDocumentComplete(doc, payload)
+        await checkAndMarkDocumentComplete(document, payload)
       }
 
       return {

@@ -11,10 +11,10 @@ import { collections } from '@/collections'
 import { globals } from '@/globals'
 import { tasks } from '@/tasks'
 import { workflows } from '@/workflows'
+import { isProd } from '@/utils/utils'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
-const isProd = process.env.NODE_ENV === 'production'
 
 export default buildConfig({
   admin: {
@@ -49,10 +49,9 @@ export default buildConfig({
     tasks,
     workflows,
     autoRun: [
-      // TODO:(@kelvinkipruto): Use correct schedule.This is for testing only
       {
-        cron: '* * * * *',
-        queue: 'everyMinute',
+        cron: isProd ? '0 * * * *' : '* * * * *',
+        queue: isProd ? 'hourly' : 'everyMinute',
       },
     ],
   },

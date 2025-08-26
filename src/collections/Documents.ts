@@ -138,60 +138,6 @@ export const Documents: CollectionConfig = {
             },
           ],
         },
-        {
-          label: 'AI Extraction',
-          fields: [
-            {
-              name: 'aiTitle',
-              type: 'text',
-            },
-            {
-              name: 'aiExtraction',
-              type: 'array',
-              fields: [
-                {
-                  name: 'category',
-                  type: 'text',
-                  required: true,
-                },
-                {
-                  name: 'summary',
-                  type: 'text',
-                  required: true,
-                },
-                {
-                  name: 'source',
-                  type: 'textarea',
-                  required: true,
-                },
-                {
-                  type: 'row',
-                  fields: [
-                    {
-                      name: 'uniqueId',
-                      type: 'text',
-                      admin: {
-                        hidden: true,
-                      },
-                    },
-                    {
-                      name: 'checkMediaId',
-                      type: 'text',
-                      admin: {
-                        hidden: true,
-                      },
-                    },
-                    {
-                      name: 'checkMediaURL',
-                      label: 'CheckMedia URL',
-                      type: 'text',
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
-        },
       ],
     },
   ],
