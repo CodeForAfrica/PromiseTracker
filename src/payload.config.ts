@@ -42,7 +42,6 @@ export default buildConfig({
     ],
   },
   i18n: {
-    // translations: { en, fr },
     supportedLanguages: { en, fr },
   },
   jobs: {
