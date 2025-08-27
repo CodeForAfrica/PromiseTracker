@@ -12,6 +12,8 @@ import { globals } from '@/globals'
 import { tasks } from '@/tasks'
 import { workflows } from '@/workflows'
 import { isProd } from '@/utils/utils'
+import { plugins } from '@/plugins'
+import * as Sentry from '@sentry/nextjs'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -24,17 +26,18 @@ export default buildConfig({
     },
   },
   collections,
-  globals,
-  editor: lexicalEditor(),
-  secret: process.env.PAYLOAD_SECRET || '',
-  typescript: {
-    outputFile: path.resolve(dirname, 'payload-types.ts'),
-  },
   db: mongooseAdapter({
     url: process.env.DATABASE_URI || '',
   }),
-  sharp,
-  plugins: [],
+  editor: lexicalEditor(),
+  globals,
+  hooks: {
+    afterError: [
+      async ({ error }) => {
+        Sentry.captureException(error)
+      },
+    ],
+  },
   jobs: {
     // For debugging in Admin
     jobsCollectionOverrides: ({ defaultJobsCollection }) => {
@@ -54,6 +57,12 @@ export default buildConfig({
         queue: isProd ? 'hourly' : 'everyMinute',
       },
     ],
+  },
+  plugins,
+  sharp,
+  secret: process.env.PAYLOAD_SECRET || '',
+  typescript: {
+    outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
   onInit: async (payload) => {
     await payload.jobs.queue({

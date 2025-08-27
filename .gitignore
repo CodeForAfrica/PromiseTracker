@@ -49,3 +49,5 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 temp
+# Sentry Config File
+.env.sentry-build-plugin
