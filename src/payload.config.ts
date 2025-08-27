@@ -14,6 +14,7 @@ import { workflows } from '@/workflows'
 import { isProd } from '@/utils/utils'
 import { plugins } from '@/plugins'
 import * as Sentry from '@sentry/nextjs'
+import { defaultLocale, locales } from '@/utils/locales'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -57,6 +58,10 @@ export default buildConfig({
         queue: isProd ? 'hourly' : 'everyMinute',
       },
     ],
+  },
+  localization: {
+    locales,
+    defaultLocale,
   },
   plugins,
   sharp,

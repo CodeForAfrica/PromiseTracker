@@ -2,6 +2,16 @@ import { CollectionConfig } from 'payload'
 
 export const Documents: CollectionConfig = {
   slug: 'documents',
+  labels: {
+    singular: {
+      en: 'Document',
+      fr: 'Document',
+    },
+    plural: {
+      en: 'Documents',
+      fr: 'Documents',
+    },
+  },
   access: {
     read: () => true,
   },
@@ -12,12 +22,20 @@ export const Documents: CollectionConfig = {
   fields: [
     {
       name: 'title',
+      label: {
+        en: 'Title',
+        fr: 'Titre',
+      },
       type: 'text',
       required: true,
     },
     {
       name: 'url',
       type: 'text',
+      label: {
+        en: 'URL',
+        fr: 'URL',
+      },
     },
     {
       name: 'docURL', // only used to download file from airtable
@@ -30,6 +48,10 @@ export const Documents: CollectionConfig = {
       name: 'file',
       type: 'upload',
       relationTo: 'media',
+      label: {
+        en: 'File',
+        fr: 'Déposer',
+      },
     },
     {
       type: 'row',
@@ -40,30 +62,48 @@ export const Documents: CollectionConfig = {
         {
           name: 'politicalEntity',
           type: 'text',
+          label: {
+            en: 'Political Entity',
+            fr: 'Entité Politique',
+          },
         },
         {
           name: 'country',
           type: 'text',
+          label: {
+            en: 'Country',
+            fr: 'Pays',
+          },
         },
         {
           name: 'region',
           type: 'text',
+          label: {
+            en: 'Region',
+            fr: 'Région',
+          },
         },
         {
           name: 'language',
           type: 'select',
+          label: {
+            en: 'Language',
+            fr: 'Langue',
+          },
           options: [
             {
               value: 'en',
-              label: 'English',
+              label: {
+                en: 'English',
+                fr: 'Anglais',
+              },
             },
             {
               value: 'fr',
-              label: 'French',
-            },
-            {
-              value: 'es',
-              label: 'Spanish',
+              label: {
+                en: 'French',
+                fr: 'Français',
+              },
             },
           ],
         },
@@ -72,17 +112,27 @@ export const Documents: CollectionConfig = {
     {
       name: 'type',
       type: 'select',
+      label: {
+        en: 'Type',
+        fr: 'Taper',
+      },
       admin: {
         position: 'sidebar',
       },
       options: [
         {
           value: 'promise',
-          label: 'Promise',
+          label: {
+            en: 'Promise',
+            fr: 'Promesse',
+          },
         },
         {
           value: 'evidence',
-          label: 'Evidence',
+          label: {
+            en: 'Evidence',
+            fr: 'Preuve',
+          },
         },
       ],
     },
@@ -95,16 +145,27 @@ export const Documents: CollectionConfig = {
         {
           name: 'yearFrom',
           type: 'number',
+          label: {
+            en: 'Year From',
+            fr: 'Année à partir de',
+          },
         },
         {
           name: 'yearTo',
           type: 'number',
+          label: {
+            en: 'Year To',
+            fr: 'Année à',
+          },
         },
       ],
     },
     {
       name: 'airtableID',
-      label: 'Airtable ID',
+      label: {
+        en: 'Airtable ID',
+        fr: 'ID Airtable ',
+      },
       type: 'text',
       unique: true,
       admin: {
@@ -115,6 +176,10 @@ export const Documents: CollectionConfig = {
     {
       name: 'fullyProcessed',
       type: 'checkbox',
+      label: {
+        en: 'Processed',
+        fr: 'Traité',
+      },
       defaultValue: false,
       admin: {
         position: 'sidebar',
@@ -127,10 +192,17 @@ export const Documents: CollectionConfig = {
       },
       tabs: [
         {
-          label: 'Extracted Text',
+          label: {
+            en: 'Extracted Text',
+            fr: 'Texte extrait',
+          },
           fields: [
             {
               name: 'extractedText',
+              label: {
+                en: 'Text',
+                fr: 'Texte',
+              },
               type: 'richText',
               admin: {
                 readOnly: true,

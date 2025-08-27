@@ -98,7 +98,7 @@ export interface Config {
     settings: SettingsSelect<false> | SettingsSelect<true>;
     'payload-jobs-stats': PayloadJobsStatsSelect<false> | PayloadJobsStatsSelect<true>;
   };
-  locale: null;
+  locale: 'en' | 'fr';
   user: User & {
     collection: 'users';
   };
@@ -193,7 +193,7 @@ export interface Document {
   politicalEntity?: string | null;
   country?: string | null;
   region?: string | null;
-  language?: ('en' | 'fr' | 'es') | null;
+  language?: ('en' | 'fr') | null;
   type?: ('promise' | 'evidence') | null;
   yearFrom?: number | null;
   yearTo?: number | null;
