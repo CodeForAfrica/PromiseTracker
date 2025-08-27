@@ -28,6 +28,7 @@
     "@payloadcms/payload-cloud": "3.53.0",
     "@payloadcms/plugin-sentry": "^3.53.0",
     "@payloadcms/richtext-lexical": "3.53.0",
+    "@payloadcms/translations": "^3.53.0",
     "@payloadcms/ui": "3.53.0",
     "@sentry/nextjs": "^10.6.0",
     "ai": "^5.0.26",
@@ -70,8 +71,9 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "sharp",
+      "@sentry/cli",
       "esbuild",
+      "sharp",
       "unrs-resolver"
     ]
   },

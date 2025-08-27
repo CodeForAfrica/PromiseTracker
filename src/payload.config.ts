@@ -15,6 +15,8 @@ import { isProd } from '@/utils/utils'
 import { plugins } from '@/plugins'
 import * as Sentry from '@sentry/nextjs'
 import { defaultLocale, locales } from '@/utils/locales'
+import { en } from '@payloadcms/translations/languages/en'
+import { fr } from '@payloadcms/translations/languages/fr'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -38,6 +40,10 @@ export default buildConfig({
         Sentry.captureException(error)
       },
     ],
+  },
+  i18n: {
+    // translations: { en, fr },
+    supportedLanguages: { en, fr },
   },
   jobs: {
     // For debugging in Admin
