@@ -14,6 +14,9 @@ import { workflows } from '@/workflows'
 import { isProd } from '@/utils/utils'
 import { plugins } from '@/plugins'
 import * as Sentry from '@sentry/nextjs'
+import { defaultLocale, locales } from '@/utils/locales'
+import { en } from '@payloadcms/translations/languages/en'
+import { fr } from '@payloadcms/translations/languages/fr'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -38,6 +41,9 @@ export default buildConfig({
       },
     ],
   },
+  i18n: {
+    supportedLanguages: { en, fr },
+  },
   jobs: {
     // For debugging in Admin
     jobsCollectionOverrides: ({ defaultJobsCollection }) => {
@@ -57,6 +63,10 @@ export default buildConfig({
         queue: isProd ? 'hourly' : 'everyMinute',
       },
     ],
+  },
+  localization: {
+    locales,
+    defaultLocale,
   },
   plugins,
   sharp,

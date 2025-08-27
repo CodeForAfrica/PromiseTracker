@@ -21,29 +21,30 @@
     "generate:airtable": "airtable-ts-codegen --apiKey $AIRTABLE_API_KEY --baseId $AIRTABLE_BASE_ID --output ./src/airtable.ts"
   },
   "dependencies": {
-    "@ai-sdk/google": "^2.0.8",
+    "@ai-sdk/google": "^2.0.11",
     "@ax-llm/ax": "^14.0.16",
     "@payloadcms/db-mongodb": "3.53.0",
     "@payloadcms/next": "3.53.0",
     "@payloadcms/payload-cloud": "3.53.0",
     "@payloadcms/plugin-sentry": "^3.53.0",
     "@payloadcms/richtext-lexical": "3.53.0",
+    "@payloadcms/translations": "^3.53.0",
     "@payloadcms/ui": "3.53.0",
-    "@sentry/nextjs": "^10.5.0",
-    "ai": "^5.0.22",
+    "@sentry/nextjs": "^10.6.0",
+    "ai": "^5.0.26",
     "airtable": "^0.12.2",
     "airtable-ts": "^1.6.0",
     "airtable-ts-formula": "^1.0.0",
     "cross-env": "^10.0.0",
     "dotenv": "17.2.1",
     "graphql": "^16.11.0",
-    "lucide-react": "^0.541.0",
+    "lucide-react": "^0.542.0",
     "next": "15.4.6",
     "payload": "3.53.0",
     "react": "19.1.1",
     "sharp": "0.34.3",
     "tiktoken": "^1.0.22",
-    "zod": "^4.1.1"
+    "zod": "^4.1.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
@@ -51,7 +52,7 @@
     "@testing-library/react": "16.3.0",
     "@types/node": "^24.3.0",
     "@types/react": "19.1.11",
-    "@types/react-dom": "19.1.7",
+    "@types/react-dom": "19.1.8",
     "@vitejs/plugin-react": "5.0.1",
     "airtable-ts-codegen": "^2.1.0",
     "eslint": "^9.34.0",
@@ -70,8 +71,9 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "sharp",
+      "@sentry/cli",
       "esbuild",
+      "sharp",
       "unrs-resolver"
     ]
   },

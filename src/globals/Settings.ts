@@ -2,13 +2,23 @@ import { GlobalConfig } from 'payload'
 
 export const Settings: GlobalConfig = {
   slug: 'settings',
+  label: {
+    en: 'Settings',
+    fr: 'Paramètres',
+  },
   fields: [
     {
       type: 'tabs',
-      label: 'Airtable',
+      label: {
+        en: 'Airtable',
+        fr: 'Airtable',
+      },
       tabs: [
         {
-          label: 'Airtable',
+          label: {
+            en: 'Airtable',
+            fr: 'Airtable',
+          },
           fields: [
             {
               name: 'airtable',
@@ -23,12 +33,19 @@ export const Settings: GlobalConfig = {
                   fields: [
                     {
                       name: 'airtableAPIKey',
-                      label: 'Airtable API Key',
+                      label: {
+                        en: 'Airtable API Key',
+                        fr: 'Clé API Airtable',
+                      },
                       type: 'text',
                       required: true,
                     },
                     {
                       name: 'airtableBaseID',
+                      label: {
+                        en: 'Airtable Base ID',
+                        fr: 'ID de Base Airtable',
+                      },
                       type: 'text',
                       required: true,
                     },
@@ -39,7 +56,10 @@ export const Settings: GlobalConfig = {
           ],
         },
         {
-          label: 'Generative AI',
+          label: {
+            en: 'Generative AI',
+            fr: 'IA Générative',
+          },
           fields: [
             {
               name: 'ai',
@@ -56,6 +76,10 @@ export const Settings: GlobalConfig = {
                       //TODO:(@kelvinkipruto): Explore adding more models.
                       name: 'model',
                       type: 'select',
+                      label: {
+                        en: 'Model',
+                        fr: 'Modèle',
+                      },
                       options: [
                         {
                           value: 'gemini-2.5-pro',
@@ -66,6 +90,10 @@ export const Settings: GlobalConfig = {
                     },
                     {
                       name: 'apiKey',
+                      label: {
+                        en: 'API Key',
+                        fr: 'Clé API',
+                      },
                       type: 'text',
                       required: true,
                     },
@@ -76,12 +104,18 @@ export const Settings: GlobalConfig = {
           ],
         },
         {
-          label: 'Meedan',
+          label: {
+            en: 'Meedan',
+            fr: 'Meedan',
+          },
           fields: [
             {
               name: 'meedan',
               type: 'group',
-
+              label: {
+                en: 'Meedan Settings',
+                fr: 'Paramètres Meedan',
+              },
               fields: [
                 {
                   type: 'row',
@@ -90,12 +124,19 @@ export const Settings: GlobalConfig = {
                       name: 'meedanAPIKey',
                       type: 'text',
                       required: true,
-                      label: 'Meedan API Key',
+                      label: {
+                        en: 'Meedan API Key',
+                        fr: 'Clé API Meedan',
+                      },
                     },
                     {
                       name: 'teamId',
                       type: 'text',
                       required: true,
+                      label: {
+                        en: 'Team ID',
+                        fr: "ID d'Équipe",
+                      },
                     },
                   ],
                 },
