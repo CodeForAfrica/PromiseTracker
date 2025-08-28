@@ -8,6 +8,9 @@ export const plugins: Plugin[] = [
   multiTenantPlugin<Config>({
     collections: {
       pages: {},
+      layout: {
+        isGlobal: true,
+      },
     },
     cleanupAfterTenantDelete: false,
     tenantField: {

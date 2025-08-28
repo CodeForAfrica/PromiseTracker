@@ -72,6 +72,7 @@ export interface Config {
     media: Media;
     pages: Page;
     users: User;
+    layout: Layout;
     tenants: Tenant;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -85,6 +86,7 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
+    layout: LayoutSelect<false> | LayoutSelect<true>;
     tenants: TenantsSelect<false> | TenantsSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -337,6 +339,17 @@ export interface User {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "layout".
+ */
+export interface Layout {
+  id: string;
+  tenant?: (string | null) | Tenant;
+  title?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-jobs".
  */
 export interface PayloadJob {
@@ -493,6 +506,10 @@ export interface PayloadLockedDocument {
         value: string | User;
       } | null)
     | ({
+        relationTo: 'layout';
+        value: string | Layout;
+      } | null)
+    | ({
         relationTo: 'tenants';
         value: string | Tenant;
       } | null)
@@ -640,6 +657,16 @@ export interface UsersSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "layout_select".
+ */
+export interface LayoutSelect<T extends boolean = true> {
+  tenant?: T;
+  title?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
