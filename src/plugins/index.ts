@@ -6,15 +6,14 @@ import { Config } from '@/payload-types'
 import { isProd } from '@/utils/utils'
 export const plugins: Plugin[] = [
   multiTenantPlugin<Config>({
-    collections: {},
+    collections: {
+      pages: {},
+    },
     cleanupAfterTenantDelete: false,
     tenantField: {
       access: {
         read: () => true,
       },
-    },
-    tenantsArrayField: {
-      includeDefaultField: false,
     },
     debug: !isProd,
     userHasAccessToAllTenants: () => true,

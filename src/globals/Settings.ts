@@ -6,6 +6,12 @@ export const Settings: GlobalConfig = {
     en: 'Settings',
     fr: 'Paramètres',
   },
+  admin: {
+    group: {
+      en: 'Settings',
+      fr: 'Paramètres',
+    },
+  },
   fields: [
     {
       type: 'tabs',

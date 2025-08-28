@@ -11,6 +11,10 @@ export const Tenants: CollectionConfig = {
   admin: {
     useAsTitle: 'name',
     defaultColumns: ['name', 'locale'],
+    group: {
+      en: 'Settings',
+      fr: 'Paramètres',
+    },
   },
   labels: {
     singular: {

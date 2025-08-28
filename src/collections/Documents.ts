@@ -18,6 +18,10 @@ export const Documents: CollectionConfig = {
   admin: {
     defaultColumns: ['title', 'country', 'region', 'type', 'language'],
     useAsTitle: 'title',
+    group: {
+      en: 'Documents',
+      fr: 'Documents',
+    },
   },
   fields: [
     {
