@@ -5,7 +5,7 @@ import { Documents } from './Documents'
 import { AIExtractions } from './Extractions'
 import { Tenants } from './Tenant'
 import { Pages } from './Pages'
-import { PageLayout } from './PageLayout'
+import { SiteSettings } from './SiteSettings'
 
 export const collections: CollectionConfig[] = [
   Documents,
@@ -13,6 +13,6 @@ export const collections: CollectionConfig[] = [
   Media,
   Pages,
   Users,
-  PageLayout,
+  SiteSettings,
   Tenants,
 ]

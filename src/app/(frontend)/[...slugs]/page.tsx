@@ -53,18 +53,16 @@ export default async function Page(params: Args) {
     return notFound()
   }
 
-  if (tenant) {
-    const { blocks } = page
-    return (
-      <div className="home">
-        <div className="content">
-          <Suspense>
-            <BlockRenderer blocks={blocks} />
-          </Suspense>
-        </div>
+  const { blocks } = page
+  return (
+    <div className="home">
+      <div className="content">
+        <Suspense>
+          <BlockRenderer blocks={blocks} />
+        </Suspense>
       </div>
-    )
-  }
+    </div>
+  )
 }
 
 const queryPageBySlug = async ({ slug, tenant }: { slug: string; tenant?: Tenant }) => {

@@ -8,7 +8,7 @@ export const plugins: Plugin[] = [
   multiTenantPlugin<Config>({
     collections: {
       pages: {},
-      layout: {
+      'site-settings': {
         isGlobal: true,
       },
     },

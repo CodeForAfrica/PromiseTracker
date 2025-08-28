@@ -72,7 +72,7 @@ export interface Config {
     media: Media;
     pages: Page;
     users: User;
-    layout: Layout;
+    'site-settings': SiteSetting;
     tenants: Tenant;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -86,7 +86,7 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
-    layout: LayoutSelect<false> | LayoutSelect<true>;
+    'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     tenants: TenantsSelect<false> | TenantsSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -359,12 +359,71 @@ export interface User {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "layout".
+ * via the `definition` "site-settings".
  */
-export interface Layout {
+export interface SiteSetting {
   id: string;
   tenant?: (string | null) | Tenant;
-  title?: string | null;
+  title: string;
+  description: {
+    root: {
+      type: string;
+      children: {
+        type: string;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  /**
+   * Shown on main navigation bar.
+   */
+  primaryLogo: string | Media;
+  /**
+   * Shown on main footer. If not provided, primary logo will be reused.
+   */
+  secondaryLogo: string | Media;
+  primaryNavigation?: {
+    titles?: string | null;
+    menus?:
+      | {
+          link: {
+            type?: ('reference' | 'custom') | null;
+            newTab?: boolean | null;
+            reference?: {
+              relationTo: 'pages';
+              value: string | Page;
+            } | null;
+            url?: string | null;
+            label: string;
+          };
+          id?: string | null;
+        }[]
+      | null;
+  };
+  secondaryNavigation?: {
+    titles?: string | null;
+    menus?:
+      | {
+          link: {
+            type?: ('reference' | 'custom') | null;
+            newTab?: boolean | null;
+            reference?: {
+              relationTo: 'pages';
+              value: string | Page;
+            } | null;
+            url?: string | null;
+            label: string;
+          };
+          id?: string | null;
+        }[]
+      | null;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -526,8 +585,8 @@ export interface PayloadLockedDocument {
         value: string | User;
       } | null)
     | ({
-        relationTo: 'layout';
-        value: string | Layout;
+        relationTo: 'site-settings';
+        value: string | SiteSetting;
       } | null)
     | ({
         relationTo: 'tenants';
@@ -706,11 +765,52 @@ export interface UsersSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "layout_select".
+ * via the `definition` "site-settings_select".
  */
-export interface LayoutSelect<T extends boolean = true> {
+export interface SiteSettingsSelect<T extends boolean = true> {
   tenant?: T;
   title?: T;
+  description?: T;
+  primaryLogo?: T;
+  secondaryLogo?: T;
+  primaryNavigation?:
+    | T
+    | {
+        titles?: T;
+        menus?:
+          | T
+          | {
+              link?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    label?: T;
+                  };
+              id?: T;
+            };
+      };
+  secondaryNavigation?:
+    | T
+    | {
+        titles?: T;
+        menus?:
+          | T
+          | {
+              link?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    label?: T;
+                  };
+              id?: T;
+            };
+      };
   updatedAt?: T;
   createdAt?: T;
 }

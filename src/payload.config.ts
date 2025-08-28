@@ -58,10 +58,10 @@ export default buildConfig({
     tasks,
     workflows,
     autoRun: [
-      {
-        cron: isProd ? '0 * * * *' : '* * * * *',
-        queue: isProd ? 'hourly' : 'everyMinute',
-      },
+      // {
+      //   cron: isProd ? '0 * * * *' : '* * * * *',
+      //   queue: isProd ? 'hourly' : 'everyMinute',
+      // },
     ],
   },
   localization: {
