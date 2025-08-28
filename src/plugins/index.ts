@@ -3,7 +3,6 @@ import { sentryPlugin } from '@payloadcms/plugin-sentry'
 import * as Sentry from '@sentry/nextjs'
 import { multiTenantPlugin } from '@payloadcms/plugin-multi-tenant'
 import { Config } from '@/payload-types'
-import { isSuperAdmin } from '@/access/isSuperAdmin'
 import { isProd } from '@/utils/utils'
 export const plugins: Plugin[] = [
   multiTenantPlugin<Config>({
@@ -18,7 +17,7 @@ export const plugins: Plugin[] = [
       includeDefaultField: false,
     },
     debug: !isProd,
-    userHasAccessToAllTenants: (user) => isSuperAdmin(user),
+    userHasAccessToAllTenants: () => true,
   }),
   sentryPlugin({ Sentry }),
 ]

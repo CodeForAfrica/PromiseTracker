@@ -1,17 +1,12 @@
-import { isSuperAdminAccess } from '@/access/isSuperAdmin'
 import { countriesByContinent } from '@/data/countries'
 import { CollectionConfig } from 'payload'
-import { updateAndDeleteAccess } from './access/updateAndDelete'
 
 const africanCountries = countriesByContinent('Africa')
 
 export const Tenants: CollectionConfig = {
   slug: 'tenants',
   access: {
-    create: isSuperAdminAccess,
-    delete: updateAndDeleteAccess,
     read: ({ req }) => Boolean(req.user),
-    update: updateAndDeleteAccess,
   },
   admin: {
     useAsTitle: 'name',

@@ -145,14 +145,6 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: string;
-  roles?: ('super-admin' | 'user')[] | null;
-  tenants?:
-    | {
-        tenant: string | Tenant;
-        roles: ('tenant-admin' | 'tenant-viewer')[];
-        id?: string | null;
-      }[]
-    | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -170,81 +162,6 @@ export interface User {
       }[]
     | null;
   password?: string | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "tenants".
- */
-export interface Tenant {
-  id: string;
-  name?: string | null;
-  locale?: ('en' | 'fr') | null;
-  country?:
-    | (
-        | 'DZA'
-        | 'AGO'
-        | 'BEN'
-        | 'BWA'
-        | 'IOT'
-        | 'BFA'
-        | 'BDI'
-        | 'CPV'
-        | 'CMR'
-        | 'CAF'
-        | 'TCD'
-        | 'COM'
-        | 'COG'
-        | 'COD'
-        | 'CIV'
-        | 'DJI'
-        | 'EGY'
-        | 'GNQ'
-        | 'ERI'
-        | 'SWZ'
-        | 'ETH'
-        | 'ATF'
-        | 'GAB'
-        | 'GMB'
-        | 'GHA'
-        | 'GIN'
-        | 'GNB'
-        | 'KEN'
-        | 'LSO'
-        | 'LBR'
-        | 'LBY'
-        | 'MDG'
-        | 'MWI'
-        | 'MLI'
-        | 'MRT'
-        | 'MUS'
-        | 'MYT'
-        | 'MAR'
-        | 'MOZ'
-        | 'NAM'
-        | 'NER'
-        | 'NGA'
-        | 'REU'
-        | 'RWA'
-        | 'SHN'
-        | 'STP'
-        | 'SEN'
-        | 'SYC'
-        | 'SLE'
-        | 'SOM'
-        | 'ZAF'
-        | 'SSD'
-        | 'SDN'
-        | 'TZA'
-        | 'TGO'
-        | 'TUN'
-        | 'UGA'
-        | 'ESH'
-        | 'ZMB'
-        | 'ZWE'
-      )
-    | null;
-  updatedAt: string;
-  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -320,6 +237,81 @@ export interface AiExtraction {
         checkMediaURL?: string | null;
         id?: string | null;
       }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tenants".
+ */
+export interface Tenant {
+  id: string;
+  name?: string | null;
+  locale?: ('en' | 'fr') | null;
+  country?:
+    | (
+        | 'DZA'
+        | 'AGO'
+        | 'BEN'
+        | 'BWA'
+        | 'IOT'
+        | 'BFA'
+        | 'BDI'
+        | 'CPV'
+        | 'CMR'
+        | 'CAF'
+        | 'TCD'
+        | 'COM'
+        | 'COG'
+        | 'COD'
+        | 'CIV'
+        | 'DJI'
+        | 'EGY'
+        | 'GNQ'
+        | 'ERI'
+        | 'SWZ'
+        | 'ETH'
+        | 'ATF'
+        | 'GAB'
+        | 'GMB'
+        | 'GHA'
+        | 'GIN'
+        | 'GNB'
+        | 'KEN'
+        | 'LSO'
+        | 'LBR'
+        | 'LBY'
+        | 'MDG'
+        | 'MWI'
+        | 'MLI'
+        | 'MRT'
+        | 'MUS'
+        | 'MYT'
+        | 'MAR'
+        | 'MOZ'
+        | 'NAM'
+        | 'NER'
+        | 'NGA'
+        | 'REU'
+        | 'RWA'
+        | 'SHN'
+        | 'STP'
+        | 'SEN'
+        | 'SYC'
+        | 'SLE'
+        | 'SOM'
+        | 'ZAF'
+        | 'SSD'
+        | 'SDN'
+        | 'TZA'
+        | 'TGO'
+        | 'TUN'
+        | 'UGA'
+        | 'ESH'
+        | 'ZMB'
+        | 'ZWE'
+      )
     | null;
   updatedAt: string;
   createdAt: string;
@@ -532,14 +524,6 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
-  roles?: T;
-  tenants?:
-    | T
-    | {
-        tenant?: T;
-        roles?: T;
-        id?: T;
-      };
   updatedAt?: T;
   createdAt?: T;
   email?: T;
