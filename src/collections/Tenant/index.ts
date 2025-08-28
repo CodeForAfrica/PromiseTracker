@@ -34,6 +34,7 @@ export const Tenants: CollectionConfig = {
         en: 'Name',
         fr: 'Nom',
       },
+      required: true,
     },
     {
       name: 'locale',
@@ -42,6 +43,7 @@ export const Tenants: CollectionConfig = {
         en: 'Locale',
         fr: 'Lieu',
       },
+      required: true,
       options: [
         {
           value: 'en',
@@ -64,6 +66,7 @@ export const Tenants: CollectionConfig = {
       type: 'select',
       options: africanCountries,
       unique: true,
+      required: true,
       label: {
         en: 'Country',
         fr: 'Pays',

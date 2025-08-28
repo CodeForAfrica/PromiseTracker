@@ -228,7 +228,9 @@ export interface AiExtraction {
 export interface Page {
   id: string;
   tenant?: (string | null) | Tenant;
-  title?: string | null;
+  title: string;
+  slug: string;
+  blocks?: (TestBlock | OtherBlock)[] | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -238,74 +240,92 @@ export interface Page {
  */
 export interface Tenant {
   id: string;
-  name?: string | null;
-  locale?: ('en' | 'fr') | null;
-  country?:
-    | (
-        | 'DZA'
-        | 'AGO'
-        | 'BEN'
-        | 'BWA'
-        | 'IOT'
-        | 'BFA'
-        | 'BDI'
-        | 'CPV'
-        | 'CMR'
-        | 'CAF'
-        | 'TCD'
-        | 'COM'
-        | 'COG'
-        | 'COD'
-        | 'CIV'
-        | 'DJI'
-        | 'EGY'
-        | 'GNQ'
-        | 'ERI'
-        | 'SWZ'
-        | 'ETH'
-        | 'ATF'
-        | 'GAB'
-        | 'GMB'
-        | 'GHA'
-        | 'GIN'
-        | 'GNB'
-        | 'KEN'
-        | 'LSO'
-        | 'LBR'
-        | 'LBY'
-        | 'MDG'
-        | 'MWI'
-        | 'MLI'
-        | 'MRT'
-        | 'MUS'
-        | 'MYT'
-        | 'MAR'
-        | 'MOZ'
-        | 'NAM'
-        | 'NER'
-        | 'NGA'
-        | 'REU'
-        | 'RWA'
-        | 'SHN'
-        | 'STP'
-        | 'SEN'
-        | 'SYC'
-        | 'SLE'
-        | 'SOM'
-        | 'ZAF'
-        | 'SSD'
-        | 'SDN'
-        | 'TZA'
-        | 'TGO'
-        | 'TUN'
-        | 'UGA'
-        | 'ESH'
-        | 'ZMB'
-        | 'ZWE'
-      )
-    | null;
+  name: string;
+  locale: 'en' | 'fr';
+  country:
+    | 'DZA'
+    | 'AGO'
+    | 'BEN'
+    | 'BWA'
+    | 'IOT'
+    | 'BFA'
+    | 'BDI'
+    | 'CPV'
+    | 'CMR'
+    | 'CAF'
+    | 'TCD'
+    | 'COM'
+    | 'COG'
+    | 'COD'
+    | 'CIV'
+    | 'DJI'
+    | 'EGY'
+    | 'GNQ'
+    | 'ERI'
+    | 'SWZ'
+    | 'ETH'
+    | 'ATF'
+    | 'GAB'
+    | 'GMB'
+    | 'GHA'
+    | 'GIN'
+    | 'GNB'
+    | 'KEN'
+    | 'LSO'
+    | 'LBR'
+    | 'LBY'
+    | 'MDG'
+    | 'MWI'
+    | 'MLI'
+    | 'MRT'
+    | 'MUS'
+    | 'MYT'
+    | 'MAR'
+    | 'MOZ'
+    | 'NAM'
+    | 'NER'
+    | 'NGA'
+    | 'REU'
+    | 'RWA'
+    | 'SHN'
+    | 'STP'
+    | 'SEN'
+    | 'SYC'
+    | 'SLE'
+    | 'SOM'
+    | 'ZAF'
+    | 'SSD'
+    | 'SDN'
+    | 'TZA'
+    | 'TGO'
+    | 'TUN'
+    | 'UGA'
+    | 'ESH'
+    | 'ZMB'
+    | 'ZWE';
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TestBlock".
+ */
+export interface TestBlock {
+  title: string;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'test-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "OtherBlock".
+ */
+export interface OtherBlock {
+  title: string;
+  content: string;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'other-block';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -627,8 +647,34 @@ export interface MediaSelect<T extends boolean = true> {
 export interface PagesSelect<T extends boolean = true> {
   tenant?: T;
   title?: T;
+  slug?: T;
+  blocks?:
+    | T
+    | {
+        'test-block'?: T | TestBlockSelect<T>;
+        'other-block'?: T | OtherBlockSelect<T>;
+      };
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TestBlock_select".
+ */
+export interface TestBlockSelect<T extends boolean = true> {
+  title?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "OtherBlock_select".
+ */
+export interface OtherBlockSelect<T extends boolean = true> {
+  title?: T;
+  content?: T;
+  id?: T;
+  blockName?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
