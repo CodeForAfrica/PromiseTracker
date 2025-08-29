@@ -1,4 +1,4 @@
-import { linkGroup } from '@/fields/linkGroup'
+import { linkGroup } from '@/fields/link/linkGroup'
 import { Tab } from 'payload'
 
 export const NavigationTab: Tab = {
