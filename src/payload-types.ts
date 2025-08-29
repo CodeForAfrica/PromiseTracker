@@ -230,6 +230,7 @@ export interface Page {
   tenant?: (string | null) | Tenant;
   title: string;
   slug: string;
+  slugLock?: boolean | null;
   blocks?: (TestBlock | OtherBlock)[] | null;
   updatedAt: string;
   createdAt: string;
@@ -707,6 +708,7 @@ export interface PagesSelect<T extends boolean = true> {
   tenant?: T;
   title?: T;
   slug?: T;
+  slugLock?: T;
   blocks?:
     | T
     | {

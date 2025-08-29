@@ -2,6 +2,7 @@ import { TestBlock } from '@/blocks/TestBlock'
 import { CollectionConfig } from 'payload'
 import { ensureUniqueSlug } from './hooks/ensureUniqueSlug'
 import { OtherBlock } from '@/blocks/OtherBlock'
+import { slugField } from '@/fields/slug'
 
 export const Pages: CollectionConfig = {
   slug: 'pages',
@@ -16,18 +17,18 @@ export const Pages: CollectionConfig = {
       type: 'text',
       required: true,
     },
-    {
-      name: 'slug',
-      type: 'text',
-      required: true,
-      admin: {
-        position: 'sidebar',
+    ...slugField('title', {
+      slugOverrides: {
+        index: true,
+        required: true,
+        admin: {
+          position: 'sidebar',
+        },
+        hooks: {
+          beforeValidate: [ensureUniqueSlug],
+        },
       },
-      index: true,
-      hooks: {
-        beforeValidate: [ensureUniqueSlug],
-      },
-    },
+    }),
     {
       name: 'blocks',
       type: 'blocks',
