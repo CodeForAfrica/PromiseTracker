@@ -17,3 +17,4 @@
    `pnpm dev`
 4. Update settings in admin
    [/admin/globals/settings]
+5. When testing multitenant app, use a domain that resolves to localhost, similar to `localtest.me`, for example `ken.localtest.me:3000`

@@ -6,6 +6,12 @@ export const Settings: GlobalConfig = {
     en: 'Settings',
     fr: 'Paramètres',
   },
+  admin: {
+    group: {
+      en: 'Settings',
+      fr: 'Paramètres',
+    },
+  },
   fields: [
     {
       type: 'tabs',
@@ -73,7 +79,7 @@ export const Settings: GlobalConfig = {
                   type: 'row',
                   fields: [
                     {
-                      //TODO:(@kelvinkipruto): Explore adding more models.
+                      //TODO: (@kelvinkipruto):(@kelvinkipruto): Explore adding more models.
                       name: 'model',
                       type: 'select',
                       label: {

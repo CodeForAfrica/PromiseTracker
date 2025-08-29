@@ -23,6 +23,9 @@ importers:
       '@payloadcms/payload-cloud':
         specifier: 3.53.0
         version: 3.53.0(payload@3.53.0(graphql@16.11.0)(typescript@5.9.2))
+      '@payloadcms/plugin-multi-tenant':
+        specifier: ^3.53.0
+        version: 3.53.0(@payloadcms/ui@3.53.0(@types/react@19.1.11)(monaco-editor@0.52.2)(next@15.4.6(@babel/core@7.28.3)(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(sass@1.77.4))(payload@3.53.0(graphql@16.11.0)(typescript@5.9.2))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(typescript@5.9.2))(next@15.4.6(@babel/core@7.28.3)(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(sass@1.77.4))(payload@3.53.0(graphql@16.11.0)(typescript@5.9.2))
       '@payloadcms/plugin-sentry':
         specifier: ^3.53.0
         version: 3.53.0(@opentelemetry/context-async-hooks@2.0.1(@opentelemetry/api@1.9.0))(@opentelemetry/core@2.0.1(@opentelemetry/api@1.9.0))(@opentelemetry/instrumentation@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.0.1(@opentelemetry/api@1.9.0))(next@15.4.6(@babel/core@7.28.3)(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(sass@1.77.4))(payload@3.53.0(graphql@16.11.0)(typescript@5.9.2))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(webpack@5.101.3)
@@ -1678,6 +1681,13 @@ packages:
   '@payloadcms/payload-cloud@3.53.0':
     resolution: {integrity: sha512-i65QaidfO8O05b0F0enz8i+kjEufeBh0+5oZ294X9FyaJWV7IX3VS5GOW00/s1Xf7z9RxTdllUUIL5JzZhvAkg==}
     peerDependencies:
+      payload: 3.53.0
+
+  '@payloadcms/plugin-multi-tenant@3.53.0':
+    resolution: {integrity: sha512-4RKZY4H5IuHC/Pnslod/rXH0G6XenS674DsDqF/peiibxFUyr5rede3ShWc97mxJPFC0OlR6BUfwHACx/DccQQ==}
+    peerDependencies:
+      '@payloadcms/ui': 3.53.0
+      next: ^15.2.3
       payload: 3.53.0
 
   '@payloadcms/plugin-sentry@3.53.0':
@@ -7409,6 +7419,12 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
       - encoding
+
+  '@payloadcms/plugin-multi-tenant@3.53.0(@payloadcms/ui@3.53.0(@types/react@19.1.11)(monaco-editor@0.52.2)(next@15.4.6(@babel/core@7.28.3)(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(sass@1.77.4))(payload@3.53.0(graphql@16.11.0)(typescript@5.9.2))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(typescript@5.9.2))(next@15.4.6(@babel/core@7.28.3)(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(sass@1.77.4))(payload@3.53.0(graphql@16.11.0)(typescript@5.9.2))':
+    dependencies:
+      '@payloadcms/ui': 3.53.0(@types/react@19.1.11)(monaco-editor@0.52.2)(next@15.4.6(@babel/core@7.28.3)(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(sass@1.77.4))(payload@3.53.0(graphql@16.11.0)(typescript@5.9.2))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(typescript@5.9.2)
+      next: 15.4.6(@babel/core@7.28.3)(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(sass@1.77.4)
+      payload: 3.53.0(graphql@16.11.0)(typescript@5.9.2)
 
   '@payloadcms/plugin-sentry@3.53.0(@opentelemetry/context-async-hooks@2.0.1(@opentelemetry/api@1.9.0))(@opentelemetry/core@2.0.1(@opentelemetry/api@1.9.0))(@opentelemetry/instrumentation@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.0.1(@opentelemetry/api@1.9.0))(next@15.4.6(@babel/core@7.28.3)(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(sass@1.77.4))(payload@3.53.0(graphql@16.11.0)(typescript@5.9.2))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(webpack@5.101.3)':
     dependencies:

@@ -12,6 +12,12 @@ export const AIExtractions: CollectionConfig = {
       fr: "Extractions d'IA",
     },
   },
+  admin: {
+    group: {
+      en: 'Documents',
+      fr: 'Documents',
+    },
+  },
   access: {
     read: () => true,
   },

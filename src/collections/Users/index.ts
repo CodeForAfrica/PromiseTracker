@@ -14,10 +14,11 @@ export const Users: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'email',
+    group: {
+      en: 'Settings',
+      fr: 'Paramètres',
+    },
   },
   auth: true,
-  fields: [
-    // Email added by default
-    // Add more fields as needed
-  ],
+  fields: [],
 }

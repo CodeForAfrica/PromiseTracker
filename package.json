@@ -26,6 +26,7 @@
     "@payloadcms/db-mongodb": "3.53.0",
     "@payloadcms/next": "3.53.0",
     "@payloadcms/payload-cloud": "3.53.0",
+    "@payloadcms/plugin-multi-tenant": "^3.53.0",
     "@payloadcms/plugin-sentry": "^3.53.0",
     "@payloadcms/richtext-lexical": "3.53.0",
     "@payloadcms/translations": "^3.53.0",
