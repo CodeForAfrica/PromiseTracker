@@ -1,8 +1,7 @@
 import React, { Suspense } from 'react'
 
 import '../styles.css'
-import { getGlobalPayload } from '@/lib/payload'
-import { Tenant } from '@/payload-types'
+import { getGlobalPayload, queryPageBySlug } from '@/lib/payload'
 import { notFound } from 'next/navigation'
 import { getDomain } from '@/lib/domain'
 import { LocalhostWarning } from '@/components/LocalhostWarning'
@@ -63,29 +62,4 @@ export default async function Page(params: Args) {
       </div>
     </div>
   )
-}
-
-const queryPageBySlug = async ({ slug, tenant }: { slug: string; tenant?: Tenant }) => {
-  const payload = await getGlobalPayload()
-  const { docs: pages } = await payload.find({
-    collection: 'pages',
-    pagination: false,
-    limit: 1,
-    where: {
-      and: [
-        {
-          tenant: {
-            equals: tenant,
-          },
-        },
-        {
-          slug: {
-            equals: slug,
-          },
-        },
-      ],
-    },
-  })
-
-  return pages[0]
 }
