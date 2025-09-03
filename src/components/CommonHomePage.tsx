@@ -1,4 +1,4 @@
-import { TenantList } from './TenantList'
+import { TenantList } from "./TenantList";
 
 // TODO: (@kelvinkipruto): This should be configured from Payload
 export const CommonHomePage = async () => {
@@ -14,5 +14,5 @@ export const CommonHomePage = async () => {
         </div>
       </div>
     </>
-  )
-}
+  );
+};

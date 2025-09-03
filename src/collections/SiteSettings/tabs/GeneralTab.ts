@@ -1,58 +1,59 @@
-import { Tab } from 'payload'
+import { Tab } from "payload";
 
 export const GeneralTab: Tab = {
   label: {
-    en: 'General',
-    fr: 'Général',
+    en: "General",
+    fr: "Général",
   },
   fields: [
     {
-      type: 'collapsible',
+      type: "collapsible",
       label: {
-        en: 'Title & Description',
-        fr: 'Titre et description',
+        en: "Title & Description",
+        fr: "Titre et description",
       },
       fields: [
         {
-          name: 'title',
-          type: 'text',
+          name: "title",
+          type: "text",
           required: true,
         },
         {
-          name: 'description',
-          type: 'richText',
+          name: "description",
+          type: "richText",
           required: true,
         },
       ],
     },
     {
-      type: 'collapsible',
+      type: "collapsible",
       label: {
-        en: 'Logo',
-        fr: 'Logo',
+        en: "Logo",
+        fr: "Logo",
       },
       fields: [
         {
-          name: 'primaryLogo',
+          name: "primaryLogo",
           required: true,
           admin: {
-            description: 'Shown on main navigation bar.',
+            description: "Shown on main navigation bar.",
           },
-          type: 'relationship',
-          relationTo: 'media',
+          type: "relationship",
+          relationTo: "media",
           hasMany: false,
         },
         {
-          name: 'secondaryLogo',
+          name: "secondaryLogo",
           required: true,
           admin: {
-            description: 'Shown on main footer. If not provided, primary logo will be reused.',
+            description:
+              "Shown on main footer. If not provided, primary logo will be reused.",
           },
-          type: 'relationship',
-          relationTo: 'media',
+          type: "relationship",
+          relationTo: "media",
           hasMany: false,
         },
       ],
     },
   ],
-}
+};

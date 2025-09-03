@@ -1,76 +1,76 @@
-import { countriesByContinent } from '@/data/countries'
-import { CollectionConfig } from 'payload'
+import { countriesByContinent } from "@/data/countries";
+import { CollectionConfig } from "payload";
 
-const africanCountries = countriesByContinent('Africa')
+const africanCountries = countriesByContinent("Africa");
 
 export const Tenants: CollectionConfig = {
-  slug: 'tenants',
+  slug: "tenants",
   access: {
     read: ({ req }) => Boolean(req.user),
   },
   admin: {
-    useAsTitle: 'name',
-    defaultColumns: ['name', 'locale'],
+    useAsTitle: "name",
+    defaultColumns: ["name", "locale"],
     group: {
-      en: 'Settings',
-      fr: 'Paramètres',
+      en: "Settings",
+      fr: "Paramètres",
     },
   },
   labels: {
     singular: {
-      en: 'Tenant',
-      fr: 'Locataire',
+      en: "Tenant",
+      fr: "Locataire",
     },
     plural: {
-      en: 'Tenants',
-      fr: 'Locataires',
+      en: "Tenants",
+      fr: "Locataires",
     },
   },
   fields: [
     {
-      name: 'name',
-      type: 'text',
+      name: "name",
+      type: "text",
       label: {
-        en: 'Name',
-        fr: 'Nom',
+        en: "Name",
+        fr: "Nom",
       },
       required: true,
     },
     {
-      name: 'locale',
-      type: 'select',
+      name: "locale",
+      type: "select",
       label: {
-        en: 'Locale',
-        fr: 'Lieu',
+        en: "Locale",
+        fr: "Lieu",
       },
       required: true,
       options: [
         {
-          value: 'en',
+          value: "en",
           label: {
-            en: 'English',
-            fr: 'Anglais',
+            en: "English",
+            fr: "Anglais",
           },
         },
         {
-          value: 'fr',
+          value: "fr",
           label: {
-            en: 'French',
-            fr: 'Français',
+            en: "French",
+            fr: "Français",
           },
         },
       ],
     },
     {
-      name: 'country',
-      type: 'select',
+      name: "country",
+      type: "select",
       options: africanCountries,
       unique: true,
       required: true,
       label: {
-        en: 'Country',
-        fr: 'Pays',
+        en: "Country",
+        fr: "Pays",
       },
     },
   ],
-}
+};

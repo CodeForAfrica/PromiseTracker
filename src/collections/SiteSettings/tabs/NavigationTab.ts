@@ -1,38 +1,38 @@
-import { linkGroup } from '@/fields/link/linkGroup'
-import { Tab } from 'payload'
+import { linkGroup } from "@/fields/link/linkGroup";
+import { Tab } from "payload";
 
 export const NavigationTab: Tab = {
   label: {
-    en: 'Navigation',
-    fr: 'Navigation',
+    en: "Navigation",
+    fr: "Navigation",
   },
   fields: [
     {
-      name: 'primaryNavigation',
-      type: 'group',
+      name: "primaryNavigation",
+      type: "group",
       fields: [
         {
-          type: 'collapsible',
+          type: "collapsible",
           label: {
-            en: 'Title & Links',
-            fr: 'Titre et liens',
+            en: "Title & Links",
+            fr: "Titre et liens",
           },
           fields: [
             {
-              name: 'titles',
-              type: 'text',
+              name: "titles",
+              type: "text",
             },
             linkGroup({
               overrides: {
-                name: 'menus',
+                name: "menus",
                 labels: {
                   singular: {
-                    en: 'Menu',
-                    fr: 'Menus',
+                    en: "Menu",
+                    fr: "Menus",
                   },
                   plural: {
-                    en: 'Menus',
-                    fr: 'Menus',
+                    en: "Menus",
+                    fr: "Menus",
                   },
                 },
               },
@@ -43,31 +43,31 @@ export const NavigationTab: Tab = {
       ],
     },
     {
-      name: 'secondaryNavigation',
-      type: 'group',
+      name: "secondaryNavigation",
+      type: "group",
       fields: [
         {
-          type: 'collapsible',
+          type: "collapsible",
           label: {
-            en: 'Title & Links',
-            fr: 'Titre et liens',
+            en: "Title & Links",
+            fr: "Titre et liens",
           },
           fields: [
             {
-              name: 'titles',
-              type: 'text',
+              name: "titles",
+              type: "text",
             },
             linkGroup({
               overrides: {
-                name: 'menus',
+                name: "menus",
                 labels: {
                   singular: {
-                    en: 'Menu',
-                    fr: 'Menus',
+                    en: "Menu",
+                    fr: "Menus",
                   },
                   plural: {
-                    en: 'Menus',
-                    fr: 'Menus',
+                    en: "Menus",
+                    fr: "Menus",
                   },
                 },
               },
@@ -78,4 +78,4 @@ export const NavigationTab: Tab = {
       ],
     },
   ],
-}
+};

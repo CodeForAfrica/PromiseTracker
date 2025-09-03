@@ -1,14 +1,14 @@
-import { Plugin } from 'payload'
-import { sentryPlugin } from '@payloadcms/plugin-sentry'
-import * as Sentry from '@sentry/nextjs'
-import { multiTenantPlugin } from '@payloadcms/plugin-multi-tenant'
-import { Config } from '@/payload-types'
-import { isProd } from '@/utils/utils'
+import { Plugin } from "payload";
+import { sentryPlugin } from "@payloadcms/plugin-sentry";
+import * as Sentry from "@sentry/nextjs";
+import { multiTenantPlugin } from "@payloadcms/plugin-multi-tenant";
+import { Config } from "@/payload-types";
+import { isProd } from "@/utils/utils";
 export const plugins: Plugin[] = [
   multiTenantPlugin<Config>({
     collections: {
       pages: {},
-      'site-settings': {
+      "site-settings": {
         isGlobal: true,
       },
     },
@@ -22,4 +22,4 @@ export const plugins: Plugin[] = [
     userHasAccessToAllTenants: () => true,
   }),
   sentryPlugin({ Sentry }),
-]
+];

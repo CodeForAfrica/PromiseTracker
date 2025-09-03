@@ -1,37 +1,37 @@
-import { AxApacheTika } from '@ax-llm/ax'
-import { TaskConfig } from 'payload'
-import { existsSync, readFileSync } from 'fs'
-import { join } from 'path'
-import { Media } from '@/payload-types'
+import { AxApacheTika } from "@ax-llm/ax";
+import { TaskConfig } from "payload";
+import { existsSync, readFileSync } from "fs";
+import { join } from "path";
+import { Media } from "@/payload-types";
 
-const tika = new AxApacheTika()
+const tika = new AxApacheTika();
 
 export function cleanText(text: string): string {
   return text
-    .replace(/\n/g, ' ')
-    .replace(/\s+/g, ' ')
-    .replace(/[^\x00-\x7F]/g, '')
-    .trim()
+    .replace(/\n/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/[^\x00-\x7F]/g, "")
+    .trim();
 }
 
 export async function extractTextFromDoc(filePath: string): Promise<string[]> {
-  const fileBuffer = readFileSync(filePath)
-  const text = await tika.convert([new Blob([fileBuffer])])
-  return text.map(cleanText)
+  const fileBuffer = readFileSync(filePath);
+  const text = await tika.convert([new Blob([fileBuffer])]);
+  return text.map(cleanText);
 }
 
-export const ExtractDocuments: TaskConfig<'extractDocuments'> = {
-  slug: 'extractDocuments',
-  label: 'Extract Documents',
+export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
+  slug: "extractDocuments",
+  label: "Extract Documents",
   handler: async ({ req }) => {
-    const { payload } = req
-    const logger = payload.logger
+    const { payload } = req;
+    const logger = payload.logger;
 
-    logger.info('extractDocuments:: Starting document text extraction')
+    logger.info("extractDocuments:: Starting document text extraction");
 
     try {
       const { docs: documents } = await payload.find({
-        collection: 'documents',
+        collection: "documents",
         where: {
           extractedText: {
             exists: false,
@@ -41,90 +41,106 @@ export const ExtractDocuments: TaskConfig<'extractDocuments'> = {
           file: true,
         },
         depth: 3,
-      })
+      });
       if (documents.length === 0) {
-        logger.info('extractDocuments:: No documents to extract')
-        return { output: {} }
+        logger.info("extractDocuments:: No documents to extract");
+        return { output: {} };
       }
 
-      logger.info('extractDocuments:: Documents to extract', { count: documents.length })
+      logger.info("extractDocuments:: Documents to extract", {
+        count: documents.length,
+      });
 
-      const processedDocs = []
+      const processedDocs = [];
 
       for (const doc of documents) {
         try {
           if (!doc.file) {
-            logger.warn('extractDocuments:: Document has no file attachment', { id: doc.id })
-            continue
+            logger.warn("extractDocuments:: Document has no file attachment", {
+              id: doc.id,
+            });
+            continue;
           }
 
-          const file = doc.file as Media
-          const filePath = join(process.cwd(), 'media', file.filename!)
+          const file = doc.file as Media;
+          const filePath = join(process.cwd(), "media", file.filename!);
 
           if (!existsSync(filePath)) {
-            logger.warn('extractDocuments:: File not found on disk', { id: doc.id, filePath })
-            continue
+            logger.warn("extractDocuments:: File not found on disk", {
+              id: doc.id,
+              filePath,
+            });
+            continue;
           }
 
-          const extractedText = await extractTextFromDoc(filePath)
+          const extractedText = await extractTextFromDoc(filePath);
 
           if (extractedText.length === 0) {
-            logger.warn('extractDocuments:: No text extracted from document', { id: doc.id })
-            continue
+            logger.warn("extractDocuments:: No text extracted from document", {
+              id: doc.id,
+            });
+            continue;
           }
 
           processedDocs.push({
             id: doc.id,
-          })
+          });
 
-          logger.info('extractDocuments:: Successfully extracted text', {
+          logger.info("extractDocuments:: Successfully extracted text", {
             id: doc.id,
-            textLength: extractedText.join('\n').length,
-          })
+            textLength: extractedText.join("\n").length,
+          });
 
           await payload.update({
-            collection: 'documents',
+            collection: "documents",
             id: doc.id,
             data: {
               extractedText: {
                 root: {
-                  type: 'root',
+                  type: "root",
                   children: extractedText.map((line) => ({
                     children: [
                       {
                         text: line,
-                        type: 'text',
+                        type: "text",
                       },
                     ],
-                    type: 'paragraph',
+                    type: "paragraph",
                   })),
                 },
               },
             },
-          })
+          });
 
-          logger.info('extractDocuments:: Updated document with extracted text', { id: doc.id })
+          logger.info(
+            "extractDocuments:: Updated document with extracted text",
+            { id: doc.id },
+          );
         } catch (docError) {
-          logger.error('extractDocuments:: Error processing individual document', {
-            id: doc.id,
-            error: docError instanceof Error ? docError.message : String(docError),
-          })
+          logger.error(
+            "extractDocuments:: Error processing individual document",
+            {
+              id: doc.id,
+              error:
+                docError instanceof Error ? docError.message : String(docError),
+            },
+          );
         }
       }
 
-      logger.info('extractDocuments:: Text extraction completed', {
+      logger.info("extractDocuments:: Text extraction completed", {
         processed: processedDocs.length,
         total: documents.length,
-      })
+      });
 
       return {
         output: {},
-      }
+      };
     } catch (error) {
-      logger.error('extractDocuments:: Error in document extraction task', {
+      logger.error("extractDocuments:: Error in document extraction task", {
         error,
-      })
-      throw error
+      });
+      throw error;
     }
   },
-}
+};

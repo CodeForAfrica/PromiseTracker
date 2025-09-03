@@ -1,17 +1,23 @@
-import { BasePayload, getPayload } from 'payload'
-import config from '@/payload.config'
-import { Tenant } from '@/payload-types'
+import { BasePayload, getPayload } from "payload";
+import config from "@/payload.config";
+import { Tenant } from "@/payload-types";
 
 export const getGlobalPayload = async (): Promise<BasePayload> => {
-  const payloadConfig = await config
-  const payload = await getPayload({ config: payloadConfig })
-  return payload
-}
+  const payloadConfig = await config;
+  const payload = await getPayload({ config: payloadConfig });
+  return payload;
+};
 
-export const queryPageBySlug = async ({ slug, tenant }: { slug: string; tenant?: Tenant }) => {
-  const payload = await getGlobalPayload()
+export const queryPageBySlug = async ({
+  slug,
+  tenant,
+}: {
+  slug: string;
+  tenant?: Tenant;
+}) => {
+  const payload = await getGlobalPayload();
   const { docs: pages } = await payload.find({
-    collection: 'pages',
+    collection: "pages",
     pagination: false,
     limit: 1,
     where: {
@@ -28,7 +34,7 @@ export const queryPageBySlug = async ({ slug, tenant }: { slug: string; tenant?:
         },
       ],
     },
-  })
+  });
 
-  return pages[0]
-}
+  return pages[0];
+};

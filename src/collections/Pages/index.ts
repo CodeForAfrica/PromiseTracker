@@ -1,28 +1,28 @@
-import { TestBlock } from '@/blocks/TestBlock'
-import { CollectionConfig } from 'payload'
-import { ensureUniqueSlug } from './hooks/ensureUniqueSlug'
-import { OtherBlock } from '@/blocks/OtherBlock'
-import { slugField } from '@/fields/slug'
+import { TestBlock } from "@/blocks/TestBlock";
+import { CollectionConfig } from "payload";
+import { ensureUniqueSlug } from "./hooks/ensureUniqueSlug";
+import { OtherBlock } from "@/blocks/OtherBlock";
+import { slugField } from "@/fields/slug";
 
 export const Pages: CollectionConfig = {
-  slug: 'pages',
+  slug: "pages",
   admin: {
-    group: { en: 'Publication', fr: 'Publication' },
-    defaultColumns: ['title', 'slug', 'tenant'],
-    useAsTitle: 'title',
+    group: { en: "Publication", fr: "Publication" },
+    defaultColumns: ["title", "slug", "tenant"],
+    useAsTitle: "title",
   },
   fields: [
     {
-      name: 'title',
-      type: 'text',
+      name: "title",
+      type: "text",
       required: true,
     },
-    ...slugField('title', {
+    ...slugField("title", {
       slugOverrides: {
         index: true,
         required: true,
         admin: {
-          position: 'sidebar',
+          position: "sidebar",
         },
         hooks: {
           beforeValidate: [ensureUniqueSlug],
@@ -30,9 +30,9 @@ export const Pages: CollectionConfig = {
       },
     }),
     {
-      name: 'blocks',
-      type: 'blocks',
+      name: "blocks",
+      type: "blocks",
       blocks: [TestBlock, OtherBlock],
     },
   ],
-}
+};

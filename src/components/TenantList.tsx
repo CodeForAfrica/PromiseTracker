@@ -1,15 +1,15 @@
-import { getGlobalPayload } from '@/lib/payload'
-import Link from 'next/link'
-import { getDomain } from '@/lib/domain'
+import { getGlobalPayload } from "@/lib/payload";
+import Link from "next/link";
+import { getDomain } from "@/lib/domain";
 
 export const TenantList = async () => {
-  const payload = await getGlobalPayload()
-  const { port } = await getDomain()
+  const payload = await getGlobalPayload();
+  const { port } = await getDomain();
 
   const { docs: tenants } = await payload.find({
-    collection: 'tenants',
+    collection: "tenants",
     limit: -1,
-  })
+  });
 
   return (
     <div className="tenant-list">
@@ -24,5 +24,5 @@ export const TenantList = async () => {
         ))}
       </ul>
     </div>
-  )
-}
+  );
+};

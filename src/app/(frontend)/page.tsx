@@ -1,3 +1,3 @@
-import PageTemplate from './[...slugs]/page'
+import PageTemplate from "./[...slugs]/page";
 
-export default PageTemplate
+export default PageTemplate;

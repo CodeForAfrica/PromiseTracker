@@ -1,7 +1,7 @@
-import { BasePayload, TaskConfig } from 'payload'
-import { createFactCheckClaim } from '@/lib/meedan'
-import { markDocumentAsProcessed } from '@/lib/airtable'
-import { AiExtraction, Document, Media } from '@/payload-types'
+import { BasePayload, TaskConfig } from "payload";
+import { createFactCheckClaim } from "@/lib/meedan";
+import { markDocumentAsProcessed } from "@/lib/airtable";
+import { AiExtraction, Document, Media } from "@/payload-types";
 
 const getAIExtractionToUpload = (doc: AiExtraction) => {
   return (
@@ -13,79 +13,84 @@ const getAIExtractionToUpload = (doc: AiExtraction) => {
         source,
         uniqueId,
       })) || []
-  )
-}
+  );
+};
 
-const checkAndMarkDocumentComplete = async (doc: Document, payload: BasePayload): Promise<void> => {
+const checkAndMarkDocumentComplete = async (
+  doc: Document,
+  payload: BasePayload,
+): Promise<void> => {
   if (doc.airtableID) {
     const {
       airtable: { airtableAPIKey },
     } = await payload.findGlobal({
-      slug: 'settings',
-    })
+      slug: "settings",
+    });
 
     await markDocumentAsProcessed({
       airtableAPIKey,
       airtableID: doc.airtableID,
-    })
+    });
   }
-}
+};
 
-export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
-  slug: 'uploadToMeedan',
-  label: 'Upload To Meedan',
+export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
+  slug: "uploadToMeedan",
+  label: "Upload To Meedan",
   handler: async ({ req }) => {
-    const { payload } = req
-    const { logger } = payload
+    const { payload } = req;
+    const { logger } = payload;
 
-    logger.info('uploadToMeedan:: Starting uploadToMeedan task')
+    logger.info("uploadToMeedan:: Starting uploadToMeedan task");
 
     try {
       const {
         meedan: { meedanAPIKey, teamId },
       } = await payload.findGlobal({
-        slug: 'settings',
-      })
+        slug: "settings",
+      });
 
       if (!meedanAPIKey || !teamId) {
-        throw new Error('Meedan API key or team ID not configured in settings')
+        throw new Error("Meedan API key or team ID not configured in settings");
       }
 
       const { docs: allPromises } = await payload.find({
-        collection: 'aiExtraction',
+        collection: "aiExtraction",
         limit: -1,
         depth: 3,
-      })
+      });
 
       for (const doc of allPromises) {
-        logger.info(`uploadToMeedan:: Processing promise: ${doc.id} - ${doc.title}`)
+        logger.info(
+          `uploadToMeedan:: Processing promise: ${doc.id} - ${doc.title}`,
+        );
 
-        const aiExtractions = getAIExtractionToUpload(doc)
+        const aiExtractions = getAIExtractionToUpload(doc);
 
         if (aiExtractions.length === 0) {
           logger.info(
             `uploadToMeedan:: Document ${doc.id} has no unprocessed AI extractions, skipping`,
-          )
-          continue
+          );
+          continue;
         }
 
-        const document = doc.document as Document
+        const document = doc.document as Document;
 
         for (const extraction of aiExtractions) {
           logger.info(
             `uploadToMeedan:: Uploading extraction ${extraction.uniqueId} from document ${doc.id} to CheckMedia`,
-          )
+          );
           const tags = [
             document.politicalEntity,
             document.country,
             document.region,
             document.type?.toUpperCase(),
             extraction.category,
-          ].filter(Boolean) as string[]
+          ].filter(Boolean) as string[];
 
-          const quote = `${extraction.summary} \n\n${extraction.source}`.trim()
+          const quote = `${extraction.summary} \n\n${extraction.source}`.trim();
 
-          const downloadedFile = document.file as Media
+          const downloadedFile = document.file as Media;
 
           const response = await createFactCheckClaim({
             apiKey: meedanAPIKey,
@@ -95,14 +100,16 @@ export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
             claimDescription: extraction.summary,
             factCheck: {
               title: extraction.summary,
-              url: document.url || document.docURL || downloadedFile.url || '',
-              language: document.language || '',
+              url: document.url || document.docURL || downloadedFile.url || "",
+              language: document.language || "",
               publish_report: false,
             },
-          })
+          });
 
-          const checkMediaId = response.data.createProjectMedia.project_media.id
-          const checkMediaURL = response.data.createProjectMedia.project_media.full_url
+          const checkMediaId =
+            response.data.createProjectMedia.project_media.id;
+          const checkMediaURL =
+            response.data.createProjectMedia.project_media.full_url;
 
           logger.info(
             `uploadToMeedan:: Successfully uploaded extraction ${extraction.uniqueId} to CheckMedia`,
@@ -110,7 +117,7 @@ export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
               checkMediaId,
               checkMediaURL,
             },
-          )
+          );
 
           const updatedAiExtraction = doc.extractions?.map((ext) => {
             if (ext.uniqueId === extraction.uniqueId) {
@@ -118,33 +125,33 @@ export const UploadToMeedan: TaskConfig<'uploadToMeedan'> = {
                 ...ext,
                 checkMediaId,
                 checkMediaURL,
-              }
+              };
             }
-            return ext
-          })
+            return ext;
+          });
 
           await payload.update({
-            collection: 'aiExtraction',
+            collection: "aiExtraction",
             id: doc.id,
             data: {
               extractions: updatedAiExtraction,
             },
-          })
+          });
 
           logger.info(
             `uploadToMeedan:: Updated extraction ${extraction.uniqueId} in document ${doc.id} with CheckMedia data`,
-          )
+          );
         }
 
-        await checkAndMarkDocumentComplete(document, payload)
+        await checkAndMarkDocumentComplete(document, payload);
       }
 
       return {
         output: {},
-      }
+      };
     } catch (error) {
-      logger.error('uploadToMeedan::  Uploading to Meedan failed:', { error })
-      throw error
+      logger.error("uploadToMeedan::  Uploading to Meedan failed:", { error });
+      throw error;
     }
   },
-}
+};

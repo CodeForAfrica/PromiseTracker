@@ -1,21 +1,21 @@
-import { CollectionConfig } from 'payload'
+import { CollectionConfig } from "payload";
 
 export const AIExtractions: CollectionConfig = {
-  slug: 'aiExtraction',
+  slug: "aiExtraction",
   labels: {
     singular: {
-      en: 'AI Extractions',
+      en: "AI Extractions",
       fr: "Extractions d'IA",
     },
     plural: {
-      en: 'AI Extractions',
+      en: "AI Extractions",
       fr: "Extractions d'IA",
     },
   },
   admin: {
     group: {
-      en: 'Documents',
-      fr: 'Documents',
+      en: "Documents",
+      fr: "Documents",
     },
   },
   access: {
@@ -23,95 +23,95 @@ export const AIExtractions: CollectionConfig = {
   },
   fields: [
     {
-      name: 'title',
-      type: 'text',
+      name: "title",
+      type: "text",
       label: {
-        en: 'Title',
-        fr: 'Titre',
+        en: "Title",
+        fr: "Titre",
       },
     },
     {
-      name: 'document',
-      type: 'relationship',
-      relationTo: 'documents',
+      name: "document",
+      type: "relationship",
+      relationTo: "documents",
       required: true,
       hasMany: false,
       label: {
-        en: 'Document',
-        fr: 'Document',
+        en: "Document",
+        fr: "Document",
       },
     },
     {
-      name: 'extractions',
-      type: 'array',
+      name: "extractions",
+      type: "array",
       label: {
-        en: 'Extractions',
-        fr: 'Extractions',
+        en: "Extractions",
+        fr: "Extractions",
       },
       fields: [
         {
-          name: 'category',
-          type: 'text',
+          name: "category",
+          type: "text",
           required: true,
           label: {
-            en: 'Category',
-            fr: 'Catégorie',
+            en: "Category",
+            fr: "Catégorie",
           },
         },
         {
-          name: 'summary',
-          type: 'text',
+          name: "summary",
+          type: "text",
           required: true,
           label: {
-            en: 'Summary',
-            fr: 'Résumé',
+            en: "Summary",
+            fr: "Résumé",
           },
         },
         {
-          name: 'source',
-          type: 'textarea',
+          name: "source",
+          type: "textarea",
           required: true,
           label: {
-            en: 'Source',
-            fr: 'Source',
+            en: "Source",
+            fr: "Source",
           },
         },
         {
-          type: 'row',
+          type: "row",
           fields: [
             {
-              name: 'uniqueId',
-              type: 'text',
+              name: "uniqueId",
+              type: "text",
               admin: {
                 hidden: true,
               },
               label: {
-                en: 'Unique ID',
-                fr: 'ID Unique',
+                en: "Unique ID",
+                fr: "ID Unique",
               },
             },
             {
-              name: 'checkMediaId',
-              type: 'text',
+              name: "checkMediaId",
+              type: "text",
               admin: {
                 hidden: true,
               },
               label: {
-                en: 'Check Media ID',
-                fr: 'ID Check Media',
+                en: "Check Media ID",
+                fr: "ID Check Media",
               },
             },
             {
-              name: 'checkMediaURL',
+              name: "checkMediaURL",
               label: {
-                en: 'CheckMedia URL',
-                fr: 'URL CheckMedia',
+                en: "CheckMedia URL",
+                fr: "URL CheckMedia",
               },
-              type: 'text',
+              type: "text",
             },
           ],
         },
       ],
     },
   ],
-}
+};
