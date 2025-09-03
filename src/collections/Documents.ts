@@ -1,108 +1,112 @@
-import { CollectionConfig } from 'payload'
+import { CollectionConfig } from "payload";
 
 export const Documents: CollectionConfig = {
-  slug: 'documents',
+  slug: "documents",
   labels: {
     singular: {
-      en: 'Document',
-      fr: 'Document',
+      en: "Document",
+      fr: "Document",
     },
     plural: {
-      en: 'Documents',
-      fr: 'Documents',
+      en: "Documents",
+      fr: "Documents",
     },
   },
   access: {
     read: () => true,
   },
   admin: {
-    defaultColumns: ['title', 'country', 'region', 'type', 'language'],
-    useAsTitle: 'title',
+    defaultColumns: ["title", "country", "region", "type", "language"],
+    useAsTitle: "title",
+    group: {
+      en: "Documents",
+      fr: "Documents",
+    },
   },
   fields: [
     {
-      name: 'title',
+      name: "title",
       label: {
-        en: 'Title',
-        fr: 'Titre',
+        en: "Title",
+        fr: "Titre",
       },
-      type: 'text',
+      type: "text",
       required: true,
     },
     {
-      name: 'url',
-      type: 'text',
+      name: "url",
+      type: "text",
       label: {
-        en: 'URL',
-        fr: 'URL',
+        en: "URL",
+        fr: "URL",
       },
     },
     {
-      name: 'docURL', // only used to download file from airtable
-      type: 'text',
+      name: "docURL", // only used to download file from airtable
+      type: "text",
       admin: {
         hidden: true,
       },
     },
     {
-      name: 'file',
-      type: 'upload',
-      relationTo: 'media',
+      name: "file",
+      type: "upload",
+      relationTo: "media",
       label: {
-        en: 'File',
-        fr: 'Déposer',
+        en: "File",
+        fr: "Déposer",
       },
     },
     {
-      type: 'row',
+      type: "row",
       admin: {
-        position: 'sidebar',
+        position: "sidebar",
       },
       fields: [
         {
-          name: 'politicalEntity',
-          type: 'text',
+          name: "politicalEntity",
+          type: "text",
           label: {
-            en: 'Political Entity',
-            fr: 'Entité Politique',
+            en: "Political Entity",
+            fr: "Entité Politique",
           },
         },
         {
-          name: 'country',
-          type: 'text',
+          name: "country",
+          type: "text",
           label: {
-            en: 'Country',
-            fr: 'Pays',
+            en: "Country",
+            fr: "Pays",
           },
         },
         {
-          name: 'region',
-          type: 'text',
+          name: "region",
+          type: "text",
           label: {
-            en: 'Region',
-            fr: 'Région',
+            en: "Region",
+            fr: "Région",
           },
         },
         {
-          name: 'language',
-          type: 'select',
+          name: "language",
+          type: "select",
           label: {
-            en: 'Language',
-            fr: 'Langue',
+            en: "Language",
+            fr: "Langue",
           },
           options: [
             {
-              value: 'en',
+              value: "en",
               label: {
-                en: 'English',
-                fr: 'Anglais',
+                en: "English",
+                fr: "Anglais",
               },
             },
             {
-              value: 'fr',
+              value: "fr",
               label: {
-                en: 'French',
-                fr: 'Français',
+                en: "French",
+                fr: "Français",
               },
             },
           ],
@@ -110,100 +114,100 @@ export const Documents: CollectionConfig = {
       ],
     },
     {
-      name: 'type',
-      type: 'select',
+      name: "type",
+      type: "select",
       label: {
-        en: 'Type',
-        fr: 'Taper',
+        en: "Type",
+        fr: "Taper",
       },
       admin: {
-        position: 'sidebar',
+        position: "sidebar",
       },
       options: [
         {
-          value: 'promise',
+          value: "promise",
           label: {
-            en: 'Promise',
-            fr: 'Promesse',
+            en: "Promise",
+            fr: "Promesse",
           },
         },
         {
-          value: 'evidence',
+          value: "evidence",
           label: {
-            en: 'Evidence',
-            fr: 'Preuve',
+            en: "Evidence",
+            fr: "Preuve",
           },
         },
       ],
     },
     {
-      type: 'row',
+      type: "row",
       admin: {
-        position: 'sidebar',
+        position: "sidebar",
       },
       fields: [
         {
-          name: 'yearFrom',
-          type: 'number',
+          name: "yearFrom",
+          type: "number",
           label: {
-            en: 'Year From',
-            fr: 'Année à partir de',
+            en: "Year From",
+            fr: "Année à partir de",
           },
         },
         {
-          name: 'yearTo',
-          type: 'number',
+          name: "yearTo",
+          type: "number",
           label: {
-            en: 'Year To',
-            fr: 'Année à',
+            en: "Year To",
+            fr: "Année à",
           },
         },
       ],
     },
     {
-      name: 'airtableID',
+      name: "airtableID",
       label: {
-        en: 'Airtable ID',
-        fr: 'ID Airtable ',
+        en: "Airtable ID",
+        fr: "ID Airtable ",
       },
-      type: 'text',
+      type: "text",
       unique: true,
       admin: {
-        position: 'sidebar',
+        position: "sidebar",
         readOnly: true,
       },
     },
     {
-      name: 'fullyProcessed',
-      type: 'checkbox',
+      name: "fullyProcessed",
+      type: "checkbox",
       label: {
-        en: 'Processed',
-        fr: 'Traité',
+        en: "Processed",
+        fr: "Traité",
       },
       defaultValue: false,
       admin: {
-        position: 'sidebar',
+        position: "sidebar",
       },
     },
     {
-      type: 'tabs',
+      type: "tabs",
       admin: {
         readOnly: true,
       },
       tabs: [
         {
           label: {
-            en: 'Extracted Text',
-            fr: 'Texte extrait',
+            en: "Extracted Text",
+            fr: "Texte extrait",
           },
           fields: [
             {
-              name: 'extractedText',
+              name: "extractedText",
               label: {
-                en: 'Text',
-                fr: 'Texte',
+                en: "Text",
+                fr: "Texte",
               },
-              type: 'richText',
+              type: "richText",
               admin: {
                 readOnly: true,
               },
@@ -213,4 +217,4 @@ export const Documents: CollectionConfig = {
       ],
     },
   ],
-}
+};

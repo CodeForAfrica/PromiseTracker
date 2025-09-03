@@ -1,89 +1,103 @@
-import { TaskConfig } from 'payload'
-import { getUnprocessedDocuments } from '@/lib/airtable'
+import { TaskConfig } from "payload";
+import { getUnprocessedDocuments } from "@/lib/airtable";
 
-const LANGUAGE_MAP: Record<string, 'en' | 'fr'> = {
-  English: 'en',
-  French: 'fr',
-}
+const LANGUAGE_MAP: Record<string, "en" | "fr"> = {
+  English: "en",
+  French: "fr",
+};
 
-export const FetchAirtableDocuments: TaskConfig<'fetchAirtableDocuments'> = {
+export const FetchAirtableDocuments: TaskConfig<"fetchAirtableDocuments"> = {
   retries: 2,
-  slug: 'fetchAirtableDocuments',
-  label: 'Fetch Airtable Documents',
+  slug: "fetchAirtableDocuments",
+  label: "Fetch Airtable Documents",
   handler: async ({ req: { payload } }) => {
-    const { logger } = payload
-    logger.info('fetchAirtableDocuments:: Starting fetching documents from Airtable')
+    const { logger } = payload;
+    logger.info(
+      "fetchAirtableDocuments:: Starting fetching documents from Airtable",
+    );
 
     const {
       airtable: { airtableAPIKey, airtableBaseID },
     } = await payload.findGlobal({
-      slug: 'settings',
-    })
+      slug: "settings",
+    });
 
     if (!airtableAPIKey || !airtableBaseID) {
-      logger.error('fetchAirtableDocuments:: Airtable API Key and Base ID not configured')
-      throw new Error('Airtable API key or Base ID not found in settings')
+      logger.error(
+        "fetchAirtableDocuments:: Airtable API Key and Base ID not configured",
+      );
+      throw new Error("Airtable API key or Base ID not found in settings");
     }
 
     try {
-      const unProcessedDocuments = await getUnprocessedDocuments({ airtableAPIKey })
+      const unProcessedDocuments = await getUnprocessedDocuments({
+        airtableAPIKey,
+      });
 
       if (unProcessedDocuments.length === 0) {
-        logger.info('fetchAirtableDocuments:: No unprocessed documents ')
-        return { output: {} }
+        logger.info("fetchAirtableDocuments:: No unprocessed documents ");
+        return { output: {} };
       }
 
-      logger.info(`fetchAirtableDocuments:: Unprocessed Documents: ${unProcessedDocuments.length}`)
+      logger.info(
+        `fetchAirtableDocuments:: Unprocessed Documents: ${unProcessedDocuments.length}`,
+      );
 
       const validUnprocessedDocuments = unProcessedDocuments.filter(
         (doc) => doc.name && (doc.uRL || doc.document.length > 0),
-      )
+      );
 
       const { docs: existingDocs } = await payload.find({
-        collection: 'documents',
+        collection: "documents",
         where: {
           airtableID: {
             in: validUnprocessedDocuments.map((doc) => doc.id),
           },
         },
-      })
+      });
 
       const docsToCreate = validUnprocessedDocuments.filter(
-        (doc) => !existingDocs.find((existing) => existing.airtableID === doc.id),
-      )
+        (doc) =>
+          !existingDocs.find((existing) => existing.airtableID === doc.id),
+      );
 
       if (docsToCreate.length === 0) {
-        logger.info('fetchAirtableDocuments:: No new documents to create')
-        return { output: {} }
+        logger.info("fetchAirtableDocuments:: No new documents to create");
+        return { output: {} };
       }
 
       const createdDocs = await Promise.all(
         docsToCreate.map(async (doc) => {
           return payload.create({
-            collection: 'documents',
+            collection: "documents",
             data: {
               title: doc.name || doc.id,
               politicalEntity: doc.politician,
               country: doc.country,
               region: doc.region,
-              language: LANGUAGE_MAP[doc?.language || ''] || '',
-              type: doc.type?.toLowerCase() as 'promise' | 'evidence',
+              language: LANGUAGE_MAP[doc?.language || ""] || "",
+              type: doc.type?.toLowerCase() as "promise" | "evidence",
               yearFrom: doc.yearFrom,
               yearTo: doc.yearTo,
               airtableID: doc.id,
               url: doc.uRL,
               docURL: doc.document[0],
             },
-          })
+          });
         }),
-      )
-      logger.info(`fetchAirtableDocuments:: Created ${createdDocs.length} new documents`)
+      );
+      logger.info(
+        `fetchAirtableDocuments:: Created ${createdDocs.length} new documents`,
+      );
       return {
         output: {},
-      }
+      };
     } catch (error) {
-      logger.error('fetchAirtableDocuments:: Error Fetching Document from AIrtable', { error })
-      throw error
+      logger.error(
+        "fetchAirtableDocuments:: Error Fetching Document from AIrtable",
+        { error },
+      );
+      throw error;
     }
   },
-}
+};

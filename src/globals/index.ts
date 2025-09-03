@@ -1,4 +1,4 @@
-import { GlobalConfig } from 'payload'
-import { Settings } from './Settings'
+import { GlobalConfig } from "payload";
+import { Settings } from "./Settings";
 
-export const globals: GlobalConfig[] = [Settings]
+export const globals: GlobalConfig[] = [Settings];

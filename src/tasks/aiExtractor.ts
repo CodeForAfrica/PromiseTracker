@@ -1,34 +1,34 @@
-import { TaskConfig } from 'payload'
-import { createGoogleGenerativeAI } from '@ai-sdk/google'
-import { generateObject } from 'ai'
-import { z } from 'zod'
-import { randomUUID } from 'node:crypto'
+import { TaskConfig } from "payload";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { generateObject } from "ai";
+import { z } from "zod";
+import { randomUUID } from "node:crypto";
 
-export const AIExtractor: TaskConfig<'aiExtractor'> = {
-  slug: 'aiExtractor',
-  label: 'AI Extractor',
+export const AIExtractor: TaskConfig<"aiExtractor"> = {
+  slug: "aiExtractor",
+  label: "AI Extractor",
   handler: async ({ req }) => {
-    const { payload } = req
-    const { logger } = payload
-    logger.info('aiExtractor:: Starting AI Extraction')
+    const { payload } = req;
+    const { logger } = payload;
+    logger.info("aiExtractor:: Starting AI Extraction");
 
     try {
       const {
         ai: { model: defaultModel, apiKey },
       } = await payload.findGlobal({
-        slug: 'settings',
-      })
+        slug: "settings",
+      });
 
       const google = createGoogleGenerativeAI({
         apiKey: apiKey,
-      })
+      });
 
-      const model = google(defaultModel)
+      const model = google(defaultModel);
 
       const systemPrompt = `
     You are a helpful assistant that analyzes documents to extract campaign promises and provide structured summaries.
     Your task is to identify and categorize campaign promises, providing direct quotations as sources.
-    `
+    `;
 
       const prompt = `
     Analyze the following document and extract campaign promises with the following structure:
@@ -50,41 +50,41 @@ export const AIExtractor: TaskConfig<'aiExtractor'> = {
 
     **Document:**
     
-    `
+    `;
 
       const { docs: allDocs } = await payload.find({
-        collection: 'documents',
+        collection: "documents",
         limit: -1,
-      })
+      });
 
-      const documents = allDocs.filter((doc) => !doc.fullyProcessed)
+      const documents = allDocs.filter((doc) => !doc.fullyProcessed);
 
       if (documents.length === 0) {
-        logger.info('aiExtractor:: No documents to Extract Promises')
-        return { output: { docs: [] } }
+        logger.info("aiExtractor:: No documents to Extract Promises");
+        return { output: { docs: [] } };
       }
 
-      logger.info(`aiExtractor:: Extracting ${documents.length} documents`)
+      logger.info(`aiExtractor:: Extracting ${documents.length} documents`);
 
-      const processedDocs = []
+      const processedDocs = [];
 
       for (const document of documents) {
-        const { extractedText } = document
+        const { extractedText } = document;
 
         const plainText = extractedText?.root.children
           .map((item) => {
-            if (item.type === 'paragraph') {
+            if (item.type === "paragraph") {
               return (item.children as Array<any>)
-                .map((child: any) => (child.type === 'text' ? child.text : ''))
-                .join('')
+                .map((child: any) => (child.type === "text" ? child.text : ""))
+                .join("");
             }
-            return ''
+            return "";
           })
-          .join('\n')
+          .join("\n");
 
         if (!plainText || plainText?.length === 0) {
-          logger.error('aiExtractor:: No text to process')
-          continue
+          logger.error("aiExtractor:: No text to process");
+          continue;
         }
 
         try {
@@ -96,28 +96,34 @@ export const AIExtractor: TaskConfig<'aiExtractor'> = {
               title: z
                 .string()
                 .describe(
-                  'Inferred title from the document content, or the provided document title as fallback',
+                  "Inferred title from the document content, or the provided document title as fallback",
                 ),
               promises: z.array(
                 z.object({
-                  category: z.string().describe('The thematic category of the promise'),
-                  summary: z.string().describe('A concise summary of the promise'),
+                  category: z
+                    .string()
+                    .describe("The thematic category of the promise"),
+                  summary: z
+                    .string()
+                    .describe("A concise summary of the promise"),
                   source: z
                     .array(z.string())
-                    .describe('Array of direct quotations from the text that support this promise'),
+                    .describe(
+                      "Array of direct quotations from the text that support this promise",
+                    ),
                 }),
               ),
             }),
             maxRetries: 5,
-          })
+          });
 
-          const { object } = res
+          const { object } = res;
 
-          logger.info(object)
+          logger.info(object);
 
           if (object.promises.length > 0) {
             await payload.create({
-              collection: 'aiExtraction',
+              collection: "aiExtraction",
               data: {
                 title: object.title,
                 document: document,
@@ -126,40 +132,42 @@ export const AIExtractor: TaskConfig<'aiExtractor'> = {
                   summary: promise.summary,
                   source: promise.source
                     .map((quote, index) => `${index + 1}: ${quote}\n`)
-                    .join('\n'),
+                    .join("\n"),
                   uniqueId: randomUUID(),
                 })),
               },
-            })
+            });
 
             await payload.update({
-              collection: 'documents',
+              collection: "documents",
               id: document.id,
               data: {
                 fullyProcessed: true,
               },
-            })
+            });
           }
 
           processedDocs.push({
             id: document.id,
             title: object.title,
             promises: object.promises,
-          })
+          });
         } catch (error) {
-          console.log('Error::', { error })
-          logger.error('aiExtractor:: Error generating AI Response::', { error })
+          console.log("Error::", { error });
+          logger.error("aiExtractor:: Error generating AI Response::", {
+            error,
+          });
         }
       }
 
-      logger.info(`aiExtractor:: Extracted ${processedDocs.length} documents`)
+      logger.info(`aiExtractor:: Extracted ${processedDocs.length} documents`);
 
       return {
         output: {},
-      }
+      };
     } catch (error) {
-      logger.error('Error:', { error })
-      throw error
+      logger.error("Error:", { error });
+      throw error;
     }
   },
-}
+};
