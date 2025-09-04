@@ -54,7 +54,42 @@ export const NavigationTab: Tab = {
           },
           fields: [
             {
-              name: "titles",
+              name: "title",
+              type: "text",
+            },
+            linkGroup({
+              overrides: {
+                name: "menus",
+                labels: {
+                  singular: {
+                    en: "Menu",
+                    fr: "Menus",
+                  },
+                  plural: {
+                    en: "Menus",
+                    fr: "Menus",
+                  },
+                },
+              },
+              appearances: false,
+            }),
+          ],
+        },
+      ],
+    },
+    {
+      name: "moreNavigation",
+      type: "group",
+      fields: [
+        {
+          type: "collapsible",
+          label: {
+            en: "Title & Links",
+            fr: "Titre et liens",
+          },
+          fields: [
+            {
+              name: "title",
               type: "text",
             },
             linkGroup({

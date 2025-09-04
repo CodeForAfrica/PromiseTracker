@@ -381,14 +381,9 @@ export interface SiteSetting {
     };
     [k: string]: unknown;
   };
-  /**
-   * Shown on main navigation bar.
-   */
   primaryLogo: string | Media;
-  /**
-   * Shown on main footer. If not provided, primary logo will be reused.
-   */
   secondaryLogo: string | Media;
+  organisationLogo: string | Media;
   primaryNavigation?: {
     titles?: string | null;
     menus?:
@@ -408,7 +403,7 @@ export interface SiteSetting {
       | null;
   };
   secondaryNavigation?: {
-    titles?: string | null;
+    title?: string | null;
     menus?:
       | {
           link: {
@@ -421,6 +416,37 @@ export interface SiteSetting {
             url?: string | null;
             label: string;
           };
+          id?: string | null;
+        }[]
+      | null;
+  };
+  moreNavigation?: {
+    title?: string | null;
+    menus?:
+      | {
+          link: {
+            type?: ('reference' | 'custom') | null;
+            newTab?: boolean | null;
+            reference?: {
+              relationTo: 'pages';
+              value: string | Page;
+            } | null;
+            url?: string | null;
+            label: string;
+          };
+          id?: string | null;
+        }[]
+      | null;
+  };
+  connect: {
+    /**
+     * Text that appears on contact links e.g Stay in Touch
+     */
+    title: string;
+    links?:
+      | {
+          platform: 'Facebook' | 'Twitter' | 'Instagram' | 'Linkedin' | 'Github' | 'Slack';
+          url: string;
           id?: string | null;
         }[]
       | null;
@@ -775,6 +801,7 @@ export interface SiteSettingsSelect<T extends boolean = true> {
   description?: T;
   primaryLogo?: T;
   secondaryLogo?: T;
+  organisationLogo?: T;
   primaryNavigation?:
     | T
     | {
@@ -797,7 +824,7 @@ export interface SiteSettingsSelect<T extends boolean = true> {
   secondaryNavigation?:
     | T
     | {
-        titles?: T;
+        title?: T;
         menus?:
           | T
           | {
@@ -810,6 +837,37 @@ export interface SiteSettingsSelect<T extends boolean = true> {
                     url?: T;
                     label?: T;
                   };
+              id?: T;
+            };
+      };
+  moreNavigation?:
+    | T
+    | {
+        title?: T;
+        menus?:
+          | T
+          | {
+              link?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    label?: T;
+                  };
+              id?: T;
+            };
+      };
+  connect?:
+    | T
+    | {
+        title?: T;
+        links?:
+          | T
+          | {
+              platform?: T;
+              url?: T;
               id?: T;
             };
       };

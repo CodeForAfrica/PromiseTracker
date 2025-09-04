@@ -1,4 +1,6 @@
-import { Tab } from "payload";
+import { Field, Tab } from "payload";
+import image from "@/fields/image";
+import richText from "@/fields/richText";
 
 export const GeneralTab: Tab = {
   label: {
@@ -8,51 +10,44 @@ export const GeneralTab: Tab = {
   fields: [
     {
       type: "collapsible",
-      label: {
-        en: "Title & Description",
-        fr: "Titre et description",
-      },
+      label: "Title & Description",
       fields: [
         {
           name: "title",
           type: "text",
           required: true,
+          localized: true,
         },
-        {
+        richText({
           name: "description",
           type: "richText",
           required: true,
-        },
+          localized: true,
+        }) as Field,
       ],
     },
     {
       type: "collapsible",
-      label: {
-        en: "Logo",
-        fr: "Logo",
-      },
+      label: "Logos",
       fields: [
-        {
-          name: "primaryLogo",
-          required: true,
-          admin: {
-            description: "Shown on main navigation bar.",
+        image({
+          overrides: {
+            name: "primaryLogo",
+            required: true,
           },
-          type: "relationship",
-          relationTo: "media",
-          hasMany: false,
-        },
-        {
-          name: "secondaryLogo",
-          required: true,
-          admin: {
-            description:
-              "Shown on main footer. If not provided, primary logo will be reused.",
+        }),
+        image({
+          overrides: {
+            name: "secondaryLogo",
+            required: true,
           },
-          type: "relationship",
-          relationTo: "media",
-          hasMany: false,
-        },
+        }),
+        image({
+          overrides: {
+            name: "organisationLogo",
+            required: true,
+          },
+        }),
       ],
     },
   ],
