@@ -1,4 +1,5 @@
 import { image } from "@/fields/image";
+import { linkGroup } from "@/fields/link/linkGroup";
 import { Tab } from "payload";
 
 export const GeneralTab: Tab = {
@@ -61,6 +62,44 @@ export const GeneralTab: Tab = {
             },
           },
         }),
+      ],
+    },
+    {
+      type: "collapsible",
+      label: {
+        en: "Legal",
+        fr: "Légal",
+      },
+      fields: [
+        {
+          name: "legal",
+          type: "group",
+          fields: [
+            {
+              name: "copyright",
+              type: "text",
+              label: {
+                en: "Copyright",
+                fr: "Droit d'auteur",
+              },
+              defaultValue: "PromiseTracker",
+              admin: {
+                position: "sidebar",
+              },
+            },
+            linkGroup({
+              overrides: {
+                admin: {
+                  description: {
+                    en: "Links to legal information, for example, terms of service or privacy policy",
+                    fr: "Liens vers des informations juridiques, par exemple, les conditions de service ou la politique de confidentialité",
+                  },
+                },
+              },
+              appearances: false,
+            }),
+          ],
+        },
       ],
     },
   ],

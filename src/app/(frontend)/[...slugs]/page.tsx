@@ -6,6 +6,7 @@ import { getDomain } from "@/lib/domain";
 import { LocalhostWarning } from "@/components/LocalhostWarning";
 import { CommonHomePage } from "@/components/CommonHomePage";
 import { BlockRenderer } from "@/components/BlockRenderer";
+import Navigation from "@/components/Navigation";
 
 type Args = {
   params: Promise<{
@@ -47,6 +48,28 @@ export default async function Page(params: Args) {
 
   const page = await queryPageBySlug({ slug, tenant });
 
+  let { docs: siteSettings } = await payload.find({
+    collection: "site-settings",
+    where: {
+      tenant: {
+        equals: tenant,
+      },
+    },
+  });
+
+  const tenantSettings = siteSettings[0];
+
+  const {
+    title,
+    description,
+    primaryLogo,
+    secondaryLogo,
+    primaryNavigation,
+    secondaryNavigation,
+    connect,
+    legal,
+  } = tenantSettings;
+
   if (!page) {
     return notFound();
   }
@@ -54,6 +77,10 @@ export default async function Page(params: Args) {
   const { blocks } = page;
   return (
     <>
+      <Navigation
+        primaryLogo={primaryLogo}
+        primaryNavigation={primaryNavigation}
+      />
       <Suspense>
         <BlockRenderer blocks={blocks} />
       </Suspense>
