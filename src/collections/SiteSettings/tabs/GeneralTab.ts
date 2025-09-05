@@ -1,3 +1,4 @@
+import { image } from "@/fields/image";
 import { Tab } from "payload";
 
 export const GeneralTab: Tab = {
@@ -32,27 +33,34 @@ export const GeneralTab: Tab = {
         fr: "Logo",
       },
       fields: [
-        {
+        image({
           name: "primaryLogo",
+          label: {
+            en: "Primary Logo",
+            fr: "Logo principal",
+          },
           required: true,
           admin: {
-            description: "Shown on main navigation bar.",
+            description: {
+              en: "Shown on main navigation bar.",
+              fr: "Affiché sur la barre de navigation principale.",
+            },
           },
-          type: "relationship",
-          relationTo: "media",
-          hasMany: false,
-        },
-        {
+        }),
+        image({
           name: "secondaryLogo",
           required: true,
-          admin: {
-            description:
-              "Shown on main footer. If not provided, primary logo will be reused.",
+          label: {
+            en: "Secondary Logo",
+            fr: "Logo secondaire",
           },
-          type: "relationship",
-          relationTo: "media",
-          hasMany: false,
-        },
+          admin: {
+            description: {
+              en: "Shown on main footer. If not provided, primary logo will be reused.",
+              fr: "Affiché dans le pied de page principal. S'il n'est pas fourni, le logo principal sera réutilisé.",
+            },
+          },
+        }),
       ],
     },
   ],
