@@ -2,9 +2,9 @@ import { Link } from "@payloadcms/ui";
 import type { DefaultServerCellComponentProps } from "payload";
 import React from "react";
 
-export const CollectionTenantFieldCell: React.FC<
-  DefaultServerCellComponentProps
-> = async (props) => {
+export const CollectionTenantFieldCell = async (
+  props: DefaultServerCellComponentProps
+) => {
   const { rowData, cellData, collectionSlug, payload } = props;
 
   const { id, tenant: tenatID } = rowData;
