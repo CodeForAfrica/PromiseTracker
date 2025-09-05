@@ -16,6 +16,11 @@ export const Pages: CollectionConfig = {
       name: "title",
       type: "text",
       required: true,
+      admin: {
+        components: {
+          Cell: "@/components/payload/CollectionTenantFieldCell#CollectionTenantFieldCell",
+        },
+      },
     },
     ...slugField("title", {
       slugOverrides: {
