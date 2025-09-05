@@ -1,9 +1,10 @@
-import { Alert, Container, Divider, Link, Typography } from "@mui/material";
+import { Alert, Divider, Link, Typography } from "@mui/material";
 import { TenantList } from "./TenantList";
+import Section from "./Section";
 
 export const LocalhostWarning = async () => {
   return (
-    <Container>
+    <Section>
       <Alert severity="warning">
         Warning: Localhost does not work properly with subdomains
       </Alert>
@@ -22,6 +23,6 @@ export const LocalhostWarning = async () => {
         You can also visit individual tenants listed below
       </Typography>
       <TenantList />
-    </Container>
+    </Section>
   );
 };

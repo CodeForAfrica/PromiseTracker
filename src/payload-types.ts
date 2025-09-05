@@ -389,6 +389,27 @@ export interface SiteSetting {
    * Shown on main footer. If not provided, primary logo will be reused.
    */
   secondaryLogo: string | Media;
+  legal?: {
+    copyright?: string | null;
+    /**
+     * Links to legal information, for example, terms of service or privacy policy
+     */
+    links?:
+      | {
+          link: {
+            type?: ('reference' | 'custom') | null;
+            newTab?: boolean | null;
+            reference?: {
+              relationTo: 'pages';
+              value: string | Page;
+            } | null;
+            url?: string | null;
+            label: string;
+          };
+          id?: string | null;
+        }[]
+      | null;
+  };
   primaryNavigation?: {
     titles?: string | null;
     menus?:
@@ -788,6 +809,25 @@ export interface SiteSettingsSelect<T extends boolean = true> {
   description?: T;
   primaryLogo?: T;
   secondaryLogo?: T;
+  legal?:
+    | T
+    | {
+        copyright?: T;
+        links?:
+          | T
+          | {
+              link?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    label?: T;
+                  };
+              id?: T;
+            };
+      };
   primaryNavigation?:
     | T
     | {
