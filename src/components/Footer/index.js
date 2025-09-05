@@ -54,7 +54,7 @@ function MainFooter({
         <Section
           sx={{
             padding: { xs: "0 23px", lg: 0 },
-            margin: { xs: 0, lg: "0 auto" },
+            margin: "auto",
             width: "100%",
           }}
         >
@@ -162,7 +162,7 @@ function MainFooter({
         <Section
           sx={{
             padding: { xs: "0 23px", lg: 0 },
-            margin: { xs: 0, lg: "0 auto" },
+            margin: "auto",
             width: "100%",
           }}
         >
