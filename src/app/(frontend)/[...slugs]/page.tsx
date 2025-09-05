@@ -1,6 +1,5 @@
 import React, { Suspense } from "react";
 
-import "../styles.css";
 import { getGlobalPayload, queryPageBySlug } from "@/lib/payload";
 import { notFound } from "next/navigation";
 import { getDomain } from "@/lib/domain";
@@ -37,7 +36,7 @@ export default async function Page(params: Args) {
   }
 
   const tenant = allTenants.find(
-    (t) => t.country?.toLocaleLowerCase() === subdomain?.toLocaleLowerCase(),
+    (t) => t.country?.toLocaleLowerCase() === subdomain?.toLocaleLowerCase()
   );
 
   if (!tenant) {
@@ -54,12 +53,10 @@ export default async function Page(params: Args) {
 
   const { blocks } = page;
   return (
-    <div className="home">
-      <div className="content">
-        <Suspense>
-          <BlockRenderer blocks={blocks} />
-        </Suspense>
-      </div>
-    </div>
+    <>
+      <Suspense>
+        <BlockRenderer blocks={blocks} />
+      </Suspense>
+    </>
   );
 }

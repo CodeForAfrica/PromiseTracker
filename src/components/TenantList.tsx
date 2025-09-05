@@ -1,6 +1,6 @@
 import { getGlobalPayload } from "@/lib/payload";
-import Link from "next/link";
 import { getDomain } from "@/lib/domain";
+import { Card, List, ListItem, Link, Typography } from "@mui/material";
 
 export const TenantList = async () => {
   const payload = await getGlobalPayload();
@@ -12,17 +12,17 @@ export const TenantList = async () => {
   });
 
   return (
-    <div className="tenant-list">
-      <h2>Available Tenants</h2>
-      <ul className="tenant-list">
+    <Card variant="outlined">
+      <Typography variant="h2">Available Tenants</Typography>
+      <List>
         {tenants.map((t) => (
-          <li key={t.id}>
+          <ListItem key={t.id}>
             <Link
               href={`http://${t.country?.toLowerCase()}.localtest.me${port}`}
             >{`http://${t.country?.toLowerCase()}.localtest.me${port}`}</Link>
-          </li>
+          </ListItem>
         ))}
-      </ul>
-    </div>
+      </List>
+    </Card>
   );
 };

@@ -1,10 +1,11 @@
 import { OtherBlock as OtherBlockProps } from "@/payload-types";
+import { Card, Typography } from "@mui/material";
 
 export default async function OtherBlock(props: OtherBlockProps) {
   return (
-    <div>
-      <h1>TestBlock Component</h1>
-      <h1>{props.title}</h1>
-    </div>
+    <Card>
+      <Typography>TestBlock Component</Typography>
+      <Typography>{props.title}</Typography>
+    </Card>
   );
 }

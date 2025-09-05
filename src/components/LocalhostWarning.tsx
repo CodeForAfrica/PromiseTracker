@@ -1,21 +1,27 @@
+import { Alert, Container, Divider, Link, Typography } from "@mui/material";
 import { TenantList } from "./TenantList";
 
 export const LocalhostWarning = async () => {
   return (
-    <div className="home">
-      <div className="content">
-        <div className="warning">
-          <h2>Warning: Localhost does not work properly with subdomains</h2>
-          <p>
-            Please use{" "}
-            <b>
-              <i>localtest.me</i>
-            </b>{" "}
-            instead. This domain points to 127.0.0.1 and supports subdomains.
-          </p>
-        </div>
-        <TenantList />
-      </div>
-    </div>
+    <Container>
+      <Alert severity="warning">
+        Warning: Localhost does not work properly with subdomains
+      </Alert>
+      <Divider />
+      <Typography>
+        Please use{" "}
+        <b>
+          <Link href="http://localtest.me:3000">
+            <i>localtest.me</i>
+          </Link>
+        </b>{" "}
+        instead. This domain points to 127.0.0.1 and supports subdomains.
+      </Typography>
+      <Divider />
+      <Typography>
+        You can also visit individual tenants listed below
+      </Typography>
+      <TenantList />
+    </Container>
   );
 };

@@ -1,10 +1,11 @@
 import React from "react";
-import "./styles.css";
-
+import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
 export const metadata = {
-  description: "A blank template using Payload in a Next.js app.",
-  title: "Payload Blank Template",
+  description: "PromiseTracker",
+  title: "PromiseTracker",
 };
+import theme from "@/theme/theme";
+import { ThemeProvider } from "@mui/material";
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
   const { children } = props;
@@ -12,7 +13,11 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <main>{children}</main>
+        <AppRouterCacheProvider>
+          <ThemeProvider theme={theme}>
+            <main>{children}</main>
+          </ThemeProvider>
+        </AppRouterCacheProvider>
       </body>
     </html>
   );
