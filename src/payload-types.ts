@@ -425,6 +425,19 @@ export interface SiteSetting {
         }[]
       | null;
   };
+  connect: {
+    /**
+     * Text that appears on contact links e.g Stay in Touch
+     */
+    title: string;
+    links?:
+      | {
+          platform: 'Facebook' | 'Twitter' | 'Instagram' | 'Linkedin' | 'Github' | 'Slack';
+          url: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -810,6 +823,18 @@ export interface SiteSettingsSelect<T extends boolean = true> {
                     url?: T;
                     label?: T;
                   };
+              id?: T;
+            };
+      };
+  connect?:
+    | T
+    | {
+        title?: T;
+        links?:
+          | T
+          | {
+              platform?: T;
+              url?: T;
               id?: T;
             };
       };
