@@ -62,6 +62,20 @@ export const GeneralTab: Tab = {
             },
           },
         }),
+        image({
+          name: "alternateLogo",
+          required: true,
+          label: {
+            en: "Alternate Logo",
+            fr: "Logo alternatif",
+          },
+          admin: {
+            description: {
+              en: "Shown on secondary footer. If not provided, secondary logo will be reused.",
+              fr: "Affiché dans le pied de page secondaire. S'il n'est pas fourni, le logo secondaire sera réutilisé.",
+            },
+          },
+        }),
       ],
     },
     {

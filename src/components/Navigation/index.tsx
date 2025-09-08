@@ -14,8 +14,8 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
-  Grid,
 } from "@mui/material";
+import Grid from "@mui/material/Grid";
 import { useTheme } from "@mui/material/styles";
 import MenuIcon from "@mui/icons-material/Menu";
 import SearchIcon from "@mui/icons-material/Search";
@@ -28,6 +28,7 @@ import Section from "@/components/Section";
 type NavigationProps = {
   primaryLogo: SiteSetting["primaryLogo"];
   primaryNavigation?: SiteSetting["primaryNavigation"] | null;
+  title: string;
 };
 
 type NavMenus = NonNullable<
@@ -67,6 +68,7 @@ function getHrefFromLink(
 export default function Navigation({
   primaryLogo,
   primaryNavigation,
+  title,
 }: NavigationProps) {
   const theme = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -141,7 +143,7 @@ export default function Navigation({
                       />
                     ) : (
                       <Box component="span" sx={{ fontWeight: 700 }}>
-                        PromiseTracker
+                        {title}
                       </Box>
                     )}
                   </IconButton>

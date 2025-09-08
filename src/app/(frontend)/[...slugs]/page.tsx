@@ -7,6 +7,7 @@ import { LocalhostWarning } from "@/components/LocalhostWarning";
 import { CommonHomePage } from "@/components/CommonHomePage";
 import { BlockRenderer } from "@/components/BlockRenderer";
 import Navigation from "@/components/Navigation";
+import Footer from "@/components/Footer";
 
 type Args = {
   params: Promise<{
@@ -64,8 +65,9 @@ export default async function Page(params: Args) {
     description,
     primaryLogo,
     secondaryLogo,
+    alternateLogo,
     primaryNavigation,
-    secondaryNavigation,
+    secondaryNavigationList,
     connect,
     legal,
   } = tenantSettings;
@@ -80,10 +82,19 @@ export default async function Page(params: Args) {
       <Navigation
         primaryLogo={primaryLogo}
         primaryNavigation={primaryNavigation}
+        title={title}
       />
       <Suspense>
         <BlockRenderer blocks={blocks} />
       </Suspense>
+      <Footer
+        secondaryLogo={secondaryLogo}
+        secondaryNavigationList={secondaryNavigationList}
+        alternateLogo={alternateLogo}
+        connect={connect}
+        legal={legal}
+        title={title}
+      />
     </>
   );
 }
