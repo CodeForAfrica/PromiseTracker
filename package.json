@@ -39,6 +39,7 @@
     "@payloadcms/translations": "^3.53.0",
     "@payloadcms/ui": "3.53.0",
     "@sentry/nextjs": "^10.6.0",
+    "@svgr/webpack": "^8.1.0",
     "ai": "^5.0.26",
     "airtable": "^0.12.2",
     "airtable-ts": "^1.6.0",

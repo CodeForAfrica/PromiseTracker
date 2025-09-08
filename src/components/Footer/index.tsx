@@ -3,21 +3,10 @@
 import React, { useMemo } from "react";
 import NextLink from "next/link";
 import Image from "next/image";
-import {
-  Box,
-  Typography,
-  IconButton,
-  Link as MuiLink,
-  Container,
-} from "@mui/material";
+import { Box, Typography, Link as MuiLink, Container } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { useTheme } from "@mui/material/styles";
-import FacebookIcon from "@mui/icons-material/Facebook";
-import TwitterIcon from "@mui/icons-material/Twitter";
-import InstagramIcon from "@mui/icons-material/Instagram";
-import LinkedInIcon from "@mui/icons-material/LinkedIn";
-import GitHubIcon from "@mui/icons-material/GitHub";
-import ChatIcon from "@mui/icons-material/Chat";
+import { SocialMediaIconLink } from "@/components/SocialMediaIconLink";
 
 import type { Media, Page, SiteSetting } from "@/payload-types";
 import { RichText } from "@/components/RichText";
@@ -63,32 +52,6 @@ function resolveLink(
     return { href: "/", label };
   }
   return null;
-}
-
-type Platform =
-  | "Facebook"
-  | "Twitter"
-  | "Instagram"
-  | "Linkedin"
-  | "Github"
-  | "Slack";
-
-function SocialIcon({ platform }: { platform: Platform }) {
-  switch (platform) {
-    case "Facebook":
-      return <FacebookIcon />;
-    case "Twitter":
-      return <TwitterIcon />;
-    case "Instagram":
-      return <InstagramIcon />;
-    case "Linkedin":
-      return <LinkedInIcon />;
-    case "Github":
-      return <GitHubIcon />;
-    case "Slack":
-    default:
-      return <ChatIcon />;
-  }
 }
 
 export default function Footer({
@@ -184,12 +147,10 @@ export default function Footer({
                 sx={{ mt: 2, flexWrap: "wrap" }}
               >
                 {connect?.links?.map((l) => (
-                  <IconButton
+                  <SocialMediaIconLink
                     key={`m-${l.platform}-${l.url}`}
-                    component={NextLink}
+                    platform={l.platform}
                     href={l.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     sx={{
                       backgroundColor: theme.palette.secondary.main,
                       width: "3rem",
@@ -198,9 +159,7 @@ export default function Footer({
                       borderRadius: 0,
                       color: theme.palette.text.primary,
                     }}
-                  >
-                    <SocialIcon platform={l.platform as Platform} />
-                  </IconButton>
+                  />
                 ))}
               </Box>
             </Grid>
@@ -330,12 +289,10 @@ export default function Footer({
                 }}
               >
                 {connect?.links?.map((l) => (
-                  <IconButton
+                  <SocialMediaIconLink
                     key={`m-${l.platform}-${l.url}`}
-                    component={NextLink}
+                    platform={l.platform}
                     href={l.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     sx={{
                       backgroundColor: theme.palette.secondary.main,
                       width: "3rem",
@@ -344,9 +301,7 @@ export default function Footer({
                       color: theme.palette.text.primary,
                       borderRadius: 0,
                     }}
-                  >
-                    <SocialIcon platform={l.platform as Platform} />
-                  </IconButton>
+                  />
                 ))}
               </Box>
 
@@ -431,12 +386,10 @@ export default function Footer({
                 {connect.title}
               </Typography>
               {connect?.links?.map((l) => (
-                <IconButton
+                <SocialMediaIconLink
                   key={`${l.platform}-${l.url}`}
-                  component={NextLink}
+                  platform={l.platform}
                   href={l.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
                   sx={{
                     backgroundColor: theme.palette.secondary.main,
                     width: "3rem",
@@ -444,9 +397,7 @@ export default function Footer({
                     mr: 0.5,
                     color: theme.palette.text.primary,
                   }}
-                >
-                  <SocialIcon platform={l.platform as Platform} />
-                </IconButton>
+                />
               ))}
             </Grid>
           </Grid>
