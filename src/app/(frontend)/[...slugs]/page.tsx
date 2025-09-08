@@ -49,7 +49,7 @@ export default async function Page(params: Args) {
 
   const page = await queryPageBySlug({ slug, tenant });
 
-  let { docs: siteSettings } = await payload.find({
+  const { docs: siteSettings } = await payload.find({
     collection: "site-settings",
     where: {
       tenant: {

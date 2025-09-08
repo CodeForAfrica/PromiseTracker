@@ -310,10 +310,10 @@ export default function Footer({
                   display: { xs: "block", lg: "none" },
                   textTransform: "uppercase",
                   color: theme.palette.secondary.dark,
-                  fontWeight: theme.typography.fontWeightBold,
                   textAlign: "center",
                   mt: 2,
                   mb: 1,
+                  fontWeight: theme.typography.button,
                 }}
               >
                 {connect.title}
@@ -366,7 +366,7 @@ export default function Footer({
                   sx={{
                     color: theme.palette.secondary.dark,
                     textTransform: "uppercase",
-                    fontWeight: theme.typography.fontWeightBold,
+                    fontWeight: theme.typography.button,
                   }}
                 >
                   &copy; {legal?.copyright || "PromiseTracker"}
@@ -398,7 +398,7 @@ export default function Footer({
                           sx={{
                             typography: "button",
                             textTransform: "uppercase",
-                            fontWeight: theme.typography.fontWeightBold,
+                            fontWeight: theme.typography.button,
                             display: "inline-block",
                             color: theme.palette.secondary.dark,
                           }}
@@ -425,7 +425,7 @@ export default function Footer({
                   textTransform: "uppercase",
                   color: theme.palette.secondary.dark,
                   mr: 2,
-                  fontWeight: theme.typography.fontWeightBold,
+                  fontWeight: theme.typography.button,
                 }}
               >
                 {connect.title}
