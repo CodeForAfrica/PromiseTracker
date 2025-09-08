@@ -14,6 +14,7 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
+  Container,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { useTheme } from "@mui/material/styles";
@@ -23,7 +24,6 @@ import CloseIcon from "@mui/icons-material/Close";
 
 import type { SiteSetting, Page, Media } from "@/payload-types";
 import Search from "@/components/Search";
-import Section from "@/components/Section";
 
 type NavigationProps = {
   primaryLogo: SiteSetting["primaryLogo"];
@@ -110,7 +110,7 @@ export default function Navigation({
     >
       <Toolbar disableGutters sx={{ display: "block" }}>
         <Box sx={{ py: { xs: 2, lg: 0 } }}>
-          <Section>
+          <Container>
             <Box sx={{ py: { lg: theme.typography.pxToRem(54) } }}>
               <Grid
                 container
@@ -229,7 +229,7 @@ export default function Navigation({
                 </Grid>
               </Grid>
             </Box>
-          </Section>
+          </Container>
         </Box>
       </Toolbar>
 
@@ -272,7 +272,7 @@ export default function Navigation({
 
           {/* Menu list */}
           <Box sx={{ flex: 1, overflowY: "auto" }} onClick={toggleMobile}>
-            <Section>
+            <Container>
               <List sx={{ p: 0 }}>
                 {menus.map((m, idx) => (
                   <ListItem
@@ -308,7 +308,7 @@ export default function Navigation({
                   </ListItem>
                 ))}
               </List>
-            </Section>
+            </Container>
           </Box>
         </Box>
       </Drawer>

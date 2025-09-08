@@ -3,7 +3,13 @@
 import React, { useMemo } from "react";
 import NextLink from "next/link";
 import Image from "next/image";
-import { Box, Typography, IconButton, Link as MuiLink } from "@mui/material";
+import {
+  Box,
+  Typography,
+  IconButton,
+  Link as MuiLink,
+  Container,
+} from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { useTheme } from "@mui/material/styles";
 import FacebookIcon from "@mui/icons-material/Facebook";
@@ -13,8 +19,8 @@ import LinkedInIcon from "@mui/icons-material/LinkedIn";
 import GitHubIcon from "@mui/icons-material/GitHub";
 import ChatIcon from "@mui/icons-material/Chat";
 
-import Section from "@/components/Section";
 import type { Media, Page, SiteSetting } from "@/payload-types";
+import { RichText } from "@/components/RichText";
 
 type Props = {
   secondaryLogo: SiteSetting["secondaryLogo"];
@@ -22,6 +28,7 @@ type Props = {
   alternateLogo: SiteSetting["alternateLogo"];
   connect: SiteSetting["connect"];
   legal?: SiteSetting["legal"] | null;
+  description: SiteSetting["description"];
   title: string;
 };
 
@@ -91,6 +98,7 @@ export default function Footer({
   connect,
   legal,
   title,
+  description,
 }: Props) {
   const theme = useTheme();
 
@@ -143,7 +151,7 @@ export default function Footer({
           pb: theme.typography.pxToRem(50),
         }}
       >
-        <Section>
+        <Container>
           <Grid container spacing={2}>
             <Grid
               size={12}
@@ -187,6 +195,7 @@ export default function Footer({
                       width: "3rem",
                       height: "3rem",
                       mr: 0.5,
+                      borderRadius: 0,
                       color: theme.palette.text.primary,
                     }}
                   >
@@ -197,27 +206,21 @@ export default function Footer({
             </Grid>
 
             <Grid size={{ xs: 12, lg: 8 }}>
-              <Typography variant="body2" sx={{ mt: 3 }}>
-                PromiseTracker, is a tool to help journalists and civil society
-                watchdogs more easily track campaign promises and other
-                political / government pledges, using official evidence / data,
-                as well as crowdsourced information, with a transparent and
-                defensible methodology, to help inject accountability and
-                honesty into the often cavalier way that promises are made to
-                citizens to win their support for elections, policies and
-                contracts but are seldom honoured. This site is an openAFRICA
-                project of Code for Africa. All content is released under a
-                Creative Commons 4 Attribution Licence. Reuse it to help empower
-                your own community. The code is available on GitHub and data is
-                available on openAFRICA.
-              </Typography>
+              <RichText
+                data={description}
+                sx={(theme) => ({
+                  ...theme.typography.body2,
+                  mt: 3,
+                })}
+              />
             </Grid>
 
             {/* Secondary navigation columns (optional) */}
             {secondaryNavColumns.map((col, idx) => (
               <Grid
                 key={idx}
-                size={{ xs: 6, lg: 2 }}
+                size={{ xs: 6, lg: idx === 0 ? 2 : 1 }}
+                offset={idx === 0 ? { lg: 1 } : undefined}
                 sx={{ mt: { xs: 4, lg: 0 } }}
               >
                 {col.title ? (
@@ -250,7 +253,7 @@ export default function Footer({
               </Grid>
             ))}
           </Grid>
-        </Section>
+        </Container>
       </Box>
 
       <Box
@@ -260,7 +263,7 @@ export default function Footer({
           py: "3rem",
         }}
       >
-        <Section
+        <Container
           sx={({ typography }) => ({
             padding: {
               xs: `0 ${typography.pxToRem(23)}`,
@@ -447,7 +450,7 @@ export default function Footer({
               ))}
             </Grid>
           </Grid>
-        </Section>
+        </Container>
       </Box>
     </Box>
   );

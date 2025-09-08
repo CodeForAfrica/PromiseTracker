@@ -94,6 +94,7 @@ export default async function Page(params: Args) {
         connect={connect}
         legal={legal}
         title={title}
+        description={description}
       />
     </>
   );
