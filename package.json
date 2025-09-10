@@ -51,6 +51,7 @@
     "next": "15.4.7",
     "payload": "3.53.0",
     "react": "19.1.1",
+    "require-in-the-middle": "^7.5.2",
     "sharp": "0.34.3",
     "tiktoken": "^1.0.22",
     "zod": "^4.1.3"
