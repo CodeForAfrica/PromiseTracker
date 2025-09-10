@@ -1,83 +1,39 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React from "react";
 import Image from "next/image";
 import { Box, Typography, Container } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { useTheme } from "@mui/material/styles";
 import { SocialMediaIconLink } from "@/components/SocialMediaIconLink";
 
-import type { Media, SiteSetting } from "@/payload-types";
+import type { SiteSetting } from "@/payload-types";
 import { RichText } from "@/components/RichText";
 import { CMSLink } from "@/components/CMSLink";
+import type { Logo, LegalLinks, SecondaryNavColumn } from "@/types/navigation";
 
 type Props = {
-  secondaryLogo: SiteSetting["secondaryLogo"];
-  secondaryNavigationList: SiteSetting["secondaryNavigationList"];
-  alternateLogo: SiteSetting["alternateLogo"];
+  secondaryLogo: Logo;
+  secondaryNavColumns: SecondaryNavColumn[];
+  alternateLogo: Logo;
   connect: SiteSetting["connect"];
-  legal?: SiteSetting["legal"] | null;
+  legal: LegalLinks;
   description: SiteSetting["description"];
   title: string;
 };
 
-type MenuItem = NonNullable<
-  NonNullable<
-    NonNullable<
-      SiteSetting["secondaryNavigationList"]
-    >[number]["secondaryNavigation"]
-  >["menus"]
->[number];
-type LegalItem = NonNullable<
-  NonNullable<SiteSetting["legal"]>["links"]
->[number];
-
 export default function Footer({
   secondaryLogo,
   alternateLogo,
-  secondaryNavigationList,
+  secondaryNavColumns,
   connect,
   legal,
   title,
   description,
 }: Props) {
   const theme = useTheme();
-
-  const secondaryLogoSrc = useMemo(() => {
-    if (!secondaryLogo) return null;
-    if (typeof secondaryLogo === "string") return null;
-    return (secondaryLogo as Media).url || null;
-  }, [secondaryLogo]);
-
-  const alternateLogoSrc = useMemo(() => {
-    if (!alternateLogo) return null;
-    if (typeof alternateLogo === "string") return null;
-    return (alternateLogo as Media).url || null;
-  }, [alternateLogo]);
-
-  const secondaryNavColumns = useMemo(() => {
-    const list = (secondaryNavigationList || []) as NonNullable<
-      SiteSetting["secondaryNavigationList"]
-    >;
-    return list
-      .map((entry) => {
-        const group = entry?.secondaryNavigation;
-        const items = ((group?.menus || []) as MenuItem[])
-          .map((m) => m.link)
-          .filter((l): l is NonNullable<MenuItem["link"]> => Boolean(l && l.label));
-        return {
-          title: group?.titles || null,
-          links: items,
-        };
-      })
-      .filter((col) => col.title || col.links.length > 0);
-  }, [secondaryNavigationList]);
-  const legalLinks = useMemo(() => {
-    const items = (legal?.links || []) as LegalItem[];
-    return items
-      .map((l) => l.link)
-      .filter((x): x is NonNullable<LegalItem["link"]> => Boolean(x && x.label));
-  }, [legal]);
+  const secondaryLogoSrc = secondaryLogo?.url || null;
+  const alternateLogoSrc = alternateLogo?.url || null;
 
   return (
     <Box component="footer">
@@ -293,9 +249,9 @@ export default function Footer({
                     fontWeight: theme.typography.button,
                   }}
                 >
-                  &copy; {legal?.copyright || "PromiseTracker"}
+                  &copy; {legal?.copyright}
                 </Typography>
-                {legalLinks.length > 0 && (
+                {legal.links.length > 0 && (
                   <Grid
                     container
                     sx={{
@@ -305,7 +261,7 @@ export default function Footer({
                       justifyContent: { xs: "center", lg: "flex-start" },
                     }}
                   >
-                    {legalLinks.map((l, index) => (
+                    {legal.links.map((l, index) => (
                       <Grid
                         key={`${index}-${l.label}`}
                         size={{ xs: 12, lg: "auto" }}

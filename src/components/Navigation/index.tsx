@@ -1,69 +1,31 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React from "react";
 import NextLink from "next/link";
 import Image from "next/image";
-import {
-  AppBar,
-  Toolbar,
-  Box,
-  IconButton,
-  Drawer,
-  List,
-  ListItem,
-  ListItemText,
-  Container,
-} from "@mui/material";
+import { AppBar, Toolbar, Box, IconButton, Container } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { useTheme } from "@mui/material/styles";
-import MenuIcon from "@mui/icons-material/Menu";
-import SearchIcon from "@mui/icons-material/Search";
-import CloseIcon from "@mui/icons-material/Close";
 
-import type { SiteSetting, Media } from "@/payload-types";
+import type { Logo, MenuLink } from "@/types/navigation";
 import Search from "@/components/Search";
-import { CMSLink } from "@/components/CMSLink";
+import { DesktopMenu } from "@/components/Navigation/DesktopMenu";
+import { MobileMenu } from "@/components/Navigation/MobileMenu";
 
 type NavigationProps = {
-  primaryLogo: SiteSetting["primaryLogo"];
-  primaryNavigation?: SiteSetting["primaryNavigation"] | null;
+  primaryLogo: Logo;
+  menus: MenuLink[];
   title: string;
 };
 
-type NavMenus = NonNullable<
-  NonNullable<SiteSetting["primaryNavigation"]>["menus"]
->;
-type CMSLinkShape = NonNullable<NavMenus[number]["link"]>;
-
 export default function Navigation({
   primaryLogo,
-  primaryNavigation,
+  menus,
   title,
 }: NavigationProps) {
   const theme = useTheme();
-  const [mobileOpen, setMobileOpen] = useState(false);
-
-  const menus = useMemo(() => {
-    const items = (primaryNavigation?.menus || []) as NavMenus | [];
-    const links = items
-      .map((m) => m.link)
-      .filter((l): l is CMSLinkShape => Boolean(l && l.label));
-    return links;
-  }, [primaryNavigation]);
-
-  const logoSrc = useMemo(() => {
-    if (!primaryLogo) return null;
-    if (typeof primaryLogo === "string") return null;
-    return (primaryLogo as Media).url || null;
-  }, [primaryLogo]);
-
-  const logoAlt = useMemo(() => {
-    if (!primaryLogo) return "";
-    if (typeof primaryLogo === "string") return "Logo";
-    return primaryLogo.alt || "Logo";
-  }, [primaryLogo]);
-
-  const toggleMobile = () => setMobileOpen((o) => !o);
+  const logoSrc = primaryLogo?.url || null;
+  const logoAlt = primaryLogo?.alt || "Logo";
 
   return (
     <AppBar
@@ -87,7 +49,6 @@ export default function Navigation({
                 alignItems="center"
                 justifyContent="space-between"
               >
-                {/* Logo */}
                 <Grid size={5}>
                   <IconButton
                     component={NextLink}
@@ -118,53 +79,7 @@ export default function Navigation({
                     )}
                   </IconButton>
                 </Grid>
-
-                {/* Desktop navigation */}
-                <Grid
-                  size={5}
-                  sx={{
-                    display: { xs: "none", lg: "flex" },
-                    paddingLeft: "1rem",
-                  }}
-                  container
-                  justifyContent="flex-end"
-                  alignItems="center"
-                  columnGap={1}
-                >
-                  {menus.map((m, idx) => (
-                    <Grid
-                      key={`${idx}-${m.type}-${m.url ?? (typeof m.reference?.value === "object" ? m.reference?.value?.slug : m.reference?.value) ?? m.label}`}
-                    >
-                      <CMSLink
-                        {...m}
-                        sx={(theme) => ({
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          height: 48,
-                          border: 0,
-                          color: theme.palette.primary.main,
-                          padding: "0.8rem  1.2rem",
-                          margin: "0.3rem",
-                          textTransform: "uppercase",
-                          fontFamily: theme.typography.fontFamily,
-                          letterSpacing: "0.56px",
-                          fontWeight: 600,
-                          fontSize: theme.typography.pxToRem(14),
-                          overflow: "hidden",
-                          whiteSpace: "nowrap",
-                          textDecoration: "none",
-                          "&:hover": {
-                            border: 0,
-                            backgroundColor: theme.palette.secondary.light,
-                            textDecoration: "none",
-                          },
-                        })}
-                      />
-                    </Grid>
-                  ))}
-                </Grid>
-
+                <DesktopMenu menus={menus} />
                 <Grid size={2} sx={{ display: { xs: "none", lg: "flex" } }}>
                   <Box
                     sx={{
@@ -177,117 +92,12 @@ export default function Navigation({
                     <Search />
                   </Box>
                 </Grid>
-
-                {/* Mobile actions */}
-                <Grid
-                  sx={{
-                    display: { xs: "flex", lg: "none" },
-                    justifyContent: "flex-end",
-                  }}
-                >
-                  <IconButton
-                    aria-label="Search"
-                    color="secondary"
-                    sx={{ mr: 1 }}
-                  >
-                    <SearchIcon />
-                  </IconButton>
-                  <IconButton
-                    aria-label="Open menu"
-                    onClick={toggleMobile}
-                    sx={{ color: theme.palette.primary.main }}
-                  >
-                    <MenuIcon />
-                  </IconButton>
-                </Grid>
+                <MobileMenu menus={menus} />
               </Grid>
             </Box>
           </Container>
         </Box>
       </Toolbar>
-
-      {/* Mobile drawer */}
-      <Drawer
-        anchor="right"
-        open={mobileOpen}
-        onClose={toggleMobile}
-        PaperProps={{
-          sx: {
-            width: "100%",
-            height: "100%",
-            backgroundColor: "#005DFD",
-            color: theme.palette.background.default,
-          },
-        }}
-      >
-        <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-          {/* Top actions (close) */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "flex-end",
-              px: {
-                xs: theme.typography.pxToRem(21.5),
-                lg: theme.typography.pxToRem(33),
-              },
-              py: 1,
-            }}
-          >
-            <IconButton
-              onClick={toggleMobile}
-              aria-label="Close"
-              sx={{ color: theme.palette.background.default }}
-            >
-              <CloseIcon fontSize="large" />
-            </IconButton>
-          </Box>
-
-          {/* Menu list */}
-          <Box sx={{ flex: 1, overflowY: "auto" }} onClick={toggleMobile}>
-            <Container>
-              <List sx={{ p: 0 }}>
-                {menus.map((m, idx) => (
-                  <ListItem
-                    key={`${idx}-${m.type}-${m.url ?? (typeof m.reference?.value === "object" ? m.reference?.value?.slug : m.reference?.value) ?? m.label}`}
-                    disableGutters
-                    sx={{
-                      display: "block",
-                      py: idx === 0 ? theme.typography.pxToRem(2) : 0,
-                    }}
-                  >
-                    <CMSLink
-                      {...m}
-                      label=""
-                      sx={{
-                        display: "block",
-                        py: theme.typography.pxToRem(40),
-                        "&:hover": { backgroundColor: "transparent" },
-                        color: theme.palette.background.default,
-                        textDecoration: "none",
-                      }}
-                    >
-                      <ListItemText
-                        primary={m.label}
-                        primaryTypographyProps={{
-                          variant: "h4",
-                          sx: {
-                            textTransform: "uppercase",
-                            fontWeight: 600,
-                            letterSpacing: "0.72px",
-                            fontSize: theme.typography.pxToRem(18),
-                            color: theme.palette.background.default,
-                          },
-                        }}
-                      />
-                    </CMSLink>
-                  </ListItem>
-                ))}
-              </List>
-            </Container>
-          </Box>
-        </Box>
-      </Drawer>
     </AppBar>
   );
 }
