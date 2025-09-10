@@ -74,6 +74,7 @@ export interface Config {
     users: User;
     'site-settings': SiteSetting;
     tenants: Tenant;
+    partners: Partner;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -88,6 +89,7 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     tenants: TenantsSelect<false> | TenantsSelect<true>;
+    partners: PartnersSelect<false> | PartnersSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -231,7 +233,25 @@ export interface Page {
   title: string;
   slug: string;
   slugLock?: boolean | null;
-  blocks?: (TestBlock | OtherBlock)[] | null;
+  blocks?:
+    | (
+        | TestBlock
+        | OtherBlock
+        | {
+            title: string;
+            partners?: (string | Partner)[] | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'partners';
+          }
+        | {
+            image: string | Media;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'newsletter';
+          }
+      )[]
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -327,6 +347,34 @@ export interface OtherBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'other-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "partners".
+ */
+export interface Partner {
+  id: string;
+  name: string;
+  image: string | Media;
+  links?:
+    | {
+        platform: 'Facebook' | 'Twitter' | 'Instagram' | 'Linkedin' | 'Github' | 'Slack';
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
+  url: {
+    type?: ('reference' | 'custom') | null;
+    newTab?: boolean | null;
+    reference?: {
+      relationTo: 'pages';
+      value: string | Page;
+    } | null;
+    url?: string | null;
+    label: string;
+  };
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -465,6 +513,11 @@ export interface SiteSetting {
           id?: string | null;
         }[]
       | null;
+  };
+  newsletter: {
+    title: string;
+    description: string;
+    embedCode: string;
   };
   updatedAt: string;
   createdAt: string;
@@ -635,6 +688,10 @@ export interface PayloadLockedDocument {
         value: string | Tenant;
       } | null)
     | ({
+        relationTo: 'partners';
+        value: string | Partner;
+      } | null)
+    | ({
         relationTo: 'payload-jobs';
         value: string | PayloadJob;
       } | null);
@@ -755,6 +812,21 @@ export interface PagesSelect<T extends boolean = true> {
     | {
         'test-block'?: T | TestBlockSelect<T>;
         'other-block'?: T | OtherBlockSelect<T>;
+        partners?:
+          | T
+          | {
+              title?: T;
+              partners?: T;
+              id?: T;
+              blockName?: T;
+            };
+        newsletter?:
+          | T
+          | {
+              image?: T;
+              id?: T;
+              blockName?: T;
+            };
       };
   updatedAt?: T;
   createdAt?: T;
@@ -891,6 +963,13 @@ export interface SiteSettingsSelect<T extends boolean = true> {
               id?: T;
             };
       };
+  newsletter?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        embedCode?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -902,6 +981,32 @@ export interface TenantsSelect<T extends boolean = true> {
   name?: T;
   locale?: T;
   country?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "partners_select".
+ */
+export interface PartnersSelect<T extends boolean = true> {
+  name?: T;
+  image?: T;
+  links?:
+    | T
+    | {
+        platform?: T;
+        url?: T;
+        id?: T;
+      };
+  url?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        label?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }

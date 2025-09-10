@@ -2,6 +2,9 @@ import OtherBlock from "@/blocks/OtherBlock/Component";
 import TestBlock from "@/blocks/TestBlock/Component";
 import { Page } from "@/payload-types";
 import { Fragment } from "react";
+import Newsletter from "./Newsletter";
+import Partners from "./Partners";
+import { b } from "vitest/dist/chunks/suite.d.FvehnV49.js";
 
 type BlockProps = {
   blocks: Page["blocks"];
@@ -10,9 +13,12 @@ type BlockProps = {
 const blockComponents = {
   "test-block": TestBlock,
   "other-block": OtherBlock,
+  newsletter: Newsletter,
+  partners: Partners,
 };
 export const BlockRenderer = ({ blocks }: BlockProps) => {
   const hasBlocks = blocks && Array.isArray(blocks) && blocks.length > 0;
+  console.log(blocks);
 
   if (hasBlocks) {
     return (
