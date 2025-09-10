@@ -6,7 +6,6 @@ import { IconButton, type SxProps, type Theme, SvgIcon } from "@mui/material";
 
 import type { SiteSetting } from "@/payload-types";
 
-// Import SVGs as React components
 import FacebookIcon from "@/assets/icons/Type=facebook, Size=24, Color=CurrentColor.svg";
 import GitHubIcon from "@/assets/icons/Type=github, Size=24, Color=CurrentColor.svg";
 import InstagramIcon from "@/assets/icons/Type=instagram, Size=24, Color=CurrentColor.svg";
