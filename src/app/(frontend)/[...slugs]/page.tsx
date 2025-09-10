@@ -1,11 +1,14 @@
 import React, { Suspense } from "react";
 
-import { getGlobalPayload, queryPageBySlug } from "@/lib/payload";
+import { queryPageBySlug } from "@/lib/payload";
 import { notFound } from "next/navigation";
 import { getDomain } from "@/lib/domain";
 import { LocalhostWarning } from "@/components/LocalhostWarning";
 import { CommonHomePage } from "@/components/CommonHomePage";
 import { BlockRenderer } from "@/components/BlockRenderer";
+import Navigation from "@/components/Navigation";
+import Footer from "@/components/Footer";
+import { getTenantBySubDomain, getTenantNavigation } from "@/lib/data/tenants";
 
 type Args = {
   params: Promise<{
@@ -23,21 +26,13 @@ async function getPageSlug({ params: pageParams }: Args) {
 }
 
 export default async function Page(params: Args) {
-  const payload = await getGlobalPayload();
   const { isLocalhost, subdomain } = await getDomain();
-
-  const { docs: allTenants } = await payload.find({
-    collection: "tenants",
-    limit: -1,
-  });
 
   if (isLocalhost) {
     return <LocalhostWarning />;
   }
 
-  const tenant = allTenants.find(
-    (t) => t.country?.toLocaleLowerCase() === subdomain?.toLocaleLowerCase()
-  );
+  const tenant = await getTenantBySubDomain(subdomain);
 
   if (!tenant) {
     return <CommonHomePage />;
@@ -51,12 +46,17 @@ export default async function Page(params: Args) {
     return notFound();
   }
 
+  const { title, description, navigation, footer } =
+    await getTenantNavigation(tenant);
+
   const { blocks } = page;
   return (
     <>
+      <Navigation title={title} {...navigation} />
       <Suspense>
         <BlockRenderer blocks={blocks} />
       </Suspense>
+      <Footer title={title} description={description} {...footer} />
     </>
   );
 }

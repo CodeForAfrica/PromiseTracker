@@ -43,36 +43,45 @@ export const NavigationTab: Tab = {
       ],
     },
     {
-      name: "secondaryNavigation",
-      type: "group",
+      name: "secondaryNavigationList",
+      type: "array",
+      required: true,
+      minRows: 1,
+      maxRows: 2,
       fields: [
         {
-          type: "collapsible",
-          label: {
-            en: "Title & Links",
-            fr: "Titre et liens",
-          },
+          name: "secondaryNavigation",
+          type: "group",
           fields: [
             {
-              name: "titles",
-              type: "text",
-            },
-            linkGroup({
-              overrides: {
-                name: "menus",
-                labels: {
-                  singular: {
-                    en: "Menu",
-                    fr: "Menus",
-                  },
-                  plural: {
-                    en: "Menus",
-                    fr: "Menus",
-                  },
-                },
+              type: "collapsible",
+              label: {
+                en: "Title & Links",
+                fr: "Titre et liens",
               },
-              appearances: false,
-            }),
+              fields: [
+                {
+                  name: "titles",
+                  type: "text",
+                },
+                linkGroup({
+                  overrides: {
+                    name: "menus",
+                    labels: {
+                      singular: {
+                        en: "Menu",
+                        fr: "Menus",
+                      },
+                      plural: {
+                        en: "Menus",
+                        fr: "Menus",
+                      },
+                    },
+                  },
+                  appearances: false,
+                }),
+              ],
+            },
           ],
         },
       ],

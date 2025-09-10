@@ -16,6 +16,38 @@ const nextConfig = {
       ".mjs": [".mts", ".mjs"],
     };
 
+    // Handle SVG imports - support both React components and URLs
+    // First, exclude SVG from the default file loader
+    const fileLoaderRule = webpackConfig.module.rules.find((rule) =>
+      rule.test?.test?.(".svg")
+    );
+    if (fileLoaderRule) {
+      fileLoaderRule.exclude = /\.svg$/i;
+    }
+
+    // Handle *.svg?url imports as URLs
+    webpackConfig.module.rules.push({
+      test: /\.svg$/i,
+      type: "asset/resource",
+      resourceQuery: /url/, // *.svg?url
+    });
+
+    // Handle *.svg imports as React components (for client-side JS/TS files)
+    webpackConfig.module.rules.push({
+      test: /\.svg$/i,
+      issuer: /\.[jt]sx?$/,
+      resourceQuery: { not: [/url/] }, // exclude if *.svg?url
+      use: ["@svgr/webpack"],
+    });
+
+    // Fallback: Handle any remaining SVG imports as assets
+    webpackConfig.module.rules.push({
+      test: /\.svg$/i,
+      type: "asset/resource",
+      resourceQuery: { not: [/url/] },
+      issuer: { not: [/\.[jt]sx?$/] }, // Only if not handled by SVGR rule above
+    });
+
     return webpackConfig;
   },
 };
@@ -53,5 +85,5 @@ export default withSentryConfig(
     // https://docs.sentry.io/product/crons/
     // https://vercel.com/docs/cron-jobs
     automaticVercelMonitors: true,
-  },
+  }
 );
