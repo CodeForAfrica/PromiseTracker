@@ -1,15 +1,15 @@
 "use client";
 
 import React, { useMemo } from "react";
-import NextLink from "next/link";
 import Image from "next/image";
-import { Box, Typography, Link as MuiLink, Container } from "@mui/material";
+import { Box, Typography, Container } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { useTheme } from "@mui/material/styles";
 import { SocialMediaIconLink } from "@/components/SocialMediaIconLink";
 
-import type { Media, Page, SiteSetting } from "@/payload-types";
+import type { Media, SiteSetting } from "@/payload-types";
 import { RichText } from "@/components/RichText";
+import { CMSLink } from "@/components/CMSLink";
 
 type Props = {
   secondaryLogo: SiteSetting["secondaryLogo"];
@@ -31,28 +31,6 @@ type MenuItem = NonNullable<
 type LegalItem = NonNullable<
   NonNullable<SiteSetting["legal"]>["links"]
 >[number];
-
-function resolveLink(
-  item: MenuItem | LegalItem
-): { href: string; label: string } | null {
-  const link = (item as any)?.link;
-  if (!link) return null;
-  const label = link.label as string | undefined;
-  if (!label) return null;
-  if (link.type === "custom" && link.url) {
-    return { href: link.url, label };
-  }
-  if (link.type === "reference" && link.reference) {
-    const value = (
-      link.reference as { relationTo: "pages"; value: string | Page }
-    ).value;
-    if (value && typeof value === "object" && (value as Page).slug) {
-      return { href: `/${(value as Page).slug}`, label };
-    }
-    return { href: "/", label };
-  }
-  return null;
-}
 
 export default function Footer({
   secondaryLogo,
@@ -84,13 +62,12 @@ export default function Footer({
     return list
       .map((entry) => {
         const group = entry?.secondaryNavigation;
-        const items = ((group?.menus || []) as MenuItem[]).map(resolveLink);
-        const links = items.filter((x): x is { href: string; label: string } =>
-          Boolean(x)
-        );
+        const items = ((group?.menus || []) as MenuItem[])
+          .map((m) => m.link)
+          .filter((l): l is NonNullable<MenuItem["link"]> => Boolean(l && l.label));
         return {
           title: group?.titles || null,
-          links,
+          links: items,
         };
       })
       .filter((col) => col.title || col.links.length > 0);
@@ -98,8 +75,8 @@ export default function Footer({
   const legalLinks = useMemo(() => {
     const items = (legal?.links || []) as LegalItem[];
     return items
-      .map(resolveLink)
-      .filter((x): x is { href: string; label: string } => Boolean(x));
+      .map((l) => l.link)
+      .filter((x): x is NonNullable<LegalItem["link"]> => Boolean(x && x.label));
   }, [legal]);
 
   return (
@@ -189,23 +166,15 @@ export default function Footer({
                 ) : null}
                 <Box component="ul" sx={{ listStyle: "none", pl: 0, m: 0 }}>
                   {col.links.map((m, index) => (
-                    <Box
-                      component="li"
-                      key={`${index}-${m.href}`}
-                      sx={{ mt: 1 }}
-                    >
-                      <MuiLink
-                        component={NextLink}
-                        href={m.href}
-                        underline="none"
-                        color="inherit"
+                    <Box component="li" key={`${index}-${m.label}`} sx={{ mt: 1 }}>
+                      <CMSLink
+                        {...m}
                         sx={{
                           typography: "h6",
                           color: theme.palette.secondary.dark,
+                          textDecoration: "none",
                         }}
-                      >
-                        {m.label}
-                      </MuiLink>
+                      />
                     </Box>
                   ))}
                 </Box>
@@ -338,28 +307,24 @@ export default function Footer({
                   >
                     {legalLinks.map((l, index) => (
                       <Grid
-                        key={`${index}-${l.href}`}
+                        key={`${index}-${l.label}`}
                         size={{ xs: 12, lg: "auto" }}
                         sx={{
                           pl: { xs: 0, lg: 3 },
                           textAlign: { xs: "center", lg: "left" },
                         }}
                       >
-                        <MuiLink
-                          component={NextLink}
-                          href={l.href}
-                          underline="none"
-                          color={theme.palette.secondary.dark}
+                        <CMSLink
+                          {...l}
                           sx={{
                             typography: "button",
                             textTransform: "uppercase",
                             fontWeight: theme.typography.button,
                             display: "inline-block",
                             color: theme.palette.secondary.dark,
+                            textDecoration: "none",
                           }}
-                        >
-                          {l.label}
-                        </MuiLink>
+                        />
                       </Grid>
                     ))}
                   </Grid>

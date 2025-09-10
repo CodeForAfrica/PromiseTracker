@@ -7,12 +7,10 @@ import {
   AppBar,
   Toolbar,
   Box,
-  Button,
   IconButton,
   Drawer,
   List,
   ListItem,
-  ListItemButton,
   ListItemText,
   Container,
 } from "@mui/material";
@@ -22,8 +20,9 @@ import MenuIcon from "@mui/icons-material/Menu";
 import SearchIcon from "@mui/icons-material/Search";
 import CloseIcon from "@mui/icons-material/Close";
 
-import type { SiteSetting, Page, Media } from "@/payload-types";
+import type { SiteSetting, Media } from "@/payload-types";
 import Search from "@/components/Search";
+import { CMSLink } from "@/components/CMSLink";
 
 type NavigationProps = {
   primaryLogo: SiteSetting["primaryLogo"];
@@ -34,36 +33,7 @@ type NavigationProps = {
 type NavMenus = NonNullable<
   NonNullable<SiteSetting["primaryNavigation"]>["menus"]
 >;
-type NavMenuItem = NavMenus[number];
-
-function getHrefFromLink(
-  menu: NavMenuItem
-): { href: string; label: string } | null {
-  const link = menu?.link;
-  if (!link) return null;
-  const label = link.label as string | undefined;
-
-  if (link.type === "custom" && link.url && label) {
-    return { href: link.url, label };
-  }
-
-  if (link.type === "reference" && link.reference && label) {
-    const value = (
-      link.reference as { relationTo: "pages"; value: string | Page }
-    ).value;
-    if (
-      value &&
-      typeof value === "object" &&
-      "slug" in value &&
-      (value as Page).slug
-    ) {
-      return { href: `/${(value as Page).slug}`, label };
-    }
-    return { href: "/", label };
-  }
-
-  return null;
-}
+type CMSLinkShape = NonNullable<NavMenus[number]["link"]>;
 
 export default function Navigation({
   primaryLogo,
@@ -75,10 +45,10 @@ export default function Navigation({
 
   const menus = useMemo(() => {
     const items = (primaryNavigation?.menus || []) as NavMenus | [];
-    const resolved = items
-      .map((m) => getHrefFromLink(m))
-      .filter((x): x is { href: string; label: string } => Boolean(x));
-    return resolved;
+    const links = items
+      .map((m) => m.link)
+      .filter((l): l is CMSLinkShape => Boolean(l && l.label));
+    return links;
   }, [primaryNavigation]);
 
   const logoSrc = useMemo(() => {
@@ -161,13 +131,16 @@ export default function Navigation({
                   alignItems="center"
                   columnGap={1}
                 >
-                  {menus.map((m) => (
-                    <Grid key={m.href + m.label}>
-                      <Button
-                        component={NextLink}
-                        href={m.href}
-                        size="large"
+                  {menus.map((m, idx) => (
+                    <Grid
+                      key={`${idx}-${m.type}-${m.url ?? (typeof m.reference?.value === "object" ? m.reference?.value?.slug : m.reference?.value) ?? m.label}`}
+                    >
+                      <CMSLink
+                        {...m}
                         sx={(theme) => ({
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
                           height: 48,
                           border: 0,
                           color: theme.palette.primary.main,
@@ -180,14 +153,14 @@ export default function Navigation({
                           fontSize: theme.typography.pxToRem(14),
                           overflow: "hidden",
                           whiteSpace: "nowrap",
+                          textDecoration: "none",
                           "&:hover": {
                             border: 0,
                             backgroundColor: theme.palette.secondary.light,
+                            textDecoration: "none",
                           },
                         })}
-                      >
-                        {m.label}
-                      </Button>
+                      />
                     </Grid>
                   ))}
                 </Grid>
@@ -276,19 +249,22 @@ export default function Navigation({
               <List sx={{ p: 0 }}>
                 {menus.map((m, idx) => (
                   <ListItem
-                    key={m.href + m.label}
+                    key={`${idx}-${m.type}-${m.url ?? (typeof m.reference?.value === "object" ? m.reference?.value?.slug : m.reference?.value) ?? m.label}`}
                     disableGutters
                     sx={{
                       display: "block",
                       py: idx === 0 ? theme.typography.pxToRem(2) : 0,
                     }}
                   >
-                    <ListItemButton
-                      component={NextLink}
-                      href={m.href}
+                    <CMSLink
+                      {...m}
+                      label=""
                       sx={{
+                        display: "block",
                         py: theme.typography.pxToRem(40),
                         "&:hover": { backgroundColor: "transparent" },
+                        color: theme.palette.background.default,
+                        textDecoration: "none",
                       }}
                     >
                       <ListItemText
@@ -304,7 +280,7 @@ export default function Navigation({
                           },
                         }}
                       />
-                    </ListItemButton>
+                    </CMSLink>
                   </ListItem>
                 ))}
               </List>
