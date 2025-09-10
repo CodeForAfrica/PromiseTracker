@@ -37,6 +37,7 @@ export const getTenantSiteSettings = async (tenant: Tenant) => {
         equals: tenant,
       },
     },
+    depth: 2,
   });
 
   return docs[0];

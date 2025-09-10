@@ -7,7 +7,7 @@ import { tokens } from "./tokens";
 const FONT_FAMILY_HEADING = '"Amiri", "serif"';
 const FONT_FAMILY_TEXT_PRIMARY = '"Merriweather", "serif"';
 const FONT_FAMILY_TEXT_SECONDARY = '"Open Sans", "sans-serif"';
-const FONT_FAMILY_TEXT_HIGHTLIGHT = '"Source Sans Pro", "sans-serif"';
+const FONT_FAMILY_TEXT_HIGHTLIGHT = '"Source Sans 3", "sans-serif"';
 
 const primary = { main: "#202020", dark: "#000000" } as const;
 const secondary = { main: "#EBEBEB", light: "#F7F7F7" } as const; // grey
