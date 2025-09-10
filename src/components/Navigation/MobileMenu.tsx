@@ -29,7 +29,6 @@ export function MobileMenu({ menus }: MobileMenuProps) {
 
   return (
     <>
-      {/* Mobile actions (search + open) */}
       <Grid
         sx={{
           display: { xs: "flex", lg: "none" },
@@ -48,7 +47,6 @@ export function MobileMenu({ menus }: MobileMenuProps) {
         </IconButton>
       </Grid>
 
-      {/* Drawer */}
       <Drawer
         anchor="right"
         open={mobileOpen}

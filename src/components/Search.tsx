@@ -71,7 +71,9 @@ export default function Search({
         aria-label="search"
         onClick={handleClick}
         sx={(theme) => ({
-          [theme.breakpoints.up("lg")]: { p: theme.typography.pxToRem(1) },
+          p: {
+            lg: theme.typography.pxToRem(1),
+          },
           "&:hover": { backgroundColor: "transparent" },
         })}
         size="large"
