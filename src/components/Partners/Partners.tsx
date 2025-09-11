@@ -2,7 +2,7 @@
 import { Grid, Container, Box, Typography } from "@mui/material";
 
 import Image from "next/image";
-import Link from "next/link";
+import { CMSLink } from "@/components/CMSLink";
 import React from "react";
 import { UrlObject } from "url";
 
@@ -58,7 +58,7 @@ const Partners = React.forwardRef<HTMLDivElement, Props>(function Partners(
                       lg: "auto",
                     }}
                   >
-                    <Link href={partner.url}>
+                    <CMSLink {...partner.url} label={""}>
                       <Box
                         sx={{
                           height: { xs: 126.56, lg: 120 },
@@ -75,7 +75,7 @@ const Partners = React.forwardRef<HTMLDivElement, Props>(function Partners(
                           />
                         )}
                       </Box>
-                    </Link>
+                    </CMSLink>
                   </Grid>
                 ),
               )}
