@@ -11,7 +11,13 @@ type CtAButtonProps = PropsWithChildren<{
   buttonSx?: SxProps<Theme>;
 }>;
 
-const CtAButton = ({ children, className, containerSx, buttonSx, ...props }: CtAButtonProps) => {
+const CtAButton = ({
+  children,
+  className,
+  containerSx,
+  buttonSx,
+  ...props
+}: CtAButtonProps) => {
   return (
     <Container
       className={className}
@@ -21,7 +27,9 @@ const CtAButton = ({ children, className, containerSx, buttonSx, ...props }: CtA
           justifyContent: "center",
           my: { xs: 4, lg: 5.5 },
         },
-        containerSx,
+        ...(Array.isArray(containerSx)
+          ? containerSx
+          : [containerSx].filter(Boolean)),
       ]}
     >
       <Button
@@ -32,14 +40,14 @@ const CtAButton = ({ children, className, containerSx, buttonSx, ...props }: CtA
             border: (t) => `1px solid ${t.palette.primary.main}`,
             minHeight: 48,
             minWidth: { xs: 98, lg: 158 },
-            
+
             ":hover": {
               border: (t) => `1px solid ${t.palette.primary.main}`,
               background: (t) => t.palette.background.default,
               color: (t) => t.palette.text.primary,
             },
           },
-          buttonSx,
+          ...(Array.isArray(buttonSx) ? buttonSx : [buttonSx].filter(Boolean)),
         ]}
       >
         {children}
