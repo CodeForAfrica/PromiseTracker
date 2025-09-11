@@ -4,7 +4,6 @@ import { Page } from "@/payload-types";
 import { Fragment } from "react";
 import Newsletter from "./Newsletter";
 import Partners from "./Partners";
-import { b } from "vitest/dist/chunks/suite.d.FvehnV49.js";
 
 type BlockProps = {
   blocks: Page["blocks"];

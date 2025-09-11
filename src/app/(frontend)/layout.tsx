@@ -40,7 +40,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
       lang="en"
       className={`${amiri.variable} ${openSans.variable} ${sourceSans.variable}`}
     >
-      <body>
+      <body style={{ margin: 0 }}>
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>
             <main>{children}</main>
