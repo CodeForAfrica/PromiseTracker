@@ -33,6 +33,18 @@
 - Linting: ESLint (`eslint.config.mjs`, Next + TS rules); Formatting: Prettier defaults.
 - Paths: Prefer TS path aliases (see `tsconfig.json`).
 
+## MUI Grid (v7)
+
+- Docs: https://mui.com/material-ui/llms.txt
+- Use the new, stable Grid (formerly Grid v2 in MUI 6).
+  - Import: `import Grid from '@mui/material/Grid'`
+  - No `item` prop; child Grids are items by default. Use `container` on parent Grids.
+  - Breakpoints: use `size` and `offset` objects — not `xs|sm|md|lg|xl` props.
+    - Example: `<Grid size={{ xs: 12, md: 6 }} />`
+    - Offset: `<Grid offset={{ md: 1 }} />`
+  - Spacing: prefer `rowSpacing` and `columnSpacing` for responsive control.
+- Do NOT use `Grid2` imports. If you must use the legacy API, it lives at `@mui/material/GridLegacy`.
+
 ## Testing Guidelines
 
 - Frameworks: Vitest (integration) and Playwright (e2e).

@@ -1,15 +1,13 @@
-import OtherBlock from "@/blocks/OtherBlock/Component";
-import TestBlock from "@/blocks/TestBlock/Component";
 import { Page } from "@/payload-types";
 import { Fragment } from "react";
+import { KeyPromises } from "./KeyPromises";
 
 type BlockProps = {
   blocks: Page["blocks"];
 };
 
 const blockComponents = {
-  "test-block": TestBlock,
-  "other-block": OtherBlock,
+  "key-promises": KeyPromises,
 };
 export const BlockRenderer = ({ blocks }: BlockProps) => {
   const hasBlocks = blocks && Array.isArray(blocks) && blocks.length > 0;
@@ -24,7 +22,6 @@ export const BlockRenderer = ({ blocks }: BlockProps) => {
             if (Block) {
               return (
                 <div key={index}>
-                  {/* @ts-expect-error there may be some mismatch between the expected types here */}
                   <Block {...block} />
                 </div>
               );
