@@ -7,10 +7,7 @@ import { useTheme } from "@mui/material/styles";
 import Image from "next/image";
 import { CMSLink } from "@/components/CMSLink";
 
-type MaybeMedia = string | Media | null | undefined;
-
-function getMediaSrc(m: MaybeMedia): { src?: string; alt?: string } {
-  if (!m) return {};
+function getMediaSrc(m: string | Media): { src?: string; alt?: string } {
   if (typeof m === "string") return { src: undefined, alt: undefined };
   return { src: m.url ?? undefined, alt: m.alt };
 }
