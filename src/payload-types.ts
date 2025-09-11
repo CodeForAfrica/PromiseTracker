@@ -231,7 +231,7 @@ export interface Page {
   title: string;
   slug: string;
   slugLock?: boolean | null;
-  blocks?: (TestBlock | OtherBlock)[] | null;
+  blocks?: (TestBlock | OtherBlock | ActNowBlock)[] | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -327,6 +327,28 @@ export interface OtherBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'other-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ActNowBlock".
+ */
+export interface ActNowBlock {
+  logo: string | Media;
+  description: string;
+  image: string | Media;
+  link: {
+    type?: ('reference' | 'custom') | null;
+    newTab?: boolean | null;
+    reference?: {
+      relationTo: 'pages';
+      value: string | Page;
+    } | null;
+    url?: string | null;
+    label: string;
+  };
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'act-now';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -755,6 +777,7 @@ export interface PagesSelect<T extends boolean = true> {
     | {
         'test-block'?: T | TestBlockSelect<T>;
         'other-block'?: T | OtherBlockSelect<T>;
+        'act-now'?: T | ActNowBlockSelect<T>;
       };
   updatedAt?: T;
   createdAt?: T;
@@ -775,6 +798,26 @@ export interface TestBlockSelect<T extends boolean = true> {
 export interface OtherBlockSelect<T extends boolean = true> {
   title?: T;
   content?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ActNowBlock_select".
+ */
+export interface ActNowBlockSelect<T extends boolean = true> {
+  logo?: T;
+  description?: T;
+  image?: T;
+  link?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        label?: T;
+      };
   id?: T;
   blockName?: T;
 }

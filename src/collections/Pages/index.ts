@@ -3,6 +3,7 @@ import { CollectionConfig } from "payload";
 import { ensureUniqueSlug } from "./hooks/ensureUniqueSlug";
 import { OtherBlock } from "@/blocks/OtherBlock";
 import { slugField } from "@/fields/slug";
+import { ActNow } from "@/blocks/ActNow";
 
 export const Pages: CollectionConfig = {
   slug: "pages",
@@ -37,7 +38,7 @@ export const Pages: CollectionConfig = {
     {
       name: "blocks",
       type: "blocks",
-      blocks: [TestBlock, OtherBlock],
+      blocks: [TestBlock, OtherBlock, ActNow],
     },
   ],
 };

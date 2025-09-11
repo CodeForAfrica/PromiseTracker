@@ -1,3 +1,4 @@
+import ActNow from "@/blocks/ActNow/Component";
 import OtherBlock from "@/blocks/OtherBlock/Component";
 import TestBlock from "@/blocks/TestBlock/Component";
 import { Page } from "@/payload-types";
@@ -10,6 +11,7 @@ type BlockProps = {
 const blockComponents = {
   "test-block": TestBlock,
   "other-block": OtherBlock,
+  "act-now": ActNow,
 };
 export const BlockRenderer = ({ blocks }: BlockProps) => {
   const hasBlocks = blocks && Array.isArray(blocks) && blocks.length > 0;
