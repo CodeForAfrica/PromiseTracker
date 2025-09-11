@@ -23,6 +23,9 @@ export const linkGroup: LinkGroupType = ({
     ],
     admin: {
       initCollapsed: true,
+      components: {
+        RowLabel: "@/components/payload/RowLabel#LinkGroupRowLabel",
+      },
     },
   };
 
