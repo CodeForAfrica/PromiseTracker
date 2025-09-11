@@ -1,6 +1,7 @@
 import { TestBlock } from "@/blocks/TestBlock";
 import { CollectionConfig } from "payload";
 import { ensureUniqueSlug } from "./hooks/ensureUniqueSlug";
+import newsletterSettingsToBlock from "./hooks/newsletterSettingsToBlock";
 import { OtherBlock } from "@/blocks/OtherBlock";
 import Partners from "@/blocks/Partners";
 import Newsletter from "@/blocks/Newsletter";
@@ -42,4 +43,7 @@ export const Pages: CollectionConfig = {
       blocks: [TestBlock, OtherBlock, Partners, Newsletter],
     },
   ],
+  hooks: {
+    afterRead: [newsletterSettingsToBlock],
+  },
 };

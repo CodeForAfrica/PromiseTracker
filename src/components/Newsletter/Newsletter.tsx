@@ -1,17 +1,18 @@
 import { Box, Grid, Typography, Container } from "@mui/material";
 import React, { FC, forwardRef } from "react";
 import Image from "next/image";
+import { Image as ImageType } from "@/types/image";
 
 import email from "@/assets/subscribe-email.svg?url";
 
 interface Props {
   description?: string;
   title: string;
-  subscribeImg?: string;
+  image?: ImageType;
   embedCode: TrustedHTML;
 }
 const Newsletter: FC<Props> = forwardRef(function Newsletter(
-  { description: descriptionProp, title, subscribeImg, embedCode },
+  { description: descriptionProp, title, image, embedCode },
   ref,
 ) {
   const description =
@@ -72,6 +73,7 @@ const Newsletter: FC<Props> = forwardRef(function Newsletter(
       },
     },
   };
+
   return (
     <Box
       ref={ref}
@@ -90,7 +92,11 @@ const Newsletter: FC<Props> = forwardRef(function Newsletter(
           <Grid
             sx={{
               display: "flex",
-              justifyContent: { xs: "center", lg: "flex-start" },
+              justifyContent: {
+                xs: "center",
+                sm: "flex-start",
+                lg: "flex-start",
+              },
               alignItems: "center",
             }}
             size={{ xs: 12, lg: 8 }}
@@ -103,8 +109,12 @@ const Newsletter: FC<Props> = forwardRef(function Newsletter(
               }}
               component={"figure"}
             >
-              {subscribeImg && (
-                <Image src={subscribeImg} alt={"Newsletter Subscribe"} fill />
+              {image?.url && (
+                <Image
+                  src={image.url}
+                  alt={image.alt || "Newsletter Subscribe"}
+                  fill
+                />
               )}
             </Box>
           </Grid>

@@ -18,7 +18,6 @@ const blockComponents = {
 };
 export const BlockRenderer = ({ blocks }: BlockProps) => {
   const hasBlocks = blocks && Array.isArray(blocks) && blocks.length > 0;
-  console.log(blocks);
 
   if (hasBlocks) {
     return (

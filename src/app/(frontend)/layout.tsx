@@ -12,11 +12,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
 
   return (
     <html lang="en">
-      <body
-        style={{
-          margin: 0,
-        }}
-      >
+      <body>
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>
             <main>{children}</main>

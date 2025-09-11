@@ -18,13 +18,12 @@ interface Props {
   title: string;
 }
 const Partners = React.forwardRef<HTMLDivElement, Props>(function Partners(
-  { partners, title, ...props },
+  { partners, title },
   ref,
 ) {
   if (!partners?.length) {
     return null;
   }
-  console.log(partners);
   return (
     <Box
       sx={({ palette }) => ({
