@@ -3,8 +3,14 @@
 import React from "react";
 import NextLink from "next/link";
 import Image from "next/image";
-import { AppBar, Toolbar, Box, IconButton, Container } from "@mui/material";
-import Grid from "@mui/material/Grid";
+import {
+  AppBar,
+  Toolbar,
+  Box,
+  IconButton,
+  Container,
+  Grid,
+} from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 
 import type { Logo, MenuLink } from "@/types/navigation";

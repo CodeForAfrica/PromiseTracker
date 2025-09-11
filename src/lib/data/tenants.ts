@@ -1,12 +1,11 @@
 import { getGlobalPayload } from "@/lib/payload";
-import { Tenant } from "node_modules/@payloadcms/plugin-multi-tenant/dist/types";
 import type {
   Logo,
   MenuLink,
   SecondaryNavColumn,
   LegalLinks,
 } from "@/types/navigation";
-import type { Media, Page } from "@/payload-types";
+import type { Media, Page, SiteSetting, Tenant } from "@/payload-types";
 
 const payload = await getGlobalPayload();
 
@@ -37,13 +36,49 @@ export const getTenantSiteSettings = async (tenant: Tenant) => {
         equals: tenant,
       },
     },
+    depth: 2,
   });
 
   return docs[0];
 };
 
+const getDefaultTenantNavigation = () => {
+  const defaultDescription: SiteSetting["description"] = {
+    root: {
+      type: "string",
+      children: [],
+      indent: 0,
+      version: 0,
+      format: "",
+      direction: null,
+    },
+  };
+  return {
+    title: "PromiseTracker",
+    description: defaultDescription,
+    navigation: {
+      primaryLogo: { url: null, alt: "Logo" },
+      menus: [],
+    },
+    footer: {
+      secondaryLogo: { url: null, alt: "Logo" },
+      alternateLogo: { url: null, alt: "Logo" },
+      secondaryNavColumns: [],
+      connect: { title: "", links: [] },
+      legal: {
+        copyright: "PromiseTracker",
+        links: [],
+      },
+    },
+  };
+};
+
 export const getTenantNavigation = async (tenant: Tenant) => {
   const tenantSettings = await getTenantSiteSettings(tenant);
+
+  if (!tenantSettings) {
+    return getDefaultTenantNavigation();
+  }
 
   const {
     title,

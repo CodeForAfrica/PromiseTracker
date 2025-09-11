@@ -20,7 +20,7 @@ type CMSLinkType = {
 export const CMSLink: React.FC<CMSLinkType> = (props) => {
   const { type, children, label, newTab = false, reference, url, sx } = props;
 
-  const href = () => {
+  const getHref = () => {
     if (
       type === "reference" &&
       typeof reference?.value === "object" &&
@@ -36,6 +36,8 @@ export const CMSLink: React.FC<CMSLinkType> = (props) => {
     return url || "";
   };
 
+  const href = getHref();
+
   if (!href) return null;
 
   const newTabProps = newTab
@@ -43,7 +45,7 @@ export const CMSLink: React.FC<CMSLinkType> = (props) => {
     : {};
 
   return (
-    <Link href={href() || url || ""} {...newTabProps} sx={sx}>
+    <Link href={href} {...newTabProps} sx={sx}>
       {label && label}
       {children && children}
     </Link>
