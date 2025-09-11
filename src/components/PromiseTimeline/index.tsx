@@ -277,17 +277,7 @@ const PromiseTimeline = ({
           date={currentStatus.date}
           title={currentStatus.label ?? "STATUS"}
           isOdd={idx % 2 === 1}
-        >
-          {idx === 0 && (
-            <rect
-              x="8"
-              y="69"
-              width="99%"
-              height="1"
-              style={{ fill: "#EBEBEB" }}
-            />
-          )}
-        </PromiseStatus>
+        />
       ))}
       <Labels />
     </svg>

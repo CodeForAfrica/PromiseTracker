@@ -1,7 +1,14 @@
 "use client";
 
 import { KeyPromises as KeyPromisesProps } from "@/payload-types";
-import { Box, Container, IconButton, MobileStepper, Typography, useMediaQuery } from "@mui/material";
+import {
+  Box,
+  Container,
+  IconButton,
+  MobileStepper,
+  Typography,
+  useMediaQuery,
+} from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { useTheme } from "@mui/material/styles";
 import { KeyboardArrowLeft, KeyboardArrowRight } from "@mui/icons-material";
@@ -97,35 +104,6 @@ const KeyPromiseCard = ({ item }: { item: Item }) => {
       rowSpacing={{ xs: 0, lg: 2 }}
       columnSpacing={{ xs: 0, lg: 2 }}
     >
-      <Grid size={{ xs: 12, lg: 5 }} sx={{ position: "relative" }}>
-        <Box
-          sx={{
-            [theme.breakpoints.up("lg")]: {
-              height: 387,
-              mt: 3,
-              position: "relative",
-              width: "calc(((100vw - 100%) / 2) + 100%)",
-            },
-          }}
-        >
-          <Box
-            sx={{
-              background: `${item.status.color}`,
-              border: `8px solid ${item.status.color}`,
-              display: "block",
-              mt: 3,
-              minHeight: 155,
-              maxWidth: 581,
-              width: "100%",
-              [theme.breakpoints.up("lg")]: {
-                position: "absolute",
-                inset: 0,
-                m: 0,
-              },
-            }}
-          />
-        </Box>
-      </Grid>
       <Grid
         size={{ xs: 12, lg: 6 }}
         container
@@ -167,7 +145,49 @@ const KeyPromiseCard = ({ item }: { item: Item }) => {
             </Typography>
           )}
         </Grid>
-        {item.href && <CtAButton href={item.href}>{"Learn more"}</CtAButton>}
+        {item.href && (
+          <CtAButton
+            href={item.href}
+            containerSx={{
+              justifyContent: { lg: "flex-start" },
+              mt: { lg: 0 },
+              mb: { lg: 0 },
+              borderTop: { lg: `1px solid ${theme.palette.primary.dark}` },
+              pt: { lg: 45 },
+            }}
+          >
+            {"Learn more"}
+          </CtAButton>
+        )}
+      </Grid>
+      <Grid size={{ xs: 12, lg: 5 }} sx={{ position: "relative" }}>
+        <Box
+          sx={{
+            [theme.breakpoints.up("lg")]: {
+              height: 387,
+              mt: 3,
+              position: "relative",
+              width: "calc(((100vw - 100%) / 2) + 100%)",
+            },
+          }}
+        >
+          <Box
+            sx={{
+              background: `${item.status.color}`,
+              border: `8px solid ${item.status.color}`,
+              display: "block",
+              mt: 3,
+              minHeight: 155,
+              maxWidth: 581,
+              width: "100%",
+              [theme.breakpoints.up("lg")]: {
+                position: "absolute",
+                inset: 0,
+                m: 0,
+              },
+            }}
+          />
+        </Box>
       </Grid>
       <Grid size={{ xs: 12 }} sx={{ order: 3 }}>
         <PromiseTimeline
@@ -224,7 +244,7 @@ export const KeyPromises = ({ title }: KeyPromisesProps) => {
           component="h2"
           gutterBottom={false}
         >
-          {items.length === 1 ? "Key Promise" : title}
+          {title}
         </Typography>
 
         <Box sx={{ mt: 2 }}>
