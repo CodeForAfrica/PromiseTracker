@@ -34,6 +34,7 @@ export const queryPageBySlug = async ({
         },
       ],
     },
+    depth: 3,
   });
 
   return pages[0];
