@@ -6,6 +6,7 @@ import { AIExtractions } from "./Extractions";
 import { Tenants } from "./Tenant";
 import { Pages } from "./Pages";
 import { SiteSettings } from "./SiteSettings";
+import { Partners } from "./Partners";
 
 export const collections: CollectionConfig[] = [
   Documents,
@@ -15,4 +16,5 @@ export const collections: CollectionConfig[] = [
   Users,
   SiteSettings,
   Tenants,
+  Partners,
 ];

@@ -1,12 +1,18 @@
+import ActNow from "@/blocks/ActNow/Component";
 import { Page } from "@/payload-types";
 import { Fragment } from "react";
 import { KeyPromises } from "./KeyPromises";
+import Newsletter from "./Newsletter";
+import Partners from "./Partners";
 
 type BlockProps = {
   blocks: Page["blocks"];
 };
 
 const blockComponents = {
+  newsletter: Newsletter,
+  partners: Partners,
+  "act-now": ActNow,
   "key-promises": KeyPromises,
 };
 export const BlockRenderer = ({ blocks }: BlockProps) => {
@@ -22,6 +28,7 @@ export const BlockRenderer = ({ blocks }: BlockProps) => {
             if (Block) {
               return (
                 <div key={index}>
+                  {/* @ts-expect-error there may be some mismatch between the expected types here */}
                   <Block {...block} />
                 </div>
               );

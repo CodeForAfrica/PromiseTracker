@@ -1,7 +1,11 @@
 import { CollectionConfig } from "payload";
 import { ensureUniqueSlug } from "./hooks/ensureUniqueSlug";
+import newsletterSettingsToBlock from "./hooks/newsletterSettingsToBlock";
+import Partners from "@/blocks/Partners";
+import Newsletter from "@/blocks/Newsletter";
 import { slugField } from "@/fields/slug";
 import { KeyPromises } from "@/blocks/KeyPromises";
+import { ActNow } from "@/blocks/ActNow";
 
 export const Pages: CollectionConfig = {
   slug: "pages",
@@ -36,7 +40,10 @@ export const Pages: CollectionConfig = {
     {
       name: "blocks",
       type: "blocks",
-      blocks: [KeyPromises],
+      blocks: [ActNow, Newsletter, Partners, KeyPromises],
     },
   ],
+  hooks: {
+    afterRead: [newsletterSettingsToBlock],
+  },
 };

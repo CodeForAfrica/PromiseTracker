@@ -5,7 +5,7 @@ import { Link, SxProps, Theme } from "@mui/material";
 
 type CMSLinkType = {
   children?: React.ReactNode;
-  label: string;
+  label?: string;
   newTab?: boolean | null;
   reference?: {
     relationTo: "pages";
@@ -14,7 +14,7 @@ type CMSLinkType = {
   type?: "custom" | "reference" | null;
   url?: string | null;
   onClick?: React.MouseEventHandler<HTMLButtonElement>;
-  sx: SxProps<Theme>;
+  sx?: SxProps<Theme>;
 };
 
 export const CMSLink: React.FC<CMSLinkType> = (props) => {
