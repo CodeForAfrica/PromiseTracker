@@ -42,5 +42,37 @@ export const EngagementTab: Tab = {
         },
       ],
     },
+    {
+      name: "newsletter",
+      type: "group",
+      label: "Email Newsletter",
+      localized: true,
+      fields: [
+        {
+          type: "collapsible",
+          label: "Title & Embed Code",
+          fields: [
+            {
+              name: "title",
+              type: "text",
+              required: true,
+            },
+            {
+              name: "description",
+              type: "textarea",
+              required: true,
+            },
+            {
+              name: "embedCode",
+              type: "code",
+              required: true,
+              admin: {
+                language: "html",
+              },
+            },
+          ],
+        },
+      ],
+    },
   ],
 };

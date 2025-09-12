@@ -1,16 +1,16 @@
 import ActNow from "@/blocks/ActNow/Component";
-import OtherBlock from "@/blocks/OtherBlock/Component";
-import TestBlock from "@/blocks/TestBlock/Component";
 import { Page } from "@/payload-types";
 import { Fragment } from "react";
+import Newsletter from "./Newsletter";
+import Partners from "./Partners";
 
 type BlockProps = {
   blocks: Page["blocks"];
 };
 
 const blockComponents = {
-  "test-block": TestBlock,
-  "other-block": OtherBlock,
+  newsletter: Newsletter,
+  partners: Partners,
   "act-now": ActNow,
 };
 export const BlockRenderer = ({ blocks }: BlockProps) => {
