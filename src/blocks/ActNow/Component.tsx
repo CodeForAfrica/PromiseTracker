@@ -18,10 +18,6 @@ export default function ActNow({
   image,
   link,
 }: ActNowBlockProps) {
-  const theme = useTheme();
-  const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
-  const descriptionVariant = isDesktop ? "body1" : "body2";
-
   const logoMedia = getMediaSrc(logo);
   const heroMedia = getMediaSrc(image);
 
@@ -72,12 +68,15 @@ export default function ActNow({
                 </Box>
               )}
               <Typography
-                variant={descriptionVariant}
                 sx={{
                   py: 2,
                   pb: 3,
                   textAlign: "left",
                   lineHeight: { lg: "1.875rem" },
+                  typography: {
+                    xs: "body2",
+                    lg: "body1",
+                  },
                 }}
               >
                 {description}
