@@ -1,3 +1,4 @@
+import ActNow from "@/blocks/ActNow/Component";
 import { Page } from "@/payload-types";
 import { Fragment } from "react";
 import Newsletter from "./Newsletter";
@@ -10,6 +11,7 @@ type BlockProps = {
 const blockComponents = {
   newsletter: Newsletter,
   partners: Partners,
+  "act-now": ActNow,
 };
 export const BlockRenderer = ({ blocks }: BlockProps) => {
   const hasBlocks = blocks && Array.isArray(blocks) && blocks.length > 0;

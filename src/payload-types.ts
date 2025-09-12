@@ -235,18 +235,19 @@ export interface Page {
   slugLock?: boolean | null;
   blocks?:
     | (
+        | ActNowBlock
+        | {
+            image: string | Media;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'newsletter';
+          }
         | {
             title: string;
             partners?: (string | Partner)[] | null;
             id?: string | null;
             blockName?: string | null;
             blockType: 'partners';
-          }
-        | {
-            image: string | Media;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'newsletter';
           }
       )[]
     | null;
@@ -324,6 +325,28 @@ export interface Tenant {
     | 'ZWE';
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ActNowBlock".
+ */
+export interface ActNowBlock {
+  logo: string | Media;
+  description: string;
+  image: string | Media;
+  link: {
+    type?: ('reference' | 'custom') | null;
+    newTab?: boolean | null;
+    reference?: {
+      relationTo: 'pages';
+      value: string | Page;
+    } | null;
+    url?: string | null;
+    label: string;
+  };
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'act-now';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -787,6 +810,14 @@ export interface PagesSelect<T extends boolean = true> {
   blocks?:
     | T
     | {
+        'act-now'?: T | ActNowBlockSelect<T>;
+        newsletter?:
+          | T
+          | {
+              image?: T;
+              id?: T;
+              blockName?: T;
+            };
         partners?:
           | T
           | {
@@ -795,16 +826,29 @@ export interface PagesSelect<T extends boolean = true> {
               id?: T;
               blockName?: T;
             };
-        newsletter?:
-          | T
-          | {
-              image?: T;
-              id?: T;
-              blockName?: T;
-            };
       };
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ActNowBlock_select".
+ */
+export interface ActNowBlockSelect<T extends boolean = true> {
+  logo?: T;
+  description?: T;
+  image?: T;
+  link?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        label?: T;
+      };
+  id?: T;
+  blockName?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
