@@ -3,6 +3,7 @@ import { Block } from "payload";
 
 export const Newsletter: Block = {
   slug: "newsletter",
+  imageURL: "/cms/newsletter.png",
   labels: {
     singular: "Newsletter",
     plural: "Newsletters",

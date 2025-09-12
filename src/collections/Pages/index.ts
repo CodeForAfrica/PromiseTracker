@@ -1,8 +1,6 @@
-import { TestBlock } from "@/blocks/TestBlock";
 import { CollectionConfig } from "payload";
 import { ensureUniqueSlug } from "./hooks/ensureUniqueSlug";
 import newsletterSettingsToBlock from "./hooks/newsletterSettingsToBlock";
-import { OtherBlock } from "@/blocks/OtherBlock";
 import Partners from "@/blocks/Partners";
 import Newsletter from "@/blocks/Newsletter";
 import { slugField } from "@/fields/slug";
@@ -40,7 +38,7 @@ export const Pages: CollectionConfig = {
     {
       name: "blocks",
       type: "blocks",
-      blocks: [TestBlock, OtherBlock, Partners, Newsletter],
+      blocks: [Partners, Newsletter],
     },
   ],
   hooks: {

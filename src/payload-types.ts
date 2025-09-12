@@ -235,8 +235,6 @@ export interface Page {
   slugLock?: boolean | null;
   blocks?:
     | (
-        | TestBlock
-        | OtherBlock
         | {
             title: string;
             partners?: (string | Partner)[] | null;
@@ -326,27 +324,6 @@ export interface Tenant {
     | 'ZWE';
   updatedAt: string;
   createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TestBlock".
- */
-export interface TestBlock {
-  title: string;
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'test-block';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "OtherBlock".
- */
-export interface OtherBlock {
-  title: string;
-  content: string;
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'other-block';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -810,8 +787,6 @@ export interface PagesSelect<T extends boolean = true> {
   blocks?:
     | T
     | {
-        'test-block'?: T | TestBlockSelect<T>;
-        'other-block'?: T | OtherBlockSelect<T>;
         partners?:
           | T
           | {
@@ -830,25 +805,6 @@ export interface PagesSelect<T extends boolean = true> {
       };
   updatedAt?: T;
   createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TestBlock_select".
- */
-export interface TestBlockSelect<T extends boolean = true> {
-  title?: T;
-  id?: T;
-  blockName?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "OtherBlock_select".
- */
-export interface OtherBlockSelect<T extends boolean = true> {
-  title?: T;
-  content?: T;
-  id?: T;
-  blockName?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

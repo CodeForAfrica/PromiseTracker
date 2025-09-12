@@ -1,5 +1,3 @@
-import OtherBlock from "@/blocks/OtherBlock/Component";
-import TestBlock from "@/blocks/TestBlock/Component";
 import { Page } from "@/payload-types";
 import { Fragment } from "react";
 import Newsletter from "./Newsletter";
@@ -10,8 +8,6 @@ type BlockProps = {
 };
 
 const blockComponents = {
-  "test-block": TestBlock,
-  "other-block": OtherBlock,
   newsletter: Newsletter,
   partners: Partners,
 };
