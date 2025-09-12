@@ -20,6 +20,7 @@ export const queryPageBySlug = async ({
     collection: "pages",
     pagination: false,
     limit: 1,
+    depth: 6,
     where: {
       and: [
         {

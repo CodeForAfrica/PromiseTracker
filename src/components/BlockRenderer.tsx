@@ -1,15 +1,15 @@
-import OtherBlock from "@/blocks/OtherBlock/Component";
-import TestBlock from "@/blocks/TestBlock/Component";
 import { Page } from "@/payload-types";
 import { Fragment } from "react";
+import Newsletter from "./Newsletter";
+import Partners from "./Partners";
 
 type BlockProps = {
   blocks: Page["blocks"];
 };
 
 const blockComponents = {
-  "test-block": TestBlock,
-  "other-block": OtherBlock,
+  newsletter: Newsletter,
+  partners: Partners,
 };
 export const BlockRenderer = ({ blocks }: BlockProps) => {
   const hasBlocks = blocks && Array.isArray(blocks) && blocks.length > 0;
