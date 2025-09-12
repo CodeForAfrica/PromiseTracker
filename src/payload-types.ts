@@ -249,6 +249,7 @@ export interface Page {
             blockName?: string | null;
             blockType: 'partners';
           }
+        | KeyPromises
       )[]
     | null;
   updatedAt: string;
@@ -375,6 +376,16 @@ export interface Partner {
   };
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "KeyPromises".
+ */
+export interface KeyPromises {
+  title: string;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'key-promises';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -826,6 +837,7 @@ export interface PagesSelect<T extends boolean = true> {
               id?: T;
               blockName?: T;
             };
+        'key-promises'?: T | KeyPromisesSelect<T>;
       };
   updatedAt?: T;
   createdAt?: T;
@@ -847,6 +859,15 @@ export interface ActNowBlockSelect<T extends boolean = true> {
         url?: T;
         label?: T;
       };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "KeyPromises_select".
+ */
+export interface KeyPromisesSelect<T extends boolean = true> {
+  title?: T;
   id?: T;
   blockName?: T;
 }

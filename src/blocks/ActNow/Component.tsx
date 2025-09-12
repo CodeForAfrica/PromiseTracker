@@ -1,9 +1,8 @@
 "use client";
 
 import { ActNowBlock as ActNowBlockProps, Media } from "@/payload-types";
-import { Box, Container, Typography, useMediaQuery } from "@mui/material";
+import { Box, Container, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import { useTheme } from "@mui/material/styles";
 import Image from "next/image";
 import { CMSLink } from "@/components/CMSLink";
 

@@ -4,6 +4,7 @@ import newsletterSettingsToBlock from "./hooks/newsletterSettingsToBlock";
 import Partners from "@/blocks/Partners";
 import Newsletter from "@/blocks/Newsletter";
 import { slugField } from "@/fields/slug";
+import { KeyPromises } from "@/blocks/KeyPromises";
 import { ActNow } from "@/blocks/ActNow";
 
 export const Pages: CollectionConfig = {
@@ -39,7 +40,7 @@ export const Pages: CollectionConfig = {
     {
       name: "blocks",
       type: "blocks",
-      blocks: [ActNow, Newsletter, Partners],
+      blocks: [ActNow, Newsletter, Partners, KeyPromises],
     },
   ],
   hooks: {
