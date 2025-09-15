@@ -905,10 +905,10 @@ export const countries: Country[] = [
   {
     region: "Africa",
     continent: "Africa",
-    value: "Congo, Democratic Republic of the",
-    label: { en: "Congo, Democratic Republic of the" },
+    value: "Democratic Republic of the Congo",
+    label: { en: "Democratic Republic of the Congo" },
     slug: "COD",
-    name: "Congo, Democratic Republic of the",
+    name: "Democratic Republic of the Congo",
     alpha3: "COD",
     alpha2: "CD",
     countryCode: "180",
@@ -3793,10 +3793,10 @@ export const countries: Country[] = [
   {
     region: "Africa",
     continent: "Africa",
-    value: "Tanzania, United Republic of",
-    label: { en: "Tanzania, United Republic of" },
+    value: "Tanzania",
+    label: { en: "Tanzania" },
     slug: "TZA",
-    name: "Tanzania, United Republic of",
+    name: "Tanzania",
     alpha3: "TZA",
     alpha2: "TZ",
     countryCode: "834",
@@ -4318,7 +4318,7 @@ export const countriesByContinent = (
     | "Europe"
     | "North America"
     | "Oceania"
-    | "South America",
+    | "South America"
 ) => {
   return countries
     .filter((country) => continent === country.continent)

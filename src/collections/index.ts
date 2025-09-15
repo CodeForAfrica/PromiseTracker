@@ -7,6 +7,7 @@ import { Tenants } from "./Tenant";
 import { Pages } from "./Pages";
 import { SiteSettings } from "./SiteSettings";
 import { Partners } from "./Partners";
+import { PoliticalEntities } from "./PoliticalEntities";
 
 export const collections: CollectionConfig[] = [
   Documents,
@@ -17,4 +18,5 @@ export const collections: CollectionConfig[] = [
   SiteSettings,
   Tenants,
   Partners,
+  PoliticalEntities,
 ];

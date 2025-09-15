@@ -49,67 +49,51 @@ export const Documents: CollectionConfig = {
       },
     },
     {
-      name: "file",
+      name: "files",
       type: "upload",
       relationTo: "media",
+      hasMany: true,
       label: {
-        en: "File",
-        fr: "Déposer",
+        en: "Files",
+        fr: "Fichiers",
       },
     },
     {
-      type: "row",
+      name: "politicalEntity",
+      type: "relationship",
+      relationTo: "political-entities",
+      label: {
+        en: "Political Entity",
+        fr: "Entité Politique",
+      },
       admin: {
         position: "sidebar",
       },
-      fields: [
+    },
+    {
+      name: "language",
+      type: "select",
+      label: {
+        en: "Language",
+        fr: "Langue",
+      },
+      admin: {
+        position: "sidebar",
+      },
+      options: [
         {
-          name: "politicalEntity",
-          type: "text",
+          value: "en",
           label: {
-            en: "Political Entity",
-            fr: "Entité Politique",
+            en: "English",
+            fr: "Anglais",
           },
         },
         {
-          name: "country",
-          type: "text",
+          value: "fr",
           label: {
-            en: "Country",
-            fr: "Pays",
+            en: "French",
+            fr: "Français",
           },
-        },
-        {
-          name: "region",
-          type: "text",
-          label: {
-            en: "Region",
-            fr: "Région",
-          },
-        },
-        {
-          name: "language",
-          type: "select",
-          label: {
-            en: "Language",
-            fr: "Langue",
-          },
-          options: [
-            {
-              value: "en",
-              label: {
-                en: "English",
-                fr: "Anglais",
-              },
-            },
-            {
-              value: "fr",
-              label: {
-                en: "French",
-                fr: "Français",
-              },
-            },
-          ],
         },
       ],
     },
@@ -136,30 +120,6 @@ export const Documents: CollectionConfig = {
           label: {
             en: "Evidence",
             fr: "Preuve",
-          },
-        },
-      ],
-    },
-    {
-      type: "row",
-      admin: {
-        position: "sidebar",
-      },
-      fields: [
-        {
-          name: "yearFrom",
-          type: "number",
-          label: {
-            en: "Year From",
-            fr: "Année à partir de",
-          },
-        },
-        {
-          name: "yearTo",
-          type: "number",
-          label: {
-            en: "Year To",
-            fr: "Année à",
           },
         },
       ],

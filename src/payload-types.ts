@@ -75,6 +75,7 @@ export interface Config {
     'site-settings': SiteSetting;
     tenants: Tenant;
     partners: Partner;
+    'political-entities': PoliticalEntity;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -90,6 +91,7 @@ export interface Config {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     tenants: TenantsSelect<false> | TenantsSelect<true>;
     partners: PartnersSelect<false> | PartnersSelect<true>;
+    'political-entities': PoliticalEntitiesSelect<false> | PoliticalEntitiesSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -154,14 +156,10 @@ export interface Document {
   title: string;
   url?: string | null;
   docURL?: string | null;
-  file?: (string | null) | Media;
-  politicalEntity?: string | null;
-  country?: string | null;
-  region?: string | null;
+  files?: (string | Media)[] | null;
+  politicalEntity?: (string | null) | PoliticalEntity;
   language?: ('en' | 'fr') | null;
   type?: ('promise' | 'evidence') | null;
-  yearFrom?: number | null;
-  yearTo?: number | null;
   airtableID?: string | null;
   fullyProcessed?: boolean | null;
   extractedText?: {
@@ -203,54 +201,24 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "aiExtraction".
+ * via the `definition` "political-entities".
  */
-export interface AiExtraction {
-  id: string;
-  title?: string | null;
-  document: string | Document;
-  extractions?:
-    | {
-        category: string;
-        summary: string;
-        source: string;
-        uniqueId?: string | null;
-        checkMediaId?: string | null;
-        checkMediaURL?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "pages".
- */
-export interface Page {
+export interface PoliticalEntity {
   id: string;
   tenant?: (string | null) | Tenant;
-  title: string;
-  slug: string;
-  slugLock?: boolean | null;
-  blocks?:
-    | (
-        | ActNowBlock
-        | {
-            image: string | Media;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'newsletter';
-          }
-        | {
-            title: string;
-            partners?: (string | Partner)[] | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'partners';
-          }
-      )[]
-    | null;
+  name: string;
+  region?: string | null;
+  /**
+   * Title of the entity, i.e President, Governor, Prime Minister
+   */
+  position: string;
+  /**
+   * Image of the Political Entity
+   */
+  image: string | Media;
+  periodFrom: string;
+  periodTo: string;
+  airtableID?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -323,6 +291,59 @@ export interface Tenant {
     | 'ESH'
     | 'ZMB'
     | 'ZWE';
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "aiExtraction".
+ */
+export interface AiExtraction {
+  id: string;
+  title?: string | null;
+  document: string | Document;
+  extractions?:
+    | {
+        category: string;
+        summary: string;
+        source: string;
+        uniqueId?: string | null;
+        checkMediaId?: string | null;
+        checkMediaURL?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages".
+ */
+export interface Page {
+  id: string;
+  tenant?: (string | null) | Tenant;
+  title: string;
+  slug: string;
+  slugLock?: boolean | null;
+  blocks?:
+    | (
+        | ActNowBlock
+        | {
+            image: string | Media;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'newsletter';
+          }
+        | {
+            title: string;
+            partners?: (string | Partner)[] | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'partners';
+          }
+      )[]
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -692,6 +713,10 @@ export interface PayloadLockedDocument {
         value: string | Partner;
       } | null)
     | ({
+        relationTo: 'political-entities';
+        value: string | PoliticalEntity;
+      } | null)
+    | ({
         relationTo: 'payload-jobs';
         value: string | PayloadJob;
       } | null);
@@ -745,14 +770,10 @@ export interface DocumentsSelect<T extends boolean = true> {
   title?: T;
   url?: T;
   docURL?: T;
-  file?: T;
+  files?: T;
   politicalEntity?: T;
-  country?: T;
-  region?: T;
   language?: T;
   type?: T;
-  yearFrom?: T;
-  yearTo?: T;
   airtableID?: T;
   fullyProcessed?: T;
   extractedText?: T;
@@ -1007,6 +1028,22 @@ export interface PartnersSelect<T extends boolean = true> {
         url?: T;
         label?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "political-entities_select".
+ */
+export interface PoliticalEntitiesSelect<T extends boolean = true> {
+  tenant?: T;
+  name?: T;
+  region?: T;
+  position?: T;
+  image?: T;
+  periodFrom?: T;
+  periodTo?: T;
+  airtableID?: T;
   updatedAt?: T;
   createdAt?: T;
 }
