@@ -1,3 +1,4 @@
+import { airtableID } from "@/fields/airtableID";
 import { CollectionConfig } from "payload";
 
 export const PoliticalEntities: CollectionConfig = {
@@ -95,14 +96,6 @@ export const PoliticalEntities: CollectionConfig = {
         },
       ],
     },
-    {
-      name: "airtableID",
-      type: "text",
-      admin: {
-        position: "sidebar",
-        readOnly: true,
-      },
-      label: "Airtable ID",
-    },
+    airtableID(),
   ],
 };

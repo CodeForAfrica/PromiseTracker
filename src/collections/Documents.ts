@@ -1,3 +1,4 @@
+import { airtableID } from "@/fields/airtableID";
 import { CollectionConfig } from "payload";
 
 export const Documents: CollectionConfig = {
@@ -131,19 +132,7 @@ export const Documents: CollectionConfig = {
         },
       ],
     },
-    {
-      name: "airtableID",
-      label: {
-        en: "Airtable ID",
-        fr: "ID Airtable ",
-      },
-      type: "text",
-      unique: true,
-      admin: {
-        position: "sidebar",
-        readOnly: true,
-      },
-    },
+    airtableID(),
     {
       name: "fullyProcessed",
       type: "checkbox",
