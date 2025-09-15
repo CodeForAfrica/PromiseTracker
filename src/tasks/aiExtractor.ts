@@ -71,14 +71,21 @@ export const AIExtractor: TaskConfig<"aiExtractor"> = {
       for (const document of documents) {
         const { extractedText } = document;
 
-        const plainText = extractedText?.root.children
-          .map((item) => {
-            if (item.type === "paragraph") {
-              return (item.children as Array<any>)
-                .map((child: any) => (child.type === "text" ? child.text : ""))
-                .join("");
-            }
-            return "";
+        const plainText = extractedText
+          ?.map((t) => {
+            const ff = t.text?.root.children
+              .map((s) => {
+                if (s.type === "paragraph") {
+                  return (s.children as Array<any>)
+                    .map((child: any) =>
+                      child.type === "text" ? child.text : ""
+                    )
+                    .join("");
+                }
+                return "";
+              })
+              .join("\n");
+            return ff;
           })
           .join("\n");
 
@@ -96,7 +103,7 @@ export const AIExtractor: TaskConfig<"aiExtractor"> = {
               title: z
                 .string()
                 .describe(
-                  "Inferred title from the document content, or the provided document title as fallback",
+                  "Inferred title from the document content, or the provided document title as fallback"
                 ),
               promises: z.array(
                 z.object({
@@ -109,9 +116,9 @@ export const AIExtractor: TaskConfig<"aiExtractor"> = {
                   source: z
                     .array(z.string())
                     .describe(
-                      "Array of direct quotations from the text that support this promise",
+                      "Array of direct quotations from the text that support this promise"
                     ),
-                }),
+                })
               ),
             }),
             maxRetries: 5,

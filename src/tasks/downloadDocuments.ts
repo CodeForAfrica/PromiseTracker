@@ -1,13 +1,7 @@
 import { TaskConfig } from "payload";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-import { writeFile, unlink, mkdir } from "node:fs/promises";
-import { existsSync } from "node:fs";
-import { mimeToExtension } from "@/utils/files";
-
-const fileName = fileURLToPath(import.meta.url);
-const dirName = dirname(fileName);
-const tempDir = join(dirName, "..", "..", "temp");
+import { unlink } from "node:fs/promises";
+import { downloadFile } from "@/utils/files";
+import { Media } from "@/payload-types";
 
 export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
   retries: 2,
@@ -18,22 +12,18 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
     const logger = payload.logger;
     logger.info("downloadDocuments:: Starting Downloading of Documents");
 
-    if (!existsSync(tempDir)) {
-      await mkdir(tempDir, { recursive: true });
-    }
-
     try {
       const { docs: documents } = await payload.find({
         collection: "documents",
         where: {
-          file: {
+          files: {
             exists: false,
           },
         },
         select: {
           title: true,
           url: true,
-          docURL: true,
+          docURLs: true,
         },
       });
 
@@ -43,7 +33,7 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
       }
 
       logger.info(
-        `downloadDocuments:: Downloading ${documents.length} documents`,
+        `downloadDocuments:: Downloading ${documents.length} documents`
       );
 
       const processedDocs = [];
@@ -53,55 +43,44 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
           logger.info("downloadDocuments:: Processing document", {
             title: doc.title,
           });
-          const { url, docURL } = doc;
+          const { url, docURLs } = doc;
 
           // prioritise file uploaded to airtable
-          const urlToFetch = docURL || url;
+          const urlsToFetch = docURLs?.length
+            ? docURLs.map((t) => t.url)
+            : [url];
 
-          if (!urlToFetch) {
+          if (!urlsToFetch) {
             logger.warn("downloadDocuments:: Document has no URL", {
               title: doc.title,
             });
             continue;
           }
 
-          const res = await fetch(urlToFetch);
-
-          if (!res.ok) {
-            logger.error(
-              `downloadDocuments:: Failed to fetch document ${doc.title}: ${res.status} ${res.statusText}`,
-            );
-            throw new Error(
-              `Failed to fetch document: ${res.status} ${res.statusText}`,
-            );
+          const files: Media[] = [];
+          for (const url of urlsToFetch) {
+            if (url) {
+              const filePath = await downloadFile(url);
+              const mediaUpload = await payload.create({
+                collection: "media",
+                data: {
+                  alt: doc.title,
+                },
+                filePath,
+              });
+              files.push(mediaUpload);
+              await unlink(filePath);
+            }
           }
-
-          const buffer = await res.arrayBuffer();
-          const contentType =
-            res.headers.get("content-type")?.split(";")[0] || "";
-          const extension = mimeToExtension[contentType] || "";
-          const docFileName = `${doc.id}${extension}`;
-          const filePath = join(tempDir, docFileName);
-
-          await writeFile(filePath, Buffer.from(buffer), { flag: "w" });
-
-          const mediaUpload = await payload.create({
-            collection: "media",
-            data: {
-              alt: docFileName,
-            },
-            filePath,
-          });
 
           await payload.update({
             collection: "documents",
             id: doc.id,
             data: {
-              file: mediaUpload,
+              files: files,
             },
           });
 
-          await unlink(filePath);
           logger.info("downloadDocuments:: Document processed successfully", {
             title: doc.title,
           });
@@ -116,7 +95,7 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
       }
 
       logger.info(
-        `downloadDocuments:: Successfully processed ${processedDocs.length} of ${documents.length} documents`,
+        `downloadDocuments:: Successfully processed ${processedDocs.length} of ${documents.length} documents`
       );
       return {
         output: {},

@@ -1,5 +1,9 @@
 import { AirtableTs } from "airtable-ts";
-import { documentListTable } from "@/types/airtableSchema";
+import {
+  documentsTable as documentListTable,
+  countriesTable,
+  PoliticalEntitiestable,
+} from "@/types/airtableSchema";
 import { formula } from "airtable-ts-formula";
 
 export const getUnprocessedDocuments = async ({
@@ -33,4 +37,26 @@ export const markDocumentAsProcessed = async ({
     id: airtableID,
     processed: true,
   });
+};
+
+export const getAirtableCountries = async ({
+  airtableAPIKey,
+}: {
+  airtableAPIKey: string;
+  airtableID: string;
+}) => {
+  const db = new AirtableTs({ apiKey: airtableAPIKey });
+  const countries = await db.scan(countriesTable, {});
+  return countries;
+};
+
+export const getAirtablePoliticalEntities = async ({
+  airtableAPIKey,
+}: {
+  airtableAPIKey: string;
+  airtableID: string;
+}) => {
+  const db = new AirtableTs({ apiKey: airtableAPIKey });
+  const entities = await db.scan(PoliticalEntitiestable, {});
+  return entities;
 };

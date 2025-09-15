@@ -72,5 +72,14 @@ export const Tenants: CollectionConfig = {
         fr: "Pays",
       },
     },
+    {
+      name: "airtableID",
+      type: "text",
+      admin: {
+        position: "sidebar",
+        readOnly: true,
+      },
+      label: "Airtable ID",
+    },
   ],
 };

@@ -114,11 +114,13 @@ export interface Config {
   };
   jobs: {
     tasks: {
+      createTenantFromAirtable: TaskCreateTenantFromAirtable;
       fetchAirtableDocuments: TaskFetchAirtableDocuments;
       downloadDocuments: TaskDownloadDocuments;
       extractDocuments: TaskExtractDocuments;
       aiExtractor: TaskAiExtractor;
       uploadToMeedan: TaskUploadToMeedan;
+      createPoliticalEntity: TaskCreatePoliticalEntity;
       inline: {
         input: unknown;
         output: unknown;
@@ -155,28 +157,38 @@ export interface Document {
   id: string;
   title: string;
   url?: string | null;
-  docURL?: string | null;
+  docURLs?:
+    | {
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
   files?: (string | Media)[] | null;
   politicalEntity?: (string | null) | PoliticalEntity;
   language?: ('en' | 'fr') | null;
   type?: ('promise' | 'evidence') | null;
   airtableID?: string | null;
   fullyProcessed?: boolean | null;
-  extractedText?: {
-    root: {
-      type: string;
-      children: {
-        type: string;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
+  extractedText?:
+    | {
+        text?: {
+          root: {
+            type: string;
+            children: {
+              type: string;
+              version: number;
+              [k: string]: unknown;
+            }[];
+            direction: ('ltr' | 'rtl') | null;
+            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+            indent: number;
+            version: number;
+          };
+          [k: string]: unknown;
+        } | null;
+        id?: string | null;
+      }[]
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -291,6 +303,7 @@ export interface Tenant {
     | 'ESH'
     | 'ZMB'
     | 'ZWE';
+  airtableID?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -597,11 +610,13 @@ export interface PayloadJob {
         completedAt: string;
         taskSlug:
           | 'inline'
+          | 'createTenantFromAirtable'
           | 'fetchAirtableDocuments'
           | 'downloadDocuments'
           | 'extractDocuments'
           | 'aiExtractor'
-          | 'uploadToMeedan';
+          | 'uploadToMeedan'
+          | 'createPoliticalEntity';
         taskID: string;
         input?:
           | {
@@ -635,11 +650,13 @@ export interface PayloadJob {
           taskSlug?:
             | (
                 | 'inline'
+                | 'createTenantFromAirtable'
                 | 'fetchAirtableDocuments'
                 | 'downloadDocuments'
                 | 'extractDocuments'
                 | 'aiExtractor'
                 | 'uploadToMeedan'
+                | 'createPoliticalEntity'
               )
             | null;
           taskID?: string | null;
@@ -651,11 +668,13 @@ export interface PayloadJob {
   taskSlug?:
     | (
         | 'inline'
+        | 'createTenantFromAirtable'
         | 'fetchAirtableDocuments'
         | 'downloadDocuments'
         | 'extractDocuments'
         | 'aiExtractor'
         | 'uploadToMeedan'
+        | 'createPoliticalEntity'
       )
     | null;
   queue?: string | null;
@@ -769,14 +788,24 @@ export interface PayloadMigration {
 export interface DocumentsSelect<T extends boolean = true> {
   title?: T;
   url?: T;
-  docURL?: T;
+  docURLs?:
+    | T
+    | {
+        url?: T;
+        id?: T;
+      };
   files?: T;
   politicalEntity?: T;
   language?: T;
   type?: T;
   airtableID?: T;
   fullyProcessed?: T;
-  extractedText?: T;
+  extractedText?:
+    | T
+    | {
+        text?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1002,6 +1031,7 @@ export interface TenantsSelect<T extends boolean = true> {
   name?: T;
   locale?: T;
   country?: T;
+  airtableID?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1129,7 +1159,7 @@ export interface Setting {
     airtableBaseID: string;
   };
   ai: {
-    model: 'gemini-2.5-pro';
+    model: 'gemini-2.5-pro' | 'gemini-2.5-flash-lite';
     apiKey: string;
   };
   meedan: {
@@ -1196,6 +1226,14 @@ export interface PayloadJobsStatsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskCreateTenantFromAirtable".
+ */
+export interface TaskCreateTenantFromAirtable {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "TaskFetchAirtableDocuments".
  */
 export interface TaskFetchAirtableDocuments {
@@ -1231,6 +1269,14 @@ export interface TaskAiExtractor {
  * via the `definition` "TaskUploadToMeedan".
  */
 export interface TaskUploadToMeedan {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskCreatePoliticalEntity".
+ */
+export interface TaskCreatePoliticalEntity {
   input?: unknown;
   output?: unknown;
 }

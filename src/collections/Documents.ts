@@ -16,7 +16,7 @@ export const Documents: CollectionConfig = {
     read: () => true,
   },
   admin: {
-    defaultColumns: ["title", "country", "region", "type", "language"],
+    defaultColumns: ["title", "politicalEntity", "language", "type"],
     useAsTitle: "title",
     group: {
       en: "Documents",
@@ -42,11 +42,18 @@ export const Documents: CollectionConfig = {
       },
     },
     {
-      name: "docURL", // only used to download file from airtable
-      type: "text",
+      name: "docURLs", // only used to download file from airtable
+      type: "array",
       admin: {
         hidden: true,
       },
+      fields: [
+        {
+          type: "text",
+          name: "url",
+          required: true,
+        },
+      ],
     },
     {
       name: "files",
@@ -167,10 +174,20 @@ export const Documents: CollectionConfig = {
                 en: "Text",
                 fr: "Texte",
               },
-              type: "richText",
-              admin: {
-                readOnly: true,
-              },
+              type: "array",
+              fields: [
+                {
+                  name: "text",
+                  label: {
+                    en: "Text",
+                    fr: "Texte",
+                  },
+                  type: "richText",
+                  admin: {
+                    readOnly: true,
+                  },
+                },
+              ],
             },
           ],
         },

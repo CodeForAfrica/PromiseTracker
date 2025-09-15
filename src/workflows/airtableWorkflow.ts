@@ -12,6 +12,12 @@ export const airtableWorkflow: WorkflowConfig = {
     },
   ],
   handler: async ({ tasks }) => {
+    await tasks.createTenantFromAirtable(randomUUID(), {
+      input: [],
+    });
+    await tasks.createPoliticalEntity(randomUUID(), {
+      input: [],
+    });
     await tasks.fetchAirtableDocuments(randomUUID(), {
       input: [],
     });

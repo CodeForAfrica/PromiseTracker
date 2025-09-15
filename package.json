@@ -45,6 +45,7 @@
     "airtable-ts": "^1.6.0",
     "airtable-ts-formula": "^1.0.0",
     "cross-env": "^10.0.0",
+    "date-fns": "^4.1.0",
     "dotenv": "17.2.1",
     "graphql": "^16.11.0",
     "lucide-react": "^0.542.0",

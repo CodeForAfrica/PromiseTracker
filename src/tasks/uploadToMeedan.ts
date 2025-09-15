@@ -18,7 +18,7 @@ const getAIExtractionToUpload = (doc: AiExtraction) => {
 
 const checkAndMarkDocumentComplete = async (
   doc: Document,
-  payload: BasePayload,
+  payload: BasePayload
 ): Promise<void> => {
   if (doc.airtableID) {
     const {
@@ -62,86 +62,86 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
 
       for (const doc of allPromises) {
         logger.info(
-          `uploadToMeedan:: Processing promise: ${doc.id} - ${doc.title}`,
+          `uploadToMeedan:: Processing promise: ${doc.id} - ${doc.title}`
         );
 
         const aiExtractions = getAIExtractionToUpload(doc);
 
         if (aiExtractions.length === 0) {
           logger.info(
-            `uploadToMeedan:: Document ${doc.id} has no unprocessed AI extractions, skipping`,
+            `uploadToMeedan:: Document ${doc.id} has no unprocessed AI extractions, skipping`
           );
           continue;
         }
 
         const document = doc.document as Document;
 
-        for (const extraction of aiExtractions) {
-          logger.info(
-            `uploadToMeedan:: Uploading extraction ${extraction.uniqueId} from document ${doc.id} to CheckMedia`,
-          );
-          const tags = [
-            document.politicalEntity,
-            document.country,
-            document.region,
-            document.type?.toUpperCase(),
-            extraction.category,
-          ].filter(Boolean) as string[];
+        // for (const extraction of aiExtractions) {
+        //   logger.info(
+        //     `uploadToMeedan:: Uploading extraction ${extraction.uniqueId} from document ${doc.id} to CheckMedia`,
+        //   );
+        //   const tags = [
+        //     document.politicalEntity,
+        //     document.country,
+        //     document.region,
+        //     document.type?.toUpperCase(),
+        //     extraction.category,
+        //   ].filter(Boolean) as string[];
 
-          const quote = `${extraction.summary} \n\n${extraction.source}`.trim();
+        //   const quote = `${extraction.summary} \n\n${extraction.source}`.trim();
 
-          const downloadedFile = document.file as Media;
+        //   const downloadedFile = document.file as Media;
 
-          const response = await createFactCheckClaim({
-            apiKey: meedanAPIKey,
-            teamId,
-            quote: quote,
-            tags,
-            claimDescription: extraction.summary,
-            factCheck: {
-              title: extraction.summary,
-              url: document.url || document.docURL || downloadedFile.url || "",
-              language: document.language || "",
-              publish_report: false,
-            },
-          });
+        //   const response = await createFactCheckClaim({
+        //     apiKey: meedanAPIKey,
+        //     teamId,
+        //     quote: quote,
+        //     tags,
+        //     claimDescription: extraction.summary,
+        //     factCheck: {
+        //       title: extraction.summary,
+        //       url: document.url || document.docURL || downloadedFile.url || "",
+        //       language: document.language || "",
+        //       publish_report: false,
+        //     },
+        //   });
 
-          const checkMediaId =
-            response.data.createProjectMedia.project_media.id;
-          const checkMediaURL =
-            response.data.createProjectMedia.project_media.full_url;
+        //   const checkMediaId =
+        //     response.data.createProjectMedia.project_media.id;
+        //   const checkMediaURL =
+        //     response.data.createProjectMedia.project_media.full_url;
 
-          logger.info(
-            `uploadToMeedan:: Successfully uploaded extraction ${extraction.uniqueId} to CheckMedia`,
-            {
-              checkMediaId,
-              checkMediaURL,
-            },
-          );
+        //   logger.info(
+        //     `uploadToMeedan:: Successfully uploaded extraction ${extraction.uniqueId} to CheckMedia`,
+        //     {
+        //       checkMediaId,
+        //       checkMediaURL,
+        //     },
+        //   );
 
-          const updatedAiExtraction = doc.extractions?.map((ext) => {
-            if (ext.uniqueId === extraction.uniqueId) {
-              return {
-                ...ext,
-                checkMediaId,
-                checkMediaURL,
-              };
-            }
-            return ext;
-          });
+        //   const updatedAiExtraction = doc.extractions?.map((ext) => {
+        //     if (ext.uniqueId === extraction.uniqueId) {
+        //       return {
+        //         ...ext,
+        //         checkMediaId,
+        //         checkMediaURL,
+        //       };
+        //     }
+        //     return ext;
+        //   });
 
-          await payload.update({
-            collection: "aiExtraction",
-            id: doc.id,
-            data: {
-              extractions: updatedAiExtraction,
-            },
-          });
+        //   await payload.update({
+        //     collection: "aiExtraction",
+        //     id: doc.id,
+        //     data: {
+        //       extractions: updatedAiExtraction,
+        //     },
+        //   });
 
-          logger.info(
-            `uploadToMeedan:: Updated extraction ${extraction.uniqueId} in document ${doc.id} with CheckMedia data`,
-          );
-        }
+        //   logger.info(
+        //     `uploadToMeedan:: Updated extraction ${extraction.uniqueId} in document ${doc.id} with CheckMedia data`,
+        //   );
+        // }
 
         await checkAndMarkDocumentComplete(document, payload);
       }
