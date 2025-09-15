@@ -7,6 +7,7 @@ import {
 import { TaskConfig } from "payload";
 import { downloadFile } from "@/utils/files";
 import { unlink } from "node:fs/promises";
+import { formatSlug } from "@/fields/slug/formatSlug";
 
 export const CreatePoliticalEntity: TaskConfig = {
   slug: "createPoliticalEntity",
@@ -95,6 +96,7 @@ export const CreatePoliticalEntity: TaskConfig = {
               image: mediaUpload,
               region: entity.region,
               airtableID: entity.id,
+              slug: formatSlug(entity.name!),
             },
           });
         }

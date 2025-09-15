@@ -1,5 +1,8 @@
 import { airtableID } from "@/fields/airtableID";
+import { image } from "@/fields/image";
+import { slugField } from "@/fields/slug";
 import { CollectionConfig } from "payload";
+import { ensureUniqueSlug } from "./hooks/ensureUniqueSlug";
 
 export const PoliticalEntities: CollectionConfig = {
   slug: "political-entities",
@@ -19,6 +22,7 @@ export const PoliticalEntities: CollectionConfig = {
       en: "Documents",
       fr: "Documents",
     },
+    defaultColumns: ["name", "region", "position", "periodFrom", "periodTo"],
   },
   fields: [
     {
@@ -30,6 +34,18 @@ export const PoliticalEntities: CollectionConfig = {
         fr: "Nom",
       },
     },
+    ...slugField("name", {
+      slugOverrides: {
+        index: true,
+        required: true,
+        admin: {
+          position: "sidebar",
+        },
+        hooks: {
+          beforeValidate: [ensureUniqueSlug],
+        },
+      },
+    }),
     {
       name: "region",
       type: "text",
@@ -57,11 +73,7 @@ export const PoliticalEntities: CollectionConfig = {
         fr: "Position",
       },
     },
-    {
-      name: "image",
-      type: "upload",
-      relationTo: "media",
-      required: true,
+    image({
       admin: {
         description: {
           en: "Image of the Political Entity",
@@ -72,7 +84,8 @@ export const PoliticalEntities: CollectionConfig = {
         en: "Photo",
         fr: "Photo",
       },
-    },
+      required: true,
+    }),
     {
       type: "row",
       fields: [
