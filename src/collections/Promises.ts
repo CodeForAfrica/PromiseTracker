@@ -46,8 +46,18 @@ export const Promises: CollectionConfig = {
       name: "extractions",
       type: "array",
       label: {
-        en: "Extractions",
-        fr: "Extractions",
+        en: "AI Extractions",
+        fr: "AI Extractions",
+      },
+      admin: {
+        components: {
+          RowLabel: {
+            path: "@/components/payload/RowLabel#CustomRowLabel",
+            clientProps: {
+              fieldToUse: "summary",
+            },
+          },
+        },
       },
       fields: [
         {
