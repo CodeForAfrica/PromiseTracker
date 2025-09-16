@@ -8,6 +8,7 @@ import { Pages } from "./Pages";
 import { SiteSettings } from "./SiteSettings";
 import { Partners } from "./Partners";
 import { PoliticalEntities } from "./PoliticalEntities";
+import { PromiseStatus } from "./PromiseStatus";
 
 export const collections: CollectionConfig[] = [
   Documents,
@@ -19,4 +20,5 @@ export const collections: CollectionConfig[] = [
   Tenants,
   Partners,
   PoliticalEntities,
+  PromiseStatus,
 ];

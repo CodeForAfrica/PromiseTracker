@@ -119,6 +119,8 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
             response.data.createProjectMedia.project_media.id;
           const checkMediaURL =
             response.data.createProjectMedia.project_media.full_url;
+          const returnedStatus =
+            response.data.createProjectMedia.project_media.status;
 
           logger.info(
             `uploadToMeedan:: Successfully uploaded extraction ${extraction.uniqueId} to CheckMedia`,
@@ -128,12 +130,29 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
             }
           );
 
+          let statusRelationId: string | undefined;
+          if (returnedStatus) {
+            try {
+              const statusRes = await payload.find({
+                collection: "promise-status",
+                where: { meedanId: { equals: returnedStatus } },
+                limit: 1,
+              });
+              statusRelationId = statusRes.docs?.[0]?.id as string | undefined;
+            } catch (e) {
+              logger.warn(
+                `uploadToMeedan:: Could not resolve status ${returnedStatus} to a promise-status doc`
+              );
+            }
+          }
+
           const updatedExtractions = doc.extractions?.map((ext) => {
             if (ext.uniqueId === extraction.uniqueId) {
               return {
                 ...ext,
                 checkMediaId,
                 checkMediaURL,
+                ...(statusRelationId ? { Status: statusRelationId } : {}),
               };
             }
             return ext;

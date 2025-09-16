@@ -17,6 +17,7 @@ export const Promises: CollectionConfig = {
       en: "Documents",
       fr: "Documents",
     },
+    useAsTitle: "title",
   },
   access: {
     read: () => true,
@@ -94,7 +95,7 @@ export const Promises: CollectionConfig = {
               name: "checkMediaId",
               type: "text",
               admin: {
-                hidden: true,
+                // hidden: true,
               },
               label: {
                 en: "Check Media ID",
@@ -108,6 +109,15 @@ export const Promises: CollectionConfig = {
                 fr: "URL CheckMedia",
               },
               type: "text",
+            },
+            {
+              name: "Status",
+              type: "relationship",
+              relationTo: "promise-status",
+              label: {
+                en: "Status",
+                fr: "Statut",
+              },
             },
           ],
         },

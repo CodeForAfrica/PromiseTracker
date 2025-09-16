@@ -7,10 +7,103 @@ const createMutationQuery = () => {
         project_media {
           id
           full_url
+          status
         }
       }
     }
   `;
+};
+
+type VerificationStatusesResponse = {
+  data: {
+    team: {
+      verification_statuses: {
+        statuses: Array<{
+          id: string;
+          label: string;
+          locales?: {
+            en?: {
+              label?: string;
+              description?: string;
+            };
+          };
+          style?: {
+            color?: string;
+          };
+        }>;
+      };
+    };
+  };
+};
+
+export interface PromiseStatusItem {
+  id: string;
+  label: string;
+  description: string;
+  color: string | null;
+}
+
+const createStatusesQuery = (useSlug: boolean) => {
+  if (useSlug) {
+    return `
+      query TeamStatuses($slug: String!) {
+        team(slug: $slug) {
+          verification_statuses
+        }
+      }
+    `;
+  }
+  return `
+    query TeamStatuses {
+      team {
+        verification_statuses
+      }
+    }
+  `;
+};
+
+export const fetchVerificationStatuses = async ({
+  apiKey,
+  teamSlug,
+  teamId,
+}: {
+  apiKey: string;
+  teamSlug?: string;
+  teamId?: string;
+}): Promise<PromiseStatusItem[]> => {
+  const query = createStatusesQuery(Boolean(teamSlug));
+  const variables = teamSlug ? { slug: teamSlug } : undefined;
+
+  const response = await fetch(BASE_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Check-Token": apiKey,
+      ...(teamId ? { "X-Check-Team": teamId } : {}),
+    },
+    body: JSON.stringify({ query, variables }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const json = (await response.json()) as VerificationStatusesResponse;
+
+  const statuses =
+    json?.data?.team?.verification_statuses?.statuses ?? ([] as any[]);
+
+  return statuses.map((s) => {
+    const enLabel = s?.locales?.en?.label ?? s?.label ?? "";
+    const enDescription = s?.locales?.en?.description ?? "";
+    const color = s?.style?.color ?? null;
+    return {
+      id: s.id,
+      label: enLabel,
+      description: enDescription,
+      color,
+    } satisfies PromiseStatusItem;
+  });
 };
 
 export interface FactCheck {
@@ -32,12 +125,7 @@ export interface CreateProjectMediaInput {
   quote: string;
   channel: { main: number };
   set_tags?: string[];
-  set_status?:
-    | "undetermined"
-    | "not_applicable"
-    | "in_progress"
-    | "false"
-    | "verified";
+  set_status?: string;
   set_claim_description?: string;
   set_fact_check?: FactCheck;
 }
@@ -48,6 +136,7 @@ export interface CreateProjectMediaResponse {
       project_media: {
         id: string;
         full_url: string;
+        status: string;
       };
     };
   };
@@ -95,7 +184,7 @@ export const postRequest = async ({
 
     if (result.errors && result.errors.length > 0) {
       throw new Error(
-        `GraphQL errors: ${result.errors.map((e) => e.message).join(", ")}`,
+        `GraphQL errors: ${result.errors.map((e) => e.message).join(", ")}`
       );
     }
 
