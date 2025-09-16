@@ -2,7 +2,7 @@ import { TaskConfig } from "payload";
 import { FetchAirtableDocuments } from "./fetchAirtableDocuments";
 import { DownloadDocuments } from "./downloadDocuments";
 import { ExtractDocuments } from "./extractDocuments";
-import { AIExtractor } from "./aiExtractor";
+import { ExtractPromises } from "./extractPromises";
 import { UploadToMeedan } from "./uploadToMeedan";
 import { CreateTenantFromAirtable } from "./createTenant";
 import { CreatePoliticalEntity } from "./createPoliticalEntity";
@@ -12,7 +12,7 @@ export const tasks: TaskConfig[] = [
   FetchAirtableDocuments,
   DownloadDocuments,
   ExtractDocuments,
-  AIExtractor,
+  ExtractPromises,
   UploadToMeedan,
   CreatePoliticalEntity,
 ];

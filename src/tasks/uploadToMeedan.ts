@@ -2,14 +2,14 @@ import { BasePayload, TaskConfig } from "payload";
 import { createFactCheckClaim } from "@/lib/meedan";
 import { markDocumentAsProcessed } from "@/lib/airtable";
 import {
-  AiExtraction,
+  Promise as PromiseDoc,
   Document,
   Media,
   PoliticalEntity,
   Tenant,
 } from "@/payload-types";
 
-const getAIExtractionToUpload = (doc: AiExtraction) => {
+const getPromisesToUpload = (doc: PromiseDoc) => {
   return (
     doc.extractions
       ?.filter((extraction) => !extraction.checkMediaId)
@@ -61,7 +61,7 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
       }
 
       const { docs: allPromises } = await payload.find({
-        collection: "aiExtraction",
+        collection: "promises",
         limit: -1,
         depth: 4,
       });
@@ -71,11 +71,11 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
           `uploadToMeedan:: Processing promise: ${doc.id} - ${doc.title}`
         );
 
-        const aiExtractions = getAIExtractionToUpload(doc);
+        const promisesToUpload = getPromisesToUpload(doc);
 
-        if (aiExtractions.length === 0) {
+        if (promisesToUpload.length === 0) {
           logger.info(
-            `uploadToMeedan:: Document ${doc.id} has no unprocessed AI extractions, skipping`
+            `uploadToMeedan:: Document ${doc.id} has no unprocessed promises, skipping`
           );
           continue;
         }
@@ -84,7 +84,7 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
         const entity = document.politicalEntity as PoliticalEntity;
         const tenant = entity.tenant as Tenant;
 
-        for (const extraction of aiExtractions) {
+        for (const extraction of promisesToUpload) {
           logger.info(
             `uploadToMeedan:: Uploading extraction ${extraction.uniqueId} from document ${doc.id} to CheckMedia`
           );
@@ -128,7 +128,7 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
             }
           );
 
-          const updatedAiExtraction = doc.extractions?.map((ext) => {
+          const updatedExtractions = doc.extractions?.map((ext) => {
             if (ext.uniqueId === extraction.uniqueId) {
               return {
                 ...ext,
@@ -140,10 +140,10 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
           });
 
           await payload.update({
-            collection: "aiExtraction",
+            collection: "promises",
             id: doc.id,
             data: {
-              extractions: updatedAiExtraction,
+              extractions: updatedExtractions,
             },
           });
 

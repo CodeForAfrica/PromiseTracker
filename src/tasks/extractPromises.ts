@@ -4,13 +4,13 @@ import { generateObject } from "ai";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
 
-export const AIExtractor: TaskConfig<"aiExtractor"> = {
-  slug: "aiExtractor",
-  label: "AI Extractor",
+export const ExtractPromises: TaskConfig<"extractPromises"> = {
+  slug: "extractPromises",
+  label: "Extract Promises",
   handler: async ({ req }) => {
     const { payload } = req;
     const { logger } = payload;
-    logger.info("aiExtractor:: Starting AI Extraction");
+    logger.info("extractPromises:: Starting promise extraction");
 
     try {
       const {
@@ -60,11 +60,11 @@ export const AIExtractor: TaskConfig<"aiExtractor"> = {
       const documents = allDocs.filter((doc) => !doc.fullyProcessed);
 
       if (documents.length === 0) {
-        logger.info("aiExtractor:: No documents to Extract Promises");
+        logger.info("extractPromises:: No documents to extract promises from");
         return { output: { docs: [] } };
       }
 
-      logger.info(`aiExtractor:: Extracting ${documents.length} documents`);
+      logger.info(`extractPromises:: Extracting ${documents.length} documents`);
 
       const processedDocs = [];
 
@@ -90,7 +90,7 @@ export const AIExtractor: TaskConfig<"aiExtractor"> = {
           .join("\n");
 
         if (!plainText || plainText?.length === 0) {
-          logger.error("aiExtractor:: No text to process");
+          logger.error("extractPromises:: No text to process");
           continue;
         }
 
@@ -130,7 +130,7 @@ export const AIExtractor: TaskConfig<"aiExtractor"> = {
 
           if (object.promises.length > 0) {
             await payload.create({
-              collection: "aiExtraction",
+              collection: "promises",
               data: {
                 title: object.title,
                 document: document,
@@ -161,13 +161,13 @@ export const AIExtractor: TaskConfig<"aiExtractor"> = {
           });
         } catch (error) {
           console.log("Error::", { error });
-          logger.error("aiExtractor:: Error generating AI Response::", {
+          logger.error("extractPromises:: Error generating AI Response::", {
             error,
           });
         }
       }
 
-      logger.info(`aiExtractor:: Extracted ${processedDocs.length} documents`);
+      logger.info(`extractPromises:: Extracted ${processedDocs.length} documents`);
 
       return {
         output: {},

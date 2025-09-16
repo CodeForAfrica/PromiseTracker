@@ -68,7 +68,7 @@ export interface Config {
   blocks: {};
   collections: {
     documents: Document;
-    aiExtraction: AiExtraction;
+    promises: Promise;
     media: Media;
     pages: Page;
     users: User;
@@ -84,7 +84,7 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     documents: DocumentsSelect<false> | DocumentsSelect<true>;
-    aiExtraction: AiExtractionSelect<false> | AiExtractionSelect<true>;
+    promises: PromisesSelect<false> | PromisesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
@@ -118,7 +118,7 @@ export interface Config {
       fetchAirtableDocuments: TaskFetchAirtableDocuments;
       downloadDocuments: TaskDownloadDocuments;
       extractDocuments: TaskExtractDocuments;
-      aiExtractor: TaskAiExtractor;
+      extractPromises: TaskExtractPromises;
       uploadToMeedan: TaskUploadToMeedan;
       createPoliticalEntity: TaskCreatePoliticalEntity;
       inline: {
@@ -311,9 +311,9 @@ export interface Tenant {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "aiExtraction".
+ * via the `definition` "promises".
  */
-export interface AiExtraction {
+export interface Promise {
   id: string;
   title?: string | null;
   document: string | Document;
@@ -616,7 +616,7 @@ export interface PayloadJob {
           | 'fetchAirtableDocuments'
           | 'downloadDocuments'
           | 'extractDocuments'
-          | 'aiExtractor'
+          | 'extractPromises'
           | 'uploadToMeedan'
           | 'createPoliticalEntity';
         taskID: string;
@@ -656,7 +656,7 @@ export interface PayloadJob {
                 | 'fetchAirtableDocuments'
                 | 'downloadDocuments'
                 | 'extractDocuments'
-                | 'aiExtractor'
+                | 'extractPromises'
                 | 'uploadToMeedan'
                 | 'createPoliticalEntity'
               )
@@ -674,7 +674,7 @@ export interface PayloadJob {
         | 'fetchAirtableDocuments'
         | 'downloadDocuments'
         | 'extractDocuments'
-        | 'aiExtractor'
+        | 'extractPromises'
         | 'uploadToMeedan'
         | 'createPoliticalEntity'
       )
@@ -706,8 +706,8 @@ export interface PayloadLockedDocument {
         value: string | Document;
       } | null)
     | ({
-        relationTo: 'aiExtraction';
-        value: string | AiExtraction;
+        relationTo: 'promises';
+        value: string | Promise;
       } | null)
     | ({
         relationTo: 'media';
@@ -813,9 +813,9 @@ export interface DocumentsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "aiExtraction_select".
+ * via the `definition` "promises_select".
  */
-export interface AiExtractionSelect<T extends boolean = true> {
+export interface PromisesSelect<T extends boolean = true> {
   title?: T;
   document?: T;
   extractions?:
@@ -1262,9 +1262,9 @@ export interface TaskExtractDocuments {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskAiExtractor".
+ * via the `definition` "TaskExtractPromises".
  */
-export interface TaskAiExtractor {
+export interface TaskExtractPromises {
   input?: unknown;
   output?: unknown;
 }
