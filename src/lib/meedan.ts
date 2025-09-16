@@ -1,4 +1,6 @@
 const BASE_URL = "https://check-api.checkmedia.org/api/graphql";
+const DEFAULT_CHANNEL_ID = "1";
+const DEFAULT_PAGE_SIZE = 100;
 
 const createMutationQuery = () => {
   return `
@@ -221,4 +223,122 @@ export const createFactCheckClaim = async ({
   };
 
   return await postRequest({ apiKey, teamId, data: input });
+};
+
+const searchProjectMediaStatusesQuery = () => `
+  query ProjectMediaSearch($query: String!) {
+    search(query: $query) {
+      number_of_results
+      medias {
+        edges {
+          node {
+            id
+            status
+          }
+        }
+      }
+    }
+  }
+`;
+
+type ProjectMediaSearchResponse = {
+  data?: {
+    search?: {
+      number_of_results?: number | null;
+      medias?: {
+        edges?: Array<{
+          node?: {
+            id?: string | null;
+            status?: string | null;
+          } | null;
+        }> | null;
+      } | null;
+    } | null;
+  };
+  errors?: Array<{ message?: string }>;
+};
+
+export interface ProjectMediaStatusItem {
+  checkMediaId: string;
+  status: string;
+}
+
+export const fetchProjectMediaStatuses = async ({
+  apiKey,
+  teamId,
+  channelId = DEFAULT_CHANNEL_ID,
+  pageSize = DEFAULT_PAGE_SIZE,
+}: {
+  apiKey: string;
+  teamId: string;
+  channelId?: string;
+  pageSize?: number;
+}): Promise<ProjectMediaStatusItem[]> => {
+  const query = searchProjectMediaStatusesQuery();
+  const results: ProjectMediaStatusItem[] = [];
+  let offset = 0;
+  let fetched = 0;
+  let total = Number.POSITIVE_INFINITY;
+
+  while (fetched < total) {
+    const searchPayload = {
+      esoffset: offset,
+      eslimit: pageSize,
+      channels: [channelId],
+    };
+
+    const response = await fetch(BASE_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Check-Token": apiKey,
+        "X-Check-Team": teamId,
+      },
+      body: JSON.stringify({
+        query,
+        variables: { query: JSON.stringify(searchPayload) },
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const payload = (await response.json()) as ProjectMediaSearchResponse;
+
+    if (payload.errors && payload.errors.length > 0) {
+      const message = payload.errors
+        .map((error) => error?.message ?? "Unknown error")
+        .join("; ");
+      throw new Error(`GraphQL errors: ${message}`);
+    }
+
+    const search = payload?.data?.search;
+    total = search?.number_of_results ?? 0;
+    const edges = search?.medias?.edges ?? [];
+
+    if (edges.length === 0) {
+      break;
+    }
+
+    for (const edge of edges) {
+      const checkMediaId = edge?.node?.id;
+      const status = edge?.node?.status;
+
+      const trimmedCheckMediaId = checkMediaId?.trim();
+      const trimmedStatus = status?.trim();
+
+      if (trimmedCheckMediaId && trimmedStatus) {
+        results.push({
+          checkMediaId: trimmedCheckMediaId,
+          status: trimmedStatus,
+        });
+      }
+    }
+
+    fetched += edges.length;
+    offset += pageSize;
+  }
+
+  return results;
 };

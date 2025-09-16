@@ -15,6 +15,8 @@ export const meedanStatusesWorkflow: WorkflowConfig = {
     await tasks.fetchPromiseStatuses(randomUUID(), {
       input: [],
     });
+    await tasks.updatePromiseStatus(randomUUID(), {
+      input: [],
+    });
   },
 };
-

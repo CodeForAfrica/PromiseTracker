@@ -124,6 +124,7 @@ export interface Config {
       uploadToMeedan: TaskUploadToMeedan;
       createPoliticalEntity: TaskCreatePoliticalEntity;
       fetchPromiseStatuses: TaskFetchPromiseStatuses;
+      updatePromiseStatus: TaskUpdatePromiseStatus;
       inline: {
         input: unknown;
         output: unknown;
@@ -642,7 +643,8 @@ export interface PayloadJob {
           | 'extractPromises'
           | 'uploadToMeedan'
           | 'createPoliticalEntity'
-          | 'fetchPromiseStatuses';
+          | 'fetchPromiseStatuses'
+          | 'updatePromiseStatus';
         taskID: string;
         input?:
           | {
@@ -684,6 +686,7 @@ export interface PayloadJob {
                 | 'uploadToMeedan'
                 | 'createPoliticalEntity'
                 | 'fetchPromiseStatuses'
+                | 'updatePromiseStatus'
               )
             | null;
           taskID?: string | null;
@@ -703,6 +706,7 @@ export interface PayloadJob {
         | 'uploadToMeedan'
         | 'createPoliticalEntity'
         | 'fetchPromiseStatuses'
+        | 'updatePromiseStatus'
       )
     | null;
   queue?: string | null;
@@ -1337,6 +1341,14 @@ export interface TaskCreatePoliticalEntity {
  * via the `definition` "TaskFetchPromiseStatuses".
  */
 export interface TaskFetchPromiseStatuses {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskUpdatePromiseStatus".
+ */
+export interface TaskUpdatePromiseStatus {
   input?: unknown;
   output?: unknown;
 }

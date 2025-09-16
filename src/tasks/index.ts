@@ -7,6 +7,7 @@ import { UploadToMeedan } from "./uploadToMeedan";
 import { CreateTenantFromAirtable } from "./createTenant";
 import { CreatePoliticalEntity } from "./createPoliticalEntity";
 import { FetchPromiseStatuses } from "./fetchMeedanPromiseStatus";
+import { UpdatePromiseStatus } from "./updatePromiseStatus";
 
 export const tasks: TaskConfig[] = [
   CreateTenantFromAirtable,
@@ -17,4 +18,5 @@ export const tasks: TaskConfig[] = [
   UploadToMeedan,
   CreatePoliticalEntity,
   FetchPromiseStatuses,
+  UpdatePromiseStatus,
 ];
