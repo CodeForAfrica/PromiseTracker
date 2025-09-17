@@ -95,14 +95,21 @@ monitor_tika() {
     return 0
   fi
 
+  while kill -0 "${TIKA_PID}" 2>/dev/null; do
+    sleep 2
+  done
+
   set +e
-  wait "${TIKA_PID}"
+  wait "${TIKA_PID}" 2>/dev/null
   exit_code=$?
   set -e
-  if [ "${exit_code}" -ne 0 ]; then
-    log "Apache Tika exited unexpectedly with status ${exit_code}"
-  else
+
+  if [ "${exit_code}" -eq 0 ]; then
     log "Apache Tika process exited"
+  elif [ "${exit_code}" -eq 127 ]; then
+    log "Apache Tika process exited (status unavailable)"
+  else
+    log "Apache Tika exited unexpectedly with status ${exit_code}"
   fi
   if [ -n "${NODE_PID}" ] && kill -0 "${NODE_PID}" 2>/dev/null; then
     log "Stopping application because Apache Tika is not running"
