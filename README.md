@@ -21,9 +21,14 @@
 
 ## Docker Image
 
-- Build the production image (bundles Apache Tika 3.2.3, no database services):
-  `docker build -t promisetracker:latest --build-arg DATABASE_URI="<build-time-database-uri>" .`
+- Build the production image (bundles Apache Tika 3.2.3, no database services) using Docker BuildKit secrets:
+  ```
+  docker build -t promisetracker:latest \
+    --secret id=database_uri,env=DATABASE_URI \
+    --secret id=payload_secret,env=PAYLOAD_SECRET \
+    .
+  ```
+  Provide `DATABASE_URI` and `PAYLOAD_SECRET` (build fails if they’re missing); Sentry secrets are optional. You can also point secrets at files via `--secret id=…,src=path/to/file`.
 - Run the container against an external database:
   `docker run -p 3000:3000 -e DATABASE_URI="<your-database-uri>" -e PAYLOAD_SECRET="<secret>" promisetracker:latest`
 - The bundled Apache Tika server listens on `http://127.0.0.1:9998/`. Override `AX_APACHE_TIKA_URL`, `TIKA_PORT`, or `TIKA_ENABLED=0` if you prefer an external Tika service.
-- The Docker build uses build-time placeholders: `DATABASE_URI` defaults to `mongodb://127.0.0.1:27017/payload-build` and `PAYLOAD_SECRET` defaults to `docker-build-secret`. Override them with `--build-arg DATABASE_URI=... --build-arg PAYLOAD_SECRET=...` when running `docker build`. At runtime, always provide your production values via environment variables.

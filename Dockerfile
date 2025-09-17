@@ -2,8 +2,6 @@
 # Based on https://github.com/vercel/next.js/blob/canary/examples/with-docker/Dockerfile
 
 ARG PNPM_VERSION=10.16.1
-ARG PAYLOAD_SECRET=docker-build-secret
-ARG DATABASE_URI=mongodb://127.0.0.1:27017/payload-build
 
 FROM node:22.12.0-alpine AS base
 ARG PNPM_VERSION
@@ -19,8 +17,6 @@ RUN pnpm install --frozen-lockfile
 
 # Rebuild the source code only when needed
 FROM base AS builder
-ARG PAYLOAD_SECRET
-ARG DATABASE_URI
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
@@ -28,9 +24,14 @@ COPY . .
 
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
-    PAYLOAD_SECRET=${PAYLOAD_SECRET} \
-    DATABASE_URI=${DATABASE_URI}
-RUN NODE_OPTIONS="--no-deprecation" pnpm exec next build
+    NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+RUN --mount=type=secret,id=database_uri,env=DATABASE_URI \
+    --mount=type=secret,id=payload_secret,env=PAYLOAD_SECRET \
+    --mount=type=secret,id=sentry_auth_token,env=SENTRY_AUTH_TOKEN \
+    --mount=type=secret,id=sentry_org,env=SENTRY_ORG \
+    --mount=type=secret,id=sentry_project,env=SENTRY_PROJECT \
+    NODE_OPTIONS="--no-deprecation" pnpm exec next build
 
 # Production image, copy all the files and run next
 FROM base AS runner
