@@ -1,32 +1,22 @@
 "use client";
 
-import { Box, Divider } from "@mui/material";
+import { Fragment } from "react";
+import { Divider } from "@mui/material";
 import Grid from "@mui/material/Grid";
 
+import type { HeroChartGroup } from "../..";
 import ProgressChart from "./ProgressChart";
-import { HeroStatusSummary } from "../..";
-
-type ChartCaptions = {
-  kept: string;
-  uncertain: string;
-  notKept: string;
-};
 
 type DesktopChartProps = {
   totalPromises: number;
-  chartCaptions: ChartCaptions;
-  kept: HeroStatusSummary[];
-  uncertain: HeroStatusSummary[];
-  notKept: HeroStatusSummary[];
+  groups: HeroChartGroup[];
 };
 
-export const DesktopChart = ({
-  totalPromises,
-  chartCaptions,
-  kept,
-  uncertain,
-  notKept,
-}: DesktopChartProps) => {
+export const DesktopChart = ({ totalPromises, groups }: DesktopChartProps) => {
+  if (!groups.length) {
+    return null;
+  }
+
   return (
     <Grid
       container
@@ -40,43 +30,28 @@ export const DesktopChart = ({
       alignItems="stretch"
       wrap="nowrap"
     >
-      <Grid size={{ xs: 12, md: 4 }}>
-        <ProgressChart
-          caption={chartCaptions.kept}
-          statuses={kept}
-          totalPromises={totalPromises}
-        />
-      </Grid>
-      <Grid
-        size={{ md: "auto" }}
-        sx={{ display: { xs: "none", md: "flex" }, alignItems: "stretch" }}
-      >
-        <Box sx={{ display: "flex", alignItems: "stretch" }}>
-          <Divider orientation="vertical" flexItem />
-        </Box>
-      </Grid>
-      <Grid size={{ xs: 12, md: 4 }}>
-        <ProgressChart
-          caption={chartCaptions.uncertain}
-          statuses={uncertain}
-          totalPromises={totalPromises}
-        />
-      </Grid>
-      <Grid
-        size={{ md: "auto" }}
-        sx={{ display: { xs: "none", md: "flex" }, alignItems: "stretch" }}
-      >
-        <Box sx={{ display: "flex", alignItems: "stretch" }}>
-          <Divider orientation="vertical" flexItem />
-        </Box>
-      </Grid>
-      <Grid size={{ xs: 12, md: 4 }}>
-        <ProgressChart
-          caption={chartCaptions.notKept}
-          statuses={notKept}
-          totalPromises={totalPromises}
-        />
-      </Grid>
+      {groups.map((group, index) => (
+        <Fragment key={group.title}>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <ProgressChart
+              caption={group.title}
+              statuses={group.statuses}
+              totalPromises={totalPromises}
+            />
+          </Grid>
+          {index < groups.length - 1 ? (
+            <Grid
+              size={{ md: "auto" }}
+              sx={{
+                display: { xs: "none", md: "flex" },
+                alignItems: "stretch",
+              }}
+            >
+              <Divider orientation="vertical" flexItem />
+            </Grid>
+          ) : null}
+        </Fragment>
+      ))}
     </Grid>
   );
 };

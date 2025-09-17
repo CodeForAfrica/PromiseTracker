@@ -2,47 +2,29 @@
 
 import { Stack } from "@mui/material";
 
-import type { HeroStatusSummary } from "../../index";
+import type { HeroChartGroup } from "../..";
 import ProgressChart from "./ProgressChart";
 
-type ChartCaptions = {
-  kept: string;
-  uncertain: string;
-  notKept: string;
-};
-
 type MobileChartProps = {
-  chartCaptions: ChartCaptions;
   totalPromises: number;
-  kept: HeroStatusSummary[];
-  uncertain: HeroStatusSummary[];
-  notKept: HeroStatusSummary[];
+  groups: HeroChartGroup[];
 };
 
-export const MobileChart = ({
-  chartCaptions,
-  totalPromises,
-  kept,
-  uncertain,
-  notKept,
-}: MobileChartProps) => {
+export const MobileChart = ({ totalPromises, groups }: MobileChartProps) => {
+  if (!groups.length) {
+    return null;
+  }
+
   return (
     <Stack spacing={3} sx={{ width: "100%", py: 3 }}>
-      <ProgressChart
-        caption={chartCaptions.kept}
-        statuses={kept}
-        totalPromises={totalPromises}
-      />
-      <ProgressChart
-        caption={chartCaptions.uncertain}
-        statuses={uncertain}
-        totalPromises={totalPromises}
-      />
-      <ProgressChart
-        caption={chartCaptions.notKept}
-        statuses={notKept}
-        totalPromises={totalPromises}
-      />
+      {groups.map((group) => (
+        <ProgressChart
+          key={group.title}
+          caption={group.title}
+          statuses={group.statuses}
+          totalPromises={totalPromises}
+        />
+      ))}
     </Stack>
   );
 };

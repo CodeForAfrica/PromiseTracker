@@ -1,4 +1,3 @@
-import { image } from "@/fields/image";
 import { Block } from "payload";
 
 export const Hero: Block = {
@@ -9,15 +8,15 @@ export const Hero: Block = {
   fields: [
     {
       name: "tagline",
-      type: "richText",
+      type: "text",
       label: {
         en: "Tagline",
         fr: "Accroche",
       },
       admin: {
         description: {
-          en: "Displayed as the main heading for the political entity page.",
-          fr: "Affiché comme titre principal de la page de l'entité politique.",
+          en: "Displayed alongside the political entity name in the hero.",
+          fr: "Affiché avec le nom de l'entité politique dans le hero.",
         },
       },
     },
@@ -46,6 +45,7 @@ export const Hero: Block = {
               fr: "Phrase qui suit le nombre de promesses, par exemple 'suivi sur PromiseTracker'.",
             },
           },
+          defaultValue: "tracked on PromiseTracker.",
         },
       ],
     },
@@ -72,111 +72,68 @@ export const Hero: Block = {
         },
       },
     },
-    image({
-      name: "fallbackImage",
+    {
+      name: "statusListTitle",
+      type: "text",
       label: {
-        en: "Fallback Profile Image",
-        fr: "Image de profil de secours",
+        en: "Status Popover Title",
+        fr: "Titre de la fenêtre des statuts",
+      },
+      defaultValue: "Promise status definitions",
+    },
+    {
+      name: "chartGroups",
+      type: "array",
+      minRows: 3,
+      maxRows: 3,
+      label: {
+        en: "Chart Groups",
+        fr: "Groupes du graphique",
+      },
+      labels: {
+        singular: {
+          en: "Group",
+          fr: "Groupe",
+        },
+        plural: {
+          en: "Groups",
+          fr: "Groupes",
+        },
       },
       admin: {
         description: {
-          en: "Used when the political entity record does not contain an image.",
-          fr: "Utilisé lorsque l'entité politique n'a pas d'image.",
+          en: "Define exactly three groups of promise statuses to display in the charts.",
+          fr: "Définissez exactement trois groupes de statuts de promesse à afficher dans les graphiques.",
         },
-      },
-      required: false,
-    }),
-    {
-      name: "statusInfo",
-      type: "group",
-      label: {
-        en: "Status Info Popover",
-        fr: "Info-bulle des statuts",
+        components: {
+          RowLabel: {
+            path: "@/components/payload/RowLabel#CustomRowLabel",
+            clientProps: {
+              fieldToUse: "title",
+            },
+          },
+        },
       },
       fields: [
         {
           name: "title",
           type: "text",
+          required: true,
           label: {
-            en: "Title",
-            fr: "Titre",
+            en: "Group title",
+            fr: "Titre du groupe",
           },
-          defaultValue: "Promise status definitions",
         },
         {
-          name: "items",
-          type: "array",
+          name: "statuses",
+          type: "relationship",
+          relationTo: "promise-status",
+          hasMany: true,
+          required: true,
           label: {
-            en: "Items",
-            fr: "Éléments",
+            en: "Statuses",
+            fr: "Statuts",
           },
-          labels: {
-            singular: {
-              en: "Item",
-              fr: "Élément",
-            },
-            plural: {
-              en: "Items",
-              fr: "Éléments",
-            },
-          },
-          fields: [
-            {
-              name: "title",
-              type: "text",
-              required: true,
-              label: {
-                en: "Status",
-                fr: "Statut",
-              },
-            },
-            {
-              name: "description",
-              type: "textarea",
-              required: true,
-              label: {
-                en: "Description",
-                fr: "Description",
-              },
-            },
-          ],
-        },
-      ],
-    },
-    {
-      name: "chartCaptions",
-      type: "group",
-      label: {
-        en: "Chart Captions",
-        fr: "Légendes du graphique",
-      },
-      fields: [
-        {
-          name: "kept",
-          type: "text",
-          label: {
-            en: "Promises kept caption",
-            fr: "Légende « Promesse tenue »",
-          },
-          defaultValue: "Promise kept",
-        },
-        {
-          name: "uncertain",
-          type: "text",
-          label: {
-            en: "Uncertain caption",
-            fr: "Légende « Incertain »",
-          },
-          defaultValue: "Uncertain",
-        },
-        {
-          name: "notKept",
-          type: "text",
-          label: {
-            en: "Promises not kept caption",
-            fr: "Légende « Promesse non tenue »",
-          },
-          defaultValue: "Promise not kept",
         },
       ],
     },

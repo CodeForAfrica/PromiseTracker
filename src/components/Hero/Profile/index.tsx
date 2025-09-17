@@ -38,6 +38,9 @@ export const Profile = ({
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
   const size = resolveImageSize(isDesktop);
+  const dateLine = [updatedAtLabel?.trim(), updatedAtDisplay]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <Box
@@ -105,12 +108,14 @@ export const Profile = ({
         >
           {profileTitle}
         </Typography>
-        <Typography
-          variant="body2"
-          sx={{ color: "rgba(32, 32, 32, 0.35)" }}
-        >
-          {updatedAtLabel} {updatedAtDisplay}
-        </Typography>
+        {dateLine ? (
+          <Typography
+            variant="body2"
+            sx={{ color: "rgba(32, 32, 32, 0.35)" }}
+          >
+            {dateLine}
+          </Typography>
+        ) : null}
       </Box>
     </Box>
   );

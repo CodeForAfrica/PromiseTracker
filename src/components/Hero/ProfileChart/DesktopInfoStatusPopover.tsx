@@ -12,22 +12,24 @@ import {
   Typography,
 } from "@mui/material";
 
-import type { HeroInfoItem } from "../index";
-import PromiseStatusList from "@/components/PromiseStatusList";
+import PromiseStatusList, {
+  type PromiseStatusListProps,
+} from "@/components/PromiseStatusList";
 
 export type DesktopInfoStatusPopoverProps = {
   title?: string;
-  items: HeroInfoItem[];
+  statuses: PromiseStatusListProps["statuses"];
 };
 
 export const DesktopInfoStatusPopover = ({
   title,
-  items,
+  statuses,
 }: DesktopInfoStatusPopoverProps) => {
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const [open, setOpen] = useState(false);
+  const resolvedTitle = title?.trim() || "Promise status definitions";
 
-  if (!title && items.length === 0) {
+  if (!resolvedTitle && statuses.length === 0) {
     return null;
   }
 
@@ -86,7 +88,7 @@ export const DesktopInfoStatusPopover = ({
                   maxHeight: theme.typography.pxToRem(520),
                 })}
               >
-                {title ? (
+                {resolvedTitle ? (
                   <Typography
                     variant="h5"
                     sx={(theme) => ({
@@ -94,10 +96,10 @@ export const DesktopInfoStatusPopover = ({
                       mb: theme.typography.pxToRem(16),
                     })}
                   >
-                    {title}
+                    {resolvedTitle}
                   </Typography>
                 ) : null}
-                <PromiseStatusList items={items} />
+                <PromiseStatusList statuses={statuses} />
               </Paper>
             </Fade>
           )}

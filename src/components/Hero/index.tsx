@@ -1,18 +1,14 @@
+import { resolveMedia } from "@/lib/data/media";
 import { getGlobalPayload } from "@/lib/payload";
 import type {
   HeroBlock,
-  Media,
   PoliticalEntity,
   Promise as PromiseDocument,
   PromiseStatus,
 } from "@/payload-types";
 import { format } from "date-fns";
-import type { DefaultTypedEditorState } from "@payloadcms/richtext-lexical";
-import type { BasePayload } from "payload";
 
 import { HeroClient } from "./Hero.Client";
-
-export type HeroStatusCategory = "kept" | "uncertain" | "notKept" | "other";
 
 export type HeroStatusSummary = {
   id: string;
@@ -22,35 +18,24 @@ export type HeroStatusSummary = {
   textColor?: string | null;
   count: number;
   percentage: number;
-  category: HeroStatusCategory;
 };
 
-export type HeroInfoItem = {
+export type HeroChartGroup = {
   title: string;
-  description: string;
-  color?: string | null;
+  statuses: HeroStatusSummary[];
 };
 
 export type HeroResolvedData = {
-  tagline?: DefaultTypedEditorState | null;
+  headline: string;
   copy: {
     promiseLabel: string;
-    trailText?: string | null;
+    trailText: string;
     updatedAtLabel: string;
     profileTitle: string;
-    chartCaptions: {
-      kept: string;
-      uncertain: string;
-      notKept: string;
-    };
-    statusInfo: {
-      title?: string;
-      items: HeroInfoItem[];
-    };
+    statusListTitle: string;
   };
   entity: {
     name: string;
-    fullName: string;
     position: string;
     updatedAtISO: string;
     updatedAtDisplay: string;
@@ -62,111 +47,32 @@ export type HeroResolvedData = {
   metrics: {
     total: number;
     statuses: HeroStatusSummary[];
+    groups: HeroChartGroup[];
   };
 };
 
-type HeroBlockOverrides = {
-  tagline?: DefaultTypedEditorState | null;
-  promiseLabel?: string | null;
-  trailText?: string | null;
-  updatedAtLabel?: string | null;
-  profileTitleOverride?: string | null;
-  fallbackImage?: string | Media | null;
-  statusInfo?: {
-    title?: string | null;
-    items?:
-      | {
-          title: string;
-          description: string;
-        }[]
-      | null;
-  } | null;
-  chartCaptions?: {
-    kept?: string | null;
-    uncertain?: string | null;
-    notKept?: string | null;
-  } | null;
-};
-
-type HeroProps = HeroBlock &
-  HeroBlockOverrides & {
-    entitySlug?: string;
-  };
-
-type PopulatedPromise = PromiseDocument & {
-  extractions?: NonNullable<PromiseDocument["extractions"]>;
+type HeroProps = HeroBlock & {
+  entitySlug?: string;
 };
 
 type StatusById = Map<string, PromiseStatus>;
 
-type ResolvedMedia = {
-  url: string;
-  alt: string;
-} | null;
+type StatusSummaryMap = Map<string, HeroStatusSummary>;
 
-const STATUS_CATEGORY_MAP: Record<string, HeroStatusCategory> = {
-  completed: "kept",
-  "in progress": "kept",
-  inconclusive: "uncertain",
-  unstarted: "uncertain",
-  stalled: "notKept",
-  "behind schedule": "notKept",
-};
-
-const DEFAULT_PROMISE_LABEL = "promises";
-const DEFAULT_TRAIL_TEXT = "tracked on PromiseTracker.";
-const DEFAULT_UPDATED_AT_LABEL = "Last updated";
-const DEFAULT_STATUS_INFO_TITLE = "Promise status definitions";
-const DEFAULT_CHART_CAPTIONS = {
-  kept: "Promise kept",
-  uncertain: "Uncertain",
-  notKept: "Promise not kept",
-};
-
-const resolveStatusCategory = (label: string): HeroStatusCategory => {
-  const normalized = label.trim().toLowerCase();
-  return STATUS_CATEGORY_MAP[normalized] ?? "other";
-};
-
-const resolveMedia = async (
-  payload: BasePayload,
-  media: string | Media | null | undefined
-): Promise<ResolvedMedia> => {
-  if (!media) {
-    return null;
-  }
-
-  if (typeof media === "string") {
-    try {
-      const mediaDoc = await payload.findByID({
-        collection: "media",
-        id: media,
-      });
-      if (mediaDoc?.url) {
-        return {
-          url: mediaDoc.url,
-          alt: mediaDoc.alt,
-        };
-      }
-    } catch (error) {
-      payload.logger.warn({
-        error,
-        message: "Failed to load media by ID while resolving hero image",
-        mediaId: media,
-      });
-    }
-    return null;
-  }
-
-  if (!media.url) {
-    return null;
-  }
-
-  return {
-    url: media.url,
-    alt: media.alt,
-  };
-};
+const FALLBACK_GROUP_DEFINITIONS = [
+  {
+    title: "Promise kept",
+    labels: ["completed", "in progress"],
+  },
+  {
+    title: "Uncertain",
+    labels: ["inconclusive", "unstarted"],
+  },
+  {
+    title: "Promise not kept",
+    labels: ["behind schedule", "stalled"],
+  },
+];
 
 const pickLatestStatus = (
   promiseDoc: PromiseDocument,
@@ -193,38 +99,82 @@ const pickLatestStatus = (
   return null;
 };
 
-const buildInfoItems = (
-  statusInfo: HeroProps["statusInfo"],
-  statuses: PromiseStatus[]
-): HeroInfoItem[] => {
-  if (statusInfo?.items?.length) {
-    const statusByLabel = new Map(
-      statuses.map((status) => [status.label.toLowerCase(), status])
-    );
-
-    return statusInfo.items.map((item) => {
-      const status = statusByLabel.get(item.title.toLowerCase());
-      return {
-        title: item.title,
-        description: item.description,
-        color: status?.colors?.color ?? undefined,
-      };
-    });
-  }
-
-  return statuses.map((status) => ({
-    title: status.label,
-    description: status.description,
-    color: status.colors?.color ?? undefined,
-  }));
-};
-
 const formatUpdatedAt = (date: string): string => {
   try {
     return format(new Date(date), "MMMM d, yyyy");
-  } catch (error) {
+  } catch (_error) {
     return date;
   }
+};
+
+const buildStatusSummaries = (statuses: PromiseStatus[]): StatusSummaryMap => {
+  return new Map(
+    statuses.map((status) => [
+      status.id,
+      {
+        id: status.id,
+        label: status.label,
+        description: status.description,
+        color: status.colors?.color ?? null,
+        textColor: status.colors?.textColor ?? null,
+        count: 0,
+        percentage: 0,
+      },
+    ])
+  );
+};
+
+const buildChartGroups = (
+  blockGroups: HeroBlock["chartGroups"] | undefined | null,
+  summaries: StatusSummaryMap
+): HeroChartGroup[] => {
+  const summaryByLabel = new Map(
+    Array.from(summaries.values()).map((summary) => [
+      summary.label.toLowerCase(),
+      summary,
+    ])
+  );
+
+  if (!blockGroups?.length) {
+    return FALLBACK_GROUP_DEFINITIONS.map((definition) => {
+      const statuses = definition.labels
+        .map((label) => summaryByLabel.get(label))
+        .filter((summary): summary is HeroStatusSummary => Boolean(summary));
+
+      if (!statuses.length) {
+        return null;
+      }
+
+      return {
+        title: definition.title,
+        statuses: statuses.map((status) => ({ ...status })),
+      } satisfies HeroChartGroup;
+    }).filter((group): group is HeroChartGroup => group !== null);
+  }
+
+  return blockGroups
+    .slice(0, 3)
+    .map((group) => {
+      const statuses = (group.statuses ?? [])
+        .map((statusRef) => {
+          const statusId =
+            typeof statusRef === "string" ? statusRef : statusRef.id;
+          return summaries.get(statusId);
+        })
+        .filter((summary): summary is HeroStatusSummary => Boolean(summary));
+
+      if (statuses.length === 0) {
+        return null;
+      }
+
+      const title = group.title?.trim() || statuses[0].label;
+
+      return {
+        title,
+        statuses: statuses.map((status) => ({ ...status })),
+      } satisfies HeroChartGroup;
+    })
+    .filter((group): group is HeroChartGroup => group !== null);
 };
 
 export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
@@ -234,7 +184,7 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
 
   const payload = await getGlobalPayload();
 
-  const { docs: entityDocs } = await payload.find({
+  const entityQuery = await payload.find({
     collection: "political-entities",
     where: {
       slug: {
@@ -245,7 +195,7 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
     depth: 2,
   });
 
-  const entity = entityDocs[0];
+  const entity = entityQuery.docs[0] as PoliticalEntity | undefined;
 
   if (!entity) {
     return null;
@@ -254,11 +204,13 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
   const { docs: statusDocs } = await payload.find({
     collection: "promise-status",
     limit: -1,
+    depth: 0,
   });
 
   const statusById: StatusById = new Map(
     statusDocs.map((status) => [status.id, status])
   );
+  const statusSummaries = buildStatusSummaries(statusDocs);
 
   const { docs: documentDocs } = await payload.find({
     collection: "documents",
@@ -286,87 +238,70 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
     : { docs: [] };
 
   const totalPromises = promiseDocs.length;
-  const summaryMap = new Map<string, HeroStatusSummary>();
-
-  // Ensure all statuses are present even if count is zero.
-  for (const status of statusDocs) {
-    summaryMap.set(status.id, {
-      id: status.id,
-      label: status.label,
-      description: status.description,
-      color: status.colors?.color ?? null,
-      textColor: status.colors?.textColor ?? null,
-      count: 0,
-      percentage: 0,
-      category: resolveStatusCategory(status.label),
-    });
-  }
 
   for (const promiseDoc of promiseDocs) {
     const status = pickLatestStatus(promiseDoc, statusById);
+
     if (!status) {
       continue;
     }
 
-    const summary = summaryMap.get(status.id);
+    const summary = statusSummaries.get(status.id);
     if (!summary) {
-      summaryMap.set(status.id, {
-        id: status.id,
-        label: status.label,
-        description: status.description,
-        color: status.colors?.color ?? null,
-        textColor: status.colors?.textColor ?? null,
-        count: 1,
-        percentage: 0,
-        category: resolveStatusCategory(status.label),
-      });
       continue;
     }
 
     summary.count += 1;
   }
 
-  const summaries = Array.from(summaryMap.values()).map((summary) => ({
-    ...summary,
-    percentage: totalPromises > 0 ? (summary.count / totalPromises) * 100 : 0,
-  }));
+  statusSummaries.forEach((summary) => {
+    summary.percentage =
+      totalPromises > 0 ? (summary.count / totalPromises) * 100 : 0;
+  });
 
-  const profileImage =
-    (await resolveMedia(payload, entity.image)) ??
-    (await resolveMedia(payload, block.fallbackImage ?? null));
+  const groups = buildChartGroups(block.chartGroups, statusSummaries);
 
-  const statusInfoItems = buildInfoItems(block.statusInfo, statusDocs);
+  const summaries: HeroStatusSummary[] = Array.from(statusSummaries.values()).map(
+    (summary) => ({ ...summary })
+  );
+
+  const entityImage = await resolveMedia(payload, entity.image);
+
+  const taglineText = block.tagline?.trim();
+  const headline =
+    [taglineText, entity.name].filter(Boolean).join(" ") || entity.name;
+
+  const profileTitleBase =
+    block.profileTitleOverride?.trim() || entity.position;
+  const profileTitle = profileTitleBase
+    ? `${profileTitleBase} ${entity.name}`.trim()
+    : entity.name;
+
+  const copyPromiseLabel = block.promiseLabel?.trim() || "promises";
+  const copyTrailText = block.trailText?.trim() || "";
+  const statusListTitle = block.statusListTitle?.trim() || "Promise status definitions";
+  const updatedAtLabel = block.updatedAtLabel?.trim() || "Last updated";
 
   const resolvedData: HeroResolvedData = {
-    tagline: block.tagline ?? null,
+    headline,
     copy: {
-      promiseLabel: block.promiseLabel ?? DEFAULT_PROMISE_LABEL,
-      trailText: block.trailText ?? DEFAULT_TRAIL_TEXT,
-      updatedAtLabel: block.updatedAtLabel ?? DEFAULT_UPDATED_AT_LABEL,
-      profileTitle:
-        block.profileTitleOverride?.trim() || entity.position || entity.name,
-      chartCaptions: {
-        kept: block.chartCaptions?.kept ?? DEFAULT_CHART_CAPTIONS.kept,
-        uncertain:
-          block.chartCaptions?.uncertain ?? DEFAULT_CHART_CAPTIONS.uncertain,
-        notKept: block.chartCaptions?.notKept ?? DEFAULT_CHART_CAPTIONS.notKept,
-      },
-      statusInfo: {
-        title: block.statusInfo?.title ?? DEFAULT_STATUS_INFO_TITLE,
-        items: statusInfoItems,
-      },
+      promiseLabel: copyPromiseLabel,
+      trailText: copyTrailText,
+      updatedAtLabel,
+      profileTitle,
+      statusListTitle,
     },
     entity: {
       name: entity.name,
-      fullName: entity.name,
       position: entity.position,
       updatedAtISO: entity.updatedAt,
       updatedAtDisplay: formatUpdatedAt(entity.updatedAt),
-      image: profileImage,
+      image: entityImage,
     },
     metrics: {
       total: totalPromises,
       statuses: summaries,
+      groups,
     },
   };
 

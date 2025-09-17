@@ -1,95 +1,26 @@
 "use client";
 
-import { Box, Container } from "@mui/material";
+import { Box, Container, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import { RichText } from "@/components/RichText";
-import { tokens } from "@/theme/tokens";
-import type {
-  HeroInfoItem,
-  HeroResolvedData,
-  HeroStatusSummary,
-} from "./index";
+
+import type { HeroResolvedData } from "./index";
 import Profile from "./Profile";
 import ProfileChart from "./ProfileChart";
-
-const HIGHLIGHT_CLASS_SX = {
-  "& .highlight": {
-    color: "info.main",
-  },
-};
-
-const groupStatusesByCategory = (statuses: HeroStatusSummary[]) => {
-  const kept: HeroStatusSummary[] = [];
-  const uncertain: HeroStatusSummary[] = [];
-  const notKept: HeroStatusSummary[] = [];
-  const other: HeroStatusSummary[] = [];
-
-  statuses.forEach((status) => {
-    switch (status.category) {
-      case "kept":
-        kept.push(status);
-        break;
-      case "uncertain":
-        uncertain.push(status);
-        break;
-      case "notKept":
-        notKept.push(status);
-        break;
-      default:
-        other.push(status);
-    }
-  });
-
-  return { kept, uncertain, notKept, other };
-};
-
-const DEFAULT_STATUS_ORDER = [
-  "Completed",
-  "In Progress",
-  "Inconclusive",
-  "Unstarted",
-  "Behind Schedule",
-  "Stalled",
-];
-
-const applyInfoItemColorFallback = (
-  items: HeroInfoItem[],
-  statuses: HeroStatusSummary[]
-) => {
-  if (!items.length) {
-    return items;
-  }
-
-  const statusByLabel = new Map(
-    statuses.map((status) => [status.label.toLowerCase(), status])
-  );
-
-  return items.map((item) => {
-    const status = statusByLabel.get(item.title.toLowerCase());
-    return {
-      ...item,
-      color: status?.color ?? item.color ?? null,
-    };
-  });
-};
 
 export type HeroClientProps = {
   data: HeroResolvedData;
 };
 
 export const HeroClient = ({ data }: HeroClientProps) => {
-  const { entity, copy, metrics, tagline } = data;
-  const statusGroups = groupStatusesByCategory(metrics.statuses);
+  const { entity, copy, metrics, headline } = data;
 
-  const statusInfoItems = applyInfoItemColorFallback(
-    copy.statusInfo.items,
-    metrics.statuses
-  );
-
-  const shareTitle =
-    `${copy.profileTitle} ${entity.name} ${metrics.total} ${copy.promiseLabel} ${
-      copy.trailText ?? ""
-    }`.trim();
+  const shareTitle = [
+    headline,
+    metrics.total > 0 ? `${metrics.total} ${copy.promiseLabel}` : undefined,
+    copy.trailText,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <Box
@@ -105,23 +36,18 @@ export const HeroClient = ({ data }: HeroClientProps) => {
       })}
     >
       <Container maxWidth="lg">
-        {tagline ? (
-          <Box
+        {headline ? (
+          <Typography
+            component="h1"
+            variant="h1"
             sx={(theme) => ({
               display: { xs: "block", lg: "none" },
+              color: theme.palette.primary.dark,
               mb: theme.typography.pxToRem(24),
             })}
           >
-            <RichText
-              data={tagline}
-              component="h1"
-              sx={(theme) => ({
-                ...HIGHLIGHT_CLASS_SX,
-                color: theme.palette.primary.dark,
-                typography: theme.typography.h1,
-              })}
-            />
-          </Box>
+            {headline}
+          </Typography>
         ) : null}
         <Grid
           container
@@ -132,38 +58,24 @@ export const HeroClient = ({ data }: HeroClientProps) => {
           <Grid size={{ xs: 12, lg: 4 }}>
             <Profile
               name={entity.name}
-              fullName={entity.fullName}
+              profileTitle={copy.profileTitle}
               updatedAtLabel={copy.updatedAtLabel}
               updatedAtDisplay={entity.updatedAtDisplay}
-              profileTitle={copy.profileTitle}
               image={entity.image}
             />
           </Grid>
           <Grid size={{ xs: 12, lg: 8 }}>
             <ProfileChart
-              tagline={tagline}
+              headline={headline}
               promiseLabel={copy.promiseLabel}
               trailText={copy.trailText}
               name={entity.name}
               position={entity.position}
               totalPromises={metrics.total}
-              chartCaptions={copy.chartCaptions}
-              statusGroups={statusGroups}
-              statusInfo={{
-                title: copy.statusInfo.title,
-                items: statusInfoItems,
-              }}
+              statusListTitle={copy.statusListTitle}
               statuses={metrics.statuses}
+              groups={metrics.groups}
               shareTitle={shareTitle}
-              colorFallbacks={{
-                kept: tokens.chart.complete,
-                keptSecondary: tokens.chart.inprogress,
-                uncertainPrimary: tokens.chart.inconclusive,
-                uncertainSecondary: tokens.chart.unstarted,
-                notKeptPrimary: tokens.chart.behindSchedule,
-                notKeptSecondary: tokens.chart.stalled,
-              }}
-              statusOrder={DEFAULT_STATUS_ORDER}
             />
           </Grid>
         </Grid>

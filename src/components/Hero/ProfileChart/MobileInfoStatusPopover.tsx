@@ -12,21 +12,21 @@ import {
   Typography,
 } from "@mui/material";
 
-import { PromiseStatusList } from "@/components/PromiseStatusList";
-import type { HeroInfoItem } from "../index";
+import { PromiseStatusList, type PromiseStatusListProps } from "@/components/PromiseStatusList";
 
 export type MobileInfoStatusPopoverProps = {
   title?: string;
-  items: HeroInfoItem[];
+  statuses: PromiseStatusListProps["statuses"];
 };
 
 export const MobileInfoStatusPopover = ({
   title,
-  items,
+  statuses,
 }: MobileInfoStatusPopoverProps) => {
   const [open, setOpen] = useState(false);
+  const resolvedTitle = title?.trim() || "Promise status definitions";
 
-  if (!title && items.length === 0) {
+  if (!resolvedTitle && statuses.length === 0) {
     return null;
   }
 
@@ -54,7 +54,7 @@ export const MobileInfoStatusPopover = ({
         <Stack direction="row" alignItems="center" spacing={1} sx={{ pr: 1 }}>
           <DialogTitle sx={{ flexGrow: 1 }}>
             <Typography variant="h5" sx={{ color: "primary.main" }}>
-              {title}
+              {resolvedTitle}
             </Typography>
           </DialogTitle>
           <IconButton onClick={handleClose} aria-label="Close" sx={{ mr: 1 }}>
@@ -62,7 +62,7 @@ export const MobileInfoStatusPopover = ({
           </IconButton>
         </Stack>
         <DialogContent>
-          <PromiseStatusList items={items} />
+          <PromiseStatusList statuses={statuses} />
         </DialogContent>
       </Dialog>
     </>

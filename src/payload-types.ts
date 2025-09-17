@@ -415,23 +415,9 @@ export interface ActNowBlock {
  */
 export interface HeroBlock {
   /**
-   * Displayed as the main heading for the political entity page.
+   * Displayed alongside the political entity name in the hero.
    */
-  tagline?: {
-    root: {
-      type: string;
-      children: {
-        type: string;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
+  tagline?: string | null;
   promiseLabel?: string | null;
   /**
    * Sentence that follows the promise count, for example 'tracked on PromiseTracker'.
@@ -442,25 +428,17 @@ export interface HeroBlock {
    * Optional text that replaces the political entity position shown above the last updated date.
    */
   profileTitleOverride?: string | null;
+  statusListTitle?: string | null;
   /**
-   * Used when the political entity record does not contain an image.
+   * Define exactly three groups of promise statuses to display in the charts.
    */
-  fallbackImage?: (string | null) | Media;
-  statusInfo?: {
-    title?: string | null;
-    items?:
-      | {
-          title: string;
-          description: string;
-          id?: string | null;
-        }[]
-      | null;
-  };
-  chartCaptions?: {
-    kept?: string | null;
-    uncertain?: string | null;
-    notKept?: string | null;
-  };
+  chartGroups?:
+    | {
+        title: string;
+        statuses: (string | PromiseStatus)[];
+        id?: string | null;
+      }[]
+    | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'hero';
@@ -1005,25 +983,13 @@ export interface HeroBlockSelect<T extends boolean = true> {
   trailText?: T;
   updatedAtLabel?: T;
   profileTitleOverride?: T;
-  fallbackImage?: T;
-  statusInfo?:
+  statusListTitle?: T;
+  chartGroups?:
     | T
     | {
         title?: T;
-        items?:
-          | T
-          | {
-              title?: T;
-              description?: T;
-              id?: T;
-            };
-      };
-  chartCaptions?:
-    | T
-    | {
-        kept?: T;
-        uncertain?: T;
-        notKept?: T;
+        statuses?: T;
+        id?: T;
       };
   id?: T;
   blockName?: T;

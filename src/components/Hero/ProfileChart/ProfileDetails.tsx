@@ -3,26 +3,23 @@
 import { useMemo } from "react";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import DonutLargeIcon from "@mui/icons-material/DonutLarge";
-import { Box, IconButton, Stack, Typography } from "@mui/material";
-import type { DefaultTypedEditorState } from "@payloadcms/richtext-lexical";
+import Grid from "@mui/material/Grid";
+import { IconButton, Stack, Typography } from "@mui/material";
 
-import { RichText } from "@/components/RichText";
-import type { HeroInfoItem } from "../index";
+import type { HeroStatusSummary } from "../index";
 import Share from "@/components/Share";
-import MobileInfoStatusPopover from "./MobileInfoStatusPopover";
 import DesktopInfoStatusPopover from "./DesktopInfoStatusPopover";
+import MobileInfoStatusPopover from "./MobileInfoStatusPopover";
 
 type ProfileDetailsProps = {
-  tagline?: DefaultTypedEditorState | null;
+  headline: string;
   name: string;
   position: string;
   promiseLabel: string;
-  trailText?: string | null;
+  trailText: string;
   totalPromises: number;
-  statusInfo: {
-    title?: string;
-    items: HeroInfoItem[];
-  };
+  statusListTitle: string;
+  statuses: HeroStatusSummary[];
   isAlternateChart: boolean;
   onToggleAlternateChart: () => void;
   isDesktop: boolean;
@@ -34,81 +31,76 @@ const buildSummary = (
   name: string,
   totalPromises: number,
   promiseLabel: string,
-  trailText?: string | null
+  trailText: string,
 ) => {
   const pieces = [
     `${position} ${name}`.trim(),
     totalPromises > 0 ? `${totalPromises} ${promiseLabel}`.trim() : undefined,
-    trailText?.trim(),
+    trailText.trim().length > 0 ? trailText.trim() : undefined,
   ].filter(Boolean);
 
   return pieces.join(" ");
 };
 
-const HIGHLIGHT_CLASS_SX = {
-  "& .highlight": {
-    color: "info.main",
-  },
-};
-
 export const ProfileDetails = ({
-  tagline,
+  headline,
   name,
   position,
   promiseLabel,
   trailText,
   totalPromises,
-  statusInfo,
+  statusListTitle,
+  statuses,
   isAlternateChart,
   onToggleAlternateChart,
   isDesktop,
   shareTitle,
 }: ProfileDetailsProps) => {
-  const InfoPopover = isDesktop
-    ? DesktopInfoStatusPopover
-    : MobileInfoStatusPopover;
-
   const summary = useMemo(
     () => buildSummary(position, name, totalPromises, promiseLabel, trailText),
-    [name, position, promiseLabel, totalPromises, trailText]
+    [position, name, totalPromises, promiseLabel, trailText],
   );
 
-  return (
-    <Stack spacing={2} sx={{ mb: { xs: 2, lg: 3 } }}>
-      {isDesktop && tagline ? (
-        <RichText
-          data={tagline}
-          component="h1"
-          sx={(theme) => ({
-            ...HIGHLIGHT_CLASS_SX,
-            color: theme.palette.primary.dark,
-            typography: theme.typography.h1,
-          })}
-        />
-      ) : null}
+  const Popover = isDesktop ? DesktopInfoStatusPopover : MobileInfoStatusPopover;
 
-      <Box
-        sx={(theme) => ({
-          alignItems: "center",
-          display: "flex",
-          flexDirection: { xs: "row", lg: "row" },
-          gap: theme.typography.pxToRem(12),
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-        })}
-      >
-        <Box sx={{ flexGrow: 1, minWidth: { xs: "100%", lg: "60%" } }}>
-          <Typography variant="body2" sx={{ color: "text.primary" }}>
+  return (
+    <Grid
+      container
+      columnSpacing={{ xs: 2, lg: 3 }}
+      rowSpacing={{ xs: 2, lg: 3 }}
+      alignItems="stretch"
+      sx={{ mb: { xs: 2, lg: 3 } }}
+    >
+      <Grid size={{ xs: 12, lg: 8 }}>
+        <Stack spacing={1.5}>
+          {isDesktop && headline ? (
+            <Typography component="h1" variant="h1" color="primary.dark">
+              {headline}
+            </Typography>
+          ) : null}
+          <Typography variant="body2" color="text.primary">
             {summary}
           </Typography>
-        </Box>
-        <Stack direction="row" spacing={1} alignItems="center">
+        </Stack>
+      </Grid>
+      <Grid
+        size={{ xs: 12, lg: 4 }}
+        sx={{
+          display: "flex",
+          justifyContent: { xs: "flex-start", lg: "center" },
+          alignItems: "center",
+        }}
+      >
+        <Stack
+          direction="row"
+          spacing={1.5}
+          alignItems="center"
+          sx={{ height: "100%" }}
+        >
           {isDesktop ? (
             <IconButton
               aria-label={
-                isAlternateChart
-                  ? "Show circle charts"
-                  : "Show comparison chart"
+                isAlternateChart ? "Show circular chart" : "Show comparison chart"
               }
               size="small"
               onClick={onToggleAlternateChart}
@@ -128,7 +120,7 @@ export const ProfileDetails = ({
               )}
             </IconButton>
           ) : null}
-          <InfoPopover title={statusInfo.title} items={statusInfo.items} />
+          <Popover title={statusListTitle} statuses={statuses} />
           <Share
             title={shareTitle}
             iconButtonProps={{
@@ -143,8 +135,8 @@ export const ProfileDetails = ({
             }}
           />
         </Stack>
-      </Box>
-    </Stack>
+      </Grid>
+    </Grid>
   );
 };
 
