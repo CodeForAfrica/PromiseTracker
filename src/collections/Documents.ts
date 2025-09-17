@@ -1,3 +1,4 @@
+import { airtableID } from "@/fields/airtableID";
 import { CollectionConfig } from "payload";
 
 export const Documents: CollectionConfig = {
@@ -16,7 +17,7 @@ export const Documents: CollectionConfig = {
     read: () => true,
   },
   admin: {
-    defaultColumns: ["title", "country", "region", "type", "language"],
+    defaultColumns: ["title", "politicalEntity", "language", "type"],
     useAsTitle: "title",
     group: {
       en: "Documents",
@@ -42,74 +43,65 @@ export const Documents: CollectionConfig = {
       },
     },
     {
-      name: "docURL", // only used to download file from airtable
-      type: "text",
+      name: "docURLs", // only used to download file from airtable
+      type: "array",
       admin: {
         hidden: true,
       },
+      fields: [
+        {
+          type: "text",
+          name: "url",
+          required: true,
+        },
+      ],
     },
     {
-      name: "file",
+      name: "files",
       type: "upload",
       relationTo: "media",
+      hasMany: true,
       label: {
-        en: "File",
-        fr: "Déposer",
+        en: "Files",
+        fr: "Fichiers",
       },
     },
     {
-      type: "row",
+      name: "politicalEntity",
+      type: "relationship",
+      relationTo: "political-entities",
+      label: {
+        en: "Political Entity",
+        fr: "Entité Politique",
+      },
       admin: {
         position: "sidebar",
       },
-      fields: [
+    },
+    {
+      name: "language",
+      type: "select",
+      label: {
+        en: "Language",
+        fr: "Langue",
+      },
+      admin: {
+        position: "sidebar",
+      },
+      options: [
         {
-          name: "politicalEntity",
-          type: "text",
+          value: "en",
           label: {
-            en: "Political Entity",
-            fr: "Entité Politique",
+            en: "English",
+            fr: "Anglais",
           },
         },
         {
-          name: "country",
-          type: "text",
+          value: "fr",
           label: {
-            en: "Country",
-            fr: "Pays",
+            en: "French",
+            fr: "Français",
           },
-        },
-        {
-          name: "region",
-          type: "text",
-          label: {
-            en: "Region",
-            fr: "Région",
-          },
-        },
-        {
-          name: "language",
-          type: "select",
-          label: {
-            en: "Language",
-            fr: "Langue",
-          },
-          options: [
-            {
-              value: "en",
-              label: {
-                en: "English",
-                fr: "Anglais",
-              },
-            },
-            {
-              value: "fr",
-              label: {
-                en: "French",
-                fr: "Français",
-              },
-            },
-          ],
         },
       ],
     },
@@ -140,43 +132,7 @@ export const Documents: CollectionConfig = {
         },
       ],
     },
-    {
-      type: "row",
-      admin: {
-        position: "sidebar",
-      },
-      fields: [
-        {
-          name: "yearFrom",
-          type: "number",
-          label: {
-            en: "Year From",
-            fr: "Année à partir de",
-          },
-        },
-        {
-          name: "yearTo",
-          type: "number",
-          label: {
-            en: "Year To",
-            fr: "Année à",
-          },
-        },
-      ],
-    },
-    {
-      name: "airtableID",
-      label: {
-        en: "Airtable ID",
-        fr: "ID Airtable ",
-      },
-      type: "text",
-      unique: true,
-      admin: {
-        position: "sidebar",
-        readOnly: true,
-      },
-    },
+    airtableID(),
     {
       name: "fullyProcessed",
       type: "checkbox",
@@ -207,10 +163,20 @@ export const Documents: CollectionConfig = {
                 en: "Text",
                 fr: "Texte",
               },
-              type: "richText",
-              admin: {
-                readOnly: true,
-              },
+              type: "array",
+              fields: [
+                {
+                  name: "text",
+                  label: {
+                    en: "Text",
+                    fr: "Texte",
+                  },
+                  type: "richText",
+                  admin: {
+                    readOnly: true,
+                  },
+                },
+              ],
             },
           ],
         },

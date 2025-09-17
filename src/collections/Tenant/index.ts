@@ -1,4 +1,5 @@
 import { countriesByContinent } from "@/data/countries";
+import { airtableID } from "@/fields/airtableID";
 import { CollectionConfig } from "payload";
 
 const africanCountries = countriesByContinent("Africa");
@@ -72,5 +73,6 @@ export const Tenants: CollectionConfig = {
         fr: "Pays",
       },
     },
+    airtableID(),
   ],
 };

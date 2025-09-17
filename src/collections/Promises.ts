@@ -1,15 +1,15 @@
 import { CollectionConfig } from "payload";
 
-export const AIExtractions: CollectionConfig = {
-  slug: "aiExtraction",
+export const Promises: CollectionConfig = {
+  slug: "promises",
   labels: {
     singular: {
-      en: "AI Extractions",
-      fr: "Extractions d'IA",
+      en: "Promise",
+      fr: "Promesse",
     },
     plural: {
-      en: "AI Extractions",
-      fr: "Extractions d'IA",
+      en: "Promises",
+      fr: "Promesses",
     },
   },
   admin: {
@@ -17,6 +17,7 @@ export const AIExtractions: CollectionConfig = {
       en: "Documents",
       fr: "Documents",
     },
+    useAsTitle: "title",
   },
   access: {
     read: () => true,
@@ -45,8 +46,18 @@ export const AIExtractions: CollectionConfig = {
       name: "extractions",
       type: "array",
       label: {
-        en: "Extractions",
-        fr: "Extractions",
+        en: "AI Extractions",
+        fr: "AI Extractions",
+      },
+      admin: {
+        components: {
+          RowLabel: {
+            path: "@/components/payload/RowLabel#CustomRowLabel",
+            clientProps: {
+              fieldToUse: "summary",
+            },
+          },
+        },
       },
       fields: [
         {
@@ -108,6 +119,15 @@ export const AIExtractions: CollectionConfig = {
                 fr: "URL CheckMedia",
               },
               type: "text",
+            },
+            {
+              name: "Status",
+              type: "relationship",
+              relationTo: "promise-status",
+              label: {
+                en: "Status",
+                fr: "Statut",
+              },
             },
           ],
         },
