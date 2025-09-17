@@ -478,6 +478,7 @@ export interface Partner {
  */
 export interface KeyPromises {
   title: string;
+  actionLabel?: string | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'key-promises';
@@ -1012,6 +1013,7 @@ export interface HeroBlockSelect<T extends boolean = true> {
  */
 export interface KeyPromisesSelect<T extends boolean = true> {
   title?: T;
+  actionLabel?: T;
   id?: T;
   blockName?: T;
 }
