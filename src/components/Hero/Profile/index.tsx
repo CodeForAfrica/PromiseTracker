@@ -1,12 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import {
-  Box,
-  Typography,
-  useMediaQuery,
-  useTheme,
-} from "@mui/material";
+import { Box, Typography } from "@mui/material";
 
 type ProfileImage = {
   url: string;
@@ -25,9 +20,6 @@ type ProfileProps = {
 const MOBILE_SIZE = 149;
 const DESKTOP_SIZE = 350;
 
-const resolveImageSize = (isDesktop: boolean) =>
-  isDesktop ? DESKTOP_SIZE : MOBILE_SIZE;
-
 export const Profile = ({
   name,
   profileTitle,
@@ -35,9 +27,6 @@ export const Profile = ({
   updatedAtDisplay,
   image,
 }: ProfileProps) => {
-  const theme = useTheme();
-  const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
-  const size = resolveImageSize(isDesktop);
   const dateLine = [updatedAtLabel?.trim(), updatedAtDisplay]
     .filter(Boolean)
     .join(" ");
@@ -47,23 +36,21 @@ export const Profile = ({
       sx={(theme) => ({
         display: "flex",
         alignItems: "center",
-        flexDirection: isDesktop ? "column" : "row",
+        flexDirection: { xs: "row", lg: "column" },
         gap: theme.typography.pxToRem(16),
-        pt: isDesktop ? 0 : theme.typography.pxToRem(20),
+        pt: { xs: theme.typography.pxToRem(20), lg: 0 },
         position: "relative",
-        [theme.breakpoints.up("lg")]: {
-          left: theme.typography.pxToRem(-55),
-        },
+        left: { xs: 0, lg: theme.typography.pxToRem(-55) },
       })}
     >
       <Box
         component="figure"
         sx={{
           m: 0,
-          width: size,
-          height: size,
-          minWidth: size,
-          minHeight: size,
+          width: { xs: MOBILE_SIZE, lg: DESKTOP_SIZE },
+          height: { xs: MOBILE_SIZE, lg: DESKTOP_SIZE },
+          minWidth: { xs: MOBILE_SIZE, lg: DESKTOP_SIZE },
+          minHeight: { xs: MOBILE_SIZE, lg: DESKTOP_SIZE },
           position: "relative",
           borderRadius: "50%",
           overflow: "hidden",
@@ -75,7 +62,7 @@ export const Profile = ({
             src={image.url}
             alt={image.alt || name}
             fill
-            sizes={isDesktop ? `${DESKTOP_SIZE}px` : `${MOBILE_SIZE}px`}
+            sizes={`(min-width: 1200px) ${DESKTOP_SIZE}px, ${MOBILE_SIZE}px`}
             style={{ objectFit: "cover" }}
             priority
           />
@@ -97,7 +84,7 @@ export const Profile = ({
           </Box>
         )}
       </Box>
-      <Box sx={{ minWidth: isDesktop ? "auto" : MOBILE_SIZE }}>
+      <Box sx={{ minWidth: { xs: MOBILE_SIZE, lg: "auto" } }}>
         <Typography
           variant="h5"
           sx={(theme) => ({

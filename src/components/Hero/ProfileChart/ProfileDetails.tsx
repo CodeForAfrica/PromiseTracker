@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import DonutLargeIcon from "@mui/icons-material/DonutLarge";
 import Grid from "@mui/material/Grid";
-import { IconButton, Stack, Typography } from "@mui/material";
+import { Box, IconButton, Stack, Typography } from "@mui/material";
 
 import type { HeroStatusSummary } from "../index";
 import Share from "@/components/Share";
@@ -22,7 +22,6 @@ type ProfileDetailsProps = {
   statuses: HeroStatusSummary[];
   isAlternateChart: boolean;
   onToggleAlternateChart: () => void;
-  isDesktop: boolean;
   shareTitle: string;
 };
 
@@ -53,15 +52,12 @@ export const ProfileDetails = ({
   statuses,
   isAlternateChart,
   onToggleAlternateChart,
-  isDesktop,
   shareTitle,
 }: ProfileDetailsProps) => {
   const summary = useMemo(
     () => buildSummary(position, name, totalPromises, promiseLabel, trailText),
     [position, name, totalPromises, promiseLabel, trailText],
   );
-
-  const Popover = isDesktop ? DesktopInfoStatusPopover : MobileInfoStatusPopover;
 
   return (
     <Grid
@@ -73,8 +69,13 @@ export const ProfileDetails = ({
     >
       <Grid size={{ xs: 12, lg: 8 }}>
         <Stack spacing={1.5}>
-          {isDesktop && headline ? (
-            <Typography component="h1" variant="h1" color="primary.dark">
+          {headline ? (
+            <Typography
+              component="h1"
+              variant="h1"
+              color="primary.dark"
+              sx={{ display: { xs: "none", lg: "block" } }}
+            >
               {headline}
             </Typography>
           ) : null}
@@ -97,7 +98,7 @@ export const ProfileDetails = ({
           alignItems="center"
           sx={{ height: "100%" }}
         >
-          {isDesktop ? (
+          <Box sx={{ display: { xs: "none", lg: "flex" } }}>
             <IconButton
               aria-label={
                 isAlternateChart ? "Show circular chart" : "Show comparison chart"
@@ -119,8 +120,19 @@ export const ProfileDetails = ({
                 <BarChartIcon fontSize="small" />
               )}
             </IconButton>
-          ) : null}
-          <Popover title={statusListTitle} statuses={statuses} />
+          </Box>
+          <Box sx={{ display: { xs: "none", lg: "flex" } }}>
+            <DesktopInfoStatusPopover
+              title={statusListTitle}
+              statuses={statuses}
+            />
+          </Box>
+          <Box sx={{ display: { xs: "flex", lg: "none" } }}>
+            <MobileInfoStatusPopover
+              title={statusListTitle}
+              statuses={statuses}
+            />
+          </Box>
           <Share
             title={shareTitle}
             iconButtonProps={{

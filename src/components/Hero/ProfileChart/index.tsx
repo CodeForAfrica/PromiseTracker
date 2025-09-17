@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Box, useMediaQuery, useTheme } from "@mui/material";
+import { Box } from "@mui/material";
 
 import type { HeroChartGroup, HeroStatusSummary } from "../index";
 import DesktopChart from "./DesktopChart";
@@ -34,8 +34,6 @@ export const ProfileChart = ({
   groups,
   shareTitle,
 }: ProfileChartProps) => {
-  const theme = useTheme();
-  const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
   const [showRectChart, setShowRectChart] = useState(false);
 
   const orderedRectStatuses = useMemo(() => {
@@ -57,19 +55,19 @@ export const ProfileChart = ({
         statuses={statuses}
         isAlternateChart={showRectChart}
         onToggleAlternateChart={() => setShowRectChart((prev) => !prev)}
-        isDesktop={isDesktop}
         shareTitle={shareTitle}
       />
       <Box sx={{ flexGrow: 1, width: "100%" }}>
-        {isDesktop ? (
-          showRectChart ? (
+        <Box sx={{ display: { xs: "none", lg: "block" } }}>
+          {showRectChart ? (
             <RectChart totalPromises={totalPromises} statuses={orderedRectStatuses} />
           ) : (
             <DesktopChart totalPromises={totalPromises} groups={groups} />
-          )
-        ) : (
+          )}
+        </Box>
+        <Box sx={{ display: { xs: "block", lg: "none" } }}>
           <MobileChart totalPromises={totalPromises} groups={groups} />
-        )}
+        </Box>
       </Box>
     </Box>
   );

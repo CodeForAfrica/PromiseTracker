@@ -27,11 +27,13 @@ export const HeroClient = ({ data }: HeroClientProps) => {
       component="section"
       sx={(theme) => ({
         backgroundColor: "transparent",
-        pt: theme.typography.pxToRem(22),
-        pb: theme.typography.pxToRem(40),
-        [theme.breakpoints.up("lg")]: {
-          pt: theme.typography.pxToRem(80),
-          pb: theme.typography.pxToRem(44),
+        pt: {
+          xs: theme.typography.pxToRem(22),
+          lg: theme.typography.pxToRem(80),
+        },
+        pb: {
+          xs: theme.typography.pxToRem(40),
+          lg: theme.typography.pxToRem(44),
         },
       })}
     >

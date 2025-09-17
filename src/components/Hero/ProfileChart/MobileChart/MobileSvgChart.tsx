@@ -50,7 +50,7 @@ export const MobileSvgChart = ({
           variant="subtitle2"
           sx={{
             textTransform: "capitalize",
-            color: "text.secondary",
+            color: "primary.dark",
           }}
         >
           {status.label.toLowerCase()}
