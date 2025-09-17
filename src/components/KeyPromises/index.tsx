@@ -34,7 +34,9 @@ const buildStatus = (status?: PromiseStatus | null) => {
   };
 };
 
-const getDocumentId = (document: PromiseDocument["document"]): string | null => {
+const getDocumentId = (
+  document: PromiseDocument["document"]
+): string | null => {
   if (!document) {
     return null;
   }
@@ -46,7 +48,11 @@ export type KeyPromisesProps = KeyPromisesBlock & {
   entitySlug?: string;
 };
 
-export const KeyPromises = async ({ entitySlug, title, actionLabel }: KeyPromisesProps) => {
+export const KeyPromises = async ({
+  entitySlug,
+  title,
+  actionLabel,
+}: KeyPromisesProps) => {
   if (!entitySlug) {
     return null;
   }
@@ -108,7 +114,7 @@ export const KeyPromises = async ({ entitySlug, title, actionLabel }: KeyPromise
   });
 
   const statusById = new Map<string, PromiseStatus>(
-    (statusQuery.docs as PromiseStatus[]).map((status) => [status.id, status]),
+    (statusQuery.docs as PromiseStatus[]).map((status) => [status.id, status])
   );
 
   const promisesQuery = await payload.find({
@@ -123,8 +129,7 @@ export const KeyPromises = async ({ entitySlug, title, actionLabel }: KeyPromise
   });
 
   const promiseDocs = (promisesQuery.docs as PromiseDocument[]).sort(
-    (a, b) =>
-      new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   );
 
   const items: KeyPromiseItem[] = [];
@@ -135,7 +140,7 @@ export const KeyPromises = async ({ entitySlug, title, actionLabel }: KeyPromise
     }
 
     const docId = getDocumentId(promise.document);
-    const document = docId ? documentMap.get(docId) ?? null : null;
+    const document = docId ? (documentMap.get(docId) ?? null) : null;
     const imageSource = document?.files?.[0] ?? null;
     const image = await resolveMedia(payload, imageSource);
 
@@ -150,7 +155,7 @@ export const KeyPromises = async ({ entitySlug, title, actionLabel }: KeyPromise
       const statusData =
         typeof statusRef === "string"
           ? statusById.get(statusRef)
-          : statusRef ?? null;
+          : (statusRef ?? null);
 
       const status = buildStatus(statusData);
 
@@ -159,9 +164,10 @@ export const KeyPromises = async ({ entitySlug, title, actionLabel }: KeyPromise
       }
 
       const summaryText = extraction.summary?.trim();
-      const titleText = summaryText || promise.title?.trim() || document?.title || "Promise";
+      const titleText =
+        summaryText || promise.title?.trim() || document?.title || "Promise";
       const description = extraction.source?.trim();
-      const href = extraction.checkMediaURL || document?.url || undefined;
+      const href = `/promises/${extraction.uniqueId}`; //TODO:(@kelvinkipruto) Ensure it is nested under promises page
 
       const statusHistory = [
         {
@@ -212,7 +218,8 @@ export const KeyPromises = async ({ entitySlug, title, actionLabel }: KeyPromise
     if (years.length) {
       const minYear = Math.min(...years);
       const maxYear = Math.max(...years);
-      timelineInterval = minYear === maxYear ? [minYear, minYear + 1] : [minYear, maxYear];
+      timelineInterval =
+        minYear === maxYear ? [minYear, minYear + 1] : [minYear, maxYear];
     }
   }
 
