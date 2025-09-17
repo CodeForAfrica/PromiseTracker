@@ -5,7 +5,7 @@ import { Block } from "payload";
 export const ActNow: Block = {
   slug: "act-now",
   interfaceName: "ActNowBlock",
-  imageURL: "/blocks/act-now.png",
+  imageURL: "/cms/act-now.png",
   imageAltText: "Act Now",
   fields: [
     image({

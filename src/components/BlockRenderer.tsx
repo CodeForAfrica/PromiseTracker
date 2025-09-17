@@ -4,6 +4,7 @@ import { Fragment } from "react";
 import { KeyPromises } from "./KeyPromises";
 import Newsletter from "./Newsletter";
 import Partners from "./Partners";
+import { Hero } from "./Hero";
 
 type BlockProps = {
   blocks: Page["blocks"];
@@ -11,9 +12,10 @@ type BlockProps = {
 };
 
 const blockComponents = {
+  "act-now": ActNow,
+  hero: Hero,
   newsletter: Newsletter,
   partners: Partners,
-  "act-now": ActNow,
   "key-promises": KeyPromises,
 };
 export const BlockRenderer = ({ blocks, entity }: BlockProps) => {
