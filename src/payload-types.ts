@@ -368,6 +368,7 @@ export interface Page {
   blocks?:
     | (
         | ActNowBlock
+        | HeroBlock
         | {
             image: string | Media;
             id?: string | null;
@@ -407,6 +408,62 @@ export interface ActNowBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'act-now';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HeroBlock".
+ */
+export interface HeroBlock {
+  /**
+   * Displayed as the main heading for the political entity page.
+   */
+  tagline?: {
+    root: {
+      type: string;
+      children: {
+        type: string;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  promiseLabel?: string | null;
+  /**
+   * Sentence that follows the promise count, for example 'tracked on PromiseTracker'.
+   */
+  trailText?: string | null;
+  updatedAtLabel?: string | null;
+  /**
+   * Optional text that replaces the political entity position shown above the last updated date.
+   */
+  profileTitleOverride?: string | null;
+  /**
+   * Used when the political entity record does not contain an image.
+   */
+  fallbackImage?: (string | null) | Media;
+  statusInfo?: {
+    title?: string | null;
+    items?:
+      | {
+          title: string;
+          description: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  chartCaptions?: {
+    kept?: string | null;
+    uncertain?: string | null;
+    notKept?: string | null;
+  };
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'hero';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -898,6 +955,7 @@ export interface PagesSelect<T extends boolean = true> {
     | T
     | {
         'act-now'?: T | ActNowBlockSelect<T>;
+        hero?: T | HeroBlockSelect<T>;
         newsletter?:
           | T
           | {
@@ -933,6 +991,39 @@ export interface ActNowBlockSelect<T extends boolean = true> {
         reference?: T;
         url?: T;
         label?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HeroBlock_select".
+ */
+export interface HeroBlockSelect<T extends boolean = true> {
+  tagline?: T;
+  promiseLabel?: T;
+  trailText?: T;
+  updatedAtLabel?: T;
+  profileTitleOverride?: T;
+  fallbackImage?: T;
+  statusInfo?:
+    | T
+    | {
+        title?: T;
+        items?:
+          | T
+          | {
+              title?: T;
+              description?: T;
+              id?: T;
+            };
+      };
+  chartCaptions?:
+    | T
+    | {
+        kept?: T;
+        uncertain?: T;
+        notKept?: T;
       };
   id?: T;
   blockName?: T;
