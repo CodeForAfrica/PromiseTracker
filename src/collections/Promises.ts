@@ -105,7 +105,7 @@ export const Promises: CollectionConfig = {
               name: "checkMediaId",
               type: "text",
               admin: {
-                // hidden: true,
+                hidden: true,
               },
               label: {
                 en: "Check Media ID",
