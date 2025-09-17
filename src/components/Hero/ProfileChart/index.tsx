@@ -10,7 +10,10 @@ import ProfileDetails from "./ProfileDetails";
 import RectChart from "./RectChart";
 
 type ProfileChartProps = {
-  headline: string;
+  headline: {
+    tagline?: string;
+    name: string;
+  };
   promiseLabel: string;
   trailText: string;
   name: string;

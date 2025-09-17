@@ -12,7 +12,10 @@ import DesktopInfoStatusPopover from "./DesktopInfoStatusPopover";
 import MobileInfoStatusPopover from "./MobileInfoStatusPopover";
 
 type ProfileDetailsProps = {
-  headline: string;
+  headline: {
+    tagline?: string;
+    name: string;
+  };
   name: string;
   position: string;
   promiseLabel: string;
@@ -30,15 +33,14 @@ const buildSummary = (
   name: string,
   totalPromises: number,
   promiseLabel: string,
-  trailText: string,
+  trailText: string
 ) => {
-  const pieces = [
-    `${position} ${name}`.trim(),
-    totalPromises > 0 ? `${totalPromises} ${promiseLabel}`.trim() : undefined,
-    trailText.trim().length > 0 ? trailText.trim() : undefined,
-  ].filter(Boolean);
-
-  return pieces.join(" ");
+  return {
+    intro: `${position} ${name}`.trim(),
+    highlight:
+      totalPromises > 0 ? `${totalPromises} ${promiseLabel}`.trim() : undefined,
+    outro: trailText.trim().length > 0 ? trailText.trim() : undefined,
+  };
 };
 
 export const ProfileDetails = ({
@@ -56,7 +58,7 @@ export const ProfileDetails = ({
 }: ProfileDetailsProps) => {
   const summary = useMemo(
     () => buildSummary(position, name, totalPromises, promiseLabel, trailText),
-    [position, name, totalPromises, promiseLabel, trailText],
+    [position, name, totalPromises, promiseLabel, trailText]
   );
 
   return (
@@ -66,21 +68,41 @@ export const ProfileDetails = ({
       rowSpacing={{ xs: 2, lg: 3 }}
       alignItems="stretch"
       sx={{ mb: { xs: 2, lg: 3 } }}
+      flexWrap="nowrap"
     >
       <Grid size={{ xs: 12, lg: 8 }}>
         <Stack spacing={1.5}>
-          {headline ? (
+          {(headline.tagline || headline.name) ? (
             <Typography
               component="h1"
               variant="h1"
-              color="primary.dark"
               sx={{ display: { xs: "none", lg: "block" } }}
             >
-              {headline}
+              {headline.tagline ? (
+                <>
+                  <Typography component="span" variant="inherit" sx={{ color: "#005DFD" }}>
+                    {headline.tagline}
+                  </Typography>{" "}
+                  {headline.name}
+                </>
+              ) : (
+                headline.name
+              )}
             </Typography>
           ) : null}
           <Typography variant="body2" color="text.primary">
-            {summary}
+            {summary.intro}
+            {summary.highlight ? " " : ""}
+            {summary.highlight ? (
+              <Typography
+                component="span"
+                variant="body2"
+                sx={{ fontWeight: 700 }}
+              >
+                {summary.highlight}
+              </Typography>
+            ) : null}
+            {summary.outro ? ` ${summary.outro}` : ""}
           </Typography>
         </Stack>
       </Grid>
@@ -101,7 +123,9 @@ export const ProfileDetails = ({
           <Box sx={{ display: { xs: "none", lg: "flex" } }}>
             <IconButton
               aria-label={
-                isAlternateChart ? "Show circular chart" : "Show comparison chart"
+                isAlternateChart
+                  ? "Show circular chart"
+                  : "Show comparison chart"
               }
               size="small"
               onClick={onToggleAlternateChart}

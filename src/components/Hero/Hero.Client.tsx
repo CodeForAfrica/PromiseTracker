@@ -12,10 +12,15 @@ export type HeroClientProps = {
 };
 
 export const HeroClient = ({ data }: HeroClientProps) => {
-  const { entity, copy, metrics, headline } = data;
+  const {
+    entity,
+    copy,
+    metrics,
+    headline: { tagline, name: entityName },
+  } = data;
 
   const shareTitle = [
-    headline,
+    tagline ? `${tagline} ${entityName}` : entityName,
     metrics.total > 0 ? `${metrics.total} ${copy.promiseLabel}` : undefined,
     copy.trailText,
   ]
@@ -38,7 +43,7 @@ export const HeroClient = ({ data }: HeroClientProps) => {
       })}
     >
       <Container maxWidth="lg">
-        {headline ? (
+        {tagline || entityName ? (
           <Typography
             component="h1"
             variant="h1"
@@ -48,7 +53,16 @@ export const HeroClient = ({ data }: HeroClientProps) => {
               mb: theme.typography.pxToRem(24),
             })}
           >
-            {headline}
+            {tagline ? (
+              <>
+                <Typography component="span" variant="inherit" sx={{ color: "#005DFD" }}>
+                  {tagline}
+                </Typography>{" "}
+                {entityName}
+              </>
+            ) : (
+              entityName
+            )}
           </Typography>
         ) : null}
         <Grid
@@ -68,7 +82,7 @@ export const HeroClient = ({ data }: HeroClientProps) => {
           </Grid>
           <Grid size={{ xs: 12, lg: 8 }}>
             <ProfileChart
-              headline={headline}
+              headline={{ tagline, name: entityName }}
               promiseLabel={copy.promiseLabel}
               trailText={copy.trailText}
               name={entity.name}

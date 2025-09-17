@@ -26,7 +26,10 @@ export type HeroChartGroup = {
 };
 
 export type HeroResolvedData = {
-  headline: string;
+  headline: {
+    tagline?: string;
+    name: string;
+  };
   copy: {
     promiseLabel: string;
     trailText: string;
@@ -267,8 +270,10 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
   const entityImage = await resolveMedia(payload, entity.image);
 
   const taglineText = block.tagline?.trim();
-  const headline =
-    [taglineText, entity.name].filter(Boolean).join(" ") || entity.name;
+  const headline = {
+    tagline: taglineText || undefined,
+    name: entity.name,
+  };
 
   const profileTitleBase =
     block.profileTitleOverride?.trim() || entity.position;
