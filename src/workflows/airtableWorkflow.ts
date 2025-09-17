@@ -12,6 +12,12 @@ export const airtableWorkflow: WorkflowConfig = {
     },
   ],
   handler: async ({ tasks }) => {
+    await tasks.createTenantFromAirtable(randomUUID(), {
+      input: [],
+    });
+    await tasks.createPoliticalEntity(randomUUID(), {
+      input: [],
+    });
     await tasks.fetchAirtableDocuments(randomUUID(), {
       input: [],
     });
@@ -21,7 +27,7 @@ export const airtableWorkflow: WorkflowConfig = {
     await tasks.extractDocuments(randomUUID(), {
       input: [],
     });
-    await tasks.aiExtractor(randomUUID(), {
+    await tasks.extractPromises(randomUUID(), {
       input: [],
     });
     await tasks.uploadToMeedan(randomUUID(), {

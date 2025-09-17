@@ -8,22 +8,15 @@ import { CommonHomePage } from "@/components/CommonHomePage";
 import { BlockRenderer } from "@/components/BlockRenderer";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { PoliticalEntityList } from "@/components/PoliticalEntityList";
 import { getTenantBySubDomain, getTenantNavigation } from "@/lib/data/tenants";
+import { getPoliticalEntitiesByTenant } from "@/lib/data/politicalEntities";
 
 type Args = {
   params: Promise<{
     slugs?: string[];
   }>;
 };
-
-async function getPageSlug({ params: pageParams }: Args) {
-  const params = await pageParams;
-  // We only have 2 slugs, for the page, ['promises'] or ['promises', 'promise-1']
-  //The first is the slug of the page.
-  // TODO: (@kelvinkipruto): check if we may need a third page: ['promises', 'political-entity', 'promise-1']
-  const pageSlugIndex = 0;
-  return params?.slugs?.[pageSlugIndex] || "index";
-}
 
 export default async function Page(params: Args) {
   const { isLocalhost, subdomain } = await getDomain();
@@ -38,25 +31,60 @@ export default async function Page(params: Args) {
     return <CommonHomePage />;
   }
 
-  const slug = await getPageSlug(params);
+  const { title, description, navigation, footer } =
+    await getTenantNavigation(tenant);
 
-  const page = await queryPageBySlug({ slug, tenant });
+  const paramsValue = await params.params;
+  const slugs = paramsValue?.slugs ?? [];
+  const [maybePoliticalEntitySlug, pageSlugCandidate] = slugs;
+
+  const politicalEntities = await getPoliticalEntitiesByTenant(tenant);
+
+  const politicalEntity = politicalEntities.find(
+    (entity) => entity.slug === maybePoliticalEntitySlug,
+  );
+
+  if (!politicalEntity) {
+    const fallbackPageSlugs = slugs.length > 0 ? slugs : ["index"];
+
+    return (
+      <>
+        <Navigation title={title} {...navigation} />
+        <PoliticalEntityList
+          tenant={tenant}
+          politicalEntities={politicalEntities}
+          pageSlugs={fallbackPageSlugs}
+        />
+        <Footer title={title} description={description} {...footer} />
+      </>
+    );
+  }
+
+  const pageSlug = pageSlugCandidate ?? "index";
+
+  const page = await queryPageBySlug({ slug: pageSlug, tenant });
 
   if (!page) {
     return notFound();
   }
 
-  const { title, description, navigation, footer } =
-    await getTenantNavigation(tenant);
-
   const { blocks } = page;
   return (
     <>
-      <Navigation title={title} {...navigation} />
+      <Navigation
+        title={title}
+        {...navigation}
+        entitySlug={politicalEntity.slug}
+      />
       <Suspense>
-        <BlockRenderer blocks={blocks} />
+        <BlockRenderer blocks={blocks} entity={politicalEntity} />
       </Suspense>
-      <Footer title={title} description={description} {...footer} />
+      <Footer
+        title={title}
+        description={description}
+        {...footer}
+        entitySlug={politicalEntity.slug}
+      />
     </>
   );
 }

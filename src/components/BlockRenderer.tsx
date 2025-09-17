@@ -1,5 +1,5 @@
 import ActNow from "@/blocks/ActNow/Component";
-import { Page } from "@/payload-types";
+import { Page, PoliticalEntity } from "@/payload-types";
 import { Fragment } from "react";
 import { KeyPromises } from "./KeyPromises";
 import Newsletter from "./Newsletter";
@@ -7,6 +7,7 @@ import Partners from "./Partners";
 
 type BlockProps = {
   blocks: Page["blocks"];
+  entity?: PoliticalEntity;
 };
 
 const blockComponents = {
@@ -15,7 +16,7 @@ const blockComponents = {
   "act-now": ActNow,
   "key-promises": KeyPromises,
 };
-export const BlockRenderer = ({ blocks }: BlockProps) => {
+export const BlockRenderer = ({ blocks, entity }: BlockProps) => {
   const hasBlocks = blocks && Array.isArray(blocks) && blocks.length > 0;
 
   if (hasBlocks) {
@@ -29,7 +30,7 @@ export const BlockRenderer = ({ blocks }: BlockProps) => {
               return (
                 <div key={index}>
                   {/* @ts-expect-error there may be some mismatch between the expected types here */}
-                  <Block {...block} />
+                  <Block {...block} entitySlug={entity?.slug} />
                 </div>
               );
             }

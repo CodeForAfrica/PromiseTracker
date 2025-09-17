@@ -1,9 +1,15 @@
 import { BasePayload, TaskConfig } from "payload";
 import { createFactCheckClaim } from "@/lib/meedan";
 import { markDocumentAsProcessed } from "@/lib/airtable";
-import { AiExtraction, Document, Media } from "@/payload-types";
+import {
+  Promise as PromiseDoc,
+  Document,
+  Media,
+  PoliticalEntity,
+  Tenant,
+} from "@/payload-types";
 
-const getAIExtractionToUpload = (doc: AiExtraction) => {
+const getPromisesToUpload = (doc: PromiseDoc) => {
   return (
     doc.extractions
       ?.filter((extraction) => !extraction.checkMediaId)
@@ -18,7 +24,7 @@ const getAIExtractionToUpload = (doc: AiExtraction) => {
 
 const checkAndMarkDocumentComplete = async (
   doc: Document,
-  payload: BasePayload,
+  payload: BasePayload
 ): Promise<void> => {
   if (doc.airtableID) {
     const {
@@ -55,42 +61,45 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
       }
 
       const { docs: allPromises } = await payload.find({
-        collection: "aiExtraction",
+        collection: "promises",
         limit: -1,
-        depth: 3,
+        depth: 4,
       });
 
       for (const doc of allPromises) {
         logger.info(
-          `uploadToMeedan:: Processing promise: ${doc.id} - ${doc.title}`,
+          `uploadToMeedan:: Processing promise: ${doc.id} - ${doc.title}`
         );
 
-        const aiExtractions = getAIExtractionToUpload(doc);
+        const promisesToUpload = getPromisesToUpload(doc);
 
-        if (aiExtractions.length === 0) {
+        if (promisesToUpload.length === 0) {
           logger.info(
-            `uploadToMeedan:: Document ${doc.id} has no unprocessed AI extractions, skipping`,
+            `uploadToMeedan:: Document ${doc.id} has no unprocessed promises, skipping`
           );
           continue;
         }
 
         const document = doc.document as Document;
+        const entity = document.politicalEntity as PoliticalEntity;
+        const tenant = entity.tenant as Tenant;
 
-        for (const extraction of aiExtractions) {
+        for (const extraction of promisesToUpload) {
           logger.info(
-            `uploadToMeedan:: Uploading extraction ${extraction.uniqueId} from document ${doc.id} to CheckMedia`,
+            `uploadToMeedan:: Uploading extraction ${extraction.uniqueId} from document ${doc.id} to CheckMedia`
           );
           const tags = [
-            document.politicalEntity,
-            document.country,
-            document.region,
+            entity.name,
+            entity.region,
+            tenant.country,
+            tenant.name,
             document.type?.toUpperCase(),
             extraction.category,
           ].filter(Boolean) as string[];
 
           const quote = `${extraction.summary} \n\n${extraction.source}`.trim();
 
-          const downloadedFile = document.file as Media;
+          const downloadedFile = document.files as Media[];
 
           const response = await createFactCheckClaim({
             apiKey: meedanAPIKey,
@@ -100,7 +109,7 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
             claimDescription: extraction.summary,
             factCheck: {
               title: extraction.summary,
-              url: document.url || document.docURL || downloadedFile.url || "",
+              url: document.url || downloadedFile[0].url || "",
               language: document.language || "",
               publish_report: false,
             },
@@ -110,36 +119,55 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
             response.data.createProjectMedia.project_media.id;
           const checkMediaURL =
             response.data.createProjectMedia.project_media.full_url;
+          const returnedStatus =
+            response.data.createProjectMedia.project_media.status;
 
           logger.info(
             `uploadToMeedan:: Successfully uploaded extraction ${extraction.uniqueId} to CheckMedia`,
             {
               checkMediaId,
               checkMediaURL,
-            },
+            }
           );
 
-          const updatedAiExtraction = doc.extractions?.map((ext) => {
+          let statusRelationId: string | undefined;
+          if (returnedStatus) {
+            try {
+              const statusRes = await payload.find({
+                collection: "promise-status",
+                where: { meedanId: { equals: returnedStatus } },
+                limit: 1,
+              });
+              statusRelationId = statusRes.docs?.[0]?.id as string | undefined;
+            } catch (e) {
+              logger.warn(
+                `uploadToMeedan:: Could not resolve status ${returnedStatus} to a promise-status doc. Error :${e}`
+              );
+            }
+          }
+
+          const updatedExtractions = doc.extractions?.map((ext) => {
             if (ext.uniqueId === extraction.uniqueId) {
               return {
                 ...ext,
                 checkMediaId,
                 checkMediaURL,
+                ...(statusRelationId ? { Status: statusRelationId } : {}),
               };
             }
             return ext;
           });
 
           await payload.update({
-            collection: "aiExtraction",
+            collection: "promises",
             id: doc.id,
             data: {
-              extractions: updatedAiExtraction,
+              extractions: updatedExtractions,
             },
           });
 
           logger.info(
-            `uploadToMeedan:: Updated extraction ${extraction.uniqueId} in document ${doc.id} with CheckMedia data`,
+            `uploadToMeedan:: Updated extraction ${extraction.uniqueId} in document ${doc.id} with CheckMedia data`
           );
         }
 

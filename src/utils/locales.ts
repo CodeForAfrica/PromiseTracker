@@ -3,3 +3,8 @@ export const locales = process.env.NEXT_PUBLIC_LOCALES?.split(",")
   .filter(Boolean) || ["en"];
 export const defaultLocale =
   process.env.NEXT_PUBLIC_DEFAULT_LOCALE?.trim() || locales?.[0];
+
+export const LANGUAGE_MAP: Record<string, "en" | "fr"> = {
+  English: "en",
+  French: "fr",
+};

@@ -11,12 +11,17 @@ function getMediaSrc(m: string | Media): { src?: string; alt?: string } {
   return { src: m.url ?? undefined, alt: m.alt };
 }
 
+type ActNowProps = ActNowBlockProps & {
+  entitySlug?: string;
+};
+
 export default function ActNow({
   logo,
   description,
   image,
   link,
-}: ActNowBlockProps) {
+  entitySlug,
+}: ActNowProps) {
   const logoMedia = getMediaSrc(logo);
   const heroMedia = getMediaSrc(image);
 
@@ -90,9 +95,10 @@ export default function ActNow({
                   <CMSLink
                     label={link.label}
                     type={link.type}
-                    reference={link.reference as any}
+                    reference={link.reference}
                     url={link.url}
                     newTab={link.newTab}
+                    entitySlug={entitySlug}
                     sx={[
                       (t) => ({
                         border: `1px solid ${t.palette.primary.main}`,

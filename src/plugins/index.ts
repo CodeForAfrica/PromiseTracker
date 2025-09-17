@@ -11,6 +11,7 @@ export const plugins: Plugin[] = [
       "site-settings": {
         isGlobal: true,
       },
+      "political-entities": {},
     },
     cleanupAfterTenantDelete: false,
     tenantField: {

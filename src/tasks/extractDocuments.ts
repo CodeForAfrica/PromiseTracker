@@ -33,12 +33,12 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
       const { docs: documents } = await payload.find({
         collection: "documents",
         where: {
-          extractedText: {
+          "extractedText.text": {
             exists: false,
           },
         },
         select: {
-          file: true,
+          files: true,
         },
         depth: 3,
       });
@@ -55,66 +55,85 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
 
       for (const doc of documents) {
         try {
-          if (!doc.file) {
+          if (!doc.files?.length) {
             logger.warn("extractDocuments:: Document has no file attachment", {
               id: doc.id,
             });
             continue;
           }
 
-          const file = doc.file as Media;
-          const filePath = join(process.cwd(), "media", file.filename!);
+          const files = doc.files as Media[];
+          const text = [];
+          let hasExtractedText = false;
 
-          if (!existsSync(filePath)) {
-            logger.warn("extractDocuments:: File not found on disk", {
+          for (const file of files) {
+            const filePath = join(process.cwd(), "media", file.filename!);
+            if (!existsSync(filePath)) {
+              logger.warn("extractDocuments:: File not found on disk", {
+                id: doc.id,
+                filePath,
+              });
+              continue;
+            }
+            const extractedText = await extractTextFromDoc(filePath);
+
+            if (extractedText.length === 0) {
+              logger.warn(
+                "extractDocuments:: No text extracted from document",
+                {
+                  id: doc.id,
+                }
+              );
+              continue;
+            }
+
+            logger.info("extractDocuments:: Successfully extracted text", {
               id: doc.id,
-              filePath,
+              textLength: extractedText.join("\n").length,
             });
-            continue;
+
+            text.push({
+              root: {
+                type: "root",
+                children: extractedText.map((line) => ({
+                  children: [
+                    {
+                      text: line,
+                      type: "text",
+                    },
+                  ],
+                  type: "paragraph",
+                })),
+              },
+            });
+            hasExtractedText = true;
           }
 
-          const extractedText = await extractTextFromDoc(filePath);
-
-          if (extractedText.length === 0) {
-            logger.warn("extractDocuments:: No text extracted from document", {
-              id: doc.id,
-            });
+          if (!hasExtractedText) {
+            logger.warn(
+              "extractDocuments:: Skipping document update - no readable text",
+              { id: doc.id }
+            );
             continue;
           }
-
-          processedDocs.push({
-            id: doc.id,
-          });
-
-          logger.info("extractDocuments:: Successfully extracted text", {
-            id: doc.id,
-            textLength: extractedText.join("\n").length,
-          });
 
           await payload.update({
             collection: "documents",
             id: doc.id,
             data: {
-              extractedText: {
-                root: {
-                  type: "root",
-                  children: extractedText.map((line) => ({
-                    children: [
-                      {
-                        text: line,
-                        type: "text",
-                      },
-                    ],
-                    type: "paragraph",
-                  })),
-                },
-              },
+              extractedText: text.map((t) => ({
+                text: t,
+              })),
             },
+          });
+
+          processedDocs.push({
+            id: doc.id,
           });
 
           logger.info(
             "extractDocuments:: Updated document with extracted text",
-            { id: doc.id },
+            { id: doc.id }
           );
         } catch (docError) {
           logger.error(
@@ -123,7 +142,7 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
               id: doc.id,
               error:
                 docError instanceof Error ? docError.message : String(docError),
-            },
+            }
           );
         }
       }
