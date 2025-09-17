@@ -5,9 +5,10 @@ import type { MenuLink } from "@/types/navigation";
 
 type DesktopMenuProps = {
   menus: MenuLink[];
+  entitySlug?: string;
 };
 
-export function DesktopMenu({ menus }: DesktopMenuProps) {
+export function DesktopMenu({ menus, entitySlug }: DesktopMenuProps) {
   return (
     <Grid
       size={5}
@@ -26,6 +27,7 @@ export function DesktopMenu({ menus }: DesktopMenuProps) {
         >
           <CMSLink
             {...m}
+            entitySlug={entitySlug}
             sx={(theme) => ({
               display: "inline-flex",
               alignItems: "center",

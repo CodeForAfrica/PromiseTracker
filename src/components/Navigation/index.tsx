@@ -22,12 +22,14 @@ type NavigationProps = {
   primaryLogo: Logo;
   menus: MenuLink[];
   title: string;
+  entitySlug?: string;
 };
 
 export default function Navigation({
   primaryLogo,
   menus,
   title,
+  entitySlug,
 }: NavigationProps) {
   const theme = useTheme();
   const logoSrc = primaryLogo?.url || null;
@@ -58,7 +60,7 @@ export default function Navigation({
                 <Grid size={5}>
                   <IconButton
                     component={NextLink}
-                    href="/"
+                    href={entitySlug ? `/${entitySlug}` : "/"}
                     disableRipple
                     disableFocusRipple
                     sx={{
@@ -85,7 +87,7 @@ export default function Navigation({
                     )}
                   </IconButton>
                 </Grid>
-                <DesktopMenu menus={menus} />
+                <DesktopMenu menus={menus} entitySlug={entitySlug} />
                 <Grid size={2} sx={{ display: { xs: "none", lg: "flex" } }}>
                   <Box
                     sx={{
@@ -98,7 +100,7 @@ export default function Navigation({
                     <Search />
                   </Box>
                 </Grid>
-                <MobileMenu menus={menus} />
+                <MobileMenu menus={menus} entitySlug={entitySlug} />
               </Grid>
             </Box>
           </Container>

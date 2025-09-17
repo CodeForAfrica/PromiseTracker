@@ -1,9 +1,8 @@
 "use client";
 
 import { ActNowBlock as ActNowBlockProps, Media } from "@/payload-types";
-import { Box, Container, Typography, useMediaQuery } from "@mui/material";
+import { Box, Container, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import { useTheme } from "@mui/material/styles";
 import Image from "next/image";
 import { CMSLink } from "@/components/CMSLink";
 
@@ -12,12 +11,17 @@ function getMediaSrc(m: string | Media): { src?: string; alt?: string } {
   return { src: m.url ?? undefined, alt: m.alt };
 }
 
+type ActNowProps = ActNowBlockProps & {
+  entitySlug?: string;
+};
+
 export default function ActNow({
   logo,
   description,
   image,
   link,
-}: ActNowBlockProps) {
+  entitySlug,
+}: ActNowProps) {
   const logoMedia = getMediaSrc(logo);
   const heroMedia = getMediaSrc(image);
 
@@ -94,6 +98,7 @@ export default function ActNow({
                     reference={link.reference as any}
                     url={link.url}
                     newTab={link.newTab}
+                    entitySlug={entitySlug}
                     sx={[
                       (t) => ({
                         border: `1px solid ${t.palette.primary.main}`,
