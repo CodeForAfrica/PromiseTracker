@@ -104,9 +104,11 @@ export interface Config {
   };
   globals: {
     settings: Setting;
+    'payload-jobs-stats': PayloadJobsStat;
   };
   globalsSelect: {
     settings: SettingsSelect<false> | SettingsSelect<true>;
+    'payload-jobs-stats': PayloadJobsStatsSelect<false> | PayloadJobsStatsSelect<true>;
   };
   locale: 'en' | 'fr';
   user: User & {
@@ -128,7 +130,10 @@ export interface Config {
         output: unknown;
       };
     };
-    workflows: unknown;
+    workflows: {
+      airtableWorkflow: WorkflowAirtableWorkflow;
+      meedanStatusesWorkflow: WorkflowMeedanStatusesWorkflow;
+    };
   };
 }
 export interface UserAuthOperations {
@@ -689,6 +694,7 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
+  workflowSlug?: ('airtableWorkflow' | 'meedanStatusesWorkflow') | null;
   taskSlug?:
     | (
         | 'inline'
@@ -706,6 +712,15 @@ export interface PayloadJob {
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
+  meta?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1148,10 +1163,12 @@ export interface PayloadJobsSelect<T extends boolean = true> {
             };
         id?: T;
       };
+  workflowSlug?: T;
   taskSlug?: T;
   queue?: T;
   waitUntil?: T;
   processing?: T;
+  meta?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1210,6 +1227,24 @@ export interface Setting {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs-stats".
+ */
+export interface PayloadJobsStat {
+  id: string;
+  stats?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "settings_select".
  */
 export interface SettingsSelect<T extends boolean = true> {
@@ -1231,6 +1266,16 @@ export interface SettingsSelect<T extends boolean = true> {
         meedanAPIKey?: T;
         teamId?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs-stats_select".
+ */
+export interface PayloadJobsStatsSelect<T extends boolean = true> {
+  stats?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
@@ -1306,6 +1351,20 @@ export interface TaskFetchPromiseStatuses {
 export interface TaskUpdatePromiseStatus {
   input?: unknown;
   output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WorkflowAirtableWorkflow".
+ */
+export interface WorkflowAirtableWorkflow {
+  input?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WorkflowMeedanStatusesWorkflow".
+ */
+export interface WorkflowMeedanStatusesWorkflow {
+  input?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
