@@ -1,6 +1,6 @@
 "use client";
 
-import { Typography } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
 
 import type { HeroStatusSummary } from "../../index";
@@ -21,27 +21,43 @@ export const ProgressChart = ({
     return null;
   }
 
+  const accentColor = statuses[0]?.color;
+
   return (
-    <Grid container columnSpacing={2} rowSpacing={2} alignItems="flex-start">
+    <Grid container columnSpacing={2} rowSpacing={2} alignItems="stretch">
       <Grid size={{ xs: 4 }}>
-        <Typography
-          variant="body2"
-          sx={{
-            color: statuses[0]?.color ?? "text.secondary",
-            fontStyle: "italic",
-          }}
+        <Box
+          sx={(theme) => ({
+            height: "100%",
+            borderRight: `3px solid ${accentColor ?? theme.palette.divider}`,
+            pr: theme.typography.pxToRem(12),
+            minHeight: theme.typography.pxToRem(70),
+            display: "flex",
+            alignItems: "center",
+          })}
         >
-          {caption}
-        </Typography>
+          <Typography
+            variant="body2"
+            sx={(theme) => ({
+              color: accentColor ?? theme.palette.text.secondary,
+              fontStyle: "italic",
+              whiteSpace: "pre-line",
+            })}
+          >
+            {caption}
+          </Typography>
+        </Box>
       </Grid>
       <Grid size={{ xs: 8 }}>
-        {statuses.map((status) => (
-          <MobileSvgChart
-            key={status.id}
-            status={status}
-            totalPromises={totalPromises}
-          />
-        ))}
+        <Stack spacing={1.5} sx={{ width: "100%" }}>
+          {statuses.map((status) => (
+            <MobileSvgChart
+              key={status.id}
+              status={status}
+              totalPromises={totalPromises}
+            />
+          ))}
+        </Stack>
       </Grid>
     </Grid>
   );
