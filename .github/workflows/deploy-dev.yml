@@ -28,7 +28,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       # Add support for more platforms with QEMU (optional)
       - name: Set up QEMU
@@ -36,14 +36,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Cache Docker layers
-        uses: actions/cache@v4
-        with:
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          path: /tmp/.buildx-cache
-          restore-keys: |
-            ${{ runner.os }}-buildx-
 
       - name: Login to DockerHub
         uses: docker/login-action@v3
@@ -58,8 +50,8 @@ jobs:
             NEXT_PUBLIC_APP_URL=${{ env.NEXT_PUBLIC_APP_URL }}
             NEXT_PUBLIC_SENTRY_DSN=${{ secrets.SENTRY_DSN }}
             SENTRY_ENVIRONMENT=${{ env.SENTRY_ENVIRONMENT }}
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           context: .
           platforms: linux/arm64
           push: true
@@ -70,14 +62,6 @@ jobs:
             "sentry_org=${{ secrets.SENTRY_ORG }}"
             "sentry_project=${{ secrets.SENTRY_PROJECT }}"
           tags: "${{ env.IMAGE_NAME }}:${{ github.sha }}"
-
-      # Temp fix
-      # https://github.com/docker/build-push-action/issues/252
-      # https://github.com/moby/buildkit/issues/1896
-      - name: Move cache
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
       - name: Push to Dokku
         uses: dokku/github-action@v1.7.0
