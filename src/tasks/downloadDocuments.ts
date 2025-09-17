@@ -46,11 +46,12 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
           const { url, docURLs } = doc;
 
           // prioritise file uploaded to airtable
-          const urlsToFetch = docURLs?.length
+          const urlsToFetch = (docURLs?.length
             ? docURLs.map((t) => t.url)
-            : [url];
+            : [url]
+          ).filter((candidate): candidate is string => Boolean(candidate));
 
-          if (!urlsToFetch) {
+          if (urlsToFetch.length === 0) {
             logger.warn("downloadDocuments:: Document has no URL", {
               title: doc.title,
             });
@@ -58,9 +59,9 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
           }
 
           const files: Media[] = [];
-          for (const url of urlsToFetch) {
-            if (url) {
-              const filePath = await downloadFile(url);
+          for (const fileUrl of urlsToFetch) {
+            try {
+              const filePath = await downloadFile(fileUrl);
               const mediaUpload = await payload.create({
                 collection: "media",
                 data: {
@@ -70,7 +71,26 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
               });
               files.push(mediaUpload);
               await unlink(filePath);
+            } catch (downloadError) {
+              logger.warn("downloadDocuments:: Failed to download URL", {
+                title: doc.title,
+                url: fileUrl,
+                error:
+                  downloadError instanceof Error
+                    ? downloadError.message
+                    : String(downloadError),
+              });
             }
+          }
+
+          if (files.length === 0) {
+            logger.warn(
+              "downloadDocuments:: No files were downloaded for document",
+              {
+                title: doc.title,
+              }
+            );
+            continue;
           }
 
           await payload.update({

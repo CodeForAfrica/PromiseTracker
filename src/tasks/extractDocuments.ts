@@ -64,6 +64,7 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
 
           const files = doc.files as Media[];
           const text = [];
+          let hasExtractedText = false;
 
           for (const file of files) {
             const filePath = join(process.cwd(), "media", file.filename!);
@@ -86,10 +87,6 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
               continue;
             }
 
-            processedDocs.push({
-              id: doc.id,
-            });
-
             logger.info("extractDocuments:: Successfully extracted text", {
               id: doc.id,
               textLength: extractedText.join("\n").length,
@@ -109,6 +106,15 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
                 })),
               },
             });
+            hasExtractedText = true;
+          }
+
+          if (!hasExtractedText) {
+            logger.warn(
+              "extractDocuments:: Skipping document update - no readable text",
+              { id: doc.id }
+            );
+            continue;
           }
 
           await payload.update({
@@ -119,6 +125,10 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
                 text: t,
               })),
             },
+          });
+
+          processedDocs.push({
+            id: doc.id,
           });
 
           logger.info(
