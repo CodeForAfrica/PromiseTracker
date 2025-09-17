@@ -95,8 +95,10 @@ monitor_tika() {
     return 0
   fi
 
+  set +e
   wait "${TIKA_PID}"
   exit_code=$?
+  set -e
   if [ "${exit_code}" -ne 0 ]; then
     log "Apache Tika exited unexpectedly with status ${exit_code}"
   else
