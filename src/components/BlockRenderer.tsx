@@ -3,6 +3,7 @@ import { Page, PoliticalEntity } from "@/payload-types";
 import { Fragment } from "react";
 import Newsletter from "./Newsletter";
 import Partners from "./Partners";
+import { Hero } from "./Hero";
 
 type BlockProps = {
   blocks: Page["blocks"];
@@ -10,9 +11,10 @@ type BlockProps = {
 };
 
 const blockComponents = {
+  "act-now": ActNow,
+  hero: Hero,
   newsletter: Newsletter,
   partners: Partners,
-  "act-now": ActNow,
 };
 export const BlockRenderer = ({ blocks, entity }: BlockProps) => {
   const hasBlocks = blocks && Array.isArray(blocks) && blocks.length > 0;

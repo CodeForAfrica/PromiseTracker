@@ -368,6 +368,7 @@ export interface Page {
   blocks?:
     | (
         | ActNowBlock
+        | HeroBlock
         | {
             image: string | Media;
             id?: string | null;
@@ -407,6 +408,40 @@ export interface ActNowBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'act-now';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HeroBlock".
+ */
+export interface HeroBlock {
+  /**
+   * Displayed alongside the political entity name in the hero.
+   */
+  tagline?: string | null;
+  promiseLabel?: string | null;
+  /**
+   * Sentence that follows the promise count, for example 'tracked on PromiseTracker'.
+   */
+  trailText?: string | null;
+  updatedAtLabel?: string | null;
+  /**
+   * Optional text that replaces the political entity position shown above the last updated date.
+   */
+  profileTitleOverride?: string | null;
+  statusListTitle?: string | null;
+  /**
+   * Define exactly three groups of promise statuses to display in the charts.
+   */
+  chartGroups?:
+    | {
+        title: string;
+        statuses: (string | PromiseStatus)[];
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'hero';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -898,6 +933,7 @@ export interface PagesSelect<T extends boolean = true> {
     | T
     | {
         'act-now'?: T | ActNowBlockSelect<T>;
+        hero?: T | HeroBlockSelect<T>;
         newsletter?:
           | T
           | {
@@ -933,6 +969,27 @@ export interface ActNowBlockSelect<T extends boolean = true> {
         reference?: T;
         url?: T;
         label?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HeroBlock_select".
+ */
+export interface HeroBlockSelect<T extends boolean = true> {
+  tagline?: T;
+  promiseLabel?: T;
+  trailText?: T;
+  updatedAtLabel?: T;
+  profileTitleOverride?: T;
+  statusListTitle?: T;
+  chartGroups?:
+    | T
+    | {
+        title?: T;
+        statuses?: T;
+        id?: T;
       };
   id?: T;
   blockName?: T;
