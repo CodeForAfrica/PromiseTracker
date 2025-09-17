@@ -14,7 +14,7 @@ env:
   DOKKU_REMOTE_URL: "ssh://azureuser@ui-1.dev.codeforafrica.org"
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   IMAGE_NAME: "codeforafrica/promisetracker-v2"
-  NEXT_PUBLIC_APP_URL: "https://v2.promisetracker.dev.codeforafrica.org"
+  NEXT_PUBLIC_APP_URL: "https://promisetracker-v2.dev.codeforafrica.org"
   SENTRY_ENVIRONMENT: "development"
 
 jobs:
