@@ -23,35 +23,33 @@ export const PromiseStatusList = ({ statuses }: PromiseStatusListProps) => {
       {statuses.map((status, index) => (
         <Fragment key={status.id}>
           <Stack direction="row" spacing={2} alignItems="flex-start">
-            <Stack
-              sx={(theme) => ({
-                width: theme.typography.pxToRem(14),
-                height: theme.typography.pxToRem(14),
-                borderRadius: "50%",
-                backgroundColor: status.color ?? theme.palette.info.main,
-                flexShrink: 0,
-                border: `1px solid ${theme.palette.divider}`,
-                mt: theme.typography.pxToRem(4),
-              })}
-            />
-            <Stack spacing={0.75} sx={{ pr: 1 }}>
+            <Stack spacing={0.75} sx={{ pr: 1, flexGrow: 1 }}>
               <Typography
                 variant="subtitle2"
                 sx={(theme) => ({
+                  display: "inline-flex",
+                  alignSelf: "flex-start",
+                  backgroundColor: status.color ?? theme.palette.info.main,
+                  color:
+                    status.textColor ??
+                    theme.palette.getContrastText(
+                      status.color ?? theme.palette.info.main
+                    ),
+                  padding: `${theme.typography.pxToRem(4)} ${theme.typography.pxToRem(12)}`,
+                  borderRadius: theme.typography.pxToRem(4),
                   fontWeight: 600,
-                  color: status.textColor ?? theme.palette.text.primary,
-                  textTransform: "uppercase",
                   letterSpacing: 0.5,
+                  textTransform: "uppercase",
                 })}
               >
                 {status.label}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="primary.dark">
                 {status.description}
               </Typography>
             </Stack>
           </Stack>
-          <Divider flexItem sx={{ opacity: index === statuses.length - 1 ? 0.5 : 1 }} />
+          {index < statuses.length - 1 ? <Divider flexItem /> : null}
         </Fragment>
       ))}
     </Stack>

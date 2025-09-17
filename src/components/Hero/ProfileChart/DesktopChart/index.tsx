@@ -20,11 +20,6 @@ export const DesktopChart = ({ totalPromises, groups }: DesktopChartProps) => {
   return (
     <Grid
       container
-      sx={(theme) => ({
-        borderRadius: theme.typography.pxToRem(8),
-        border: `1px solid ${theme.palette.divider}`,
-        p: theme.typography.pxToRem(24),
-      })}
       columnSpacing={{ xs: 0, md: 4 }}
       rowSpacing={4}
       alignItems="stretch"
@@ -47,7 +42,14 @@ export const DesktopChart = ({ totalPromises, groups }: DesktopChartProps) => {
                 alignItems: "stretch",
               }}
             >
-              <Divider orientation="vertical" flexItem />
+              <Divider
+                orientation="vertical"
+                flexItem
+                sx={({ typography }) => ({
+                  margin: "2rem 0",
+                  height: typography.pxToRem(200),
+                })}
+              />
             </Grid>
           ) : null}
         </Fragment>

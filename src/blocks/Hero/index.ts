@@ -79,7 +79,7 @@ export const Hero: Block = {
         en: "Status Popover Title",
         fr: "Titre de la fenêtre des statuts",
       },
-      defaultValue: "Promise status definitions",
+      defaultValue: "What do the ratings mean?",
     },
     {
       name: "chartGroups",

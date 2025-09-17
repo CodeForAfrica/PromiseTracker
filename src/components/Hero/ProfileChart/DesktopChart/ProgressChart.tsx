@@ -20,20 +20,27 @@ export const ProgressChart = ({
     return null;
   }
 
-  const captionColor = statuses[0]?.color ?? "text.secondary";
+  const accentColor = statuses[0]?.color ?? "";
 
   return (
-    <Stack spacing={2} alignItems="center" sx={{ px: 2 }}>
+    <Stack spacing={2} alignItems="stretch" sx={{ px: 2 }}>
       <Typography
         variant="caption"
-        sx={{
-          color: captionColor,
+        sx={(theme) => ({
+          color: accentColor || theme.palette.text.secondary,
           fontStyle: "italic",
           textAlign: "center",
-        }}
+        })}
       >
         {caption}
       </Typography>
+      <Box
+        sx={(theme) => ({
+          borderTop: `3px solid ${accentColor || theme.palette.divider}`,
+          borderRadius: theme.typography.pxToRem(1),
+          width: "100%",
+        })}
+      />
       <Box
         sx={{
           display: "flex",

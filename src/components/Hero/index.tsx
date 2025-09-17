@@ -59,6 +59,8 @@ type StatusById = Map<string, PromiseStatus>;
 
 type StatusSummaryMap = Map<string, HeroStatusSummary>;
 
+type PromiseExtraction = NonNullable<PromiseDocument["extractions"]>[number];
+
 const FALLBACK_GROUP_DEFINITIONS = [
   {
     title: "Promise kept",
@@ -74,29 +76,21 @@ const FALLBACK_GROUP_DEFINITIONS = [
   },
 ];
 
-const pickLatestStatus = (
-  promiseDoc: PromiseDocument,
+const resolveExtractionStatus = (
+  extraction: PromiseExtraction,
   statusById: StatusById
 ): PromiseStatus | null => {
-  const extractions = promiseDoc.extractions ?? [];
-  for (let index = extractions.length - 1; index >= 0; index -= 1) {
-    const extraction = extractions[index];
-    const statusRef = extraction.Status;
-    if (!statusRef) {
-      continue;
-    }
+  const statusRef = extraction.Status;
 
-    if (typeof statusRef === "string") {
-      const status = statusById.get(statusRef);
-      if (status) {
-        return status;
-      }
-    } else {
-      return statusRef;
-    }
+  if (!statusRef) {
+    return null;
   }
 
-  return null;
+  if (typeof statusRef === "string") {
+    return statusById.get(statusRef) ?? null;
+  }
+
+  return statusRef;
 };
 
 const formatUpdatedAt = (date: string): string => {
@@ -237,26 +231,31 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
       })
     : { docs: [] };
 
-  const totalPromises = promiseDocs.length;
+  let totalExtractions = 0;
 
   for (const promiseDoc of promiseDocs) {
-    const status = pickLatestStatus(promiseDoc, statusById);
+    const extractions = promiseDoc.extractions ?? [];
 
-    if (!status) {
-      continue;
+    for (const extraction of extractions) {
+      const status = resolveExtractionStatus(extraction, statusById);
+
+      if (!status) {
+        continue;
+      }
+
+      const summary = statusSummaries.get(status.id);
+      if (!summary) {
+        continue;
+      }
+
+      summary.count += 1;
+      totalExtractions += 1;
     }
-
-    const summary = statusSummaries.get(status.id);
-    if (!summary) {
-      continue;
-    }
-
-    summary.count += 1;
   }
 
   statusSummaries.forEach((summary) => {
     summary.percentage =
-      totalPromises > 0 ? (summary.count / totalPromises) * 100 : 0;
+      totalExtractions > 0 ? (summary.count / totalExtractions) * 100 : 0;
   });
 
   const groups = buildChartGroups(block.chartGroups, statusSummaries);
@@ -277,8 +276,8 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
     ? `${profileTitleBase} ${entity.name}`.trim()
     : entity.name;
 
-  const copyPromiseLabel = block.promiseLabel?.trim() || "promises";
-  const copyTrailText = block.trailText?.trim() || "";
+  const copyPromiseLabel = block.promiseLabel?.trim() || "promises tracked";
+  const copyTrailText = block.trailText?.trim() || "tracked on PromiseTracker.";
   const statusListTitle = block.statusListTitle?.trim() || "Promise status definitions";
   const updatedAtLabel = block.updatedAtLabel?.trim() || "Last updated";
 
@@ -299,7 +298,7 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
       image: entityImage,
     },
     metrics: {
-      total: totalPromises,
+      total: totalExtractions,
       statuses: summaries,
       groups,
     },
