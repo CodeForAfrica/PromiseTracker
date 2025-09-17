@@ -1,12 +1,14 @@
+import { Page } from "@/payload-types";
 import { CollectionAfterReadHook } from "payload";
 
+type PageBlockType = NonNullable<Page["blocks"]>[0];
 const newsletterSettingsToBlock: CollectionAfterReadHook = async ({
   doc,
   req,
 }) => {
   if (doc.blocks && Array.isArray(doc.blocks)) {
     const processedBlocks = await Promise.all(
-      doc.blocks.map(async (block: any) => {
+      doc.blocks.map(async (block: PageBlockType) => {
         if (block.blockType === "newsletter") {
           try {
             const { docs } = await req.payload.find({
@@ -31,13 +33,13 @@ const newsletterSettingsToBlock: CollectionAfterReadHook = async ({
             };
           } catch (error) {
             req.payload.logger.error(
-              `Error fetching documents for Newsletter block: ${error}`,
+              `Error fetching documents for Newsletter block: ${error}`
             );
             return block;
           }
         }
         return block;
-      }),
+      })
     );
 
     return {

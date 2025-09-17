@@ -141,7 +141,7 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
               statusRelationId = statusRes.docs?.[0]?.id as string | undefined;
             } catch (e) {
               logger.warn(
-                `uploadToMeedan:: Could not resolve status ${returnedStatus} to a promise-status doc`
+                `uploadToMeedan:: Could not resolve status ${returnedStatus} to a promise-status doc. Error :${e}`
               );
             }
           }

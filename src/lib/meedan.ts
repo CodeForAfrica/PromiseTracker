@@ -92,8 +92,7 @@ export const fetchVerificationStatuses = async ({
 
   const json = (await response.json()) as VerificationStatusesResponse;
 
-  const statuses =
-    json?.data?.team?.verification_statuses?.statuses ?? ([] as any[]);
+  const statuses = json?.data?.team?.verification_statuses?.statuses ?? [];
 
   return statuses.map((s) => {
     const enLabel = s?.locales?.en?.label ?? s?.label ?? "";

@@ -95,7 +95,7 @@ export default function ActNow({
                   <CMSLink
                     label={link.label}
                     type={link.type}
-                    reference={link.reference as any}
+                    reference={link.reference}
                     url={link.url}
                     newTab={link.newTab}
                     entitySlug={entitySlug}
