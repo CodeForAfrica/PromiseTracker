@@ -18,3 +18,12 @@
 4. Update settings in admin
    [/admin/globals/settings]
 5. When testing multitenant app, use a domain that resolves to localhost, similar to `localtest.me`, for example `ken.localtest.me:3000`
+
+## Docker Image
+
+- Build the production image (bundles Apache Tika 3.2.3, no database services):
+  `docker build -t promisetracker:latest --build-arg DATABASE_URI="<build-time-database-uri>" .`
+- Run the container against an external database:
+  `docker run -p 3000:3000 -e DATABASE_URI="<your-database-uri>" -e PAYLOAD_SECRET="<secret>" promisetracker:latest`
+- The bundled Apache Tika server listens on `http://127.0.0.1:9998/`. Override `AX_APACHE_TIKA_URL`, `TIKA_PORT`, or `TIKA_ENABLED=0` if you prefer an external Tika service.
+- The Docker build uses build-time placeholders: `DATABASE_URI` defaults to `mongodb://127.0.0.1:27017/payload-build` and `PAYLOAD_SECRET` defaults to `docker-build-secret`. Override them with `--build-arg DATABASE_URI=... --build-arg PAYLOAD_SECRET=...` when running `docker build`. At runtime, always provide your production values via environment variables.
