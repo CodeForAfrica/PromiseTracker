@@ -4,7 +4,7 @@ import { headers as getHeaders } from "next/headers";
 export const getDomain = async () => {
   const headers = await getHeaders();
   const host = headers.get("host");
-  const isLocalhost = host?.includes("localhost");
+  const isLocalhost = host?.includes("localhost") ?? false;
 
   let baseDomain = host;
   let hostname: string | null = null;

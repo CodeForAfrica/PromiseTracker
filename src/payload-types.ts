@@ -104,10 +104,12 @@ export interface Config {
   };
   globals: {
     settings: Setting;
+    'home-page': HomePage;
     'payload-jobs-stats': PayloadJobsStat;
   };
   globalsSelect: {
     settings: SettingsSelect<false> | SettingsSelect<true>;
+    'home-page': HomePageSelect<false> | HomePageSelect<true>;
     'payload-jobs-stats': PayloadJobsStatsSelect<false> | PayloadJobsStatsSelect<true>;
   };
   locale: 'en' | 'fr';
@@ -1284,6 +1286,20 @@ export interface Setting {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "home-page".
+ */
+export interface HomePage {
+  id: string;
+  tenantSelector: {
+    title: string;
+    subtitle: string;
+    ctaLabel: string;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-jobs-stats".
  */
 export interface PayloadJobsStat {
@@ -1322,6 +1338,22 @@ export interface SettingsSelect<T extends boolean = true> {
     | {
         meedanAPIKey?: T;
         teamId?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "home-page_select".
+ */
+export interface HomePageSelect<T extends boolean = true> {
+  tenantSelector?:
+    | T
+    | {
+        title?: T;
+        subtitle?: T;
+        ctaLabel?: T;
       };
   updatedAt?: T;
   createdAt?: T;

@@ -1,23 +1,26 @@
 import React from "react";
 import NextLink from "next/link";
 import {
+  Avatar,
   Box,
   Card,
   CardContent,
+  Chip,
   Container,
-  Divider,
   List,
   ListItem,
+  ListItemAvatar,
   ListItemButton,
-  ListItemText,
+  Stack,
   Typography,
 } from "@mui/material";
-import type { PoliticalEntity, Tenant } from "@/payload-types";
+import type { Media, PoliticalEntity, Tenant } from "@/payload-types";
 
 type PoliticalEntityListProps = {
   tenant: Tenant;
   politicalEntities: PoliticalEntity[];
   pageSlugs?: string[];
+  extractionCounts?: Record<string, number>;
 };
 
 const buildHref = (entity: PoliticalEntity, pageSlugs: string[] = []) => {
@@ -33,66 +36,129 @@ const buildHref = (entity: PoliticalEntity, pageSlugs: string[] = []) => {
   return `/${segments.join("/")}`;
 };
 
+const resolveImage = (image: PoliticalEntity["image"]): Media | null => {
+  if (!image || typeof image === "string") return null;
+  return image as Media;
+};
+
 export const PoliticalEntityList = ({
   tenant,
   politicalEntities,
   pageSlugs = [],
+  extractionCounts = {},
 }: PoliticalEntityListProps) => {
   const hasEntities = politicalEntities.length > 0;
 
   return (
-    <Container component="section" sx={{ py: { xs: 4, md: 6 } }}>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h2" sx={{ mb: 0.5 }}>
-          {tenant.name}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
+    <Container component="section" sx={{ py: { xs: 6, md: 8 } }}>
+      <Stack spacing={2} sx={{ mb: { xs: 4, md: 5 } }}>
+        <Typography variant="body1">
           {hasEntities
-            ? "Select a political entity to continue."
+            ? "Choose a political entity to explore their campaign promises."
             : "No political entities are available for this tenant yet."}
         </Typography>
-      </Box>
+      </Stack>
 
-      {hasEntities && (
-        <Card variant="outlined" sx={{ borderRadius: 1 }}>
-          <CardContent sx={{ p: 0 }}>
-            <List disablePadding dense>
+      {hasEntities ? (
+        <Card variant="outlined" sx={{ borderRadius: 2 }}>
+          <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+            <List disablePadding sx={{ "& > * + *": { mt: 1 } }}>
               {politicalEntities.map((entity, index) => {
                 const href = buildHref(entity, pageSlugs);
+                const media = resolveImage(entity.image);
+                const extractionCount = extractionCounts[entity.id] ?? 0;
+                const initials = entity.name
+                  .split(" ")
+                  .slice(0, 2)
+                  .map((part) => part[0]?.toUpperCase())
+                  .join("");
 
                 return (
                   <React.Fragment key={entity.id}>
-                    <ListItem disablePadding>
+                    <ListItem disableGutters sx={{ alignItems: "stretch" }}>
                       <ListItemButton
                         component={NextLink}
                         href={href}
-                        sx={{ py: 1.25, px: { xs: 2, md: 2.5 } }}
+                        sx={{
+                          borderRadius: 2,
+                          "&:hover": {
+                            backgroundColor: "action.hover",
+                          },
+                        }}
                       >
-                        <ListItemText
-                          primary={entity.name}
-                          secondary={
-                            [entity.position, entity.region]
-                              .filter(Boolean)
-                              .join(" • ") || undefined
-                          }
-                          primaryTypographyProps={{
-                            variant: "h5",
-                            sx: { fontWeight: 600 },
-                          }}
-                          secondaryTypographyProps={{
-                            variant: "body2",
-                            color: "primary",
-                          }}
-                        />
+                        <Stack
+                          direction="row"
+                          spacing={2}
+                          alignItems="center"
+                          sx={{ width: "100%" }}
+                        >
+                          <ListItemAvatar sx={{ minWidth: "auto" }}>
+                            <Avatar
+                              src={media?.url ?? undefined}
+                              alt={media?.alt ?? entity.name}
+                              sx={{ width: 56, height: 56 }}
+                            >
+                              {initials || "?"}
+                            </Avatar>
+                          </ListItemAvatar>
+                          <Box flexGrow={1} minWidth={0}>
+                            <Typography
+                              variant="subtitle2"
+                              sx={{
+                                fontWeight: 600,
+                                textTransform: "uppercase",
+                              }}
+                            >
+                              {entity.position}
+                            </Typography>
+                            <Typography
+                              variant="h6"
+                              sx={{ fontWeight: 700, lineHeight: 1.2, mt: 0.5 }}
+                            >
+                              {entity.name}
+                            </Typography>
+                            {entity.region ? (
+                              <Typography variant="body2">
+                                {entity.region}
+                              </Typography>
+                            ) : null}
+                          </Box>
+                          <Chip
+                            label={`${extractionCount} promise${extractionCount === 1 ? "" : "s"}`}
+                            color={extractionCount > 0 ? "primary" : "default"}
+                            variant={
+                              extractionCount > 0 ? "filled" : "outlined"
+                            }
+                          />
+                        </Stack>
                       </ListItemButton>
                     </ListItem>
                     {index < politicalEntities.length - 1 ? (
-                      <Divider component="div" />
+                      <Box
+                        component="hr"
+                        sx={{
+                          border: 0,
+                          borderBottom: 1,
+                          borderColor: "divider",
+                          my: 1,
+                        }}
+                      />
                     ) : null}
                   </React.Fragment>
                 );
               })}
             </List>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card variant="outlined">
+          <CardContent>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              No political entities have been published yet
+            </Typography>
+            <Typography variant="body2">
+              Check back soon for newly tracked leaders and their promises.
+            </Typography>
           </CardContent>
         </Card>
       )}

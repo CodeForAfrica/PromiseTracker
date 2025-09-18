@@ -10,7 +10,10 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { PoliticalEntityList } from "@/components/PoliticalEntityList";
 import { getTenantBySubDomain, getTenantNavigation } from "@/lib/data/tenants";
-import { getPoliticalEntitiesByTenant } from "@/lib/data/politicalEntities";
+import {
+  getPoliticalEntitiesByTenant,
+  getExtractionCountsForEntities,
+} from "@/lib/data/politicalEntities";
 
 type Args = {
   params: Promise<{
@@ -46,6 +49,9 @@ export default async function Page(params: Args) {
 
   if (!politicalEntity) {
     const fallbackPageSlugs = slugs.length > 0 ? slugs : ["index"];
+    const extractionCounts = await getExtractionCountsForEntities(
+      politicalEntities.map((entity) => entity.id),
+    );
 
     return (
       <>
@@ -54,6 +60,7 @@ export default async function Page(params: Args) {
           tenant={tenant}
           politicalEntities={politicalEntities}
           pageSlugs={fallbackPageSlugs}
+          extractionCounts={extractionCounts}
         />
         <Footer title={title} description={description} {...footer} />
       </>
