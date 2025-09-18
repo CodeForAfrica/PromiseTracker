@@ -1,20 +1,17 @@
 "use server";
 import type { Media } from "@/payload-types";
-import type { BasePayload } from "payload";
+import { getGlobalPayload } from "@/lib/payload";
 
 type ResolvedMedia = {
   url: string;
   alt: string;
 };
 
-/**
- * Resolve a media relationship into a usable URL + alt pair.
- * Returns null when the media record cannot be found or is missing a URL.
- */
 export const resolveMedia = async (
-  payload: BasePayload,
   media: string | Media | null | undefined
 ): Promise<ResolvedMedia | null> => {
+  const payload = await getGlobalPayload();
+
   if (!media) {
     return null;
   }

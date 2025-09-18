@@ -4,7 +4,9 @@ import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { Media } from "@/payload-types";
 
-const tika = new AxApacheTika();
+const tika = new AxApacheTika({
+  url: process.env.AX_APACHE_TIKA_URL ?? "http://127.0.0.1:9998/",
+});
 
 export function cleanText(text: string): string {
   return text

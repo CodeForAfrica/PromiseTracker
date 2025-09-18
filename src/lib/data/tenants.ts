@@ -13,6 +13,7 @@ export const getAllTenants = async () => {
   const { docs } = await payload.find({
     collection: "tenants",
     limit: -1,
+    sort: "name",
   });
 
   return docs;

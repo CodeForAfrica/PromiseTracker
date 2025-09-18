@@ -1,11 +1,12 @@
-import { Container } from "@mui/material";
 import { TenantList } from "./TenantList";
+import { Box, Container } from "@mui/material";
 
-// TODO: (@kelvinkipruto): This should be configured from Payload
 export const CommonHomePage = async () => {
   return (
-    <Container>
-      <TenantList />
-    </Container>
+    <Box component="main" sx={{ bgcolor: "background.default" }}>
+      <Container maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
+        <TenantList />
+      </Container>
+    </Box>
   );
 };

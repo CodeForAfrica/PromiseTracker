@@ -103,10 +103,12 @@ export interface Config {
     defaultIDType: string;
   };
   globals: {
+    'home-page': HomePage;
     settings: Setting;
     'payload-jobs-stats': PayloadJobsStat;
   };
   globalsSelect: {
+    'home-page': HomePageSelect<false> | HomePageSelect<true>;
     settings: SettingsSelect<false> | SettingsSelect<true>;
     'payload-jobs-stats': PayloadJobsStatsSelect<false> | PayloadJobsStatsSelect<true>;
   };
@@ -1286,6 +1288,25 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "home-page".
+ */
+export interface HomePage {
+  id: string;
+  tenantSelector: {
+    title: string;
+    subtitle: string;
+    ctaLabel: string;
+    emptyListLabel: string;
+  };
+  entitySelector: {
+    emptyTitle: string;
+    EmptySubtitle: string;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "settings".
  */
 export interface Setting {
@@ -1322,6 +1343,29 @@ export interface PayloadJobsStat {
     | null;
   updatedAt?: string | null;
   createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "home-page_select".
+ */
+export interface HomePageSelect<T extends boolean = true> {
+  tenantSelector?:
+    | T
+    | {
+        title?: T;
+        subtitle?: T;
+        ctaLabel?: T;
+        emptyListLabel?: T;
+      };
+  entitySelector?:
+    | T
+    | {
+        emptyTitle?: T;
+        EmptySubtitle?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
