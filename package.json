@@ -33,6 +33,7 @@
     "@mui/utils": "^7.3.2",
     "@next/third-parties": "^15.5.3",
     "@payloadcms/db-mongodb": "3.56.0",
+    "@payloadcms/email-nodemailer": "^3.56.0",
     "@payloadcms/next": "3.56.0",
     "@payloadcms/payload-cloud": "3.56.0",
     "@payloadcms/plugin-cloud-storage": "^3.56.0",
