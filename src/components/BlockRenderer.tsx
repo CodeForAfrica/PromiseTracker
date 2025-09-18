@@ -1,22 +1,25 @@
 import ActNow from "@/blocks/ActNow/Component";
-import { Page } from "@/payload-types";
+import { Page, PoliticalEntity } from "@/payload-types";
 import { Fragment } from "react";
 import Newsletter from "./Newsletter";
 import Partners from "./Partners";
 import LatestPromises from "./LatestPromises";
+import { Hero } from "./Hero";
 
 type BlockProps = {
   blocks: Page["blocks"];
+  entity?: PoliticalEntity;
 };
 
 const blockComponents = {
+  "act-now": ActNow,
+  hero: Hero,
   newsletter: Newsletter,
   partners: Partners,
-  "act-now": ActNow,
   "latest-promises": LatestPromises,
 };
 
-export const BlockRenderer = ({ blocks: b }: BlockProps) => {
+export const BlockRenderer = ({ blocks: b, entity }: BlockProps) => {
   const blocks = [
     ...b,
     {
@@ -75,7 +78,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer euismod odio no
               return (
                 <div key={index}>
                   {/* @ts-expect-error there may be some mismatch between the expected types here */}
-                  <Block {...block} />
+                  <Block {...block} entitySlug={entity?.slug} />
                 </div>
               );
             }

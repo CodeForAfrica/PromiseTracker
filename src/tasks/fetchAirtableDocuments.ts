@@ -1,10 +1,6 @@
 import { TaskConfig } from "payload";
 import { getUnprocessedDocuments } from "@/lib/airtable";
-
-const LANGUAGE_MAP: Record<string, "en" | "fr"> = {
-  English: "en",
-  French: "fr",
-};
+import { LANGUAGE_MAP } from "@/utils/locales";
 
 export const FetchAirtableDocuments: TaskConfig<"fetchAirtableDocuments"> = {
   retries: 2,
@@ -13,7 +9,7 @@ export const FetchAirtableDocuments: TaskConfig<"fetchAirtableDocuments"> = {
   handler: async ({ req: { payload } }) => {
     const { logger } = payload;
     logger.info(
-      "fetchAirtableDocuments:: Starting fetching documents from Airtable",
+      "fetchAirtableDocuments:: Starting fetching documents from Airtable"
     );
 
     const {
@@ -24,7 +20,7 @@ export const FetchAirtableDocuments: TaskConfig<"fetchAirtableDocuments"> = {
 
     if (!airtableAPIKey || !airtableBaseID) {
       logger.error(
-        "fetchAirtableDocuments:: Airtable API Key and Base ID not configured",
+        "fetchAirtableDocuments:: Airtable API Key and Base ID not configured"
       );
       throw new Error("Airtable API key or Base ID not found in settings");
     }
@@ -40,11 +36,11 @@ export const FetchAirtableDocuments: TaskConfig<"fetchAirtableDocuments"> = {
       }
 
       logger.info(
-        `fetchAirtableDocuments:: Unprocessed Documents: ${unProcessedDocuments.length}`,
+        `fetchAirtableDocuments:: Unprocessed Documents: ${unProcessedDocuments.length}`
       );
 
       const validUnprocessedDocuments = unProcessedDocuments.filter(
-        (doc) => doc.name && (doc.uRL || doc.document.length > 0),
+        (doc) => doc.name && (doc.uRL || doc.documents.length > 0)
       );
 
       const { docs: existingDocs } = await payload.find({
@@ -58,7 +54,7 @@ export const FetchAirtableDocuments: TaskConfig<"fetchAirtableDocuments"> = {
 
       const docsToCreate = validUnprocessedDocuments.filter(
         (doc) =>
-          !existingDocs.find((existing) => existing.airtableID === doc.id),
+          !existingDocs.find((existing) => existing.airtableID === doc.id)
       );
 
       if (docsToCreate.length === 0) {
@@ -66,28 +62,35 @@ export const FetchAirtableDocuments: TaskConfig<"fetchAirtableDocuments"> = {
         return { output: {} };
       }
 
+      const { docs: entities } = await payload.find({
+        collection: "political-entities",
+        limit: -1,
+        depth: 2,
+      });
+
       const createdDocs = await Promise.all(
         docsToCreate.map(async (doc) => {
-          return payload.create({
+          const entity = entities.find(
+            (t) => t.airtableID === doc.politicalEntity[0]
+          );
+          return await payload.create({
             collection: "documents",
             data: {
               title: doc.name || doc.id,
-              politicalEntity: doc.politician,
-              country: doc.country,
-              region: doc.region,
+              politicalEntity: entity,
               language: LANGUAGE_MAP[doc?.language || ""] || "",
               type: doc.type?.toLowerCase() as "promise" | "evidence",
-              yearFrom: doc.yearFrom,
-              yearTo: doc.yearTo,
               airtableID: doc.id,
               url: doc.uRL,
-              docURL: doc.document[0],
+              docURLs: doc.documents.map((t) => ({
+                url: t,
+              })),
             },
           });
-        }),
+        })
       );
       logger.info(
-        `fetchAirtableDocuments:: Created ${createdDocs.length} new documents`,
+        `fetchAirtableDocuments:: Created ${createdDocs.length} new documents`
       );
       return {
         output: {},
@@ -95,7 +98,7 @@ export const FetchAirtableDocuments: TaskConfig<"fetchAirtableDocuments"> = {
     } catch (error) {
       logger.error(
         "fetchAirtableDocuments:: Error Fetching Document from AIrtable",
-        { error },
+        { error }
       );
       throw error;
     }

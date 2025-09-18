@@ -5,6 +5,7 @@ import Partners from "@/blocks/Partners";
 import Newsletter from "@/blocks/Newsletter";
 import { slugField } from "@/fields/slug";
 import { ActNow } from "@/blocks/ActNow";
+import { Hero } from "@/blocks/Hero";
 
 export const Pages: CollectionConfig = {
   slug: "pages",
@@ -39,7 +40,7 @@ export const Pages: CollectionConfig = {
     {
       name: "blocks",
       type: "blocks",
-      blocks: [ActNow, Newsletter, Partners],
+      blocks: [ActNow, Hero, Newsletter, Partners],
     },
   ],
   hooks: {

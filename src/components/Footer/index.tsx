@@ -20,6 +20,7 @@ type Props = {
   legal: LegalLinks;
   description: SiteSetting["description"];
   title: string;
+  entitySlug?: string;
 };
 
 export default function Footer({
@@ -30,6 +31,7 @@ export default function Footer({
   legal,
   title,
   description,
+  entitySlug,
 }: Props) {
   const theme = useTheme();
   const secondaryLogoSrc = secondaryLogo?.url || null;
@@ -125,6 +127,7 @@ export default function Footer({
                     <Box component="li" key={`${index}-${m.label}`} sx={{ mt: 1 }}>
                       <CMSLink
                         {...m}
+                        entitySlug={entitySlug}
                         sx={{
                           typography: "h6",
                           color: theme.palette.secondary.dark,
@@ -272,6 +275,7 @@ export default function Footer({
                       >
                         <CMSLink
                           {...l}
+                          entitySlug={entitySlug}
                           sx={{
                             typography: "button",
                             textTransform: "uppercase",

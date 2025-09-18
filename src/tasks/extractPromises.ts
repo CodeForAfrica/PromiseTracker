@@ -4,13 +4,13 @@ import { generateObject } from "ai";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
 
-export const AIExtractor: TaskConfig<"aiExtractor"> = {
-  slug: "aiExtractor",
-  label: "AI Extractor",
+export const ExtractPromises: TaskConfig<"extractPromises"> = {
+  slug: "extractPromises",
+  label: "Extract Promises",
   handler: async ({ req }) => {
     const { payload } = req;
     const { logger } = payload;
-    logger.info("aiExtractor:: Starting AI Extraction");
+    logger.info("extractPromises:: Starting promise extraction");
 
     try {
       const {
@@ -60,30 +60,37 @@ export const AIExtractor: TaskConfig<"aiExtractor"> = {
       const documents = allDocs.filter((doc) => !doc.fullyProcessed);
 
       if (documents.length === 0) {
-        logger.info("aiExtractor:: No documents to Extract Promises");
+        logger.info("extractPromises:: No documents to extract promises from");
         return { output: { docs: [] } };
       }
 
-      logger.info(`aiExtractor:: Extracting ${documents.length} documents`);
+      logger.info(`extractPromises:: Extracting ${documents.length} documents`);
 
       const processedDocs = [];
 
       for (const document of documents) {
         const { extractedText } = document;
 
-        const plainText = extractedText?.root.children
-          .map((item) => {
-            if (item.type === "paragraph") {
-              return (item.children as Array<any>)
-                .map((child: any) => (child.type === "text" ? child.text : ""))
-                .join("");
-            }
-            return "";
+        const plainText = extractedText
+          ?.map((t) => {
+            const ff = t.text?.root.children
+              .map((s) => {
+                if (s.type === "paragraph") {
+                  return (s.children as Array<any>)
+                    .map((child: any) =>
+                      child.type === "text" ? child.text : ""
+                    )
+                    .join("");
+                }
+                return "";
+              })
+              .join("\n");
+            return ff;
           })
           .join("\n");
 
         if (!plainText || plainText?.length === 0) {
-          logger.error("aiExtractor:: No text to process");
+          logger.error("extractPromises:: No text to process");
           continue;
         }
 
@@ -96,7 +103,7 @@ export const AIExtractor: TaskConfig<"aiExtractor"> = {
               title: z
                 .string()
                 .describe(
-                  "Inferred title from the document content, or the provided document title as fallback",
+                  "Inferred title from the document content, or the provided document title as fallback"
                 ),
               promises: z.array(
                 z.object({
@@ -109,9 +116,9 @@ export const AIExtractor: TaskConfig<"aiExtractor"> = {
                   source: z
                     .array(z.string())
                     .describe(
-                      "Array of direct quotations from the text that support this promise",
+                      "Array of direct quotations from the text that support this promise"
                     ),
-                }),
+                })
               ),
             }),
             maxRetries: 5,
@@ -123,7 +130,7 @@ export const AIExtractor: TaskConfig<"aiExtractor"> = {
 
           if (object.promises.length > 0) {
             await payload.create({
-              collection: "aiExtraction",
+              collection: "promises",
               data: {
                 title: object.title,
                 document: document,
@@ -154,13 +161,13 @@ export const AIExtractor: TaskConfig<"aiExtractor"> = {
           });
         } catch (error) {
           console.log("Error::", { error });
-          logger.error("aiExtractor:: Error generating AI Response::", {
+          logger.error("extractPromises:: Error generating AI Response::", {
             error,
           });
         }
       }
 
-      logger.info(`aiExtractor:: Extracted ${processedDocs.length} documents`);
+      logger.info(`extractPromises:: Extracted ${processedDocs.length} documents`);
 
       return {
         output: {},

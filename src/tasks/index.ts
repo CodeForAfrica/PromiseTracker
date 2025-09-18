@@ -2,13 +2,21 @@ import { TaskConfig } from "payload";
 import { FetchAirtableDocuments } from "./fetchAirtableDocuments";
 import { DownloadDocuments } from "./downloadDocuments";
 import { ExtractDocuments } from "./extractDocuments";
-import { AIExtractor } from "./aiExtractor";
+import { ExtractPromises } from "./extractPromises";
 import { UploadToMeedan } from "./uploadToMeedan";
+import { CreateTenantFromAirtable } from "./createTenant";
+import { CreatePoliticalEntity } from "./createPoliticalEntity";
+import { FetchPromiseStatuses } from "./fetchMeedanPromiseStatus";
+import { UpdatePromiseStatus } from "./updatePromiseStatus";
 
 export const tasks: TaskConfig[] = [
+  CreateTenantFromAirtable,
   FetchAirtableDocuments,
   DownloadDocuments,
   ExtractDocuments,
-  AIExtractor,
+  ExtractPromises,
   UploadToMeedan,
+  CreatePoliticalEntity,
+  FetchPromiseStatuses,
+  UpdatePromiseStatus,
 ];

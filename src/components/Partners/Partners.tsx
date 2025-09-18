@@ -4,21 +4,22 @@ import { Grid, Container, Box, Typography } from "@mui/material";
 import Image from "next/image";
 import { CMSLink } from "@/components/CMSLink";
 import React from "react";
-import { UrlObject } from "url";
+import type { Partner as PartnerType } from "@/payload-types";
 
 interface Props {
   partners: Array<{
     name: string;
-    url: UrlObject;
+    url: PartnerType["url"];
     image: {
       url: string;
       alt?: string;
     };
   }>;
   title: string;
+  entitySlug?: string;
 }
 const Partners = React.forwardRef<HTMLDivElement, Props>(function Partners(
-  { partners, title },
+  { partners, title, entitySlug },
   ref,
 ) {
   if (!partners?.length) {
@@ -42,15 +43,7 @@ const Partners = React.forwardRef<HTMLDivElement, Props>(function Partners(
                 lg: "space-between",
               }}
             >
-              {partners.slice(0, 6).map(
-                (partner: {
-                  name: string;
-                  url: UrlObject;
-                  image: {
-                    url: string;
-                    alt?: string;
-                  };
-                }) => (
+              {partners.slice(0, 6).map((partner) => (
                   <Grid
                     key={partner.name}
                     size={{
@@ -58,7 +51,11 @@ const Partners = React.forwardRef<HTMLDivElement, Props>(function Partners(
                       lg: "auto",
                     }}
                   >
-                    <CMSLink {...partner.url} label={""}>
+                    <CMSLink
+                      {...partner.url}
+                      label={""}
+                      entitySlug={entitySlug}
+                    >
                       <Box
                         sx={{
                           height: { xs: 126.56, lg: 120 },

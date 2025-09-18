@@ -20,9 +20,10 @@ import type { MenuLink } from "@/types/navigation";
 
 type MobileMenuProps = {
   menus: MenuLink[];
+  entitySlug?: string;
 };
 
-export function MobileMenu({ menus }: MobileMenuProps) {
+export function MobileMenu({ menus, entitySlug }: MobileMenuProps) {
   const theme = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const toggleMobile = () => setMobileOpen((o) => !o);
@@ -97,6 +98,7 @@ export function MobileMenu({ menus }: MobileMenuProps) {
                   >
                     <CMSLink
                       {...m}
+                      entitySlug={entitySlug}
                       label=""
                       sx={{
                         display: "block",

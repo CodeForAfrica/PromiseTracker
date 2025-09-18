@@ -7,6 +7,7 @@ type CMSLinkType = {
   children?: React.ReactNode;
   label?: string;
   newTab?: boolean | null;
+  entitySlug?: string;
   reference?: {
     relationTo: "pages";
     value: Page | string | number;
@@ -18,7 +19,16 @@ type CMSLinkType = {
 };
 
 export const CMSLink: React.FC<CMSLinkType> = (props) => {
-  const { type, children, label, newTab = false, reference, url, sx } = props;
+  const {
+    type,
+    children,
+    label,
+    newTab = false,
+    reference,
+    url,
+    sx,
+    entitySlug,
+  } = props;
 
   const getHref = () => {
     if (
@@ -28,7 +38,14 @@ export const CMSLink: React.FC<CMSLinkType> = (props) => {
     ) {
       switch (reference.relationTo) {
         case "pages":
-          return `/${reference.value.slug}`;
+          {
+            const pageSlug = reference.value.slug === "index" ? "" : reference.value.slug;
+            const segments = [entitySlug, pageSlug].filter(Boolean);
+            if (segments.length === 0) {
+              return "/";
+            }
+            return `/${segments.join("/")}`;
+          }
         default:
           return "";
       }
