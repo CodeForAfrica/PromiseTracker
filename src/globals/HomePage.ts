@@ -14,13 +14,6 @@ export const HomePage: GlobalConfig = {
   },
   fields: [
     {
-      name: "title",
-      type: "text",
-      admin: {
-        hidden: true,
-      },
-    },
-    {
       type: "tabs",
       tabs: [
         {

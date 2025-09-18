@@ -2,7 +2,7 @@ name: Promise Tracker | Deploy | Dev
 
 on:
   push:
-    branches: [main, "ft/docker-image"]
+    branches: [main]
 
 concurrency:
   group: "${{ github.workflow }} @ ${{ github.ref }}"
