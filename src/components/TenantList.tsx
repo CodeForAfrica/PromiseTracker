@@ -4,7 +4,7 @@ import { Card, List, ListItem, Link, Typography } from "@mui/material";
 
 export const TenantList = async () => {
   const payload = await getGlobalPayload();
-  const { port, isLocalhost, baseDomain } = await getDomain();
+  const { port, isLocalhost, baseDomain, hostname } = await getDomain();
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
 
   const { docs: tenants } = await payload.find({
@@ -22,37 +22,31 @@ export const TenantList = async () => {
     }
 
     let protocol = "https";
-    let host: string | null = null;
-    let portSuffix = "";
+    let host: string | null = hostname;
 
     if (appUrl) {
       try {
         const parsed = new URL(appUrl);
         protocol = parsed.protocol.replace(/:$/, "") || protocol;
-        host = parsed.hostname;
-        portSuffix = parsed.port ? `:${parsed.port}` : "";
-        if (host === "localhost" && baseDomain) {
-          const [baseHost, basePort] = baseDomain.split(":");
-          host = baseHost || host;
-          portSuffix = basePort ? `:${basePort}` : portSuffix;
-        }
+        host = host ?? parsed.hostname;
       } catch {
         // Fall back to request host information
       }
     }
 
     if (!host && baseDomain) {
-      const [baseHost, basePort] = baseDomain.split(":");
+      const [baseHost] = baseDomain.split(":");
       host = baseHost || null;
-      portSuffix = basePort ? `:${basePort}` : "";
-      if (host?.includes("localhost")) {
-        protocol = "http";
-      }
+    }
+
+    if (host?.includes("localhost")) {
+      // If upstream host is still localhost assume http
+      protocol = "http";
     }
 
     if (!host) return null;
 
-    return `${protocol}://${subdomain}.${host}${portSuffix}`;
+    return `${protocol}://${subdomain}.${host}`;
   };
 
   return (

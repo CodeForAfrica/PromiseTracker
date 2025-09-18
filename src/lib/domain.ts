@@ -7,6 +7,7 @@ export const getDomain = async () => {
   const isLocalhost = host?.includes("localhost");
 
   let baseDomain = host;
+  let hostname: string | null = null;
   let port = "";
 
   if (host) {
@@ -15,6 +16,8 @@ export const getDomain = async () => {
     if (hostParts.length > 1) {
       port = `:${hostParts[1]}`;
     }
+
+    hostname = hostParts[0] || null;
 
     // Extract base domain without subdomain
     const domainParts = hostParts[0].split(".");
@@ -34,5 +37,5 @@ export const getDomain = async () => {
     }
   }
 
-  return { isLocalhost, baseDomain, port, subdomain };
+  return { isLocalhost, baseDomain, port, subdomain, hostname };
 };
