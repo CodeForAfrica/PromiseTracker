@@ -1290,10 +1290,16 @@ export interface Setting {
  */
 export interface HomePage {
   id: string;
+  title?: string | null;
   tenantSelector: {
     title: string;
     subtitle: string;
     ctaLabel: string;
+    emptyListLabel: string;
+  };
+  entitySelector: {
+    emptyTitle: string;
+    EmptySubtitle: string;
   };
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -1348,12 +1354,20 @@ export interface SettingsSelect<T extends boolean = true> {
  * via the `definition` "home-page_select".
  */
 export interface HomePageSelect<T extends boolean = true> {
+  title?: T;
   tenantSelector?:
     | T
     | {
         title?: T;
         subtitle?: T;
         ctaLabel?: T;
+        emptyListLabel?: T;
+      };
+  entitySelector?:
+    | T
+    | {
+        emptyTitle?: T;
+        EmptySubtitle?: T;
       };
   updatedAt?: T;
   createdAt?: T;

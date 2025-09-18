@@ -3,7 +3,6 @@ import React, { Suspense } from "react";
 import { queryPageBySlug } from "@/lib/payload";
 import { notFound } from "next/navigation";
 import { getDomain } from "@/lib/domain";
-import { LocalhostWarning } from "@/components/LocalhostWarning";
 import { CommonHomePage } from "@/components/CommonHomePage";
 import { BlockRenderer } from "@/components/BlockRenderer";
 import Navigation from "@/components/Navigation";
@@ -22,11 +21,7 @@ type Args = {
 };
 
 export default async function Page(params: Args) {
-  const { isLocalhost, subdomain } = await getDomain();
-
-  if (isLocalhost) {
-    return <LocalhostWarning />;
-  }
+  const { subdomain } = await getDomain();
 
   const tenant = await getTenantBySubDomain(subdomain);
 
@@ -44,13 +39,13 @@ export default async function Page(params: Args) {
   const politicalEntities = await getPoliticalEntitiesByTenant(tenant);
 
   const politicalEntity = politicalEntities.find(
-    (entity) => entity.slug === maybePoliticalEntitySlug,
+    (entity) => entity.slug === maybePoliticalEntitySlug
   );
 
   if (!politicalEntity) {
     const fallbackPageSlugs = slugs.length > 0 ? slugs : ["index"];
     const extractionCounts = await getExtractionCountsForEntities(
-      politicalEntities.map((entity) => entity.id),
+      politicalEntities.map((entity) => entity.id)
     );
 
     return (

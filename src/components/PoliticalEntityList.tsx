@@ -14,7 +14,9 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import type { Media, PoliticalEntity, Tenant } from "@/payload-types";
+import type { PoliticalEntity, Tenant } from "@/payload-types";
+import { getGlobalPayload } from "@/lib/payload";
+import { resolveMedia } from "@/lib/data/media";
 
 type PoliticalEntityListProps = {
   tenant: Tenant;
@@ -36,36 +38,28 @@ const buildHref = (entity: PoliticalEntity, pageSlugs: string[] = []) => {
   return `/${segments.join("/")}`;
 };
 
-const resolveImage = (image: PoliticalEntity["image"]): Media | null => {
-  if (!image || typeof image === "string") return null;
-  return image as Media;
-};
-
-export const PoliticalEntityList = ({
-  tenant,
+export const PoliticalEntityList = async ({
   politicalEntities,
   pageSlugs = [],
   extractionCounts = {},
 }: PoliticalEntityListProps) => {
   const hasEntities = politicalEntities.length > 0;
 
+  const payload = await getGlobalPayload();
+
+  const { entitySelector } = await payload.findGlobal({
+    slug: "home-page",
+  });
+
   return (
     <Container component="section" sx={{ py: { xs: 6, md: 8 } }}>
-      <Stack spacing={2} sx={{ mb: { xs: 4, md: 5 } }}>
-        <Typography variant="body1">
-          {hasEntities
-            ? "Choose a political entity to explore their campaign promises."
-            : "No political entities are available for this tenant yet."}
-        </Typography>
-      </Stack>
-
       {hasEntities ? (
         <Card variant="outlined" sx={{ borderRadius: 2 }}>
           <CardContent sx={{ p: { xs: 2, md: 3 } }}>
             <List disablePadding sx={{ "& > * + *": { mt: 1 } }}>
-              {politicalEntities.map((entity, index) => {
+              {politicalEntities.map(async (entity, index) => {
                 const href = buildHref(entity, pageSlugs);
-                const media = resolveImage(entity.image);
+                const media = await resolveMedia(entity.image);
                 const extractionCount = extractionCounts[entity.id] ?? 0;
                 const initials = entity.name
                   .split(" ")
@@ -154,10 +148,10 @@ export const PoliticalEntityList = ({
         <Card variant="outlined">
           <CardContent>
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              No political entities have been published yet
+              {entitySelector.emptyTitle}
             </Typography>
             <Typography variant="body2">
-              Check back soon for newly tracked leaders and their promises.
+              {entitySelector.EmptySubtitle}
             </Typography>
           </CardContent>
         </Card>

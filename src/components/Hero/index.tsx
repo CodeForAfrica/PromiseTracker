@@ -263,11 +263,11 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
 
   const groups = buildChartGroups(block.chartGroups, statusSummaries);
 
-  const summaries: HeroStatusSummary[] = Array.from(statusSummaries.values()).map(
-    (summary) => ({ ...summary })
-  );
+  const summaries: HeroStatusSummary[] = Array.from(
+    statusSummaries.values()
+  ).map((summary) => ({ ...summary }));
 
-  const entityImage = await resolveMedia(payload, entity.image);
+  const entityImage = await resolveMedia(entity.image);
 
   const taglineText = block.tagline?.trim();
   const headline = {
@@ -283,7 +283,8 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
 
   const copyPromiseLabel = block.promiseLabel?.trim() || "promises tracked";
   const copyTrailText = block.trailText?.trim() || "tracked on PromiseTracker.";
-  const statusListTitle = block.statusListTitle?.trim() || "Promise status definitions";
+  const statusListTitle =
+    block.statusListTitle?.trim() || "Promise status definitions";
   const updatedAtLabel = block.updatedAtLabel?.trim() || "Last updated";
 
   const resolvedData: HeroResolvedData = {

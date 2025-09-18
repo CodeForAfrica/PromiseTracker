@@ -15,6 +15,7 @@ import {
   ListItemText,
   Typography,
 } from "@mui/material";
+import { getGlobalPayload } from "@/lib/payload";
 
 export type TenantLink = {
   id: string;
@@ -88,32 +89,37 @@ export const getTenantLinks = async (): Promise<TenantLink[]> => {
 };
 
 type TenantListProps = {
-  items?: TenantLink[];
   dense?: boolean;
-  title?: string;
-  subtitle?: string;
 };
 
-export const TenantList = async ({
-  items,
-  dense = false,
-  title = "Available Tenants",
-  subtitle = "Open a tenant site to explore its promises",
-}: TenantListProps) => {
-  const tenantLinks = items ?? (await getTenantLinks());
+export const TenantList = async ({ dense = false }: TenantListProps) => {
+  const tenantLinks = await getTenantLinks();
+  const payload = await getGlobalPayload();
+
+  const { tenantSelector } = await payload.findGlobal({
+    slug: "home-page",
+  });
 
   if (tenantLinks.length === 0) {
-    return null;
+    return (
+      <Card>
+        <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+          <Typography variant="body1">
+            {tenantSelector.emptyListLabel}
+          </Typography>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
     <Card variant="outlined" sx={{ borderRadius: 2 }}>
       <CardContent sx={{ p: { xs: 2, md: 3 } }}>
         <Typography variant="h5" sx={{ fontWeight: 600 }}>
-          {title}
+          {tenantSelector.title}
         </Typography>
         <Typography variant="body2" sx={{ mb: 3 }}>
-          {subtitle}
+          {tenantSelector.subtitle}
         </Typography>
         <List disablePadding dense={dense}>
           {tenantLinks.map((tenant, index) => {
@@ -156,7 +162,7 @@ export const TenantList = async ({
                     href={tenant.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    label="Visit"
+                    label={tenantSelector.ctaLabel}
                     clickable
                     color="primary"
                     sx={{ ml: 2 }}

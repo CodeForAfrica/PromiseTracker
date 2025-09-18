@@ -14,6 +14,13 @@ export const HomePage: GlobalConfig = {
   },
   fields: [
     {
+      name: "title",
+      type: "text",
+      admin: {
+        hidden: true,
+      },
+    },
+    {
       type: "tabs",
       tabs: [
         {
@@ -60,6 +67,52 @@ export const HomePage: GlobalConfig = {
                     fr: "Libellé du CTA",
                   },
                   defaultValue: "Open tenant site",
+                },
+                {
+                  name: "emptyListLabel",
+                  type: "text",
+                  required: true,
+                  label: {
+                    en: "Empty Tenant List Label",
+                    fr: "Étiquette de liste de locataires vide",
+                  },
+                  defaultValue: "No tenants created yet",
+                },
+              ],
+            },
+          ],
+        },
+        {
+          label: {
+            en: "Entity Selector",
+            fr: "Sélecteur d'entité",
+          },
+          fields: [
+            {
+              name: "entitySelector",
+              type: "group",
+              fields: [
+                {
+                  name: "emptyTitle",
+                  type: "text",
+                  required: true,
+                  label: {
+                    en: "Empty List Title",
+                    fr: "Titre de la liste vide",
+                  },
+                  defaultValue:
+                    "No political entities have been published yet for this tenant",
+                },
+                {
+                  name: "EmptySubtitle",
+                  type: "textarea",
+                  required: true,
+                  label: {
+                    en: "Empty List Subtitle",
+                    fr: "Sous-titre de la liste vide",
+                  },
+                  defaultValue:
+                    "Check back soon for newly tracked leaders and their promises.",
                 },
               ],
             },
