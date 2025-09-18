@@ -1,7 +1,7 @@
 {
-  "name": "promisetracker2",
-  "version": "1.0.0",
-  "description": "A blank template to get started with Payload 3.0",
+  "name": "promisetracker",
+  "version": "2.0.0",
+  "description": "PromiseTracker V2 App",
   "license": "MIT",
   "type": "module",
   "scripts": {
@@ -32,14 +32,17 @@
     "@mui/material-nextjs": "^7.3.2",
     "@mui/utils": "^7.3.2",
     "@next/third-parties": "^15.5.3",
-    "@payloadcms/db-mongodb": "3.55.1",
-    "@payloadcms/next": "3.55.1",
-    "@payloadcms/payload-cloud": "3.55.1",
-    "@payloadcms/plugin-multi-tenant": "^3.55.1",
-    "@payloadcms/plugin-sentry": "^3.55.1",
-    "@payloadcms/richtext-lexical": "3.55.1",
-    "@payloadcms/translations": "^3.55.1",
-    "@payloadcms/ui": "3.55.1",
+    "@payloadcms/db-mongodb": "3.56.0",
+    "@payloadcms/email-nodemailer": "^3.56.0",
+    "@payloadcms/next": "3.56.0",
+    "@payloadcms/payload-cloud": "3.56.0",
+    "@payloadcms/plugin-cloud-storage": "^3.56.0",
+    "@payloadcms/plugin-multi-tenant": "^3.56.0",
+    "@payloadcms/plugin-sentry": "^3.56.0",
+    "@payloadcms/richtext-lexical": "3.56.0",
+    "@payloadcms/storage-s3": "^3.56.0",
+    "@payloadcms/translations": "^3.56.0",
+    "@payloadcms/ui": "3.56.0",
     "@sentry/nextjs": "^10.6.0",
     "@svgr/webpack": "^8.1.0",
     "ai": "^5.0.26",
@@ -52,7 +55,7 @@
     "graphql": "^16.11.0",
     "lucide-react": "^0.542.0",
     "next": "15.4.7",
-    "payload": "3.55.1",
+    "payload": "3.56.0",
     "react": "19.1.1",
     "react-share": "^5.2.2",
     "require-in-the-middle": "^7.5.2",
@@ -91,5 +94,5 @@
       "unrs-resolver"
     ]
   },
-  "packageManager": "pnpm@10.16.1+sha512.0e155aa2629db8672b49e8475da6226aa4bdea85fdcdfdc15350874946d4f3c91faaf64cbdc4a5d1ab8002f473d5c3fcedcd197989cf0390f9badd3c04678706"
+  "packageManager": "pnpm@10.16.1"
 }

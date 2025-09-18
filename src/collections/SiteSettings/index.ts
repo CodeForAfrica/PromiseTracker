@@ -17,8 +17,8 @@ export const SiteSettings: CollectionConfig = {
   },
   admin: {
     group: {
-      en: "Settings",
-      fr: "Paramètres",
+      en: "Website",
+      fr: "Site web",
     },
   },
   fields: [
