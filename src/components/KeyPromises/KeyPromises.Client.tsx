@@ -52,28 +52,38 @@ const KeyPromiseCard = ({
   timelineInterval: [number, number];
 }) => {
   const theme = useTheme();
+  const statusColor = item.status.color;
 
   return (
     <Grid
       container
       spacing={{ xs: 3, lg: 4 }}
       alignItems="stretch"
-      sx={{ overflow: "visible" }}
+      sx={{
+        overflow: "visible",
+        minHeight: { lg: theme.typography.pxToRem(520) },
+      }}
     >
       <Grid
-        size={{ xs: 12, lg: 5 }}
+        size={{ xs: 12, lg: 6 }}
         order={{
           xs: 1,
           lg: 2,
         }}
+        sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}
       >
         <Box
           sx={{
-            position: { lg: "relative" },
-            height: "100%",
-            bgcolor: item.status.color,
+            width: "100%",
+            maxWidth: { lg: theme.typography.pxToRem(580) },
+            height: {
+              xs: theme.typography.pxToRem(220),
+              sm: theme.typography.pxToRem(280),
+              lg: theme.typography.pxToRem(387),
+            },
+            border: `8px solid ${statusColor}`,
             backgroundImage: item.imageUrl
-              ? `linear-gradient(to right, ${item.status.color}, ${item.status.color}), url(${item.imageUrl})`
+              ? `url(${item.imageUrl})`
               : undefined,
             backgroundSize: "cover",
             backgroundPosition: "center",
@@ -81,7 +91,7 @@ const KeyPromiseCard = ({
         />
       </Grid>
       <Grid
-        size={{ xs: 12, lg: 7 }}
+        size={{ xs: 12, lg: 6 }}
         container
         direction="column"
         justifyContent="space-between"
@@ -89,36 +99,41 @@ const KeyPromiseCard = ({
           xs: 2,
           lg: 1,
         }}
+        sx={{ minHeight: { lg: theme.typography.pxToRem(387) } }}
       >
         <Grid>
           <Typography
             component="h3"
-            sx={{
+            sx={(theme) => ({
               typography: { xs: "h4", lg: "h2" },
-              mb: { lg: 1 },
+              p: "0 !important",
               position: { lg: "relative" },
-              flexDirection: { lg: "column" },
               overflow: "hidden",
+              display: "-webkit-box",
+              WebkitBoxOrient: "vertical",
+              WebkitLineClamp: { xs: 3, lg: 2 },
+              minHeight: { lg: theme.typography.pxToRem(56) },
               "&::after": {
                 content: '""',
                 display: { lg: "block" },
-                width: 72,
-                borderBottom: { lg: `8px solid ${item.status.color}` },
+                width: theme.typography.pxToRem(72),
+                borderBottom: { lg: `8px solid ${statusColor}` },
+                marginTop: { lg: theme.typography.pxToRem(8) },
               },
-            }}
+            })}
           >
             {item.title}
           </Typography>
           {item.description ? (
             <Typography
               variant="body2"
-              sx={{
+              sx={(theme) => ({
                 display: { xs: "none", lg: "block" },
                 fontSize: 13,
-                mt: { lg: 4 },
+                mt: { lg: theme.typography.pxToRem(36) },
                 overflow: "hidden",
                 maxHeight: theme.typography.pxToRem(24 * 4),
-              }}
+              })}
             >
               {item.description}
             </Typography>
@@ -142,15 +157,16 @@ const KeyPromiseCard = ({
               <Button
                 variant="contained"
                 sx={{
-                  border: `1px solid ${theme.palette.primary.main}`,
+                  border: `1px solid transparent`,
                   minHeight: 48,
                   minWidth: { xs: 98, lg: 158 },
                   textTransform: "none",
                   fontWeight: 600,
+                  bgcolor: theme.palette.common.black,
+                  color: theme.palette.common.white,
                   "&:hover": {
-                    border: `1px solid ${theme.palette.primary.main}`,
-                    backgroundColor: theme.palette.background.default,
-                    color: theme.palette.text.primary,
+                    backgroundColor: theme.palette.common.black,
+                    color: theme.palette.common.white,
                   },
                 }}
               >

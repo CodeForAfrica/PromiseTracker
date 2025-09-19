@@ -1,7 +1,6 @@
 import { resolveMedia } from "@/lib/data/media";
 import { getGlobalPayload } from "@/lib/payload";
 import type {
-  Document,
   KeyPromises as KeyPromisesBlock,
   PoliticalEntity,
   Promise as PromiseDocument,
@@ -9,7 +8,7 @@ import type {
 } from "@/payload-types";
 import { KeyPromisesClient, type KeyPromiseItem } from "./KeyPromises.Client";
 
-const MAX_ITEMS = 5;
+const DEFAULT_ITEMS = 5;
 
 const parseYear = (value?: string | null): number | undefined => {
   if (!value) {
@@ -34,16 +33,6 @@ const buildStatus = (status?: PromiseStatus | null) => {
   };
 };
 
-const getDocumentId = (
-  document: PromiseDocument["document"]
-): string | null => {
-  if (!document) {
-    return null;
-  }
-
-  return typeof document === "string" ? document : document.id;
-};
-
 export type KeyPromisesProps = KeyPromisesBlock & {
   entitySlug?: string;
 };
@@ -52,6 +41,7 @@ export const KeyPromises = async ({
   entitySlug,
   title,
   actionLabel,
+  itemsToShow,
 }: KeyPromisesProps) => {
   if (!entitySlug) {
     return null;
@@ -76,37 +66,6 @@ export const KeyPromises = async ({
     return null;
   }
 
-  const documentsQuery = await payload.find({
-    collection: "documents",
-    where: {
-      and: [
-        {
-          politicalEntity: {
-            equals: entity.id,
-          },
-        },
-        {
-          type: {
-            equals: "promise",
-          },
-        },
-      ],
-    },
-    limit: -1,
-    depth: 1,
-  });
-
-  if (!documentsQuery.docs.length) {
-    return null;
-  }
-
-  const documentMap = new Map<string, Document>();
-  for (const document of documentsQuery.docs as Document[]) {
-    documentMap.set(document.id, document);
-  }
-
-  const documentIds = Array.from(documentMap.keys());
-
   const statusQuery = await payload.find({
     collection: "promise-status",
     limit: -1,
@@ -116,78 +75,103 @@ export const KeyPromises = async ({
   const statusById = new Map<string, PromiseStatus>(
     (statusQuery.docs as PromiseStatus[]).map((status) => [status.id, status])
   );
+  const statusByLabel = new Map<string, PromiseStatus>();
+  (statusQuery.docs as PromiseStatus[]).forEach((status) => {
+    const labelKey = status.label?.trim().toLowerCase();
+    if (labelKey) {
+      statusByLabel.set(labelKey, status);
+    }
+
+    const meedanKey = status.meedanId?.trim().toLowerCase();
+    if (meedanKey && !statusByLabel.has(meedanKey)) {
+      statusByLabel.set(meedanKey, status);
+    }
+  });
+
+  const resolvedLimit = Math.max(1, itemsToShow ?? DEFAULT_ITEMS);
 
   const promisesQuery = await payload.find({
     collection: "promises",
     where: {
-      document: {
-        in: documentIds,
+      politicalEntity: {
+        equals: entity.id,
       },
     },
-    limit: -1,
-    depth: 2,
+    limit: resolvedLimit,
+    depth: 1,
+    sort: "-lastPublished,-updatedAt",
   });
 
-  const promiseDocs = (promisesQuery.docs as PromiseDocument[]).sort(
-    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-  );
+  const promiseDocs = promisesQuery.docs as PromiseDocument[];
 
   const items: KeyPromiseItem[] = [];
 
   for (const promise of promiseDocs) {
-    if (items.length >= MAX_ITEMS) {
-      break;
+    const statusRelation = promise.status;
+    let statusDoc: PromiseStatus | null = null;
+
+    if (statusRelation) {
+      if (typeof statusRelation === "string") {
+        statusDoc = statusById.get(statusRelation) ?? null;
+      } else {
+        statusDoc = statusRelation;
+      }
     }
 
-    const docId = getDocumentId(promise.document);
-    const document = docId ? (documentMap.get(docId) ?? null) : null;
-    const imageSource = document?.files?.[0] ?? null;
-    const image = await resolveMedia(payload, imageSource);
-
-    const extractions = promise.extractions ?? [];
-
-    for (const [index, extraction] of extractions.entries()) {
-      if (items.length >= MAX_ITEMS) {
-        break;
+    if (!statusDoc) {
+      const lookupKey = promise.statusLabel?.trim().toLowerCase();
+      if (lookupKey) {
+        statusDoc = statusByLabel.get(lookupKey) ?? null;
       }
+    }
 
-      const statusRef = extraction.Status;
-      const statusData =
-        typeof statusRef === "string"
-          ? statusById.get(statusRef)
-          : (statusRef ?? null);
+    const statusDetails =
+      buildStatus(statusDoc) ??
+      (promise.statusLabel
+        ? {
+            color: promise.themeColor?.trim() || "#005dfd",
+            label: promise.statusLabel,
+            textColor: "#202020",
+          }
+        : null);
 
-      const status = buildStatus(statusData);
+    if (!statusDetails) {
+      continue;
+    }
 
-      if (!status) {
-        continue;
-      }
+    const image = await resolveMedia(promise.image ?? null);
+    const titleText =
+      promise.headline?.trim() || promise.title?.trim() || "Promise";
+    const description =
+      promise.description?.trim() ||
+      promise.text?.trim() ||
+      promise.introduction?.trim() ||
+      undefined;
+    const href = promise.publishedArticleUrl?.trim() || undefined;
+    const statusDate = promise.lastPublished ?? promise.updatedAt;
 
-      const summaryText = extraction.summary?.trim();
-      const titleText =
-        summaryText || promise.title?.trim() || document?.title || "Promise";
-      const description = extraction.source?.trim();
-      const href = `/promises/${extraction.uniqueId}`; //TODO:(@kelvinkipruto) Ensure it is nested under promises page
+    const statusHistory = [
+      {
+        color: statusDetails.color,
+        label: statusDetails.label,
+        textColor: statusDetails.textColor,
+        date: statusDate,
+      },
+    ];
 
-      const statusHistory = [
-        {
-          color: status.color,
-          label: status.label,
-          textColor: status.textColor,
-          date: promise.updatedAt,
-        },
-      ];
+    items.push({
+      id: promise.id,
+      title: titleText,
+      description,
+      href,
+      imageUrl: image?.url ?? undefined,
+      status: { ...statusDetails, date: statusDate },
+      statusHistory,
+      events: [],
+    });
 
-      items.push({
-        id: `${promise.id}-${extraction.id ?? extraction.uniqueId ?? index}`,
-        title: titleText,
-        description,
-        href,
-        imageUrl: image?.url ?? undefined,
-        status: { ...status, date: promise.updatedAt },
-        statusHistory,
-        events: [],
-      });
+    if (items.length >= resolvedLimit) {
+      break;
     }
   }
 

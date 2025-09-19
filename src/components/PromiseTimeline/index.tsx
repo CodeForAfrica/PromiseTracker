@@ -415,22 +415,7 @@ const PromiseTimeline = ({
           isOdd={idx % 2 === 1}
           textColor={currentStatus.textColor}
           interval={resolvedInterval}
-        >
-          {currentStatus.label && (
-            <text
-              x="8"
-              y={idx % 2 === 1 ? "40" : "5"}
-              fill={currentStatus.textColor ?? "#202020"}
-              stroke="#202020"
-              strokeWidth={0.1}
-              fontFamily={theme.typography.body2.fontFamily as string}
-              fontSize={theme.typography.body2.fontSize as string}
-              fontWeight={600}
-            >
-              {currentStatus.label?.toUpperCase()}
-            </text>
-          )}
-        </PromiseStatus>
+        />
       ))}
       <Labels interval={resolvedInterval} />
     </Box>

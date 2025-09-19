@@ -21,5 +21,23 @@ export const KeyPromises: Block = {
       },
       localized: true,
     },
+    {
+      name: "itemsToShow",
+      type: "number",
+      required: true,
+      label: {
+        en: "Number of promises",
+        fr: "Nombre de promesses",
+      },
+      defaultValue: 5,
+      admin: {
+        description: {
+          en: "How many highlighted promises to display (minimum 1).",
+          fr: "Nombre de promesses mises en avant à afficher (minimum 1).",
+        },
+        step: 1,
+      },
+      min: 1,
+    },
   ],
 };

@@ -510,6 +510,10 @@ export interface Partner {
 export interface KeyPromises {
   title: string;
   actionLabel?: string | null;
+  /**
+   * How many highlighted promises to display (minimum 1).
+   */
+  itemsToShow: number;
   id?: string | null;
   blockName?: string | null;
   blockType: 'key-promises';
@@ -1076,6 +1080,7 @@ export interface HeroBlockSelect<T extends boolean = true> {
 export interface KeyPromisesSelect<T extends boolean = true> {
   title?: T;
   actionLabel?: T;
+  itemsToShow?: T;
   id?: T;
   blockName?: T;
 }
