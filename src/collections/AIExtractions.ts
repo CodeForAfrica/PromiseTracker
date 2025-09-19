@@ -1,15 +1,15 @@
 import { CollectionConfig } from "payload";
 
-export const Promises: CollectionConfig = {
-  slug: "promises",
+export const AIExtractions: CollectionConfig = {
+  slug: "ai-extractions",
   labels: {
     singular: {
-      en: "Promise",
-      fr: "Promesse",
+      en: "AI Extraction",
+      fr: "Extraction IA",
     },
     plural: {
-      en: "Promises",
-      fr: "Promesses",
+      en: "AI Extractions",
+      fr: "Extractions IA",
     },
   },
   admin: {
@@ -47,7 +47,7 @@ export const Promises: CollectionConfig = {
       type: "array",
       label: {
         en: "AI Extractions",
-        fr: "AI Extractions",
+        fr: "Extractions IA",
       },
       admin: {
         components: {

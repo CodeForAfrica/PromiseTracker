@@ -68,7 +68,7 @@ export interface Config {
   blocks: {};
   collections: {
     documents: Document;
-    promises: Promise;
+    'ai-extractions': AiExtraction;
     media: Media;
     pages: Page;
     users: User;
@@ -85,7 +85,7 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     documents: DocumentsSelect<false> | DocumentsSelect<true>;
-    promises: PromisesSelect<false> | PromisesSelect<true>;
+    'ai-extractions': AiExtractionsSelect<false> | AiExtractionsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
@@ -318,9 +318,9 @@ export interface Tenant {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "promises".
+ * via the `definition` "ai-extractions".
  */
-export interface Promise {
+export interface AiExtraction {
   id: string;
   title?: string | null;
   document: string | Document;
@@ -771,8 +771,8 @@ export interface PayloadLockedDocument {
         value: string | Document;
       } | null)
     | ({
-        relationTo: 'promises';
-        value: string | Promise;
+        relationTo: 'ai-extractions';
+        value: string | AiExtraction;
       } | null)
     | ({
         relationTo: 'media';
@@ -882,9 +882,9 @@ export interface DocumentsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "promises_select".
+ * via the `definition` "ai-extractions_select".
  */
-export interface PromisesSelect<T extends boolean = true> {
+export interface AiExtractionsSelect<T extends boolean = true> {
   title?: T;
   document?: T;
   extractions?:

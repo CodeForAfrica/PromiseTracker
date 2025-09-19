@@ -89,8 +89,8 @@ export const getExtractionCountsForEntities = async (
     }, {});
   }
 
-  const { docs: promises } = await payload.find({
-    collection: "promises",
+  const { docs: aiExtractions } = await payload.find({
+    collection: "ai-extractions",
     depth: 0,
     limit: -1,
     select: {
@@ -109,14 +109,14 @@ export const getExtractionCountsForEntities = async (
     return acc;
   }, {});
 
-  for (const promise of promises) {
-    const relation = promise.document;
+  for (const extraction of aiExtractions) {
+    const relation = extraction.document;
     const documentId = typeof relation === "string" ? relation : relation?.id;
     if (!documentId) continue;
     const entityId = docToEntity.get(documentId);
     if (!entityId) continue;
-    const extractionsCount = Array.isArray(promise.extractions)
-      ? promise.extractions.length
+    const extractionsCount = Array.isArray(extraction.extractions)
+      ? extraction.extractions.length
       : 0;
     if (extractionsCount === 0) continue;
     counts[entityId] = (counts[entityId] ?? 0) + extractionsCount;

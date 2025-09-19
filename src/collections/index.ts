@@ -2,7 +2,7 @@ import { CollectionConfig } from "payload";
 import { Users } from "./Users";
 import { Media } from "./Media";
 import { Documents } from "./Documents";
-import { Promises } from "./Promises";
+import { AIExtractions } from "./AIExtractions";
 import { Tenants } from "./Tenant";
 import { Pages } from "./Pages";
 import { SiteSettings } from "./SiteSettings";
@@ -12,7 +12,7 @@ import { PromiseStatus } from "./PromiseStatus";
 
 export const collections: CollectionConfig[] = [
   Documents,
-  Promises,
+  AIExtractions,
   Media,
   Pages,
   Users,

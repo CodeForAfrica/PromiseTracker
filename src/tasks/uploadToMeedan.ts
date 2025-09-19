@@ -2,14 +2,14 @@ import { BasePayload, TaskConfig } from "payload";
 import { createFactCheckClaim } from "@/lib/meedan";
 import { markDocumentAsProcessed } from "@/lib/airtable";
 import {
-  Promise as PromiseDoc,
+  AiExtraction as AiExtractionDoc,
   Document,
   Media,
   PoliticalEntity,
   Tenant,
 } from "@/payload-types";
 
-const getPromisesToUpload = (doc: PromiseDoc) => {
+const getExtractionsToUpload = (doc: AiExtractionDoc) => {
   return (
     doc.extractions
       ?.filter((extraction) => !extraction.checkMediaId)
@@ -60,22 +60,22 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
         throw new Error("Meedan API key or team ID not configured in settings");
       }
 
-      const { docs: allPromises } = await payload.find({
-        collection: "promises",
+      const { docs: allExtractions } = await payload.find({
+        collection: "ai-extractions",
         limit: -1,
         depth: 4,
       });
 
-      for (const doc of allPromises) {
+      for (const doc of allExtractions) {
         logger.info(
-          `uploadToMeedan:: Processing promise: ${doc.id} - ${doc.title}`
+          `uploadToMeedan:: Processing AI extraction: ${doc.id} - ${doc.title}`
         );
 
-        const promisesToUpload = getPromisesToUpload(doc);
+        const extractionsToUpload = getExtractionsToUpload(doc);
 
-        if (promisesToUpload.length === 0) {
+        if (extractionsToUpload.length === 0) {
           logger.info(
-            `uploadToMeedan:: Document ${doc.id} has no unprocessed promises, skipping`
+            `uploadToMeedan:: Document ${doc.id} has no unprocessed AI extractions, skipping`
           );
           continue;
         }
@@ -84,7 +84,7 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
         const entity = document.politicalEntity as PoliticalEntity;
         const tenant = entity.tenant as Tenant;
 
-        for (const extraction of promisesToUpload) {
+        for (const extraction of extractionsToUpload) {
           logger.info(
             `uploadToMeedan:: Uploading extraction ${extraction.uniqueId} from document ${doc.id} to CheckMedia`
           );
@@ -159,7 +159,7 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
           });
 
           await payload.update({
-            collection: "promises",
+            collection: "ai-extractions",
             id: doc.id,
             data: {
               extractions: updatedExtractions,

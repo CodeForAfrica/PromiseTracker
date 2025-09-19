@@ -130,7 +130,7 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
 
           if (object.promises.length > 0) {
             await payload.create({
-              collection: "promises",
+              collection: "ai-extractions",
               data: {
                 title: object.title,
                 document: document,
