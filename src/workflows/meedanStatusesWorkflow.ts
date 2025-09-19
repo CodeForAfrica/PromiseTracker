@@ -1,8 +1,9 @@
 import { WorkflowConfig } from "payload";
 import { randomUUID } from "node:crypto";
 import { isProd } from "@/utils/utils";
+import { defineWorkflow } from "./utils";
 
-export const meedanStatusesWorkflow: WorkflowConfig = {
+export const meedanStatusesWorkflow = defineWorkflow({
   slug: "meedanStatusesWorkflow",
   label: "Meedan Statuses Workflow",
   schedule: [
@@ -19,4 +20,4 @@ export const meedanStatusesWorkflow: WorkflowConfig = {
       input: [],
     });
   },
-};
+} satisfies WorkflowConfig);
