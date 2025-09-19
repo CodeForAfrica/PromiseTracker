@@ -22,7 +22,14 @@ export const PoliticalEntities: CollectionConfig = {
       en: "Documents",
       fr: "Documents",
     },
-    defaultColumns: ["name", "region", "position", "periodFrom", "periodTo"],
+    defaultColumns: [
+      "name",
+      "image",
+      "region",
+      "position",
+      "periodFrom",
+      "periodTo",
+    ],
   },
   fields: [
     {

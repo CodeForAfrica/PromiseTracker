@@ -1,4 +1,5 @@
 import { CollectionConfig } from "payload";
+import { image as imageField } from "@/fields/image";
 
 export const Promises: CollectionConfig = {
   slug: "promises",
@@ -18,11 +19,25 @@ export const Promises: CollectionConfig = {
       fr: "Documents",
     },
     useAsTitle: "title",
+    defaultColumns: ["title", "statusLabel", "state", "lastPublished"],
   },
   access: {
     read: () => true,
   },
   fields: [
+    {
+      name: "meedanId",
+      type: "text",
+      required: true,
+      unique: true,
+      label: {
+        en: "Meedan ID",
+        fr: "ID Meedan",
+      },
+      admin: {
+        hidden: true,
+      },
+    },
     {
       name: "title",
       type: "text",
@@ -32,106 +47,143 @@ export const Promises: CollectionConfig = {
       },
     },
     {
-      name: "document",
-      type: "relationship",
-      relationTo: "documents",
-      required: true,
-      hasMany: false,
+      name: "headline",
+      type: "text",
       label: {
-        en: "Document",
-        fr: "Document",
+        en: "Headline",
+        fr: "Titre court",
       },
     },
     {
-      name: "extractions",
-      type: "array",
+      name: "description",
+      type: "textarea",
       label: {
-        en: "AI Extractions",
-        fr: "AI Extractions",
+        en: "Description",
+        fr: "Description",
+      },
+    },
+    {
+      name: "text",
+      type: "textarea",
+      label: {
+        en: "Text",
+        fr: "Texte",
+      },
+    },
+    {
+      name: "introduction",
+      type: "textarea",
+      label: {
+        en: "Introduction",
+        fr: "Introduction",
+      },
+    },
+    {
+      name: "statusLabel",
+      type: "text",
+      label: {
+        en: "Status Label",
+        fr: "Libellé du statut",
       },
       admin: {
-        components: {
-          RowLabel: {
-            path: "@/components/payload/RowLabel#CustomRowLabel",
-            clientProps: {
-              fieldToUse: "summary",
-            },
-          },
-        },
+        position: "sidebar",
       },
-      fields: [
-        {
-          name: "category",
-          type: "text",
-          required: true,
-          label: {
-            en: "Category",
-            fr: "Catégorie",
-          },
+    },
+    {
+      name: "status",
+      type: "relationship",
+      relationTo: "promise-status",
+      label: {
+        en: "Status",
+        fr: "Statut",
+      },
+      admin: {
+        position: "sidebar",
+      },
+    },
+    {
+      name: "themeColor",
+      type: "text",
+      label: {
+        en: "Theme Color",
+        fr: "Couleur du thème",
+      },
+      admin: {
+        position: "sidebar",
+      },
+    },
+    imageField({
+      label: {
+        en: "Image",
+        fr: "Image",
+      },
+    }),
+    {
+      name: "imageUrl",
+      type: "text",
+      admin: {
+        hidden: true,
+      },
+      label: {
+        en: "Image Source URL",
+        fr: "URL source de l'image",
+      },
+    },
+    {
+      name: "publishedArticleUrl",
+      type: "text",
+      label: {
+        en: "Published Article URL",
+        fr: "URL de l'article publié",
+      },
+    },
+    {
+      name: "useVisualCard",
+      type: "checkbox",
+      label: {
+        en: "Use Visual Card",
+        fr: "Utiliser la carte visuelle",
+      },
+      admin: {
+        position: "sidebar",
+      },
+    },
+    {
+      name: "state",
+      type: "text",
+      label: {
+        en: "State",
+        fr: "État",
+      },
+      admin: {
+        position: "sidebar",
+      },
+    },
+    {
+      name: "politicalEntity",
+      type: "relationship",
+      relationTo: "political-entities",
+      label: {
+        en: "Political Entity",
+        fr: "Entité politique",
+      },
+      admin: {
+        position: "sidebar",
+      },
+    },
+    {
+      name: "lastPublished",
+      type: "date",
+      admin: {
+        date: {
+          displayFormat: "yyyy-MM-dd HH:mm",
         },
-        {
-          name: "summary",
-          type: "text",
-          required: true,
-          label: {
-            en: "Summary",
-            fr: "Résumé",
-          },
-        },
-        {
-          name: "source",
-          type: "textarea",
-          required: true,
-          label: {
-            en: "Source",
-            fr: "Source",
-          },
-        },
-        {
-          type: "row",
-          fields: [
-            {
-              name: "uniqueId",
-              type: "text",
-              admin: {
-                hidden: true,
-              },
-              label: {
-                en: "Unique ID",
-                fr: "ID Unique",
-              },
-            },
-            {
-              name: "checkMediaId",
-              type: "text",
-              admin: {
-                hidden: true,
-              },
-              label: {
-                en: "Check Media ID",
-                fr: "ID Check Media",
-              },
-            },
-            {
-              name: "checkMediaURL",
-              label: {
-                en: "CheckMedia URL",
-                fr: "URL CheckMedia",
-              },
-              type: "text",
-            },
-            {
-              name: "Status",
-              type: "relationship",
-              relationTo: "promise-status",
-              label: {
-                en: "Status",
-                fr: "Statut",
-              },
-            },
-          ],
-        },
-      ],
+        position: "sidebar",
+      },
+      label: {
+        en: "Last Published",
+        fr: "Dernière publication",
+      },
     },
   ],
 };

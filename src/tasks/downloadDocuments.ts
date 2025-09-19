@@ -33,7 +33,7 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
       }
 
       logger.info(
-        `downloadDocuments:: Downloading ${documents.length} documents`
+        `downloadDocuments:: Downloading ${documents.length}. Documents:\n ${documents.map((t) => `${t.title}\n`)}`
       );
 
       const processedDocs = [];
@@ -46,9 +46,8 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
           const { url, docURLs } = doc;
 
           // prioritise file uploaded to airtable
-          const urlsToFetch = (docURLs?.length
-            ? docURLs.map((t) => t.url)
-            : [url]
+          const urlsToFetch = (
+            docURLs?.length ? docURLs.map((t) => t.url) : [url]
           ).filter((candidate): candidate is string => Boolean(candidate));
 
           if (urlsToFetch.length === 0) {

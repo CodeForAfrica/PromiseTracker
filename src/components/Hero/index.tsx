@@ -3,7 +3,7 @@ import { getGlobalPayload } from "@/lib/payload";
 import type {
   HeroBlock,
   PoliticalEntity,
-  Promise as PromiseDocument,
+  AiExtraction as AiExtractionDocument,
   PromiseStatus,
 } from "@/payload-types";
 import { format } from "date-fns";
@@ -62,7 +62,9 @@ type StatusById = Map<string, PromiseStatus>;
 
 type StatusSummaryMap = Map<string, HeroStatusSummary>;
 
-type PromiseExtraction = NonNullable<PromiseDocument["extractions"]>[number];
+type AiExtractionItem = NonNullable<
+  AiExtractionDocument["extractions"]
+>[number];
 
 const FALLBACK_GROUP_DEFINITIONS = [
   {
@@ -80,7 +82,7 @@ const FALLBACK_GROUP_DEFINITIONS = [
 ];
 
 const resolveExtractionStatus = (
-  extraction: PromiseExtraction,
+  extraction: AiExtractionItem,
   statusById: StatusById
 ): PromiseStatus | null => {
   const statusRef = extraction.Status;
@@ -221,9 +223,9 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
 
   const documentIds = documentDocs.map((doc) => doc.id);
 
-  const { docs: promiseDocs } = documentIds.length
+  const { docs: aiExtractionDocs } = documentIds.length
     ? await payload.find({
-        collection: "promises",
+        collection: "ai-extractions",
         where: {
           document: {
             in: documentIds,
@@ -236,8 +238,8 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
 
   let totalExtractions = 0;
 
-  for (const promiseDoc of promiseDocs) {
-    const extractions = promiseDoc.extractions ?? [];
+  for (const aiExtractionDoc of aiExtractionDocs) {
+    const extractions = aiExtractionDoc.extractions ?? [];
 
     for (const extraction of extractions) {
       const status = resolveExtractionStatus(extraction, statusById);

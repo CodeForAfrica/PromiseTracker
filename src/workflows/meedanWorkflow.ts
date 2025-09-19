@@ -1,10 +1,11 @@
 import { WorkflowConfig } from "payload";
 import { randomUUID } from "node:crypto";
 import { isProd } from "@/utils/utils";
+import { defineWorkflow } from "./utils";
 
-export const meedanStatusesWorkflow: WorkflowConfig = {
-  slug: "meedanStatusesWorkflow",
-  label: "Meedan Statuses Workflow",
+export const meedanWorkflow = defineWorkflow({
+  slug: "meedanWorkflow",
+  label: "Meedan Workflow",
   schedule: [
     {
       cron: isProd ? "0 * * * *" : "* * * * *",
@@ -18,5 +19,8 @@ export const meedanStatusesWorkflow: WorkflowConfig = {
     await tasks.updatePromiseStatus(randomUUID(), {
       input: [],
     });
+    await tasks.syncMeedanPromises(randomUUID(), {
+      input: [],
+    });
   },
-};
+} satisfies WorkflowConfig);

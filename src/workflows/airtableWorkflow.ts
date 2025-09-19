@@ -1,8 +1,9 @@
 import { WorkflowConfig } from "payload";
 import { randomUUID } from "node:crypto";
 import { isProd } from "@/utils/utils";
+import { defineWorkflow } from "./utils";
 
-export const airtableWorkflow: WorkflowConfig = {
+export const airtableWorkflow = defineWorkflow({
   slug: "airtableWorkflow",
   label: "Airtable Workflow",
   schedule: [
@@ -34,4 +35,4 @@ export const airtableWorkflow: WorkflowConfig = {
       input: [],
     });
   },
-};
+} satisfies WorkflowConfig);
