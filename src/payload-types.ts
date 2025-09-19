@@ -434,13 +434,11 @@ export interface HeroBlock {
   /**
    * Define exactly three groups of promise statuses to display in the charts.
    */
-  chartGroups?:
-    | {
-        title: string;
-        statuses: (string | PromiseStatus)[];
-        id?: string | null;
-      }[]
-    | null;
+  chartGroups: {
+    title: string;
+    statuses: (string | PromiseStatus)[];
+    id?: string | null;
+  }[];
   id?: string | null;
   blockName?: string | null;
   blockType: 'hero';
