@@ -1,6 +1,8 @@
 // storage-adapter-import-placeholder
 import { mongooseAdapter } from "@payloadcms/db-mongodb";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
+import { nodemailerAdapter } from "@payloadcms/email-nodemailer";
+import type { NodemailerAdapterArgs } from "@payloadcms/email-nodemailer";
 import path from "node:path";
 import { buildConfig } from "payload";
 import { fileURLToPath } from "node:url";
@@ -21,6 +23,27 @@ import { fr } from "@payloadcms/translations/languages/fr";
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
 
+let nodemailerAdapterArgs: NodemailerAdapterArgs | undefined;
+if (process.env.SMTP_HOST && process.env.SMTP_PASS) {
+  const smtpPort = Number(process.env.SMTP_PORT) || 587;
+  nodemailerAdapterArgs = {
+    defaultFromAddress:
+      process.env.SMTP_FROM_ADDRESS || "noreply@codeforafrica.africa",
+    defaultFromName: process.env.SENDGRID_FROM_NAME || "PromiseTracker CMS",
+    // Any Nodemailer transport can be used
+    transportOptions: {
+      host: process.env.SMTP_HOST,
+      port: smtpPort,
+      secure: smtpPort === 465, // true for port 465, false (the default) for others
+      auth: {
+        user: process.env.SMTP_USER || "apikey",
+        pass: process.env.SMTP_PASS,
+      },
+    },
+  };
+}
+const email = nodemailerAdapter(nodemailerAdapterArgs);
+
 export default buildConfig({
   admin: {
     user: Users.slug,
@@ -33,6 +56,7 @@ export default buildConfig({
     url: process.env.DATABASE_URI || "",
   }),
   editor: lexicalEditor(),
+  email,
   globals,
   hooks: {
     afterError: [

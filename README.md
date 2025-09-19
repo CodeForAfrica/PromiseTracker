@@ -18,3 +18,17 @@
 4. Update settings in admin
    [/admin/globals/settings]
 5. When testing multitenant app, use a domain that resolves to localhost, similar to `localtest.me`, for example `ken.localtest.me:3000`
+
+## Docker Image
+
+- Build the production image (bundles Apache Tika 3.2.3, no database services) using Docker BuildKit secrets:
+  ```
+  docker build -t promisetracker:latest \
+    --secret id=database_uri,env=DATABASE_URI \
+    --secret id=payload_secret,env=PAYLOAD_SECRET \
+    .
+  ```
+  Provide `DATABASE_URI` and `PAYLOAD_SECRET` (build fails if they’re missing); Sentry secrets are optional. You can also point secrets at files via `--secret id=…,src=path/to/file`.
+- Run the container against an external database:
+  `docker run -p 3000:3000 -e DATABASE_URI="<your-database-uri>" -e PAYLOAD_SECRET="<secret>" promisetracker:latest`
+- The bundled Apache Tika server listens on `http://127.0.0.1:9998/`. Override `AX_APACHE_TIKA_URL`, `TIKA_PORT`, or `TIKA_ENABLED=0` if you prefer an external Tika service.

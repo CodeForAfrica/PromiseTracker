@@ -1,9 +1,9 @@
 import { TaskConfig } from "payload";
-import { Promise as PromiseDoc, PromiseStatus } from "@/payload-types";
+import { AiExtraction as AiExtractionDoc, PromiseStatus } from "@/payload-types";
 import { fetchProjectMediaStatuses } from "@/lib/meedan";
 
 type ExtractionItem = NonNullable<
-  NonNullable<PromiseDoc["extractions"]>[number]
+  NonNullable<AiExtractionDoc["extractions"]>[number]
 >;
 
 const getStatusId = (value: ExtractionItem["Status"]) => {
@@ -67,16 +67,16 @@ export const UpdatePromiseStatus: TaskConfig<"updatePromiseStatus"> = {
       statusIdByMeedan.set(statusDoc.meedanId, statusDoc.id);
     }
 
-    const { docs: promises } = await payload.find({
-      collection: "promises",
+    const { docs: aiExtractions } = await payload.find({
+      collection: "ai-extractions",
       limit: -1,
       depth: 0,
     });
 
     let updatedPromises = 0;
 
-    for (const promiseDoc of promises as PromiseDoc[]) {
-      const extractions = promiseDoc.extractions ?? [];
+    for (const extractionDoc of aiExtractions as AiExtractionDoc[]) {
+      const extractions = extractionDoc.extractions ?? [];
       if (extractions.length === 0) {
         continue;
       }
@@ -115,21 +115,21 @@ export const UpdatePromiseStatus: TaskConfig<"updatePromiseStatus"> = {
 
       if (didChange) {
         await payload.update({
-          collection: "promises",
-          id: promiseDoc.id,
+          collection: "ai-extractions",
+          id: extractionDoc.id,
           data: {
             extractions: updatedExtractions,
           },
         });
         updatedPromises += 1;
         logger.info(
-          `updatePromiseStatus:: Updated promise ${promiseDoc.id} with latest statuses`
+          `updatePromiseStatus:: Updated AI extraction ${extractionDoc.id} with latest statuses`
         );
       }
     }
 
     logger.info(
-      `updatePromiseStatus:: Completed syncing statuses. Updated ${updatedPromises} promises.`
+      `updatePromiseStatus:: Completed syncing statuses. Updated ${updatedPromises} AI extractions.`
     );
 
     return {

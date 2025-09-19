@@ -68,6 +68,7 @@ export interface Config {
   blocks: {};
   collections: {
     documents: Document;
+    'ai-extractions': AiExtraction;
     promises: Promise;
     media: Media;
     pages: Page;
@@ -85,6 +86,7 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     documents: DocumentsSelect<false> | DocumentsSelect<true>;
+    'ai-extractions': AiExtractionsSelect<false> | AiExtractionsSelect<true>;
     promises: PromisesSelect<false> | PromisesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
@@ -103,10 +105,12 @@ export interface Config {
     defaultIDType: string;
   };
   globals: {
+    'home-page': HomePage;
     settings: Setting;
     'payload-jobs-stats': PayloadJobsStat;
   };
   globalsSelect: {
+    'home-page': HomePageSelect<false> | HomePageSelect<true>;
     settings: SettingsSelect<false> | SettingsSelect<true>;
     'payload-jobs-stats': PayloadJobsStatsSelect<false> | PayloadJobsStatsSelect<true>;
   };
@@ -125,6 +129,7 @@ export interface Config {
       createPoliticalEntity: TaskCreatePoliticalEntity;
       fetchPromiseStatuses: TaskFetchPromiseStatuses;
       updatePromiseStatus: TaskUpdatePromiseStatus;
+      syncMeedanPromises: TaskSyncMeedanPromises;
       inline: {
         input: unknown;
         output: unknown;
@@ -132,7 +137,7 @@ export interface Config {
     };
     workflows: {
       airtableWorkflow: WorkflowAirtableWorkflow;
-      meedanStatusesWorkflow: WorkflowMeedanStatusesWorkflow;
+      meedanWorkflow: WorkflowMeedanWorkflow;
     };
   };
 }
@@ -316,9 +321,9 @@ export interface Tenant {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "promises".
+ * via the `definition` "ai-extractions".
  */
-export interface Promise {
+export interface AiExtraction {
   id: string;
   title?: string | null;
   document: string | Document;
@@ -352,6 +357,31 @@ export interface PromiseStatus {
     color?: string | null;
     textColor?: string | null;
   };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promises".
+ */
+export interface Promise {
+  id: string;
+  meedanId: string;
+  title?: string | null;
+  headline?: string | null;
+  description?: string | null;
+  text?: string | null;
+  introduction?: string | null;
+  statusLabel?: string | null;
+  status?: (string | null) | PromiseStatus;
+  themeColor?: string | null;
+  image?: (string | null) | Media;
+  imageUrl?: string | null;
+  publishedArticleUrl?: string | null;
+  useVisualCard?: boolean | null;
+  state?: string | null;
+  politicalEntity?: (string | null) | PoliticalEntity;
+  lastPublished?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -452,13 +482,11 @@ export interface HeroBlock {
   /**
    * Define exactly three groups of promise statuses to display in the charts.
    */
-  chartGroups?:
-    | {
-        title: string;
-        statuses: (string | PromiseStatus)[];
-        id?: string | null;
-      }[]
-    | null;
+  chartGroups: {
+    title: string;
+    statuses: (string | PromiseStatus)[];
+    id?: string | null;
+  }[];
   id?: string | null;
   blockName?: string | null;
   blockType: 'hero';
@@ -699,7 +727,8 @@ export interface PayloadJob {
           | 'uploadToMeedan'
           | 'createPoliticalEntity'
           | 'fetchPromiseStatuses'
-          | 'updatePromiseStatus';
+          | 'updatePromiseStatus'
+          | 'syncMeedanPromises';
         taskID: string;
         input?:
           | {
@@ -742,6 +771,7 @@ export interface PayloadJob {
                 | 'createPoliticalEntity'
                 | 'fetchPromiseStatuses'
                 | 'updatePromiseStatus'
+                | 'syncMeedanPromises'
               )
             | null;
           taskID?: string | null;
@@ -749,7 +779,7 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  workflowSlug?: ('airtableWorkflow' | 'meedanStatusesWorkflow') | null;
+  workflowSlug?: ('airtableWorkflow' | 'meedanWorkflow') | null;
   taskSlug?:
     | (
         | 'inline'
@@ -762,6 +792,7 @@ export interface PayloadJob {
         | 'createPoliticalEntity'
         | 'fetchPromiseStatuses'
         | 'updatePromiseStatus'
+        | 'syncMeedanPromises'
       )
     | null;
   queue?: string | null;
@@ -789,6 +820,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'documents';
         value: string | Document;
+      } | null)
+    | ({
+        relationTo: 'ai-extractions';
+        value: string | AiExtraction;
       } | null)
     | ({
         relationTo: 'promises';
@@ -902,9 +937,9 @@ export interface DocumentsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "promises_select".
+ * via the `definition` "ai-extractions_select".
  */
-export interface PromisesSelect<T extends boolean = true> {
+export interface AiExtractionsSelect<T extends boolean = true> {
   title?: T;
   document?: T;
   extractions?:
@@ -919,6 +954,30 @@ export interface PromisesSelect<T extends boolean = true> {
         Status?: T;
         id?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promises_select".
+ */
+export interface PromisesSelect<T extends boolean = true> {
+  meedanId?: T;
+  title?: T;
+  headline?: T;
+  description?: T;
+  text?: T;
+  introduction?: T;
+  statusLabel?: T;
+  status?: T;
+  themeColor?: T;
+  image?: T;
+  imageUrl?: T;
+  publishedArticleUrl?: T;
+  useVisualCard?: T;
+  state?: T;
+  politicalEntity?: T;
+  lastPublished?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1302,6 +1361,25 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "home-page".
+ */
+export interface HomePage {
+  id: string;
+  tenantSelector: {
+    title: string;
+    subtitle: string;
+    ctaLabel: string;
+    emptyListLabel: string;
+  };
+  entitySelector: {
+    emptyTitle: string;
+    EmptySubtitle: string;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "settings".
  */
 export interface Setting {
@@ -1338,6 +1416,29 @@ export interface PayloadJobsStat {
     | null;
   updatedAt?: string | null;
   createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "home-page_select".
+ */
+export interface HomePageSelect<T extends boolean = true> {
+  tenantSelector?:
+    | T
+    | {
+        title?: T;
+        subtitle?: T;
+        ctaLabel?: T;
+        emptyListLabel?: T;
+      };
+  entitySelector?:
+    | T
+    | {
+        emptyTitle?: T;
+        EmptySubtitle?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1450,6 +1551,14 @@ export interface TaskUpdatePromiseStatus {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSyncMeedanPromises".
+ */
+export interface TaskSyncMeedanPromises {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "WorkflowAirtableWorkflow".
  */
 export interface WorkflowAirtableWorkflow {
@@ -1457,9 +1566,9 @@ export interface WorkflowAirtableWorkflow {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "WorkflowMeedanStatusesWorkflow".
+ * via the `definition` "WorkflowMeedanWorkflow".
  */
-export interface WorkflowMeedanStatusesWorkflow {
+export interface WorkflowMeedanWorkflow {
   input?: unknown;
 }
 /**

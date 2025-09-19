@@ -86,6 +86,7 @@ export const Hero: Block = {
       type: "array",
       minRows: 3,
       maxRows: 3,
+      required: true,
       label: {
         en: "Chart Groups",
         fr: "Groupes du graphique",

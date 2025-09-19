@@ -1,23 +1,28 @@
 import React from "react";
 import NextLink from "next/link";
 import {
+  Avatar,
   Box,
   Card,
   CardContent,
+  Chip,
   Container,
-  Divider,
   List,
   ListItem,
+  ListItemAvatar,
   ListItemButton,
-  ListItemText,
+  Stack,
   Typography,
 } from "@mui/material";
 import type { PoliticalEntity, Tenant } from "@/payload-types";
+import { getGlobalPayload } from "@/lib/payload";
+import { resolveMedia } from "@/lib/data/media";
 
 type PoliticalEntityListProps = {
   tenant: Tenant;
   politicalEntities: PoliticalEntity[];
   pageSlugs?: string[];
+  extractionCounts?: Record<string, number>;
 };
 
 const buildHref = (entity: PoliticalEntity, pageSlugs: string[] = []) => {
@@ -33,69 +38,124 @@ const buildHref = (entity: PoliticalEntity, pageSlugs: string[] = []) => {
   return `/${segments.join("/")}`;
 };
 
-export const PoliticalEntityList = ({
-  tenant,
+export const PoliticalEntityList = async ({
   politicalEntities,
   pageSlugs = [],
+  extractionCounts = {},
 }: PoliticalEntityListProps) => {
-  const hasEntities = politicalEntities.length > 0;
+  const payload = await getGlobalPayload();
 
-  return (
-    <Container component="section" sx={{ py: { xs: 4, md: 6 } }}>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h2" sx={{ mb: 0.5 }}>
-          {tenant.name}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {hasEntities
-            ? "Select a political entity to continue."
-            : "No political entities are available for this tenant yet."}
-        </Typography>
-      </Box>
+  const { entitySelector } = await payload.findGlobal({
+    slug: "home-page",
+  });
 
-      {hasEntities && (
-        <Card variant="outlined" sx={{ borderRadius: 1 }}>
-          <CardContent sx={{ p: 0 }}>
-            <List disablePadding dense>
-              {politicalEntities.map((entity, index) => {
-                const href = buildHref(entity, pageSlugs);
-
-                return (
-                  <React.Fragment key={entity.id}>
-                    <ListItem disablePadding>
-                      <ListItemButton
-                        component={NextLink}
-                        href={href}
-                        sx={{ py: 1.25, px: { xs: 2, md: 2.5 } }}
-                      >
-                        <ListItemText
-                          primary={entity.name}
-                          secondary={
-                            [entity.position, entity.region]
-                              .filter(Boolean)
-                              .join(" • ") || undefined
-                          }
-                          primaryTypographyProps={{
-                            variant: "h5",
-                            sx: { fontWeight: 600 },
-                          }}
-                          secondaryTypographyProps={{
-                            variant: "body2",
-                            color: "primary",
-                          }}
-                        />
-                      </ListItemButton>
-                    </ListItem>
-                    {index < politicalEntities.length - 1 ? (
-                      <Divider component="div" />
-                    ) : null}
-                  </React.Fragment>
-                );
-              })}
-            </List>
+  if (!politicalEntities.length) {
+    return (
+      <Container component="section" sx={{ py: { xs: 6, md: 8 } }}>
+        <Card variant="outlined">
+          <CardContent>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              {entitySelector.emptyTitle}
+            </Typography>
+            <Typography variant="body2">
+              {entitySelector.EmptySubtitle}
+            </Typography>
           </CardContent>
         </Card>
-      )}
+      </Container>
+    );
+  }
+
+  return (
+    <Container component="section" sx={{ py: { xs: 6, md: 8 } }}>
+      <Card variant="outlined" sx={{ borderRadius: 2 }}>
+        <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+          <List disablePadding sx={{ "& > * + *": { mt: 1 } }}>
+            {politicalEntities.map(async (entity, index) => {
+              const href = buildHref(entity, pageSlugs);
+              const media = await resolveMedia(entity.image);
+              const extractionCount = extractionCounts[entity.id] ?? 0;
+              const initials = entity.name
+                .split(" ")
+                .slice(0, 2)
+                .map((part) => part[0]?.toUpperCase())
+                .join("");
+
+              return (
+                <React.Fragment key={entity.id}>
+                  <ListItem disableGutters sx={{ alignItems: "stretch" }}>
+                    <ListItemButton
+                      component={NextLink}
+                      href={href}
+                      sx={{
+                        borderRadius: 2,
+                        "&:hover": {
+                          backgroundColor: "action.hover",
+                        },
+                      }}
+                    >
+                      <Stack
+                        direction="row"
+                        spacing={2}
+                        alignItems="center"
+                        sx={{ width: "100%" }}
+                      >
+                        <ListItemAvatar sx={{ minWidth: "auto" }}>
+                          <Avatar
+                            src={media?.url ?? undefined}
+                            alt={media?.alt ?? entity.name}
+                            sx={{ width: 56, height: 56 }}
+                          >
+                            {initials || "?"}
+                          </Avatar>
+                        </ListItemAvatar>
+                        <Box flexGrow={1} minWidth={0}>
+                          <Typography
+                            variant="subtitle2"
+                            sx={{
+                              fontWeight: 600,
+                              textTransform: "uppercase",
+                            }}
+                          >
+                            {entity.position}
+                          </Typography>
+                          <Typography
+                            variant="h6"
+                            sx={{ fontWeight: 700, lineHeight: 1.2, mt: 0.5 }}
+                          >
+                            {entity.name}
+                          </Typography>
+                          {entity.region ? (
+                            <Typography variant="body2">
+                              {entity.region}
+                            </Typography>
+                          ) : null}
+                        </Box>
+                        <Chip
+                          label={`${extractionCount} promise${extractionCount === 1 ? "" : "s"}`}
+                          color={extractionCount > 0 ? "primary" : "default"}
+                          variant={extractionCount > 0 ? "filled" : "outlined"}
+                        />
+                      </Stack>
+                    </ListItemButton>
+                  </ListItem>
+                  {index < politicalEntities.length - 1 ? (
+                    <Box
+                      component="hr"
+                      sx={{
+                        border: 0,
+                        borderBottom: 1,
+                        borderColor: "divider",
+                        my: 1,
+                      }}
+                    />
+                  ) : null}
+                </React.Fragment>
+              );
+            })}
+          </List>
+        </CardContent>
+      </Card>
     </Container>
   );
 };

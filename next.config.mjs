@@ -9,6 +9,7 @@ const nextConfig = {
     // your project has ESLint errors.
     ignoreDuringBuilds: true,
   },
+  output: "standalone",
   webpack: (webpackConfig) => {
     webpackConfig.resolve.extensionAlias = {
       ".cjs": [".cts", ".cjs"],
@@ -19,7 +20,7 @@ const nextConfig = {
     // Handle SVG imports - support both React components and URLs
     // First, exclude SVG from the default file loader
     const fileLoaderRule = webpackConfig.module.rules.find((rule) =>
-      rule.test?.test?.(".svg"),
+      rule.test?.test?.(".svg")
     );
     if (fileLoaderRule) {
       fileLoaderRule.exclude = /\.svg$/i;
@@ -85,5 +86,5 @@ export default withSentryConfig(
     // https://docs.sentry.io/product/crons/
     // https://vercel.com/docs/cron-jobs
     automaticVercelMonitors: true,
-  },
+  }
 );
