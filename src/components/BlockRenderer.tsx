@@ -5,66 +5,23 @@ import Newsletter from "./Newsletter";
 import Partners from "./Partners";
 import LatestPromises from "./LatestPromises";
 import { Hero } from "./Hero";
+import Promises from "./Promises";
 
 type BlockProps = {
   blocks: Page["blocks"];
   entity?: PoliticalEntity;
 };
 
-const blockComponents = {
+const blockComponents: Record<string, React.FC<any>> = {
   "act-now": ActNow,
   hero: Hero,
   newsletter: Newsletter,
   partners: Partners,
   "latest-promises": LatestPromises,
+  "promise-list": Promises,
 };
 
-export const BlockRenderer = ({ blocks: b, entity }: BlockProps) => {
-  const blocks = [
-    ...b,
-    {
-      blockType: "latest-promises",
-      title: "Latest Promises",
-      actionLabel: "View All",
-      items: [
-        {
-          title: "Promise 1",
-          status: {
-            title: "In Progress",
-            label: "in-progress",
-            color: "#FFA500",
-          },
-          href: "/promises/promise-1",
-          image: "https://via.placeholder.com/300x200",
-          description: "This is a brief description of Promise 1.",
-        },
-        {
-          title: "Promise 2",
-          status: {
-            title: "Completed",
-            label: "completed",
-            color: "#008000",
-          },
-          href: "/promises/promise-2",
-          image: "https://via.placeholder.com/300x200",
-          description: "This is a brief description of Promise 1.",
-        },
-        {
-          title: "Promise 3",
-          date: "January 15, 2024",
-          status: {
-            title: "Not Started",
-            label: "not-started",
-            color: "#FF0000",
-          },
-          href: "/promises/promise-3",
-          image: "https://via.placeholder.com/300x200",
-          description: `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer euismod odio non leo pretium pellentesque. Curabitur blandit urna cursus, malesuada erat ut, egestas odio. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer euismod odio non leo pretium pellentesque. Curabitur blandit urna cursus, malesuada erat ut, egestas odio.
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer euismod odio non leo pretium pellentesque. Curabitur blandit urna cursus, malesuada erat ut, egestas odio. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer euismod odio non leo pretium pellentesque. Curabitur blandit urna cursus, malesuada erat ut, egestas odio.`,
-        },
-      ],
-    },
-  ];
+export const BlockRenderer = ({ blocks, entity }: BlockProps) => {
   const hasBlocks = blocks && Array.isArray(blocks) && blocks.length > 0;
 
   if (hasBlocks) {
@@ -77,7 +34,6 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer euismod odio no
             if (Block) {
               return (
                 <div key={index}>
-                  {/* @ts-expect-error there may be some mismatch between the expected types here */}
                   <Block {...block} entitySlug={entity?.slug} />
                 </div>
               );

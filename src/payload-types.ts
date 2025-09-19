@@ -382,6 +382,26 @@ export interface Page {
             blockName?: string | null;
             blockType: 'partners';
           }
+        | {
+            title: string;
+            /**
+             * Link to the page where all promises can be viewed. E.g. /promises
+             */
+            seeAllLink?: string | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'latest-promises';
+          }
+        | {
+            title?: string | null;
+            filterByLabel?: string | null;
+            sortByLabel?: string | null;
+            filterBy?: ('status' | 'category')[] | null;
+            sortBy?: ('mostRecent' | 'deadline')[] | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'promise-list';
+          }
       )[]
     | null;
   updatedAt: string;
@@ -946,6 +966,25 @@ export interface PagesSelect<T extends boolean = true> {
           | {
               title?: T;
               partners?: T;
+              id?: T;
+              blockName?: T;
+            };
+        'latest-promises'?:
+          | T
+          | {
+              title?: T;
+              seeAllLink?: T;
+              id?: T;
+              blockName?: T;
+            };
+        'promise-list'?:
+          | T
+          | {
+              title?: T;
+              filterByLabel?: T;
+              sortByLabel?: T;
+              filterBy?: T;
+              sortBy?: T;
               id?: T;
               blockName?: T;
             };

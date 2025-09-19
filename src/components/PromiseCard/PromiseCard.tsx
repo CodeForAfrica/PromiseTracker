@@ -11,7 +11,10 @@ interface Props {
   };
   href?: string;
   title: string;
-  image?: string;
+  image?: {
+    url: string;
+    alt?: string;
+  };
 }
 const PromiseCard: FC<Props> = function PromiseCard({
   status,
@@ -23,10 +26,12 @@ const PromiseCard: FC<Props> = function PromiseCard({
   return (
     <PostCard
       {...props}
+      image={image}
       title={title}
       href={href}
       imageSx={{
-        background: `linear-gradient(to right, ${status?.color}, ${status?.color}), url("${image}") no-repeat center/cover`,
+        border: `8px solid ${status.color}`,
+        background: `linear-gradient(to right, ${status.color}, ${status.color}), url("${image?.url}") center center / cover no-repeat`,
       }}
     >
       <Status {...status} />

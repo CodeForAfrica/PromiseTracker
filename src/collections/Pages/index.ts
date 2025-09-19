@@ -3,6 +3,8 @@ import { ensureUniqueSlug } from "./hooks/ensureUniqueSlug";
 import newsletterSettingsToBlock from "./hooks/newsletterSettingsToBlock";
 import Partners from "@/blocks/Partners";
 import Newsletter from "@/blocks/Newsletter";
+import LatestPromises from "@/blocks/LatestPromises";
+import PromiseList from "@/blocks/PromiseList";
 import { slugField } from "@/fields/slug";
 import { ActNow } from "@/blocks/ActNow";
 import { Hero } from "@/blocks/Hero";
@@ -40,7 +42,7 @@ export const Pages: CollectionConfig = {
     {
       name: "blocks",
       type: "blocks",
-      blocks: [ActNow, Hero, Newsletter, Partners],
+      blocks: [ActNow, Hero, Newsletter, Partners, LatestPromises, PromiseList],
     },
   ],
   hooks: {

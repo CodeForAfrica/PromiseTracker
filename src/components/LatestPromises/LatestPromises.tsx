@@ -13,7 +13,7 @@ interface Props {
       color: string;
     };
     href?: string;
-    image?: string;
+    image?: { url: string; alt?: string };
   }>;
   title: string;
 }

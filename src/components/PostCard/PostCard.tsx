@@ -20,15 +20,18 @@ interface Props {
   as?: React.ElementType;
   date?: string;
   description?: string;
-  image?: string;
+  image?: {
+    url: string;
+    alt?: string;
+  };
   title?: string;
-  imageSx?: React.CSSProperties;
+  imageSx?: SxProps;
   children?: React.ReactNode;
   href?: string;
   sx?: SxProps;
 }
 
-const PostCard: FC<Props> = React.forwardRef(function PostCard({
+const PostCard: FC<Props> = function PostCard({
   children,
   as,
   date,
@@ -126,7 +129,14 @@ const PostCard: FC<Props> = React.forwardRef(function PostCard({
             </Grid>
           </Grid>
         </CardContent>
-        <CardMedia component="div" image={image} title={title} sx={mediaSx} />
+        {image?.url ? (
+          <CardMedia
+            component="div"
+            image={image.url}
+            title={title}
+            sx={mediaSx}
+          />
+        ) : null}
         {children}
         {description && (
           <CardContent sx={contentSx}>
@@ -138,6 +148,6 @@ const PostCard: FC<Props> = React.forwardRef(function PostCard({
       </CardActionArea>
     </Card>
   );
-});
+};
 
 export default PostCard;

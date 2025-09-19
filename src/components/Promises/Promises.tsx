@@ -1,0 +1,260 @@
+"use client";
+import { Grid, Typography, Chip, Container } from "@mui/material";
+import React, { useState, useEffect } from "react";
+
+import PostCard from "@/components/PostCard";
+import Filter from "./Filter";
+import Sort from "./Sort";
+import { slugify } from "@/utils/utils";
+
+interface SortItem {
+  name: string;
+  slug: string;
+  active?: boolean;
+}
+interface ProjectMeta {
+  tags: Array<SortItem>;
+}
+interface PromiseItem {
+  status: { title: string };
+  categories: Array<{ name: string }>;
+  date?: string;
+  promiseDeadline?: string;
+  events?: Array<{ year: number }>;
+  title?: string;
+}
+interface FilterSort {
+  label?: string;
+  items: SortItem[];
+}
+interface PromisesProps {
+  items: PromiseItem[];
+  title?: string;
+  withFilter?: boolean;
+  projectMeta?: ProjectMeta;
+  promiseStatuses?: SortItem[];
+  sortLabels?: {
+    sortByDeadline: SortItem;
+    sortByMostRecent: SortItem;
+  };
+  filterByConfig?: FilterSort;
+  sortByConfig?: FilterSort;
+}
+
+const filterGridSx = {
+  mb: 4,
+  mt: 2,
+};
+const sectionSx = { mb: "2rem" };
+const sectionTitleSx = {
+  m: "2rem 0rem",
+  position: "relative",
+  "&::after": {
+    borderBottom: "5px solid #000000",
+    content: '""',
+    display: "block",
+    left: 0,
+    bottom: 0,
+    position: "absolute",
+    width: "5rem",
+  },
+};
+const sortItemsSx = {
+  alignItems: { xs: "flex-end", lg: "center" },
+  display: "flex",
+  flexDirection: "row",
+  mt: "4rem",
+};
+const labelSx = { color: "secondary.dark", pr: "0.5rem", pt: "0.4rem" };
+const chipsSx = { mt: 3.25 };
+const chipSx = { borderRadius: 0, mr: 2 };
+
+function Promises({
+  items: itemsProp,
+  title,
+  withFilter = true,
+  projectMeta,
+  promiseStatuses = [],
+  sortLabels,
+  filterByConfig,
+  sortByConfig,
+}: PromisesProps) {
+  const sortByDeadline = sortLabels?.sortByDeadline;
+  const sortByMostRecent = sortLabels?.sortByMostRecent;
+  const filterCategoryItems = projectMeta?.tags ?? [];
+  const filterStatusItems = promiseStatuses;
+  const [items, setItems] = useState(itemsProp);
+  const [selectedFilters, setSelectedFilters] = useState<any[]>([]);
+  const [sortBy, setSortBy] = useState(sortByMostRecent?.slug);
+  const [filterBy, setFilterBy] = useState("status");
+
+  const getFilter = (slug: string) => {
+    const filters = [];
+    if (filterBy === "status") {
+      filters.push(...(filterStatusItems || []));
+    } else {
+      filters.push(...(filterCategoryItems || []));
+    }
+    return filters.find((f) => f.slug === slug);
+  };
+  const handleFilterClick = (slug: string) => {
+    setSelectedFilters((prev) => {
+      if (prev.find((f) => f.slug === slug)) {
+        return prev;
+      }
+      return [...prev, getFilter(slug)];
+    });
+  };
+  const handleFilterByClick = (slug: string) => {
+    setFilterBy(slug);
+    setSelectedFilters([]);
+  };
+  const handleChipDelete = (slug: string) => () => {
+    setSelectedFilters((prev) => prev.filter((f) => f.slug !== slug));
+  };
+  const handleDeleteAllFilters = () => {
+    setSelectedFilters([]);
+  };
+  const handleSortClicked = (slug: string) => {
+    setSortBy(slug);
+  };
+
+  useEffect(() => {
+    if (withFilter) {
+      const hasStatus = (item: PromiseItem) => {
+        const promiseSlug = slugify(item.status.title);
+        return selectedFilters.some((c) => c.slug === promiseSlug);
+      };
+      const hasCategory = (item: PromiseItem) => {
+        const promiseCategories = item?.categories.map((c) => slugify(c.name));
+        return selectedFilters.every((c) => promiseCategories.includes(c.slug));
+      };
+      let filteredItems: PromiseItem[] = [];
+      if (filterBy === "status") {
+        filteredItems = itemsProp.filter(hasStatus);
+      }
+      if (filterBy === "category") {
+        filteredItems = itemsProp.filter(hasCategory);
+      }
+      const hasFilters = selectedFilters?.length;
+      setItems(hasFilters ? filteredItems : itemsProp);
+    }
+  }, [selectedFilters, filterBy, itemsProp, withFilter]);
+
+  useEffect(() => {
+    if (withFilter) {
+      let sortedItems = items;
+      if (sortBy === sortByMostRecent?.slug) {
+        sortedItems = items.sort(
+          (a, b) => a.date?.localeCompare(b.date ?? "") ?? 0,
+        );
+      } else if (sortBy === sortByDeadline?.slug) {
+        sortedItems = items.sort((a, b) => {
+          const aDeadline = a?.promiseDeadline
+            ? new Date(a.promiseDeadline).getTime()
+            : (a.events?.[0]?.year ?? 0);
+          const bDeadline = b?.promiseDeadline
+            ? new Date(b.promiseDeadline).getTime()
+            : (b.events?.[0]?.year ?? 0);
+          return bDeadline - aDeadline;
+        });
+      }
+      setItems(sortedItems);
+    }
+  }, [sortBy, items, sortByDeadline, sortByMostRecent, withFilter]);
+
+  return (
+    <Container sx={sectionSx}>
+      <Typography variant="h1" sx={sectionTitleSx}>
+        {title || "Promises"}
+      </Typography>
+      {withFilter && (
+        <Grid container justifyContent="space-between" sx={filterGridSx}>
+          <Grid
+            size={{
+              xs: 12,
+              lg: 4,
+            }}
+          >
+            <Filter
+              label={filterByConfig?.label}
+              items={
+                filterByConfig?.items.map((item) => ({
+                  name: item.name,
+                  active: item.slug === filterBy,
+                  slug: item.slug,
+                })) ?? []
+              }
+              onClick={handleFilterByClick}
+              variant="outlined"
+            />
+            <Filter
+              label=""
+              items={
+                filterBy === "category"
+                  ? filterCategoryItems
+                  : filterStatusItems
+              }
+              onClick={handleFilterClick}
+              variant="text"
+            />
+          </Grid>
+          <Grid
+            size={{
+              xs: 12,
+              lg: "auto",
+            }}
+            sx={sortItemsSx}
+          >
+            <Typography variant="h6" sx={labelSx}>
+              {sortByConfig?.label}
+            </Typography>
+            {sortByConfig?.items.map((item) => (
+              <Sort
+                key={item.slug}
+                active={item.slug === sortBy}
+                {...item}
+                onClick={handleSortClicked}
+              />
+            ))}
+          </Grid>
+          <Grid size={{ xs: 12 }} sx={chipsSx}>
+            {selectedFilters?.map((filterItem) => (
+              <Chip
+                sx={chipSx}
+                label={filterItem.name}
+                onDelete={handleChipDelete(filterItem.slug)}
+                key={filterItem.slug}
+              />
+            ))}
+            {selectedFilters?.length > 0 && (
+              <Chip
+                sx={chipSx}
+                label="Delete All"
+                onDelete={handleDeleteAllFilters}
+              />
+            )}
+          </Grid>
+        </Grid>
+      )}
+      <Grid container>
+        {items.map((card) => (
+          <Grid
+            key={card.title}
+            size={{ xs: 12, lg: 4 }}
+            sx={{
+              pb: {
+                xs: 3.75,
+                lg: 2,
+              },
+            }}
+          >
+            <PostCard {...card} />
+          </Grid>
+        ))}
+      </Grid>
+    </Container>
+  );
+}
+
+export default Promises;
