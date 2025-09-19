@@ -1,8 +1,5 @@
 import { WorkflowConfig } from "payload";
 import { airtableWorkflow } from "./airtableWorkflow";
-import { meedanStatusesWorkflow } from "./meedanStatusesWorkflow";
+import { meedanWorkflow } from "./meedanWorkflow";
 
-export const workflows: WorkflowConfig[] = [
-  airtableWorkflow,
-  meedanStatusesWorkflow,
-];
+export const workflows: WorkflowConfig[] = [airtableWorkflow, meedanWorkflow];

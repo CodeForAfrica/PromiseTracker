@@ -69,6 +69,7 @@ export interface Config {
   collections: {
     documents: Document;
     'ai-extractions': AiExtraction;
+    promises: Promise;
     media: Media;
     pages: Page;
     users: User;
@@ -86,6 +87,7 @@ export interface Config {
   collectionsSelect: {
     documents: DocumentsSelect<false> | DocumentsSelect<true>;
     'ai-extractions': AiExtractionsSelect<false> | AiExtractionsSelect<true>;
+    promises: PromisesSelect<false> | PromisesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
@@ -127,6 +129,7 @@ export interface Config {
       createPoliticalEntity: TaskCreatePoliticalEntity;
       fetchPromiseStatuses: TaskFetchPromiseStatuses;
       updatePromiseStatus: TaskUpdatePromiseStatus;
+      syncMeedanPromises: TaskSyncMeedanPromises;
       inline: {
         input: unknown;
         output: unknown;
@@ -134,7 +137,7 @@ export interface Config {
     };
     workflows: {
       airtableWorkflow: WorkflowAirtableWorkflow;
-      meedanStatusesWorkflow: WorkflowMeedanStatusesWorkflow;
+      meedanWorkflow: WorkflowMeedanWorkflow;
     };
   };
 }
@@ -354,6 +357,31 @@ export interface PromiseStatus {
     color?: string | null;
     textColor?: string | null;
   };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promises".
+ */
+export interface Promise {
+  id: string;
+  meedanId: string;
+  title?: string | null;
+  headline?: string | null;
+  description?: string | null;
+  text?: string | null;
+  introduction?: string | null;
+  statusLabel?: string | null;
+  status?: (string | null) | PromiseStatus;
+  themeColor?: string | null;
+  image?: (string | null) | Media;
+  imageUrl?: string | null;
+  publishedArticleUrl?: string | null;
+  useVisualCard?: boolean | null;
+  state?: string | null;
+  politicalEntity?: (string | null) | PoliticalEntity;
+  lastPublished?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -679,7 +707,8 @@ export interface PayloadJob {
           | 'uploadToMeedan'
           | 'createPoliticalEntity'
           | 'fetchPromiseStatuses'
-          | 'updatePromiseStatus';
+          | 'updatePromiseStatus'
+          | 'syncMeedanPromises';
         taskID: string;
         input?:
           | {
@@ -722,6 +751,7 @@ export interface PayloadJob {
                 | 'createPoliticalEntity'
                 | 'fetchPromiseStatuses'
                 | 'updatePromiseStatus'
+                | 'syncMeedanPromises'
               )
             | null;
           taskID?: string | null;
@@ -729,7 +759,7 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  workflowSlug?: ('airtableWorkflow' | 'meedanStatusesWorkflow') | null;
+  workflowSlug?: ('airtableWorkflow' | 'meedanWorkflow') | null;
   taskSlug?:
     | (
         | 'inline'
@@ -742,6 +772,7 @@ export interface PayloadJob {
         | 'createPoliticalEntity'
         | 'fetchPromiseStatuses'
         | 'updatePromiseStatus'
+        | 'syncMeedanPromises'
       )
     | null;
   queue?: string | null;
@@ -773,6 +804,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'ai-extractions';
         value: string | AiExtraction;
+      } | null)
+    | ({
+        relationTo: 'promises';
+        value: string | Promise;
       } | null)
     | ({
         relationTo: 'media';
@@ -899,6 +934,30 @@ export interface AiExtractionsSelect<T extends boolean = true> {
         Status?: T;
         id?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promises_select".
+ */
+export interface PromisesSelect<T extends boolean = true> {
+  meedanId?: T;
+  title?: T;
+  headline?: T;
+  description?: T;
+  text?: T;
+  introduction?: T;
+  statusLabel?: T;
+  status?: T;
+  themeColor?: T;
+  image?: T;
+  imageUrl?: T;
+  publishedArticleUrl?: T;
+  useVisualCard?: T;
+  state?: T;
+  politicalEntity?: T;
+  lastPublished?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1453,6 +1512,14 @@ export interface TaskUpdatePromiseStatus {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSyncMeedanPromises".
+ */
+export interface TaskSyncMeedanPromises {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "WorkflowAirtableWorkflow".
  */
 export interface WorkflowAirtableWorkflow {
@@ -1460,9 +1527,9 @@ export interface WorkflowAirtableWorkflow {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "WorkflowMeedanStatusesWorkflow".
+ * via the `definition` "WorkflowMeedanWorkflow".
  */
-export interface WorkflowMeedanStatusesWorkflow {
+export interface WorkflowMeedanWorkflow {
   input?: unknown;
 }
 /**
