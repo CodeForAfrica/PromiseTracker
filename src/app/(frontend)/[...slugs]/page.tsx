@@ -11,7 +11,7 @@ import { PoliticalEntityList } from "@/components/PoliticalEntityList";
 import { getTenantBySubDomain, getTenantNavigation } from "@/lib/data/tenants";
 import {
   getPoliticalEntitiesByTenant,
-  getExtractionCountsForEntities,
+  getPromiseCountsForEntities,
 } from "@/lib/data/politicalEntities";
 
 type Args = {
@@ -44,7 +44,7 @@ export default async function Page(params: Args) {
 
   if (!politicalEntity) {
     const fallbackPageSlugs = slugs.length > 0 ? slugs : ["index"];
-    const extractionCounts = await getExtractionCountsForEntities(
+    const promiseCounts = await getPromiseCountsForEntities(
       politicalEntities.map((entity) => entity.id)
     );
 
@@ -55,7 +55,7 @@ export default async function Page(params: Args) {
           tenant={tenant}
           politicalEntities={politicalEntities}
           pageSlugs={fallbackPageSlugs}
-          extractionCounts={extractionCounts}
+          promiseCounts={promiseCounts}
         />
         <Footer title={title} description={description} {...footer} />
       </>

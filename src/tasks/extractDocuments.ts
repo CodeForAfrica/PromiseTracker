@@ -1,8 +1,10 @@
 import { AxApacheTika } from "@ax-llm/ax";
 import { TaskConfig } from "payload";
 import { existsSync, readFileSync } from "fs";
+import { unlink } from "fs/promises";
 import { join } from "path";
 import { Media } from "@/payload-types";
+import { downloadFile } from "@/utils/files";
 
 const tika = new AxApacheTika({
   url: process.env.AX_APACHE_TIKA_URL ?? "http://127.0.0.1:9998/",
@@ -69,46 +71,106 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
           let hasExtractedText = false;
 
           for (const file of files) {
-            const filePath = join(process.cwd(), "media", file.filename!);
-            if (!existsSync(filePath)) {
-              logger.warn("extractDocuments:: File not found on disk", {
-                id: doc.id,
-                filePath,
-              });
-              continue;
-            }
-            const extractedText = await extractTextFromDoc(filePath);
+            const filePath = file.filename
+              ? join(process.cwd(), "media", file.filename)
+              : null;
+            let fileInput: string | null = null;
+            let tempFilePath: string | null = null;
 
-            if (extractedText.length === 0) {
+            if (filePath && existsSync(filePath)) {
+              logger.info(`File exist in: ${filePath}`);
+              fileInput = filePath;
+            } else if (file.url) {
+              const url = `${process.env.NEXT_PUBLIC_APP_URL}${file.url}`;
+              logger.info(
+                `File does not exist in ${fileInput}. Downloading from ${url}`
+              );
+              try {
+                tempFilePath = await downloadFile(url);
+                console.log(`Tempfilepath: ${tempFilePath}`);
+                fileInput = tempFilePath;
+
+                logger.info(
+                  "extractDocuments:: Downloaded file from remote storage",
+                  {
+                    id: doc.id,
+                    fileId: file.id,
+                  }
+                );
+              } catch (downloadError) {
+                logger.error(
+                  "extractDocuments:: Error downloading remote file",
+                  {
+                    id: doc.id,
+                    fileId: file.id,
+                    error:
+                      downloadError instanceof Error
+                        ? downloadError.message
+                        : String(downloadError),
+                  }
+                );
+                continue;
+              }
+            } else {
               logger.warn(
-                "extractDocuments:: No text extracted from document",
+                "extractDocuments:: File unavailable locally and has no URL",
                 {
                   id: doc.id,
+                  fileId: file.id,
                 }
               );
               continue;
             }
 
-            logger.info("extractDocuments:: Successfully extracted text", {
-              id: doc.id,
-              textLength: extractedText.join("\n").length,
-            });
+            try {
+              const extractedText = await extractTextFromDoc(fileInput);
 
-            text.push({
-              root: {
-                type: "root",
-                children: extractedText.map((line) => ({
-                  children: [
-                    {
-                      text: line,
-                      type: "text",
-                    },
-                  ],
-                  type: "paragraph",
-                })),
-              },
-            });
-            hasExtractedText = true;
+              if (extractedText.length === 0) {
+                logger.warn(
+                  "extractDocuments:: No text extracted from document",
+                  {
+                    id: doc.id,
+                  }
+                );
+                continue;
+              }
+
+              logger.info("extractDocuments:: Successfully extracted text", {
+                id: doc.id,
+                textLength: extractedText.join("\n").length,
+              });
+
+              text.push({
+                root: {
+                  type: "root",
+                  children: extractedText.map((line) => ({
+                    children: [
+                      {
+                        text: line,
+                        type: "text",
+                      },
+                    ],
+                    type: "paragraph",
+                  })),
+                },
+              });
+              hasExtractedText = true;
+            } finally {
+              if (tempFilePath) {
+                try {
+                  await unlink(tempFilePath);
+                } catch (cleanupError) {
+                  logger.warn("extractDocuments:: Failed to delete temp file", {
+                    id: doc.id,
+                    fileId: file.id,
+                    error:
+                      cleanupError instanceof Error
+                        ? cleanupError.message
+                        : String(cleanupError),
+                  });
+                }
+              }
+            }
           }
 
           if (!hasExtractedText) {

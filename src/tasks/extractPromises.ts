@@ -71,6 +71,40 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
       for (const document of documents) {
         const { extractedText } = document;
 
+        const { docs: existingExtractions } = await payload.find({
+          collection: "ai-extractions",
+          where: {
+            document: {
+              equals: document.id,
+            },
+          },
+          limit: 1,
+        });
+
+        const existingExtraction = existingExtractions[0];
+
+        if (existingExtraction) {
+          logger.info(
+            "extractPromises:: Skipping document with existing AI extraction",
+            {
+              documentId: document.id,
+              extractionId: existingExtraction.id,
+            }
+          );
+
+          if (!document.fullyProcessed) {
+            await payload.update({
+              collection: "documents",
+              id: document.id,
+              data: {
+                fullyProcessed: true,
+              },
+            });
+          }
+
+          continue;
+        }
+
         const plainText = extractedText
           ?.map((t) => {
             const ff = t.text?.root.children
@@ -130,7 +164,7 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
 
           if (object.promises.length > 0) {
             await payload.create({
-              collection: "promises",
+              collection: "ai-extractions",
               data: {
                 title: object.title,
                 document: document,

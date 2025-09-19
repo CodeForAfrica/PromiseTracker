@@ -1,6 +1,25 @@
 const BASE_URL = "https://check-api.checkmedia.org/api/graphql";
 const DEFAULT_CHANNEL_ID = "1";
 const DEFAULT_PAGE_SIZE = 100;
+const PUBLISHED_REPORTS_QUERY = `
+  query PublishedReports($query: String!) {
+    search(query: $query) {
+      number_of_results
+      item_navigation_offset
+      medias {
+        edges {
+            node {
+              id
+              status
+              dynamic_annotation_report_design {
+                data
+              }
+            }
+        }
+      }
+    }
+  }
+`;
 
 const createMutationQuery = () => {
   return `
@@ -147,6 +166,174 @@ export interface CreateProjectMediaResponse {
     path?: string[];
   }>;
 }
+
+type PublishedReportsResponse = {
+  data?: {
+    search?: {
+      number_of_results?: number;
+      item_navigation_offset?: number;
+      medias?: {
+        edges?: Array<{
+          node?: {
+            id?: string | null;
+            status?: string | null;
+            dynamic_annotation_report_design?: {
+              data?: {
+                options?: Record<string, unknown> | null;
+                state?: string | null;
+                last_published?: string | number | null;
+              } | null;
+            } | null;
+          } | null;
+        }>;
+      } | null;
+    } | null;
+  };
+};
+
+export interface PublishedReport {
+  meedanId: string;
+  introduction: string | null;
+  themeColor: string | null;
+  statusLabel: string | null;
+  status: string | null;
+  image: string | null;
+  title: string | null;
+  headline: string | null;
+  text: string | null;
+  description: string | null;
+  publishedArticleUrl: string | null;
+  useVisualCard: boolean;
+  state: string | null;
+  lastPublished: string | null;
+}
+
+const toNullableString = (value: unknown): string | null => {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  return null;
+};
+
+const toBoolean = (value: unknown): boolean => {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "false" || normalized === "0" || normalized === "") {
+      return false;
+    }
+    return true;
+  }
+
+  if (typeof value === "number") {
+    return value !== 0;
+  }
+
+  return false;
+};
+
+const parseTimestampToISO = (value: unknown): string | null => {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const ms = value < 1e12 ? value * 1000 : value;
+    return new Date(ms).toISOString();
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed.length === 0) {
+      return null;
+    }
+
+    const numeric = Number(trimmed);
+    if (!Number.isNaN(numeric)) {
+      const ms = numeric < 1e12 ? numeric * 1000 : numeric;
+      return new Date(ms).toISOString();
+    }
+
+    const date = new Date(trimmed);
+    if (!Number.isNaN(date.getTime())) {
+      return date.toISOString();
+    }
+  }
+
+  return null;
+};
+
+export const fetchPublishedReports = async ({
+  apiKey,
+  teamId,
+}: {
+  apiKey: string;
+  teamId: string;
+}): Promise<PublishedReport[]> => {
+  const payload = {
+    query: PUBLISHED_REPORTS_QUERY,
+    variables: {
+      query: JSON.stringify({ report_status: ["published"] }),
+    },
+  };
+
+  const response = await fetch(BASE_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Check-Token": apiKey,
+      "X-Check-Team": teamId,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const json = (await response.json()) as PublishedReportsResponse;
+
+  const edges =
+    json?.data?.search?.medias?.edges?.filter(Boolean) ?? [];
+
+  return edges
+    .map((edge) => edge?.node)
+    .filter((node): node is NonNullable<typeof node> => Boolean(node))
+    .map((node) => {
+      const meedanId = toNullableString(node.id);
+      const data =
+        node.dynamic_annotation_report_design?.data ?? undefined;
+      const options = (data?.options ?? {}) as Record<string, unknown>;
+      const status = toNullableString(node.status ?? null);
+
+      if (!meedanId) {
+        return null;
+      }
+
+      return {
+        meedanId,
+        status,
+        introduction: toNullableString(options["introduction"]),
+        themeColor: toNullableString(options["theme_color"]),
+        statusLabel: toNullableString(options["status_label"]),
+        image: toNullableString(options["image"]),
+        title: toNullableString(options["title"]),
+        headline: toNullableString(options["headline"]),
+        text: toNullableString(options["text"]),
+        description: toNullableString(options["description"]),
+        publishedArticleUrl: toNullableString(options["published_article_url"]),
+        useVisualCard: toBoolean(options["use_visual_card"]),
+        state: toNullableString(data?.state ?? null),
+        lastPublished: parseTimestampToISO(data?.last_published ?? null),
+      } satisfies PublishedReport;
+    })
+    .filter((report): report is PublishedReport => report !== null);
+};
 
 export const postRequest = async ({
   apiKey,
