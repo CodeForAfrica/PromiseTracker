@@ -3,7 +3,7 @@ import { getGlobalPayload } from "@/lib/payload";
 import type {
   HeroBlock,
   PoliticalEntity,
-  AiExtraction as AiExtractionDocument,
+  Promise as PromiseDocument,
   PromiseStatus,
 } from "@/payload-types";
 import { format } from "date-fns";
@@ -62,9 +62,7 @@ type StatusById = Map<string, PromiseStatus>;
 
 type StatusSummaryMap = Map<string, HeroStatusSummary>;
 
-type AiExtractionItem = NonNullable<
-  AiExtractionDocument["extractions"]
->[number];
+type PromiseItem = PromiseDocument;
 
 const FALLBACK_GROUP_DEFINITIONS = [
   {
@@ -81,21 +79,30 @@ const FALLBACK_GROUP_DEFINITIONS = [
   },
 ];
 
-const resolveExtractionStatus = (
-  extraction: AiExtractionItem,
-  statusById: StatusById
+const resolvePromiseStatus = (
+  promise: PromiseItem,
+  statusById: StatusById,
+  statusByLabel: Map<string, PromiseStatus>
 ): PromiseStatus | null => {
-  const statusRef = extraction.Status;
+  const statusRef = promise.status;
 
-  if (!statusRef) {
+  if (statusRef) {
+    if (typeof statusRef === "string") {
+      const mapped = statusById.get(statusRef);
+      if (mapped) {
+        return mapped;
+      }
+    } else {
+      return statusRef;
+    }
+  }
+
+  const label = promise.statusLabel?.trim().toLowerCase();
+  if (!label) {
     return null;
   }
 
-  if (typeof statusRef === "string") {
-    return statusById.get(statusRef) ?? null;
-  }
-
-  return statusRef;
+  return statusByLabel.get(label) ?? null;
 };
 
 const formatUpdatedAt = (date: string): string => {
@@ -210,57 +217,55 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
     statusDocs.map((status) => [status.id, status])
   );
   const statusSummaries = buildStatusSummaries(statusDocs);
+  const statusByLabel = new Map<string, PromiseStatus>();
+  statusDocs.forEach((status) => {
+    const labelKey = status.label?.trim().toLowerCase();
+    if (labelKey) {
+      statusByLabel.set(labelKey, status);
+    }
 
-  const { docs: documentDocs } = await payload.find({
-    collection: "documents",
+    const meedanKey = status.meedanId?.trim().toLowerCase();
+    if (meedanKey && !statusByLabel.has(meedanKey)) {
+      statusByLabel.set(meedanKey, status);
+    }
+  });
+
+  const { docs: promiseDocs } = await payload.find({
+    collection: "promises",
     where: {
       politicalEntity: {
         equals: entity.id,
       },
     },
     limit: -1,
+    depth: 1,
   });
 
-  const documentIds = documentDocs.map((doc) => doc.id);
+  let totalPromises = 0;
 
-  const { docs: aiExtractionDocs } = documentIds.length
-    ? await payload.find({
-        collection: "ai-extractions",
-        where: {
-          document: {
-            in: documentIds,
-          },
-        },
-        depth: 2,
-        limit: -1,
-      })
-    : { docs: [] };
+  for (const promise of promiseDocs as PromiseItem[]) {
+    const status = resolvePromiseStatus(
+      promise,
+      statusById,
+      statusByLabel
+    );
 
-  let totalExtractions = 0;
-
-  for (const aiExtractionDoc of aiExtractionDocs) {
-    const extractions = aiExtractionDoc.extractions ?? [];
-
-    for (const extraction of extractions) {
-      const status = resolveExtractionStatus(extraction, statusById);
-
-      if (!status) {
-        continue;
-      }
-
-      const summary = statusSummaries.get(status.id);
-      if (!summary) {
-        continue;
-      }
-
-      summary.count += 1;
-      totalExtractions += 1;
+    if (!status) {
+      continue;
     }
+
+    const summary = statusSummaries.get(status.id);
+    if (!summary) {
+      continue;
+    }
+
+    summary.count += 1;
+    totalPromises += 1;
   }
 
   statusSummaries.forEach((summary) => {
     summary.percentage =
-      totalExtractions > 0 ? (summary.count / totalExtractions) * 100 : 0;
+      totalPromises > 0 ? (summary.count / totalPromises) * 100 : 0;
   });
 
   const groups = buildChartGroups(block.chartGroups, statusSummaries);
@@ -306,7 +311,7 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
       image: entityImage,
     },
     metrics: {
-      total: totalExtractions,
+      total: totalPromises,
       statuses: summaries,
       groups,
     },
