@@ -22,7 +22,7 @@ type PoliticalEntityListProps = {
   tenant: Tenant;
   politicalEntities: PoliticalEntity[];
   pageSlugs?: string[];
-  extractionCounts?: Record<string, number>;
+  promiseCounts?: Record<string, number>;
 };
 
 const buildHref = (entity: PoliticalEntity, pageSlugs: string[] = []) => {
@@ -41,7 +41,7 @@ const buildHref = (entity: PoliticalEntity, pageSlugs: string[] = []) => {
 export const PoliticalEntityList = async ({
   politicalEntities,
   pageSlugs = [],
-  extractionCounts = {},
+  promiseCounts = {},
 }: PoliticalEntityListProps) => {
   const payload = await getGlobalPayload();
 
@@ -74,7 +74,7 @@ export const PoliticalEntityList = async ({
             {politicalEntities.map(async (entity, index) => {
               const href = buildHref(entity, pageSlugs);
               const media = await resolveMedia(entity.image);
-              const extractionCount = extractionCounts[entity.id] ?? 0;
+              const promiseCount = promiseCounts[entity.id] ?? 0;
               const initials = entity.name
                 .split(" ")
                 .slice(0, 2)
@@ -132,9 +132,9 @@ export const PoliticalEntityList = async ({
                           ) : null}
                         </Box>
                         <Chip
-                          label={`${extractionCount} promise${extractionCount === 1 ? "" : "s"}`}
-                          color={extractionCount > 0 ? "primary" : "default"}
-                          variant={extractionCount > 0 ? "filled" : "outlined"}
+                          label={`${promiseCount} promise${promiseCount === 1 ? "" : "s"}`}
+                          color={promiseCount > 0 ? "primary" : "default"}
+                          variant={promiseCount > 0 ? "filled" : "outlined"}
                         />
                       </Stack>
                     </ListItemButton>

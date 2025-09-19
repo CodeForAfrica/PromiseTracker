@@ -448,6 +448,9 @@ export interface HeroBlock {
    * Displayed alongside the political entity name in the hero.
    */
   tagline?: string | null;
+  /**
+   * Label displayed beside the total count of synced promises.
+   */
   promiseLabel?: string | null;
   /**
    * Sentence that follows the promise count, for example 'tracked on PromiseTracker'.

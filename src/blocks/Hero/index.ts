@@ -13,6 +13,7 @@ export const Hero: Block = {
         en: "Tagline",
         fr: "Accroche",
       },
+      defaultValue: "Tracking",
       admin: {
         description: {
           en: "Displayed alongside the political entity name in the hero.",
@@ -29,6 +30,12 @@ export const Hero: Block = {
           label: {
             en: "Promise Label",
             fr: "Libellé des promesses",
+          },
+          admin: {
+            description: {
+              en: "Label displayed beside the total count of synced promises.",
+              fr: "Libellé affiché à côté du nombre total de promesses synchronisées.",
+            },
           },
           defaultValue: "promises",
         },
@@ -65,6 +72,7 @@ export const Hero: Block = {
         en: "Profile Title Override",
         fr: "Remplacement du titre du profil",
       },
+      defaultValue: "Campaign Promises made by",
       admin: {
         description: {
           en: "Optional text that replaces the political entity position shown above the last updated date.",
