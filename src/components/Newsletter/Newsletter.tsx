@@ -10,6 +10,7 @@ interface Props {
   title: string;
   image?: ImageType;
   embedCode: TrustedHTML;
+  entitySlug?: string;
 }
 const Newsletter: FC<Props> = forwardRef(function Newsletter(
   { description: descriptionProp, title, image, embedCode },

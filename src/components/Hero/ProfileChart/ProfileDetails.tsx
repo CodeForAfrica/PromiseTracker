@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import DonutLargeIcon from "@mui/icons-material/DonutLarge";
 import Grid from "@mui/material/Grid";
-import { Box, IconButton, Stack, Typography } from "@mui/material";
+import { Box, IconButton, Stack, Theme, Typography } from "@mui/material";
 
 import type { HeroStatusSummary } from "../index";
 import Share from "@/components/Share";
@@ -33,7 +33,7 @@ const buildSummary = (
   name: string,
   totalPromises: number,
   promiseLabel: string,
-  trailText: string
+  trailText: string,
 ) => {
   return {
     intro: `${position} ${name}`.trim(),
@@ -58,7 +58,7 @@ export const ProfileDetails = ({
 }: ProfileDetailsProps) => {
   const summary = useMemo(
     () => buildSummary(position, name, totalPromises, promiseLabel, trailText),
-    [position, name, totalPromises, promiseLabel, trailText]
+    [position, name, totalPromises, promiseLabel, trailText],
   );
 
   return (
@@ -72,7 +72,7 @@ export const ProfileDetails = ({
     >
       <Grid size={{ xs: 12, lg: 8 }}>
         <Stack spacing={1.5}>
-          {(headline.tagline || headline.name) ? (
+          {headline.tagline || headline.name ? (
             <Typography
               component="h1"
               variant="h1"
@@ -80,7 +80,11 @@ export const ProfileDetails = ({
             >
               {headline.tagline ? (
                 <>
-                  <Typography component="span" variant="inherit" sx={{ color: "#005DFD" }}>
+                  <Typography
+                    component="span"
+                    variant="inherit"
+                    sx={{ color: "#005DFD" }}
+                  >
                     {headline.tagline}
                   </Typography>{" "}
                   {headline.name}
@@ -160,7 +164,7 @@ export const ProfileDetails = ({
           <Share
             title={shareTitle}
             iconButtonProps={{
-              sx: (theme) => ({
+              sx: (theme: Theme) => ({
                 backgroundColor: theme.palette.secondary.light,
                 width: theme.typography.pxToRem(40),
                 height: theme.typography.pxToRem(40),
@@ -169,6 +173,8 @@ export const ProfileDetails = ({
                 },
               }),
             }}
+            link={""}
+            children={undefined}
           />
         </Stack>
       </Grid>
