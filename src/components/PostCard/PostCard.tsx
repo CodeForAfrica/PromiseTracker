@@ -15,37 +15,40 @@ import React, { FC } from "react";
 import Share from "@/components/Share";
 import ShareIcon from "@/assets/share-icon.svg";
 import site from "@/utils/site";
+import { Media, PromiseStatus } from "@/payload-types";
 
 interface Props {
   as?: React.ElementType;
-  date?: string;
+  createdAt?: string;
   description?: string;
-  image?: {
-    url: string;
-    alt?: string;
-  };
-  title?: string;
+  image?: Media | null;
+  title?: string | null;
   imageSx?: SxProps;
   children?: React.ReactNode;
   href?: string;
   sx?: SxProps;
+  status: PromiseStatus;
 }
 
 const PostCard: FC<Props> = function PostCard({
   children,
   as,
-  date,
+  createdAt,
   description,
   image,
   title,
   imageSx,
+  status,
   ...props
 }) {
+  const date = new Date(createdAt ?? "").toISOString().split("T")[0];
   const rootSx = {
-    border: "1px solid #EBEBEB",
     minWidth: 314,
     maxHeight: 510,
+    height: 510,
     width: "100%",
+    overflow: "hidden",
+    boxSizing: "border-box",
     "@media (min-width:1200px)": {
       marginRight: 21.5,
       maxHeight: 510,
@@ -53,12 +56,20 @@ const PostCard: FC<Props> = function PostCard({
       overflow: "visible",
       "&:last-of-type": { marginRight: 0 },
     },
+    "&:hover": {
+      boxShadow: "rgba(0, 0, 0, 0.1) 0px 0px 4px 4px",
+      borderTopColor: `${status.colors?.color}`,
+    },
     ...props.sx,
   };
   const contentSx = { p: 0 };
   const contentRootSx = {
-    height: "100%",
-    padding: "2rem 1rem",
+    height: 510,
+    p: 2,
+    borderTop: "8px solid transparent",
+    "&:hover": {
+      borderTopColor: `${status.colors?.color}`,
+    },
   };
   const dateSx = {
     lineHeight: 1.4,
@@ -73,7 +84,7 @@ const PostCard: FC<Props> = function PostCard({
     textOverflow: "ellipsis",
   };
   const mediaSx = {
-    backgroundSize: "contain",
+    backgroundSize: "cover",
     display: "block",
     height: { xs: 185, lg: 210 },
     maxWidth: { xs: 277, lg: "100%" },
@@ -91,7 +102,7 @@ const PostCard: FC<Props> = function PostCard({
   const shareIconSx = { color: "#909090" };
 
   return (
-    <Card square variant="outlined" sx={rootSx}>
+    <Card square variant="outlined" sx={rootSx as SxProps}>
       <CardActionArea
         {...(as ? { component: as } : {})}
         {...props}
@@ -117,7 +128,7 @@ const PostCard: FC<Props> = function PostCard({
                 sx={shareSx}
                 socialLinkSx={socialLinkSx}
                 link={site.url + (as || "")}
-                title={title}
+                title={title ?? ""}
                 {...props}
               >
                 <SvgIcon
@@ -133,7 +144,7 @@ const PostCard: FC<Props> = function PostCard({
           <CardMedia
             component="div"
             image={image.url}
-            title={title}
+            title={title ?? ""}
             sx={mediaSx}
           />
         ) : null}

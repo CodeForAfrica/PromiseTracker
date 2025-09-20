@@ -2,10 +2,11 @@
 import { Grid, Typography, Chip, Container } from "@mui/material";
 import React, { useState, useEffect } from "react";
 
-import PostCard from "@/components/PostCard";
 import Filter from "./Filter";
 import Sort from "./Sort";
 import { slugify } from "@/utils/utils";
+import { Promise as PromiseItem, PromiseStatus } from "@/payload-types";
+import PromiseCard from "../PromiseCard";
 
 interface SortItem {
   name: string;
@@ -15,14 +16,7 @@ interface SortItem {
 interface ProjectMeta {
   tags: Array<SortItem>;
 }
-interface PromiseItem {
-  status: { title: string };
-  categories: Array<{ name: string }>;
-  date?: string;
-  promiseDeadline?: string;
-  events?: Array<{ year: number }>;
-  title?: string;
-}
+
 interface FilterSort {
   label?: string;
   items: SortItem[];
@@ -122,20 +116,20 @@ function Promises({
   useEffect(() => {
     if (withFilter) {
       const hasStatus = (item: PromiseItem) => {
-        const promiseSlug = slugify(item.status.title);
+        const promiseSlug =
+          typeof item?.status === "object" &&
+          item?.status !== null &&
+          "label" in item.status
+            ? slugify(item.status.label ?? "")
+            : slugify(item.status ?? "");
         return selectedFilters.some((c) => c.slug === promiseSlug);
       };
-      const hasCategory = (item: PromiseItem) => {
-        const promiseCategories = item?.categories.map((c) => slugify(c.name));
-        return selectedFilters.every((c) => promiseCategories.includes(c.slug));
-      };
+
       let filteredItems: PromiseItem[] = [];
       if (filterBy === "status") {
         filteredItems = itemsProp.filter(hasStatus);
       }
-      if (filterBy === "category") {
-        filteredItems = itemsProp.filter(hasCategory);
-      }
+
       const hasFilters = selectedFilters?.length;
       setItems(hasFilters ? filteredItems : itemsProp);
     }
@@ -146,16 +140,16 @@ function Promises({
       let sortedItems = items;
       if (sortBy === sortByMostRecent?.slug) {
         sortedItems = items.sort(
-          (a, b) => a.date?.localeCompare(b.date ?? "") ?? 0,
+          (a, b) => a.createdAt?.localeCompare(b.createdAt ?? "") ?? 0,
         );
       } else if (sortBy === sortByDeadline?.slug) {
         sortedItems = items.sort((a, b) => {
-          const aDeadline = a?.promiseDeadline
-            ? new Date(a.promiseDeadline).getTime()
-            : (a.events?.[0]?.year ?? 0);
-          const bDeadline = b?.promiseDeadline
-            ? new Date(b.promiseDeadline).getTime()
-            : (b.events?.[0]?.year ?? 0);
+          const aDeadline = a.lastPublished
+            ? new Date(a.lastPublished).getTime()
+            : 0;
+          const bDeadline = b?.lastPublished
+            ? new Date(b.lastPublished).getTime()
+            : 1;
           return bDeadline - aDeadline;
         });
       }
@@ -238,7 +232,7 @@ function Promises({
         </Grid>
       )}
       <Grid container>
-        {items.map((card) => (
+        {items.map((card: PromiseItem) => (
           <Grid
             key={card.title}
             size={{ xs: 12, lg: 4 }}
@@ -249,7 +243,12 @@ function Promises({
               },
             }}
           >
-            <PostCard {...card} />
+            <PromiseCard
+              {...card}
+              title={card.title ?? null}
+              image={typeof card.image === "string" ? undefined : card.image}
+              status={card.status as PromiseStatus}
+            />
           </Grid>
         ))}
       </Grid>

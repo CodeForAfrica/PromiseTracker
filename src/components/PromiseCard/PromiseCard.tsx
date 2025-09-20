@@ -2,19 +2,13 @@ import React, { FC } from "react";
 
 import PostCard from "@/components/PostCard/PostCard";
 import Status from "@/components/PromiseStatus/PromiseStatus";
+import { PromiseStatus, Promise as P, Media } from "@/payload-types";
 
 interface Props {
-  status: {
-    title: string;
-    label: string;
-    color: string;
-  };
+  status: PromiseStatus;
   href?: string;
-  title: string;
-  image?: {
-    url: string;
-    alt?: string;
-  };
+  title: string | null;
+  image?: Media | null;
 }
 const PromiseCard: FC<Props> = function PromiseCard({
   status,
@@ -30,9 +24,10 @@ const PromiseCard: FC<Props> = function PromiseCard({
       title={title}
       href={href}
       imageSx={{
-        border: `8px solid ${status.color}`,
-        background: `linear-gradient(to right, ${status.color}, ${status.color}), url("${image?.url}") center center / cover no-repeat`,
+        border: `8px solid ${status.colors?.color}`,
+        background: `linear-gradient(to right, ${status.colors?.color || "#000"}, ${status.colors?.color || "#000"}), url("${image?.url}") center center / cover no-repeat`,
       }}
+      status={status}
     >
       <Status {...status} />
     </PostCard>

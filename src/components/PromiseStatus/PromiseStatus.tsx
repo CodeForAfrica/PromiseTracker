@@ -1,14 +1,12 @@
-import { Chip } from "@mui/material";
+import { PromiseStatus } from "@/payload-types";
+import { Chip, SxProps } from "@mui/material";
 import React from "react";
 
-interface Props {
-  title: string;
-  color?: string;
-  textColor?: string;
-  [key: string]: any;
+interface Props extends PromiseStatus {
+  sx?: SxProps;
 }
 
-function Status({ title, color, textColor, ...props }: Props) {
+function Status({ label, colors: { color, textColor } = {}, ...props }: Props) {
   const sx = {
     backgroundColor: color || "#909090",
     borderRadius: 0,
@@ -20,9 +18,9 @@ function Status({ title, color, textColor, ...props }: Props) {
     mt: 2,
     textTransform: "uppercase",
     ...props.sx,
-  };
+  } as SxProps;
 
-  return <Chip label={title} sx={sx} {...props} />;
+  return <Chip label={label} sx={sx} />;
 }
 
 export default Status;
