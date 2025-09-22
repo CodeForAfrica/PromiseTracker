@@ -58,10 +58,10 @@ export default function Search({
           color: theme.palette.primary.main,
           flex: 1,
           padding: "0rem 2rem",
-          fontSize: theme.typography.pxToRem(14),
           fontFamily: theme.typography.fontFamily,
           fontWeight: 500,
           "&: MuiInputBase-input": {
+            fontSize: "14px",
             flex: 1,
           },
         })}

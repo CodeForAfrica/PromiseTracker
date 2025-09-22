@@ -9,10 +9,13 @@ type CircleSvgChartProps = {
   totalPromises: number;
 };
 
-const SIZE = 120;
+const SIZE = 100;
 const CENTER = SIZE / 2;
 
-export const CircleSvgChart = ({ status, totalPromises }: CircleSvgChartProps) => {
+export const CircleSvgChart = ({
+  status,
+  totalPromises,
+}: CircleSvgChartProps) => {
   const percentage = totalPromises > 0 ? status.percentage : 0;
   const radius = Math.max((percentage * SIZE) / 200, 16);
 
@@ -29,16 +32,32 @@ export const CircleSvgChart = ({ status, totalPromises }: CircleSvgChartProps) =
         />
       </svg>
       <Box sx={{ pt: 1.5 }}>
-        <Typography variant="h6" sx={{ color: "primary.dark" }}>
+        <Typography
+          variant="h3"
+          sx={{
+            fontSize: 24,
+            fontWeight: "normal",
+          }}
+        >
           {status.count}
         </Typography>
         <Typography
-          variant="subtitle2"
-          sx={{ color: "primary.main", textTransform: "capitalize" }}
+          variant="h4"
+          sx={(theme) => ({
+            textTransform: "capitalize",
+            color: "primary.main",
+            fontWeight: 400,
+            fontSize: theme.typography.pxToRem(12),
+          })}
         >
-          {status.label.toLowerCase()}
+          <span style={{ fontSize: 12 }}>{status.label.toLowerCase()}</span>
         </Typography>
-        <Typography variant="caption" sx={{ color: "text.secondary" }}>
+        <Typography
+          variant="caption"
+          sx={{
+            color: "#909090",
+          }}
+        >
           {Math.round(percentage)}%
         </Typography>
       </Box>

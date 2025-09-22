@@ -61,7 +61,6 @@ const baseTheme = createTheme({
       fontStyle: "normal",
       fontWeight: 600,
       letterSpacing: "0.64px",
-      textTransform: "uppercase",
     },
     h5: {
       fontFamily: FONT_FAMILY_TEXT_SECONDARY,
@@ -251,7 +250,7 @@ const theme = createTheme(baseTheme, {
         },
       },
     },
-    { clone: false }
+    { clone: false },
   ),
   components: {
     MuiButton: {
@@ -308,6 +307,32 @@ const theme = createTheme(baseTheme, {
           "&:hover": {
             boxShadow: "none",
           },
+        },
+      },
+    },
+    MuiContainer: {
+      styleOverrides: {
+        root: {
+          [breakpoints.up("xs")]: {
+            maxWidth: "100%",
+            paddingLeft: 16,
+            paddingRight: 16,
+          },
+          [breakpoints.up("sm")]: { maxWidth: "600px" },
+          [breakpoints.up("md")]: {
+            maxWidth: "960px",
+            paddingLeft: 0,
+            paddingRight: 0,
+          },
+          [breakpoints.up("lg")]: { maxWidth: "1080px" },
+        },
+        // padding-left { xs: 16px, lg: 0 }
+      },
+    },
+    MuiInputBase: {
+      styleOverrides: {
+        input: {
+          fontSize: "14px",
         },
       },
     },

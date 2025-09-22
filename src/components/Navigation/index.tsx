@@ -57,7 +57,7 @@ export default function Navigation({
                 alignItems="center"
                 justifyContent="space-between"
               >
-                <Grid size={5}>
+                <Grid size={4}>
                   <IconButton
                     component={NextLink}
                     href={entitySlug ? `/${entitySlug}` : "/"}
@@ -88,7 +88,7 @@ export default function Navigation({
                   </IconButton>
                 </Grid>
                 <DesktopMenu menus={menus} entitySlug={entitySlug} />
-                <Grid size={2} sx={{ display: { xs: "none", lg: "flex" } }}>
+                <Grid size={3} sx={{ display: { xs: "none", lg: "flex" } }}>
                   <Box
                     sx={{
                       pl: "1rem",

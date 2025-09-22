@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Typography } from "@mui/material";
+import { Box, SxProps, Typography } from "@mui/material";
 
 import type { HeroStatusSummary } from "../../index";
 
@@ -8,6 +8,7 @@ type RectSvgChartProps = {
   status: HeroStatusSummary;
   totalPromises: number;
   containerWidth: number;
+  sx?: SxProps;
 };
 
 const HEIGHT = 160;
@@ -17,6 +18,7 @@ export const RectSvgChart = ({
   status,
   totalPromises,
   containerWidth,
+  sx,
 }: RectSvgChartProps) => {
   if (totalPromises === 0 || status.count === 0 || containerWidth <= 0) {
     return null;
@@ -27,7 +29,7 @@ export const RectSvgChart = ({
   const width = Math.max((percentage / 100) * containerWidth, availableWidth);
 
   return (
-    <Box sx={{ textAlign: "center" }}>
+    <Box sx={[{ textAlign: "center" }, ...(Array.isArray(sx) ? sx : [sx])]}>
       <svg width={width} height={HEIGHT} role="presentation">
         <rect
           x={0}
@@ -42,14 +44,31 @@ export const RectSvgChart = ({
         />
       </svg>
       <Box sx={{ pt: 1 }}>
-        <Typography variant="h6">{Math.round(percentage)}%</Typography>
         <Typography
-          variant="subtitle2"
-          sx={{ textTransform: "capitalize", color: "primary.main" }}
+          variant="h3"
+          sx={{
+            fontSize: 24,
+            fontWeight: "normal",
+          }}
+        >
+          {Math.round(percentage)}%
+        </Typography>
+        <Typography
+          variant="h4"
+          sx={{
+            textTransform: "capitalize",
+            color: "primary.main",
+            fontWeight: 400,
+          }}
         >
           {status.label.toLowerCase()}
         </Typography>
-        <Typography variant="caption" sx={{ color: "text.secondary" }}>
+        <Typography
+          variant="caption"
+          sx={{
+            color: "#909090",
+          }}
+        >
           {status.count}
         </Typography>
       </Box>

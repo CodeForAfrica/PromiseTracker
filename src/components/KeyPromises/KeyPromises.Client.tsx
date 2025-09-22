@@ -107,18 +107,23 @@ const KeyPromiseCard = ({
             sx={(theme) => ({
               typography: { xs: "h4", lg: "h2" },
               p: "0 !important",
-              position: { lg: "relative" },
+              position: "relative",
               overflow: "hidden",
               display: "-webkit-box",
               WebkitBoxOrient: "vertical",
               WebkitLineClamp: { xs: 3, lg: 2 },
               minHeight: { lg: theme.typography.pxToRem(56) },
+              textTransform: "none",
+              lineHeight: "48px",
+              pb: 1,
               "&::after": {
                 content: '""',
-                display: { lg: "block" },
                 width: theme.typography.pxToRem(72),
                 borderBottom: { lg: `8px solid ${statusColor}` },
                 marginTop: { lg: theme.typography.pxToRem(8) },
+                position: "absolute",
+                bottom: -2,
+                left: 0,
               },
             })}
           >
@@ -205,7 +210,7 @@ export const KeyPromisesClient = ({
     }
 
     const dots = Array.from(
-      container.querySelectorAll<HTMLSpanElement>(".MuiMobileStepper-dot")
+      container.querySelectorAll<HTMLSpanElement>(".MuiMobileStepper-dot"),
     );
 
     const cleanups = dots.map((dot, index) => {
@@ -221,7 +226,7 @@ export const KeyPromisesClient = ({
 
   const clampedStep = useMemo(
     () => Math.min(activeStep, Math.max(items.length - 1, 0)),
-    [activeStep, items.length]
+    [activeStep, items.length],
   );
 
   useEffect(() => {
