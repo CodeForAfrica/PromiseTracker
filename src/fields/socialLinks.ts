@@ -24,6 +24,16 @@ export const socialLinks = (overrides: Partial<Field> = {}) => {
         fr: "Links",
       },
     },
+    admin: {
+      components: {
+        RowLabel: {
+          path: "@/components/payload/RowLabel#CustomRowLabel",
+          clientProps: {
+            fieldToUse: "platform",
+          },
+        },
+      },
+    },
     minRows: 1,
     fields: [
       {

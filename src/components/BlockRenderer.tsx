@@ -1,6 +1,7 @@
 import ActNow from "@/blocks/ActNow/Component";
 import { Page, PoliticalEntity } from "@/payload-types";
 import { Fragment } from "react";
+import { KeyPromises } from "./KeyPromises";
 import Newsletter from "./Newsletter";
 import Partners from "./Partners";
 import { Hero } from "./Hero";
@@ -15,6 +16,7 @@ const blockComponents = {
   hero: Hero,
   newsletter: Newsletter,
   partners: Partners,
+  "key-promises": KeyPromises,
 };
 export const BlockRenderer = ({ blocks, entity }: BlockProps) => {
   const hasBlocks = blocks && Array.isArray(blocks) && blocks.length > 0;

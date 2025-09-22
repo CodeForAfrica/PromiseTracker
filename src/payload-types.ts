@@ -412,6 +412,7 @@ export interface Page {
             blockName?: string | null;
             blockType: 'partners';
           }
+        | KeyPromises
       )[]
     | null;
   updatedAt: string;
@@ -501,6 +502,21 @@ export interface Partner {
   };
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "KeyPromises".
+ */
+export interface KeyPromises {
+  title: string;
+  actionLabel?: string | null;
+  /**
+   * How many highlighted promises to display (minimum 1).
+   */
+  itemsToShow: number;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'key-promises';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1011,6 +1027,7 @@ export interface PagesSelect<T extends boolean = true> {
               id?: T;
               blockName?: T;
             };
+        'key-promises'?: T | KeyPromisesSelect<T>;
       };
   updatedAt?: T;
   createdAt?: T;
@@ -1053,6 +1070,17 @@ export interface HeroBlockSelect<T extends boolean = true> {
         statuses?: T;
         id?: T;
       };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "KeyPromises_select".
+ */
+export interface KeyPromisesSelect<T extends boolean = true> {
+  title?: T;
+  actionLabel?: T;
+  itemsToShow?: T;
   id?: T;
   blockName?: T;
 }
