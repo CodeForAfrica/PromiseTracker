@@ -1,6 +1,7 @@
 import ActNow from "@/blocks/ActNow/Component";
 import { Page, PoliticalEntity } from "@/payload-types";
 import { Fragment } from "react";
+import { KeyPromises } from "./KeyPromises";
 import Newsletter from "./Newsletter";
 import Partners from "./Partners";
 import LatestPromises from "./LatestPromises";
@@ -19,6 +20,7 @@ const blockComponents: Record<string, React.FC<any>> = {
   partners: Partners,
   "latest-promises": LatestPromises,
   "promise-list": Promises,
+  "key-promises": KeyPromises,
 };
 
 export const BlockRenderer = ({ blocks, entity }: BlockProps) => {
