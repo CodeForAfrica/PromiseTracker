@@ -36,18 +36,17 @@ export function MobileMenu({ menus, entitySlug }: MobileMenuProps) {
           justifyContent: "flex-end",
         }}
       >
-        <IconButton aria-label="Search" color="secondary" sx={{ mr: 1 }}>
+        <IconButton aria-label="Search" color="secondary" sx={{ mr: 1 }} size="large">
           <SearchIcon />
         </IconButton>
         <IconButton
           aria-label="Open menu"
           onClick={toggleMobile}
           sx={{ color: theme.palette.primary.main }}
-        >
+          size="large">
           <MenuIcon />
         </IconButton>
       </Grid>
-
       <Drawer
         anchor="right"
         open={mobileOpen}
@@ -79,7 +78,7 @@ export function MobileMenu({ menus, entitySlug }: MobileMenuProps) {
               onClick={toggleMobile}
               aria-label="Close"
               sx={{ color: theme.palette.background.default }}
-            >
+              size="large">
               <CloseIcon fontSize="large" />
             </IconButton>
           </Box>

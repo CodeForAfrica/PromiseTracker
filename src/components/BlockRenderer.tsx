@@ -4,20 +4,25 @@ import { Fragment } from "react";
 import { KeyPromises } from "./KeyPromises";
 import Newsletter from "./Newsletter";
 import Partners from "./Partners";
+import LatestPromises from "./LatestPromises";
 import { Hero } from "./Hero";
+import Promises from "./Promises";
 
 type BlockProps = {
   blocks: Page["blocks"];
   entity?: PoliticalEntity;
 };
 
-const blockComponents = {
+const blockComponents: Record<string, React.FC<any>> = {
   "act-now": ActNow,
   hero: Hero,
   newsletter: Newsletter,
   partners: Partners,
+  "latest-promises": LatestPromises,
+  "promise-list": Promises,
   "key-promises": KeyPromises,
 };
+
 export const BlockRenderer = ({ blocks, entity }: BlockProps) => {
   const hasBlocks = blocks && Array.isArray(blocks) && blocks.length > 0;
 
@@ -31,7 +36,6 @@ export const BlockRenderer = ({ blocks, entity }: BlockProps) => {
             if (Block) {
               return (
                 <div key={index}>
-                  {/* @ts-expect-error there may be some mismatch between the expected types here */}
                   <Block {...block} entitySlug={entity?.slug} />
                 </div>
               );
