@@ -147,7 +147,7 @@ export const KeyPromises = async ({
       promise.text?.trim() ||
       promise.introduction?.trim() ||
       undefined;
-    const href = promise.publishedArticleUrl?.trim() || undefined;
+    const href = `/${entity.slug}/promises/${promise.id}`;
     const statusDate = promise.lastPublished ?? promise.updatedAt;
 
     const statusHistory = [
