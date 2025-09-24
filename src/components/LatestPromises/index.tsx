@@ -52,7 +52,7 @@ export default async function Index({
     docs?.map((promise) => {
       return {
         ...promise,
-        href: `/promises/${promise.id}`,
+        href: `/${entity.slug}/promises/${promise.id}`,
       };
     }) ?? [];
 
