@@ -28,12 +28,7 @@ export const RectChart = ({ totalPromises, statuses }: RectChartProps) => {
 
   return (
     <Box ref={containerRef} sx={{ width: "100%", py: 3 }}>
-      <Stack
-        direction="row"
-        spacing={2}
-        alignItems="flex-end"
-        sx={{ overflowX: "auto" }}
-      >
+      <Stack direction="row" alignItems="flex-end" sx={{ overflowX: "auto" }}>
         {statuses.map((status) => (
           <RectSvgChart
             key={status.id}

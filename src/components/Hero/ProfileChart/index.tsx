@@ -63,7 +63,10 @@ export const ProfileChart = ({
       <Box sx={{ flexGrow: 1, width: "100%" }}>
         <Box sx={{ display: { xs: "none", lg: "block" } }}>
           {showRectChart ? (
-            <RectChart totalPromises={totalPromises} statuses={orderedRectStatuses} />
+            <RectChart
+              totalPromises={totalPromises}
+              statuses={orderedRectStatuses}
+            />
           ) : (
             <DesktopChart totalPromises={totalPromises} groups={groups} />
           )}

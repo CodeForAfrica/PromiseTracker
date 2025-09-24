@@ -27,7 +27,7 @@ const LatestPromises: React.FC<Props> = forwardRef(function LatestPromises({
       }}
       title={title}
     >
-      <Grid container spacing={3.75}>
+      <Grid container spacing={2}>
         {items.map((promise: P) => (
           <Grid
             key={promise.title}

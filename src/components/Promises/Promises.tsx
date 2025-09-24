@@ -231,7 +231,7 @@ function Promises({
           </Grid>
         </Grid>
       )}
-      <Grid container>
+      <Grid spacing={1} justifyContent="space-between" container>
         {items.map((card: PromiseItem) => (
           <Grid
             key={card.title}

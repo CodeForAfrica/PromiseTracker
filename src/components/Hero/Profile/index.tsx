@@ -97,8 +97,12 @@ export const Profile = ({
         </Typography>
         {dateLine ? (
           <Typography
-            variant="body2"
-            sx={{ color: "rgba(32, 32, 32, 0.35)" }}
+            variant="h6"
+            sx={{
+              color: "rgba(32, 32, 32, 0.35)",
+              textTransform: "uppercase",
+              mb: 0,
+            }}
           >
             {dateLine}
           </Typography>
