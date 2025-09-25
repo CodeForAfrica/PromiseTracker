@@ -7,21 +7,6 @@ import { syncMeedanReports } from "@/lib/syncMeedanReports";
 
 const WEBHOOK_SECRET_ENV_KEY = "WEBHOOK_SECRET_KEY";
 
-const extractSecret = (request: NextRequest): string | null => {
-  const headerValue =
-    request.headers.get("x-webhook-secret") ?? request.headers.get("authorization");
-
-  if (!headerValue) {
-    return null;
-  }
-
-  if (headerValue.toLowerCase().startsWith("bearer ")) {
-    return headerValue.slice(7).trim();
-  }
-
-  return headerValue.trim();
-};
-
 const toNullableString = (value: unknown): string | null => {
   if (typeof value === "string") {
     const trimmed = value.trim();
@@ -117,7 +102,7 @@ export const POST = async (request: NextRequest) => {
     return NextResponse.json({ error: "Service misconfigured" }, { status: 500 });
   }
 
-  const providedSecret = extractSecret(request);
+  const providedSecret = request.headers.get("authorization")?.trim() ?? null;
 
   if (!providedSecret || providedSecret !== configuredSecret) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
