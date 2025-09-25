@@ -1,3 +1,5 @@
+import { fromUnixTime } from "date-fns";
+
 const BASE_URL = "https://check-api.checkmedia.org/api/graphql";
 const DEFAULT_CHANNEL_ID = "1";
 const DEFAULT_PAGE_SIZE = 100;
@@ -167,7 +169,7 @@ export interface CreateProjectMediaResponse {
   }>;
 }
 
-type PublishedReportsResponse = {
+export type PublishedReportsResponse = {
   data?: {
     search?: {
       number_of_results?: number;
@@ -208,7 +210,7 @@ export interface PublishedReport {
   lastPublished: string | null;
 }
 
-const toNullableString = (value: unknown): string | null => {
+export const toNullableString = (value: unknown): string | null => {
   if (typeof value === "string") {
     const trimmed = value.trim();
     return trimmed.length > 0 ? trimmed : null;
@@ -221,7 +223,7 @@ const toNullableString = (value: unknown): string | null => {
   return null;
 };
 
-const toBoolean = (value: unknown): boolean => {
+export const toBoolean = (value: unknown): boolean => {
   if (typeof value === "boolean") {
     return value;
   }
@@ -241,31 +243,59 @@ const toBoolean = (value: unknown): boolean => {
   return false;
 };
 
-const parseTimestampToISO = (value: unknown): string | null => {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    const ms = value < 1e12 ? value * 1000 : value;
-    return new Date(ms).toISOString();
+export const toIsoTimestamp = (value: unknown): string | null => {
+  const numericValue =
+    typeof value === "number"
+      ? value
+      : typeof value === "string"
+      ? Number(value.trim())
+      : null;
+
+  if (numericValue === null || Number.isNaN(numericValue)) {
+    return null;
   }
 
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    if (trimmed.length === 0) {
-      return null;
-    }
+  const seconds = numericValue > 1e12 ? numericValue / 1000 : numericValue;
+  return fromUnixTime(seconds).toISOString();
+};
 
-    const numeric = Number(trimmed);
-    if (!Number.isNaN(numeric)) {
-      const ms = numeric < 1e12 ? numeric * 1000 : numeric;
-      return new Date(ms).toISOString();
-    }
+export const mapPublishedReports = (
+  payload: PublishedReportsResponse
+): PublishedReport[] => {
+  const edges =
+    payload?.data?.search?.medias?.edges?.filter(Boolean) ?? [];
 
-    const date = new Date(trimmed);
-    if (!Number.isNaN(date.getTime())) {
-      return date.toISOString();
-    }
-  }
+  return edges
+    .map((edge) => edge?.node)
+    .filter((node): node is NonNullable<typeof node> => Boolean(node))
+    .map((node) => {
+      const meedanId = toNullableString(node.id);
+      const data = node.dynamic_annotation_report_design?.data ?? undefined;
+      const options = (data?.options ?? {}) as Record<string, unknown>;
+      const status = toNullableString(node.status ?? null);
 
-  return null;
+      if (!meedanId) {
+        return null;
+      }
+
+      return {
+        meedanId,
+        status,
+        introduction: toNullableString(options["introduction"]),
+        themeColor: toNullableString(options["theme_color"]),
+        statusLabel: toNullableString(options["status_label"]),
+        image: toNullableString(options["image"]),
+        title: toNullableString(options["title"]),
+        headline: toNullableString(options["headline"]),
+        text: toNullableString(options["text"]),
+        description: toNullableString(options["description"]),
+        publishedArticleUrl: toNullableString(options["published_article_url"]),
+        useVisualCard: toBoolean(options["use_visual_card"]),
+        state: toNullableString(data?.state ?? null),
+        lastPublished: toIsoTimestamp(data?.last_published ?? null),
+      } satisfies PublishedReport;
+    })
+    .filter((report): report is PublishedReport => report !== null);
 };
 
 export const fetchPublishedReports = async ({
@@ -298,41 +328,7 @@ export const fetchPublishedReports = async ({
 
   const json = (await response.json()) as PublishedReportsResponse;
 
-  const edges =
-    json?.data?.search?.medias?.edges?.filter(Boolean) ?? [];
-
-  return edges
-    .map((edge) => edge?.node)
-    .filter((node): node is NonNullable<typeof node> => Boolean(node))
-    .map((node) => {
-      const meedanId = toNullableString(node.id);
-      const data =
-        node.dynamic_annotation_report_design?.data ?? undefined;
-      const options = (data?.options ?? {}) as Record<string, unknown>;
-      const status = toNullableString(node.status ?? null);
-
-      if (!meedanId) {
-        return null;
-      }
-
-      return {
-        meedanId,
-        status,
-        introduction: toNullableString(options["introduction"]),
-        themeColor: toNullableString(options["theme_color"]),
-        statusLabel: toNullableString(options["status_label"]),
-        image: toNullableString(options["image"]),
-        title: toNullableString(options["title"]),
-        headline: toNullableString(options["headline"]),
-        text: toNullableString(options["text"]),
-        description: toNullableString(options["description"]),
-        publishedArticleUrl: toNullableString(options["published_article_url"]),
-        useVisualCard: toBoolean(options["use_visual_card"]),
-        state: toNullableString(data?.state ?? null),
-        lastPublished: parseTimestampToISO(data?.last_published ?? null),
-      } satisfies PublishedReport;
-    })
-    .filter((report): report is PublishedReport => report !== null);
+  return mapPublishedReports(json);
 };
 
 export const postRequest = async ({
