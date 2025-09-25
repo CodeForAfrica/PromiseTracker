@@ -95,6 +95,7 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
             tenant.name,
             document.type?.toUpperCase(),
             extraction.category,
+            `${entity.periodFrom}-${entity.periodTo}`,
           ].filter(Boolean) as string[];
 
           const quote = `${extraction.summary} \n\n${extraction.source}`.trim();
