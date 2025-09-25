@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { fromUnixTime, isValid, parseISO } from "date-fns";
+import { fromUnixTime } from "date-fns";
 
 import type { PublishedReport } from "@/lib/meedan";
 import { syncMeedanReports } from "@/lib/syncMeedanReports";
@@ -8,7 +8,7 @@ import { syncMeedanReports } from "@/lib/syncMeedanReports";
 const toNullableString = (value: unknown): string | null => {
   if (typeof value === "string") {
     const trimmed = value.trim();
-    return trimmed.length > 0 ? trimmed : null;
+    return trimmed ? trimmed : null;
   }
 
   if (typeof value === "number" && Number.isFinite(value)) {
@@ -25,50 +25,10 @@ const toBoolean = (value: unknown): boolean => {
 
   if (typeof value === "string") {
     const normalised = value.trim().toLowerCase();
-    if (normalised === "false" || normalised === "0" || normalised === "") {
-      return false;
-    }
-    return true;
+    return !["false", "0", ""].includes(normalised);
   }
 
-  if (typeof value === "number") {
-    return value !== 0;
-  }
-
-  return false;
-};
-
-const toIsoString = (value: unknown): string | null => {
-  const fromNumber = (input: number) => {
-    const date = input < 1e12 ? fromUnixTime(input) : new Date(input);
-    return isValid(date) ? date.toISOString() : null;
-  };
-
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return fromNumber(value);
-  }
-
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    if (!trimmed) {
-      return null;
-    }
-
-    const numeric = Number(trimmed);
-    if (!Number.isNaN(numeric)) {
-      return fromNumber(numeric);
-    }
-
-    const parsed = parseISO(trimmed);
-    if (isValid(parsed)) {
-      return parsed.toISOString();
-    }
-
-    const fallback = new Date(trimmed);
-    return isValid(fallback) ? fallback.toISOString() : null;
-  }
-
-  return null;
+  return Boolean(value);
 };
 
 const normaliseReport = (raw: unknown): PublishedReport | null => {
@@ -82,6 +42,14 @@ const normaliseReport = (raw: unknown): PublishedReport | null => {
   if (!meedanId) {
     return null;
   }
+
+  const lastPublished = (() => {
+    const raw = data.lastPublished ?? data.last_published;
+    if (typeof raw !== "number" || Number.isNaN(raw)) {
+      return null;
+    }
+    return fromUnixTime(raw).toISOString();
+  })();
 
   return {
     meedanId: meedanId.trim(),
@@ -99,9 +67,7 @@ const normaliseReport = (raw: unknown): PublishedReport | null => {
     ),
     useVisualCard: toBoolean(data.useVisualCard ?? data.use_visual_card),
     state: toNullableString(data.state),
-    lastPublished:
-      toIsoString(data.lastPublished ?? data.last_published) ??
-      toNullableString(data.lastPublished ?? data.last_published),
+    lastPublished,
   } satisfies PublishedReport;
 };
 
@@ -123,7 +89,7 @@ const normaliseInput = (input: unknown): unknown[] => {
     }
   }
 
-  return [input];
+  return input == null ? [] : [input];
 };
 
 export const POST = async (request: NextRequest) => {
