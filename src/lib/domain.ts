@@ -19,11 +19,14 @@ export const getDomain = async () => {
 
     hostname = hostParts[0] || null;
 
-    // Extract base domain without subdomain
-    const domainParts = hostParts[0].split(".");
+    // Extract base domain without the leading tenant subdomain
+    const domainParts = hostname?.split(".") ?? [];
+
     if (domainParts.length > 2) {
-      // For domains like sub.example.com, get example.com
-      baseDomain = `${domainParts[domainParts.length - 2]}.${domainParts[domainParts.length - 1]}${port}`;
+      // Keep all segments after the tenant label to preserve environment prefixes (e.g. staging.example.com)
+      baseDomain = `${domainParts.slice(1).join(".")}${port}`;
+    } else if (hostname) {
+      baseDomain = `${hostname}${port}`;
     }
   }
 
@@ -37,5 +40,28 @@ export const getDomain = async () => {
     }
   }
 
-  return { isLocalhost, baseDomain, port, subdomain, hostname };
+  const normalizedHost = hostname?.toLowerCase() ?? "";
+  const normalizedBaseDomain = baseDomain?.toLowerCase() ?? "";
+  const isLocalEnvironment =
+    isLocalhost ||
+    normalizedHost.includes("localtest") ||
+    normalizedHost.startsWith("127.") ||
+    normalizedHost === "0.0.0.0" ||
+    normalizedBaseDomain.includes("localhost") ||
+    normalizedBaseDomain.startsWith("127.") ||
+    normalizedBaseDomain === "0.0.0.0";
+
+  const protocol = isLocalEnvironment ? "http" : "https";
+  const tenantSelectionHref = baseDomain
+    ? `${protocol}://${baseDomain}`
+    : "/";
+
+  return {
+    isLocalhost,
+    baseDomain,
+    port,
+    subdomain,
+    hostname,
+    tenantSelectionHref,
+  };
 };

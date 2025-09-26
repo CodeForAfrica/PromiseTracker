@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import type { ElementType } from "react";
 import NextLink from "next/link";
 import Image from "next/image";
 import {
@@ -23,6 +24,7 @@ type NavigationProps = {
   menus: MenuLink[];
   title: string;
   entitySlug?: string;
+  tenantSelectionHref?: string;
 };
 
 export default function Navigation({
@@ -30,10 +32,17 @@ export default function Navigation({
   menus,
   title,
   entitySlug,
+  tenantSelectionHref,
 }: NavigationProps) {
   const theme = useTheme();
   const logoSrc = primaryLogo?.url || null;
   const logoAlt = primaryLogo?.alt || "Logo";
+  const logoHref = tenantSelectionHref ?? (entitySlug ? `/${entitySlug}` : "/");
+  const isExternalLogoHref =
+    logoHref.startsWith("http://") ||
+    logoHref.startsWith("https://") ||
+    logoHref.startsWith("//");
+  const LogoComponent: ElementType = isExternalLogoHref ? "a" : NextLink;
 
   return (
     <AppBar
@@ -59,8 +68,8 @@ export default function Navigation({
               >
                 <Grid size={4}>
                   <IconButton
-                    component={NextLink}
-                    href={entitySlug ? `/${entitySlug}` : "/"}
+                    component={LogoComponent}
+                    href={logoHref}
                     disableRipple
                     disableFocusRipple
                     sx={{

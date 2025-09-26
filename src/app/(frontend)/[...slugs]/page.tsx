@@ -1,7 +1,7 @@
 import React, { Suspense } from "react";
 
 import { queryPageBySlug } from "@/lib/payload";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getDomain } from "@/lib/domain";
 import { CommonHomePage } from "@/components/CommonHomePage";
 import { BlockRenderer } from "@/components/BlockRenderer";
@@ -21,7 +21,7 @@ type Args = {
 };
 
 export default async function Page(params: Args) {
-  const { subdomain } = await getDomain();
+  const { subdomain, tenantSelectionHref } = await getDomain();
 
   const tenant = await getTenantBySubDomain(subdomain);
 
@@ -43,6 +43,18 @@ export default async function Page(params: Args) {
   );
 
   if (!politicalEntity) {
+    if (politicalEntities.length === 1) {
+      const [onlyEntity] = politicalEntities;
+      if (onlyEntity) {
+        const fallbackPageSlugs = slugs.length > 0 ? slugs : ["index"];
+        const sanitizedPageSlugs = fallbackPageSlugs.filter(
+          (slug) => slug && slug !== "index"
+        );
+        const segments = [onlyEntity.slug, ...sanitizedPageSlugs].filter(Boolean);
+        const targetPath = segments.length > 0 ? `/${segments.join("/")}` : "/";
+        redirect(targetPath);
+      }
+    }
     const fallbackPageSlugs = slugs.length > 0 ? slugs : ["index"];
     const promiseCounts = await getPromiseCountsForEntities(
       politicalEntities.map((entity) => entity.id)
@@ -50,7 +62,11 @@ export default async function Page(params: Args) {
 
     return (
       <>
-        <Navigation title={title} {...navigation} />
+        <Navigation
+          title={title}
+          {...navigation}
+          tenantSelectionHref={tenantSelectionHref}
+        />
         <PoliticalEntityList
           tenant={tenant}
           politicalEntities={politicalEntities}
@@ -77,6 +93,7 @@ export default async function Page(params: Args) {
         title={title}
         {...navigation}
         entitySlug={politicalEntity.slug}
+        tenantSelectionHref={tenantSelectionHref}
       />
       <Suspense>
         <BlockRenderer blocks={blocks} entity={politicalEntity} />
