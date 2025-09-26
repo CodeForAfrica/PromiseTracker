@@ -22,6 +22,7 @@ export type TenantLink = {
   name: string;
   url: string;
   countryCode?: Tenant["country"] | string | null;
+  flag?: string | null;
 };
 
 const getSubdomain = (tenant: Tenant): string | null => {
@@ -40,7 +41,7 @@ const buildTenantUrl = (
   hostname: string | null,
   baseDomain: string | null,
   isLocalhost: boolean,
-  port: string
+  port: string,
 ) => {
   const subdomain = getSubdomain(tenant);
   if (!subdomain) return null;
@@ -74,7 +75,7 @@ export const getTenantLinks = async (): Promise<TenantLink[]> => {
       hostname,
       baseDomain ?? null,
       isLocalhost,
-      port
+      port,
     );
     if (!url) continue;
     entries.push({
@@ -82,6 +83,7 @@ export const getTenantLinks = async (): Promise<TenantLink[]> => {
       name: tenant.name,
       url,
       countryCode: tenant.country ?? null,
+      flag: tenant.flag ?? null,
     });
   }
 
@@ -134,6 +136,8 @@ export const TenantList = async ({ dense = false }: TenantListProps) => {
                 <ListItem disableGutters sx={{ py: dense ? 0.75 : 1.25 }}>
                   <ListItemAvatar sx={{ minWidth: dense ? 36 : 46 }}>
                     <Avatar
+                      src={tenant.flag ?? undefined}
+                      alt={tenant.name}
                       sx={{
                         bgcolor: "primary.light",
                         color: "primary.dark",

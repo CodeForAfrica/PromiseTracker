@@ -9,7 +9,9 @@ import type { Media, Page, SiteSetting, Tenant } from "@/payload-types";
 
 const payload = await getGlobalPayload();
 
-export const getAllTenants = async () => {
+export const getAllTenants = async (): Promise<
+  (Tenant & { flag?: string | null })[]
+> => {
   const { docs } = await payload.find({
     collection: "tenants",
     limit: -1,
@@ -23,7 +25,7 @@ export const getTenantBySubDomain = async (subdomain: string | null) => {
   const tenants = await getAllTenants();
 
   const tenant = tenants.find(
-    (t) => t.country?.toLocaleLowerCase() === subdomain?.toLocaleLowerCase()
+    (t) => t.country?.toLocaleLowerCase() === subdomain?.toLocaleLowerCase(),
   );
 
   return tenant;

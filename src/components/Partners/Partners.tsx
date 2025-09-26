@@ -32,7 +32,10 @@ const Partners = React.forwardRef<HTMLDivElement, Props>(function Partners(
       })}
       component={"section"}
     >
-      <Container sx={{ py: 8 }} ref={ref}>
+      <Container
+        sx={{ py: 8, textAlign: { xs: "center", lg: "left" } }}
+        ref={ref}
+      >
         <Typography variant="h4">{title}</Typography>
         <Grid container justifyContent="center">
           <Grid size={{ xs: 12, lg: 10 }}>
@@ -44,38 +47,33 @@ const Partners = React.forwardRef<HTMLDivElement, Props>(function Partners(
               }}
             >
               {partners.slice(0, 6).map((partner) => (
-                  <Grid
-                    key={partner.name}
-                    size={{
-                      xs: 12,
-                      lg: "auto",
-                    }}
-                  >
-                    <CMSLink
-                      {...partner.url}
-                      label={""}
-                      entitySlug={entitySlug}
+                <Grid
+                  key={partner.name}
+                  size={{
+                    xs: 12,
+                    lg: 4,
+                  }}
+                >
+                  <CMSLink {...partner.url} label={""} entitySlug={entitySlug}>
+                    <Box
+                      sx={{
+                        height: { xs: 126.56, lg: 120 },
+                        width: { xs: 273.6, lg: 260 },
+                        position: "relative",
+                      }}
+                      component={"figure"}
                     >
-                      <Box
-                        sx={{
-                          height: { xs: 126.56, lg: 120 },
-                          width: { xs: 273.6, lg: 260 },
-                          position: "relative",
-                        }}
-                        component={"figure"}
-                      >
-                        {partner.image && (
-                          <Image
-                            src={partner.image?.url}
-                            alt={partner.name}
-                            fill
-                          />
-                        )}
-                      </Box>
-                    </CMSLink>
-                  </Grid>
-                ),
-              )}
+                      {partner.image && (
+                        <Image
+                          src={partner.image?.url}
+                          alt={partner.name}
+                          fill
+                        />
+                      )}
+                    </Box>
+                  </CMSLink>
+                </Grid>
+              ))}
             </Grid>
           </Grid>
         </Grid>

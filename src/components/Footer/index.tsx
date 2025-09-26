@@ -124,7 +124,11 @@ export default function Footer({
                 ) : null}
                 <Box component="ul" sx={{ listStyle: "none", pl: 0, m: 0 }}>
                   {col.links.map((m, index) => (
-                    <Box component="li" key={`${index}-${m.label}`} sx={{ mt: 1 }}>
+                    <Box
+                      component="li"
+                      key={`${index}-${m.label}`}
+                      sx={{ mt: 1 }}
+                    >
                       <CMSLink
                         {...m}
                         entitySlug={entitySlug}
@@ -182,7 +186,7 @@ export default function Footer({
                 {alternateLogoSrc ? (
                   <Image
                     src={alternateLogoSrc}
-                    alt={""}
+                    alt={alternateLogo?.alt}
                     fill
                     style={{ objectFit: "contain" }}
                   />
@@ -245,9 +249,9 @@ export default function Footer({
                 }}
               >
                 <Typography
-                  variant="button"
+                  variant="caption"
                   sx={{
-                    color: theme.palette.secondary.dark,
+                    color: "#a4a4a4",
                     textTransform: "uppercase",
                     fontWeight: theme.typography.button,
                   }}

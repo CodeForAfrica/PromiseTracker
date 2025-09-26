@@ -115,7 +115,6 @@ const baseTheme = createTheme({
       fontFamily: FONT_FAMILY_TEXT_HIGHTLIGHT,
       fontStretch: "normal",
       fontStyle: "normal",
-      color: "white",
       fontWeight: 600,
       letterSpacing: 0,
     },
