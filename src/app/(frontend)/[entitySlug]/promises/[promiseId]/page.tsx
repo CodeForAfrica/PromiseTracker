@@ -122,7 +122,7 @@ export default async function PromiseDetailPage({
   const paramsValue = await params;
   const { entitySlug, promiseId } = paramsValue;
 
-  const { subdomain } = await getDomain();
+  const { subdomain, tenantSelectionHref } = await getDomain();
   const tenant = await getTenantBySubDomain(subdomain);
 
   if (!tenant) {
@@ -209,6 +209,7 @@ export default async function PromiseDetailPage({
         title={title}
         {...navigation}
         entitySlug={entity.slug}
+        tenantSelectionHref={tenantSelectionHref}
       />
       <Box component="article" sx={{ bgcolor: "background.default" }}>
         {timelineStatus ? (

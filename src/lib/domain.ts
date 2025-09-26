@@ -37,5 +37,28 @@ export const getDomain = async () => {
     }
   }
 
-  return { isLocalhost, baseDomain, port, subdomain, hostname };
+  const normalizedHost = hostname?.toLowerCase() ?? "";
+  const normalizedBaseDomain = baseDomain?.toLowerCase() ?? "";
+  const isLocalEnvironment =
+    isLocalhost ||
+    normalizedHost.includes("localtest") ||
+    normalizedHost.startsWith("127.") ||
+    normalizedHost === "0.0.0.0" ||
+    normalizedBaseDomain.includes("localhost") ||
+    normalizedBaseDomain.startsWith("127.") ||
+    normalizedBaseDomain === "0.0.0.0";
+
+  const protocol = isLocalEnvironment ? "http" : "https";
+  const tenantSelectionHref = baseDomain
+    ? `${protocol}://${baseDomain}`
+    : "/";
+
+  return {
+    isLocalhost,
+    baseDomain,
+    port,
+    subdomain,
+    hostname,
+    tenantSelectionHref,
+  };
 };
