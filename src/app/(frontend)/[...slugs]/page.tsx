@@ -39,7 +39,7 @@ export default async function Page(params: Args) {
   const politicalEntities = await getPoliticalEntitiesByTenant(tenant);
 
   const politicalEntity = politicalEntities.find(
-    (entity) => entity.slug === maybePoliticalEntitySlug
+    (entity) => entity.slug === maybePoliticalEntitySlug,
   );
 
   if (!politicalEntity) {
@@ -48,16 +48,18 @@ export default async function Page(params: Args) {
       if (onlyEntity) {
         const fallbackPageSlugs = slugs.length > 0 ? slugs : ["index"];
         const sanitizedPageSlugs = fallbackPageSlugs.filter(
-          (slug) => slug && slug !== "index"
+          (slug) => slug && slug !== "index",
         );
-        const segments = [onlyEntity.slug, ...sanitizedPageSlugs].filter(Boolean);
+        const segments = [onlyEntity.slug, ...sanitizedPageSlugs].filter(
+          Boolean,
+        );
         const targetPath = segments.length > 0 ? `/${segments.join("/")}` : "/";
         redirect(targetPath);
       }
     }
     const fallbackPageSlugs = slugs.length > 0 ? slugs : ["index"];
     const promiseCounts = await getPromiseCountsForEntities(
-      politicalEntities.map((entity) => entity.id)
+      politicalEntities.map((entity) => entity.id),
     );
 
     return (
