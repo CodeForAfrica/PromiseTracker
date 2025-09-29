@@ -47,7 +47,6 @@ export const NavigationTab: Tab = {
       type: "array",
       required: true,
       minRows: 1,
-      maxRows: 2,
       fields: [
         {
           name: "secondaryNavigation",

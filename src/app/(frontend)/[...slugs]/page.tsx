@@ -1,18 +1,14 @@
 import React, { Suspense } from "react";
 
-import { queryPageBySlug } from "@/lib/payload";
+import { getGlobalPayload, queryPageBySlug } from "@/lib/payload";
 import { notFound, redirect } from "next/navigation";
 import { getDomain } from "@/lib/domain";
 import { CommonHomePage } from "@/components/CommonHomePage";
 import { BlockRenderer } from "@/components/BlockRenderer";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { PoliticalEntityList } from "@/components/PoliticalEntityList";
 import { getTenantBySubDomain, getTenantNavigation } from "@/lib/data/tenants";
-import {
-  getPoliticalEntitiesByTenant,
-  getPromiseCountsForEntities,
-} from "@/lib/data/politicalEntities";
+import { getPoliticalEntitiesByTenant } from "@/lib/data/politicalEntities";
 
 type Args = {
   params: Promise<{
@@ -50,14 +46,23 @@ export default async function Page(params: Args) {
         const sanitizedPageSlugs = fallbackPageSlugs.filter(
           (slug) => slug && slug !== "index"
         );
-        const segments = [onlyEntity.slug, ...sanitizedPageSlugs].filter(Boolean);
+        const segments = [onlyEntity.slug, ...sanitizedPageSlugs].filter(
+          Boolean
+        );
         const targetPath = segments.length > 0 ? `/${segments.join("/")}` : "/";
         redirect(targetPath);
       }
     }
     const fallbackPageSlugs = slugs.length > 0 ? slugs : ["index"];
-    const promiseCounts = await getPromiseCountsForEntities(
-      politicalEntities.map((entity) => entity.id)
+    const payload = await getGlobalPayload();
+    const homePage = await payload.findGlobal({
+      slug: "home-page",
+    });
+    const entityBlocks = (homePage?.entitySelector?.blocks ?? []).map(
+      (block) =>
+        block.blockType === "entity-selection"
+          ? { ...block, pageSlugs: fallbackPageSlugs }
+          : block
     );
 
     return (
@@ -67,12 +72,7 @@ export default async function Page(params: Args) {
           {...navigation}
           tenantSelectionHref={tenantSelectionHref}
         />
-        <PoliticalEntityList
-          tenant={tenant}
-          politicalEntities={politicalEntities}
-          pageSlugs={fallbackPageSlugs}
-          promiseCounts={promiseCounts}
-        />
+        <BlockRenderer blocks={entityBlocks} />
         <Footer title={title} description={description} {...footer} />
       </>
     );
