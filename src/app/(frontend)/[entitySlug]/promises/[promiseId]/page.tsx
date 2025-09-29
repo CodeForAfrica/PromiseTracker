@@ -9,10 +9,7 @@ import PromiseStatus from "@/components/PromiseStatus";
 import PromiseTimeline from "@/components/PromiseTimeline";
 import { CommonHomePage } from "@/components/CommonHomePage";
 import { getDomain } from "@/lib/domain";
-import {
-  getTenantBySubDomain,
-  getTenantNavigation,
-} from "@/lib/data/tenants";
+import { getTenantBySubDomain, getTenantNavigation } from "@/lib/data/tenants";
 import { getPoliticalEntityBySlug } from "@/lib/data/politicalEntities";
 import { getPromiseById } from "@/lib/data/promises";
 import { resolveMedia } from "@/lib/data/media";
@@ -39,7 +36,7 @@ const parseYear = (value?: string | null): number | null => {
 
 const computeTimelineInterval = (
   entityPeriod: { from?: string | null; to?: string | null },
-  statusHistory: { date: string }[]
+  statusHistory: { date: string }[],
 ): [number, number] => {
   const start = parseYear(entityPeriod.from);
   const end = parseYear(entityPeriod.to);
@@ -75,7 +72,7 @@ const formatDate = (value: string, locale: string) => {
 };
 
 const buildStatusDocument = (
-  promise: PromiseDocument
+  promise: PromiseDocument,
 ): PromiseStatusDocument | null => {
   const relation = promise.status;
   if (relation && typeof relation !== "string") {
@@ -147,14 +144,15 @@ export default async function PromiseDetailPage({
   const promiseEntityId =
     typeof promise.politicalEntity === "string"
       ? promise.politicalEntity
-      : promise.politicalEntity?.id ?? null;
+      : (promise.politicalEntity?.id ?? null);
 
   if (!promiseEntityId || promiseEntityId !== entity.id) {
     return notFound();
   }
 
   const statusDoc = buildStatusDocument(promise);
-  const statusColor = statusDoc?.colors?.color || promise.themeColor || FALLBACK_STATUS_COLOR;
+  const statusColor =
+    statusDoc?.colors?.color || promise.themeColor || FALLBACK_STATUS_COLOR;
   const statusTextColor =
     statusDoc?.colors?.textColor || FALLBACK_STATUS_TEXT_COLOR;
 
@@ -174,7 +172,7 @@ export default async function PromiseDetailPage({
 
   const timelineInterval = computeTimelineInterval(
     { from: entity.periodFrom, to: entity.periodTo },
-    timelineStatusHistory
+    timelineStatusHistory,
   );
 
   const image = await resolveMedia(promise.image ?? null);
@@ -243,7 +241,7 @@ export default async function PromiseDetailPage({
         >
           <Grid
             container
-            columnSpacing={{ xs: 0, lg: 5 }}
+            columnSpacing={{ xs: 0, lg: 10 }}
             rowSpacing={{ xs: 6, lg: 0 }}
             alignItems="flex-start"
           >
@@ -263,7 +261,7 @@ export default async function PromiseDetailPage({
                   fontWeight: 600,
                   letterSpacing: 1.2,
                   textTransform: "uppercase",
-                  color: "text.secondary",
+                  color: "#202020",
                 }}
               >
                 <Box
@@ -318,7 +316,7 @@ export default async function PromiseDetailPage({
               ) : null}
               <Box
                 sx={{
-                  width: "100%",
+                  width: "auto",
                   height: { xs: "210px", lg: "477px" },
                   border: {
                     xs: `6px solid ${statusColor}`,
@@ -372,7 +370,7 @@ export default async function PromiseDetailPage({
                   sx={{
                     display: { xs: "block", lg: "none" },
                     mt: 2,
-                    color: "text.secondary",
+                    color: "#202020",
                   }}
                 >
                   {statusDoc.description}
@@ -384,7 +382,7 @@ export default async function PromiseDetailPage({
                   sx={{
                     display: { xs: "block", lg: "none" },
                     mt: 2,
-                    color: "text.secondary",
+                    color: "#202020",
                   }}
                 >
                   Last updated {formattedStatusDate}
@@ -425,18 +423,24 @@ export default async function PromiseDetailPage({
                   mt: 6,
                 }}
               >
-                <Typography variant="subtitle2" sx={{ color: "text.secondary", mb: 1 }}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{ color: "#202020", mb: 1 }}
+                >
                   {entity.position}
                 </Typography>
                 <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
                   {entity.name}
                 </Typography>
                 {stateLabel ? (
-                  <Typography variant="body2" sx={{ color: "text.secondary", mb: 0.5 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: "#202020", mb: 0.5 }}
+                  >
                     State: {stateLabel}
                   </Typography>
                 ) : null}
-                <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                <Typography variant="body2" sx={{ color: "#202020" }}>
                   Promise ID: {promise.id}
                 </Typography>
               </Box>
@@ -466,35 +470,47 @@ export default async function PromiseDetailPage({
                       }}
                     />
                     {statusDoc.description ? (
-                      <Typography variant="body2" sx={{ mt: 2, color: "text.secondary" }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ mt: 2, color: "#202020" }}
+                      >
                         {statusDoc.description}
                       </Typography>
                     ) : null}
                     {formattedStatusDate ? (
-                      <Typography variant="body2" sx={{ mt: 2, color: "text.secondary" }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ mt: 2, color: "#202020" }}
+                      >
                         Last updated {formattedStatusDate}
                       </Typography>
                     ) : null}
                   </>
                 ) : (
-                  <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                  <Typography variant="body2" sx={{ color: "#202020" }}>
                     Status coming soon.
                   </Typography>
                 )}
               </Box>
               <Box>
-                <Typography variant="subtitle2" sx={{ color: "text.secondary", mb: 1 }}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{ color: "#202020", mb: 1 }}
+                >
                   {entity.position}
                 </Typography>
                 <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
                   {entity.name}
                 </Typography>
                 {stateLabel ? (
-                  <Typography variant="body2" sx={{ color: "text.secondary", mb: 0.5 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: "#202020", mb: 0.5 }}
+                  >
                     State: {stateLabel}
                   </Typography>
                 ) : null}
-                <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                <Typography variant="body2" sx={{ color: "#202020" }}>
                   Promise ID: {promise.id}
                 </Typography>
               </Box>
