@@ -4318,7 +4318,7 @@ export const countriesByContinent = (
     | "Europe"
     | "North America"
     | "Oceania"
-    | "South America"
+    | "South America",
 ) => {
   return countries
     .filter((country) => continent === country.continent)
@@ -4332,3 +4332,12 @@ export const allCountries = countries.map((country) => ({
   value: country.alpha3,
   label: country.label,
 }));
+
+export const getCountryFlag = (countryCode: string) => {
+  const country = countries.find(
+    (c) => c.alpha2 === countryCode || c.alpha3 === countryCode,
+  );
+  return country
+    ? `https://flagcdn.com/w40/${country.alpha2.toLowerCase()}.png`
+    : null;
+};

@@ -1,4 +1,4 @@
-import { countriesByContinent } from "@/data/countries";
+import { countriesByContinent, getCountryFlag } from "@/data/countries";
 import { airtableID } from "@/fields/airtableID";
 import { CollectionConfig } from "payload";
 
@@ -75,4 +75,12 @@ export const Tenants: CollectionConfig = {
     },
     airtableID(),
   ],
+  hooks: {
+    afterRead: [
+      async ({ doc }) => {
+        doc.flag = getCountryFlag(doc.country);
+        return doc;
+      },
+    ],
+  },
 };
