@@ -8,8 +8,8 @@ export const meedanWorkflow = defineWorkflow({
   label: "Meedan Workflow",
   schedule: [
     {
-      cron: isProd ? "0 * * * *" : "* * * * *",
-      queue: isProd ? "hourly" : "everyMinute",
+      cron: "* * * * *",
+      queue: "everyMinute",
     },
   ],
   handler: async ({ tasks }) => {

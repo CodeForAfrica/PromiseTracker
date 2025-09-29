@@ -83,8 +83,8 @@ export default buildConfig({
     workflows,
     autoRun: [
       {
-        cron: isProd ? "0 * * * *" : "* * * * *",
-        queue: isProd ? "hourly" : "everyMinute",
+        cron: "* * * * *",
+        queue: "everyMinute",
       },
     ],
   },
