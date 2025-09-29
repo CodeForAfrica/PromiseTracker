@@ -5,6 +5,7 @@ import {
   type PublishedReportsResponse,
 } from "@/lib/meedan";
 import { syncMeedanReports } from "@/lib/syncMeedanReports";
+import { writeFileSync } from "node:fs";
 
 const WEBHOOK_SECRET_ENV_KEY = "WEBHOOK_SECRET_KEY";
 
@@ -12,8 +13,13 @@ export const POST = async (request: NextRequest) => {
   const configuredSecret = process.env[WEBHOOK_SECRET_ENV_KEY];
 
   if (!configuredSecret) {
-    console.error("meedan-sync:: Missing WEBHOOK_SECRET_KEY environment variable");
-    return NextResponse.json({ error: "Service misconfigured" }, { status: 500 });
+    console.error(
+      "meedan-sync:: Missing WEBHOOK_SECRET_KEY environment variable"
+    );
+    return NextResponse.json(
+      { error: "Service misconfigured" },
+      { status: 500 }
+    );
   }
 
   const providedSecret = request.headers.get("authorization")?.trim() ?? null;
@@ -34,8 +40,15 @@ export const POST = async (request: NextRequest) => {
       { status: 400 }
     );
   }
+  // TODO: @kelvinkipruto remove this; only for testing
+  writeFileSync(
+    `Payload-${Date.now().toString()}.json`,
+    JSON.stringify(parsed)
+  );
 
-  const reports = mapPublishedReports((parsed ?? {}) as PublishedReportsResponse);
+  const reports = mapPublishedReports(
+    (parsed ?? {}) as PublishedReportsResponse
+  );
 
   if (reports.length === 0) {
     return NextResponse.json(
