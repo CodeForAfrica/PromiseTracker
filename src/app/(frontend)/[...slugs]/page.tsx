@@ -49,9 +49,6 @@ export default async function Page(params: Args) {
         const segments = [onlyEntity.slug, ...sanitizedPageSlugs].filter(
           Boolean
         );
-        const segments = [onlyEntity.slug, ...sanitizedPageSlugs].filter(
-          Boolean
-        );
         const targetPath = segments.length > 0 ? `/${segments.join("/")}` : "/";
         redirect(targetPath);
       }
