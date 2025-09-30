@@ -494,12 +494,21 @@ export default async function PromiseDetailPage({
               </Box>
               <Box>
                 <Typography
-                  variant="subtitle2"
-                  sx={{ color: "#202020", mb: 1 }}
+                  variant="h6"
+                  sx={{
+                    color: "#202020",
+                    mb: 1,
+                    textTransform: "uppercase",
+                    fontWeight: 900,
+                    fontSize: "24px !important",
+                  }}
                 >
                   {entity.position}
                 </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
+                <Typography
+                  variant="h5"
+                  sx={{ fontWeight: 600, mb: 1, fontSize: "20px !important" }}
+                >
                   {entity.name}
                 </Typography>
                 {stateLabel ? (
