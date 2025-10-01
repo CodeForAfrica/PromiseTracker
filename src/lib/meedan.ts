@@ -24,6 +24,10 @@ const PUBLISHED_REPORTS_QUERY = `
                     description
                     fieldset
                     first_response_value
+                    first_response {
+                      content
+                      file_data
+                    }
                   }
                 }
               }
@@ -188,6 +192,12 @@ type PublishedReportAnnotation = {
   description?: string | null;
   fieldset?: string | null;
   first_response_value?: unknown;
+  first_response?: {
+    content?: unknown;
+    file_data?: {
+      file_urls?: unknown;
+    } | null;
+  } | null;
 };
 
 export type PublishedReportsResponse = {
@@ -308,7 +318,8 @@ export const mapPublishedReports = (
         for (const slug of slugs) {
           const normalisedSlug = slug.trim().toLowerCase();
           for (const edgeItem of annotations) {
-            const annotationSlug = toNullableString(edgeItem?.node?.slug);
+            const nodeData = edgeItem?.node;
+            const annotationSlug = toNullableString(nodeData?.slug);
             if (!annotationSlug) {
               continue;
             }
@@ -316,11 +327,24 @@ export const mapPublishedReports = (
               continue;
             }
 
-            const extracted = extractAnnotationValue(
-              edgeItem?.node?.first_response_value
-            );
-            if (extracted) {
-              return extracted;
+            const fileUrls =
+              nodeData?.first_response?.file_data?.file_urls;
+
+            if (Array.isArray(fileUrls)) {
+              for (const value of fileUrls) {
+                const normalisedUrl = toNullableString(value);
+                if (normalisedUrl) {
+                  return normalisedUrl;
+                }
+              }
+            }
+
+            const extractedValue =
+              extractAnnotationValue(nodeData?.first_response_value) ??
+              extractAnnotationValue(nodeData?.first_response?.content);
+
+            if (extractedValue) {
+              return extractedValue;
             }
           }
         }
