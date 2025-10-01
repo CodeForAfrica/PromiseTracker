@@ -202,6 +202,7 @@ export type PublishedReportsResponse = {
             title?: string | null;
             description?: string | null;
             report_status?: string | null;
+            status?: string | null;
             annotations?: {
               edges?: Array<{
                 node?: PublishedReportAnnotation | null;
@@ -299,7 +300,7 @@ export const mapPublishedReports = (
     .filter((node): node is NonNullable<typeof node> => Boolean(node))
     .map((node) => {
       const meedanId = toNullableString(node.id);
-      const status = toNullableString(node.report_status ?? null);
+      const status = toNullableString(node.status ?? null);
       const url = toNullableString(node.full_url ?? null);
       const annotations = node.annotations?.edges ?? [];
 
