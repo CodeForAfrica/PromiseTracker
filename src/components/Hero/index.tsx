@@ -81,8 +81,7 @@ const FALLBACK_GROUP_DEFINITIONS = [
 
 const resolvePromiseStatus = (
   promise: PromiseItem,
-  statusById: StatusById,
-  statusByLabel: Map<string, PromiseStatus>
+  statusById: StatusById
 ): PromiseStatus | null => {
   const statusRef = promise.status;
 
@@ -96,13 +95,7 @@ const resolvePromiseStatus = (
       return statusRef;
     }
   }
-
-  const label = promise.statusLabel?.trim().toLowerCase();
-  if (!label) {
-    return null;
-  }
-
-  return statusByLabel.get(label) ?? null;
+  return null;
 };
 
 const formatUpdatedAt = (date: string): string => {
@@ -217,18 +210,6 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
     statusDocs.map((status) => [status.id, status])
   );
   const statusSummaries = buildStatusSummaries(statusDocs);
-  const statusByLabel = new Map<string, PromiseStatus>();
-  statusDocs.forEach((status) => {
-    const labelKey = status.label?.trim().toLowerCase();
-    if (labelKey) {
-      statusByLabel.set(labelKey, status);
-    }
-
-    const meedanKey = status.meedanId?.trim().toLowerCase();
-    if (meedanKey && !statusByLabel.has(meedanKey)) {
-      statusByLabel.set(meedanKey, status);
-    }
-  });
 
   const { docs: promiseDocs } = await payload.find({
     collection: "promises",
@@ -244,11 +225,7 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
   let totalPromises = 0;
 
   for (const promise of promiseDocs as PromiseItem[]) {
-    const status = resolvePromiseStatus(
-      promise,
-      statusById,
-      statusByLabel
-    );
+    const status = resolvePromiseStatus(promise, statusById);
 
     if (!status) {
       continue;

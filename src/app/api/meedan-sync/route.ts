@@ -40,6 +40,34 @@ const normaliseString = (value: unknown): string | null => {
   return null;
 };
 
+const getRelationId = (value: unknown): string | null => {
+  if (!value) {
+    return null;
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  if (typeof value === "object") {
+    const maybeId = (value as { id?: unknown }).id;
+    if (typeof maybeId === "string") {
+      const trimmed = maybeId.trim();
+      return trimmed.length > 0 ? trimmed : null;
+    }
+    if (typeof maybeId === "number" && Number.isFinite(maybeId)) {
+      return String(maybeId);
+    }
+  }
+
+  return null;
+};
+
 export const POST = async (request: NextRequest) => {
   const configuredSecret = process.env[WEBHOOK_SECRET_ENV_KEY];
 
@@ -105,16 +133,12 @@ export const POST = async (request: NextRequest) => {
       return NextResponse.json({ error: "Promise not found" }, { status: 404 });
     }
 
-    if (promise.imageUrl?.trim() === imageUrl) {
-      return NextResponse.json({ ok: true, updated: false }, { status: 200 });
-    }
-
     const fallbackAlt =
       (
         parsed?.object?.data?.fields?.[0]?.value as string | undefined
       )?.trim() ??
       promise.title?.trim() ??
-      promise.headline?.trim() ??
+      promise.description?.trim() ??
       "Meedan promise image";
 
     let filePath: string | null = null;
@@ -122,20 +146,29 @@ export const POST = async (request: NextRequest) => {
     try {
       filePath = await downloadFile(imageUrl);
 
-      const media = (await payload.create({
-        collection: "media",
-        data: {
-          alt: fallbackAlt,
-        },
-        filePath,
-      })) as Media;
+      const existingImageId = getRelationId(promise.image as unknown);
+      let mediaId = existingImageId;
 
-      const mediaId =
-        typeof media?.id === "string"
-          ? media.id
-          : typeof media?.id === "number"
-            ? String(media.id)
-            : null;
+      if (existingImageId) {
+        await payload.update({
+          collection: "media",
+          id: existingImageId,
+          data: {
+            alt: fallbackAlt,
+          },
+          filePath,
+        });
+      } else {
+        const media = (await payload.create({
+          collection: "media",
+          data: {
+            alt: fallbackAlt,
+          },
+          filePath,
+        })) as Media;
+
+        mediaId = getRelationId(media as unknown);
+      }
 
       if (!mediaId) {
         return NextResponse.json(
@@ -149,7 +182,6 @@ export const POST = async (request: NextRequest) => {
         id: promise.id,
         data: {
           image: mediaId,
-          imageUrl,
         },
       });
 

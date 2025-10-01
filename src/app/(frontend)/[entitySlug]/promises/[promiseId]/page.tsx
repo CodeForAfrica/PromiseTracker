@@ -75,29 +75,15 @@ const buildStatusDocument = (
   promise: PromiseDocument,
 ): PromiseStatusDocument | null => {
   const relation = promise.status;
-  if (relation && typeof relation !== "string") {
-    return relation;
-  }
-
-  const label = promise.statusLabel?.trim();
-  if (!label) {
+  if (!relation) {
     return null;
   }
 
-  const color = promise.themeColor?.trim() || FALLBACK_STATUS_COLOR;
+  if (typeof relation !== "string") {
+    return relation;
+  }
 
-  return {
-    id: `derived-${promise.id}`,
-    label,
-    description: "",
-    meedanId: `derived-${promise.id}`,
-    colors: {
-      color,
-      textColor: FALLBACK_STATUS_TEXT_COLOR,
-    },
-    createdAt: promise.createdAt,
-    updatedAt: promise.updatedAt,
-  };
+  return null;
 };
 
 const getUniqueSections = (sections: Array<string | null | undefined>) => {
@@ -151,13 +137,11 @@ export default async function PromiseDetailPage({
   }
 
   const statusDoc = buildStatusDocument(promise);
-  const statusColor =
-    statusDoc?.colors?.color || promise.themeColor || FALLBACK_STATUS_COLOR;
+  const statusColor = statusDoc?.colors?.color || FALLBACK_STATUS_COLOR;
   const statusTextColor =
     statusDoc?.colors?.textColor || FALLBACK_STATUS_TEXT_COLOR;
 
-  const statusDate =
-    promise.lastPublished || promise.updatedAt || promise.createdAt;
+  const statusDate = promise.updatedAt || promise.createdAt;
 
   const timelineStatusHistory = statusDate
     ? [
@@ -181,16 +165,10 @@ export default async function PromiseDetailPage({
     ? formatDate(statusDate, locale)
     : null;
 
-  const headline = promise.headline?.trim();
-  const titleText = promise.title?.trim() || headline || "Promise";
-  const originalArticleUrl = promise.publishedArticleUrl?.trim();
-  const stateLabel = promise.state?.trim();
+  const titleText = promise.title?.trim() || "Promise";
+  const originalArticleUrl = promise.url?.trim();
 
-  const bodySections = getUniqueSections([
-    promise.introduction,
-    promise.description,
-    promise.text,
-  ]);
+  const bodySections = getUniqueSections([promise.description]);
   const statusLabelText = "Promise rating status:";
   const timelineStatus = statusDoc
     ? {
@@ -302,18 +280,6 @@ export default async function PromiseDetailPage({
               >
                 {titleText}
               </Typography>
-              {headline && headline !== titleText ? (
-                <Typography
-                  component="p"
-                  sx={{
-                    typography: { xs: "h5", lg: "h4" },
-                    color: "text.primary",
-                    mb: { xs: 2.5, lg: 3 },
-                  }}
-                >
-                  {headline}
-                </Typography>
-              ) : null}
               <Box
                 sx={{
                   width: "auto",
@@ -432,14 +398,6 @@ export default async function PromiseDetailPage({
                 <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
                   {entity.name}
                 </Typography>
-                {stateLabel ? (
-                  <Typography
-                    variant="body2"
-                    sx={{ color: "#202020", mb: 0.5 }}
-                  >
-                    State: {stateLabel}
-                  </Typography>
-                ) : null}
                 <Typography variant="body2" sx={{ color: "#202020" }}>
                   Promise ID: {promise.id}
                 </Typography>
@@ -511,14 +469,6 @@ export default async function PromiseDetailPage({
                 >
                   {entity.name}
                 </Typography>
-                {stateLabel ? (
-                  <Typography
-                    variant="body2"
-                    sx={{ color: "#202020", mb: 0.5 }}
-                  >
-                    State: {stateLabel}
-                  </Typography>
-                ) : null}
                 <Typography variant="body2" sx={{ color: "#202020" }}>
                   Promise ID: {promise.id}
                 </Typography>

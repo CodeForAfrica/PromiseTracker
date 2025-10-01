@@ -368,20 +368,11 @@ export interface Promise {
   id: string;
   meedanId: string;
   title?: string | null;
-  headline?: string | null;
   description?: string | null;
-  text?: string | null;
-  introduction?: string | null;
-  statusLabel?: string | null;
+  url?: string | null;
   status?: (string | null) | PromiseStatus;
-  themeColor?: string | null;
-  image?: (string | null) | Media;
-  imageUrl?: string | null;
-  publishedArticleUrl?: string | null;
-  useVisualCard?: boolean | null;
-  state?: string | null;
   politicalEntity?: (string | null) | PoliticalEntity;
-  lastPublished?: string | null;
+  image?: (string | null) | Media;
   updatedAt: string;
   createdAt: string;
 }
@@ -983,20 +974,11 @@ export interface AiExtractionsSelect<T extends boolean = true> {
 export interface PromisesSelect<T extends boolean = true> {
   meedanId?: T;
   title?: T;
-  headline?: T;
   description?: T;
-  text?: T;
-  introduction?: T;
-  statusLabel?: T;
+  url?: T;
   status?: T;
-  themeColor?: T;
-  image?: T;
-  imageUrl?: T;
-  publishedArticleUrl?: T;
-  useVisualCard?: T;
-  state?: T;
   politicalEntity?: T;
-  lastPublished?: T;
+  image?: T;
   updatedAt?: T;
   createdAt?: T;
 }

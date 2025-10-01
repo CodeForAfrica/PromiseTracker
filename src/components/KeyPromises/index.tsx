@@ -75,18 +75,6 @@ export const KeyPromises = async ({
   const statusById = new Map<string, PromiseStatus>(
     (statusQuery.docs as PromiseStatus[]).map((status) => [status.id, status])
   );
-  const statusByLabel = new Map<string, PromiseStatus>();
-  (statusQuery.docs as PromiseStatus[]).forEach((status) => {
-    const labelKey = status.label?.trim().toLowerCase();
-    if (labelKey) {
-      statusByLabel.set(labelKey, status);
-    }
-
-    const meedanKey = status.meedanId?.trim().toLowerCase();
-    if (meedanKey && !statusByLabel.has(meedanKey)) {
-      statusByLabel.set(meedanKey, status);
-    }
-  });
 
   const resolvedLimit = Math.max(1, itemsToShow ?? DEFAULT_ITEMS);
 
@@ -99,7 +87,7 @@ export const KeyPromises = async ({
     },
     limit: resolvedLimit,
     depth: 1,
-    sort: "-lastPublished,-updatedAt",
+    sort: "-updatedAt",
   });
 
   const promiseDocs = promisesQuery.docs as PromiseDocument[];
@@ -118,37 +106,17 @@ export const KeyPromises = async ({
       }
     }
 
-    if (!statusDoc) {
-      const lookupKey = promise.statusLabel?.trim().toLowerCase();
-      if (lookupKey) {
-        statusDoc = statusByLabel.get(lookupKey) ?? null;
-      }
-    }
-
-    const statusDetails =
-      buildStatus(statusDoc) ??
-      (promise.statusLabel
-        ? {
-            color: promise.themeColor?.trim() || "#005dfd",
-            label: promise.statusLabel,
-            textColor: "#202020",
-          }
-        : null);
+    const statusDetails = buildStatus(statusDoc);
 
     if (!statusDetails) {
       continue;
     }
 
     const image = await resolveMedia(promise.image ?? null);
-    const titleText =
-      promise.headline?.trim() || promise.title?.trim() || "Promise";
-    const description =
-      promise.description?.trim() ||
-      promise.text?.trim() ||
-      promise.introduction?.trim() ||
-      undefined;
+    const titleText = promise.title?.trim() || "Promise";
+    const description = promise.description?.trim() || undefined;
     const href = `/${entity.slug}/promises/${promise.id}`;
-    const statusDate = promise.lastPublished ?? promise.updatedAt;
+    const statusDate = promise.updatedAt ?? promise.createdAt;
 
     const statusHistory = [
       {
