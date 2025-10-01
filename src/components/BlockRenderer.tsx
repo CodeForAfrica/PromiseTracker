@@ -1,19 +1,38 @@
 import ActNow from "@/blocks/ActNow/Component";
-import { Page, PoliticalEntity } from "@/payload-types";
-import { Fragment } from "react";
+import { HomePage, Page, PoliticalEntity } from "@/payload-types";
+import { Fragment, type ComponentType } from "react";
 import { KeyPromises } from "./KeyPromises";
 import Newsletter from "./Newsletter";
 import Partners from "./Partners";
 import LatestPromises from "./LatestPromises";
 import { Hero } from "./Hero";
 import Promises from "./Promises";
+import { TenantList } from "./TenantList";
+import { PoliticalEntityList } from "./PoliticalEntityList";
+
+type PageBlocks = NonNullable<Page["blocks"]>;
+type PageBlock = PageBlocks extends Array<infer T> ? T : never;
+
+type TenantSelectorBlocks = HomePage["tenantSelector"]["blocks"];
+type TenantSelectionBlockBase =
+  TenantSelectorBlocks extends Array<infer T> ? T : never;
+type TenantSelectionBlock = TenantSelectionBlockBase;
+
+type EntitySelectorBlocks = HomePage["entitySelector"]["blocks"];
+type EntitySelectionBlockBase =
+  EntitySelectorBlocks extends Array<infer T> ? T : never;
+type EntitySelectionBlock = EntitySelectionBlockBase & {
+  pageSlugs?: string[];
+};
+
+type ResolvedBlock = PageBlock | TenantSelectionBlock | EntitySelectionBlock;
 
 type BlockProps = {
-  blocks: Page["blocks"];
+  blocks: ResolvedBlock[] | null | undefined;
   entity?: PoliticalEntity;
 };
 
-const blockComponents: Record<string, React.FC<any>> = {
+const blockComponents: Record<string, ComponentType<any>> = {
   "act-now": ActNow,
   hero: Hero,
   newsletter: Newsletter,
@@ -21,6 +40,8 @@ const blockComponents: Record<string, React.FC<any>> = {
   "latest-promises": LatestPromises,
   "promise-list": Promises,
   "key-promises": KeyPromises,
+  "tenant-selection": TenantList,
+  "entity-selection": PoliticalEntityList,
 };
 
 export const BlockRenderer = ({ blocks, entity }: BlockProps) => {
@@ -31,16 +52,27 @@ export const BlockRenderer = ({ blocks, entity }: BlockProps) => {
       <Fragment>
         {blocks.map((block, index) => {
           const { blockType } = block;
+          if (!blockType) {
+            return null;
+          }
+
+          const key =
+            ("id" in block && block.id) ||
+            ("blockName" in block && block.blockName) ||
+            index;
+
           if (blockType && blockType in blockComponents) {
             const Block = blockComponents[blockType];
             if (Block) {
               return (
-                <div key={index}>
+                <div key={String(key)}>
                   <Block {...block} entitySlug={entity?.slug} />
                 </div>
               );
             }
           }
+
+          return null;
         })}
       </Fragment>
     );

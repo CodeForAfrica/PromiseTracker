@@ -1397,14 +1397,56 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
 export interface HomePage {
   id: string;
   tenantSelector: {
-    title: string;
-    subtitle: string;
-    ctaLabel: string;
-    emptyListLabel: string;
+    blocks: (
+      | ActNowBlock
+      | {
+          title: string;
+          subtitle: string;
+          ctaLabel: string;
+          emptyListLabel: string;
+          id?: string | null;
+          blockName?: string | null;
+          blockType: 'tenant-selection';
+        }
+      | {
+          image: string | Media;
+          id?: string | null;
+          blockName?: string | null;
+          blockType: 'newsletter';
+        }
+      | {
+          title: string;
+          partners?: (string | Partner)[] | null;
+          id?: string | null;
+          blockName?: string | null;
+          blockType: 'partners';
+        }
+    )[];
   };
   entitySelector: {
-    emptyTitle: string;
-    EmptySubtitle: string;
+    blocks: (
+      | ActNowBlock
+      | {
+          emptyTitle: string;
+          EmptySubtitle: string;
+          id?: string | null;
+          blockName?: string | null;
+          blockType: 'entity-selection';
+        }
+      | {
+          image: string | Media;
+          id?: string | null;
+          blockName?: string | null;
+          blockType: 'newsletter';
+        }
+      | {
+          title: string;
+          partners?: (string | Partner)[] | null;
+          id?: string | null;
+          blockName?: string | null;
+          blockType: 'partners';
+        }
+    )[];
   };
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -1456,16 +1498,68 @@ export interface HomePageSelect<T extends boolean = true> {
   tenantSelector?:
     | T
     | {
-        title?: T;
-        subtitle?: T;
-        ctaLabel?: T;
-        emptyListLabel?: T;
+        blocks?:
+          | T
+          | {
+              'act-now'?: T | ActNowBlockSelect<T>;
+              'tenant-selection'?:
+                | T
+                | {
+                    title?: T;
+                    subtitle?: T;
+                    ctaLabel?: T;
+                    emptyListLabel?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              newsletter?:
+                | T
+                | {
+                    image?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              partners?:
+                | T
+                | {
+                    title?: T;
+                    partners?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+            };
       };
   entitySelector?:
     | T
     | {
-        emptyTitle?: T;
-        EmptySubtitle?: T;
+        blocks?:
+          | T
+          | {
+              'act-now'?: T | ActNowBlockSelect<T>;
+              'entity-selection'?:
+                | T
+                | {
+                    emptyTitle?: T;
+                    EmptySubtitle?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              newsletter?:
+                | T
+                | {
+                    image?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              partners?:
+                | T
+                | {
+                    title?: T;
+                    partners?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+            };
       };
   updatedAt?: T;
   createdAt?: T;

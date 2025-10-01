@@ -1,6 +1,6 @@
 import { getDomain } from "@/lib/domain";
 import { getAllTenants } from "@/lib/data/tenants";
-import type { Tenant } from "@/payload-types";
+import type { HomePage, Tenant } from "@/payload-types";
 import {
   Avatar,
   Box,
@@ -15,7 +15,6 @@ import {
   ListItemText,
   Typography,
 } from "@mui/material";
-import { getGlobalPayload } from "@/lib/payload";
 
 export type TenantLink = {
   id: string;
@@ -90,24 +89,30 @@ export const getTenantLinks = async (): Promise<TenantLink[]> => {
   return entries.sort((a, b) => a.name.localeCompare(b.name));
 };
 
-type TenantListProps = {
+type TenantSelectionBlock = Extract<
+  HomePage["tenantSelector"]["blocks"][number],
+  { blockType: "tenant-selection" }
+>;
+
+type TenantListProps = TenantSelectionBlock & {
   dense?: boolean;
 };
 
-export const TenantList = async ({ dense = false }: TenantListProps) => {
+export const TenantList = async ({
+  dense = false,
+  title,
+  subtitle,
+  ctaLabel,
+  emptyListLabel,
+}: TenantListProps) => {
   const tenantLinks = await getTenantLinks();
-  const payload = await getGlobalPayload();
-
-  const { tenantSelector } = await payload.findGlobal({
-    slug: "home-page",
-  });
 
   if (tenantLinks.length === 0) {
     return (
       <Card>
         <CardContent sx={{ p: { xs: 2, md: 3 } }}>
           <Typography variant="body1">
-            {tenantSelector.emptyListLabel}
+            {emptyListLabel}
           </Typography>
         </CardContent>
       </Card>
@@ -118,10 +123,10 @@ export const TenantList = async ({ dense = false }: TenantListProps) => {
     <Card variant="outlined" sx={{ borderRadius: 2 }}>
       <CardContent sx={{ p: { xs: 2, md: 3 } }}>
         <Typography variant="h5" sx={{ fontWeight: 600 }}>
-          {tenantSelector.title}
+          {title}
         </Typography>
         <Typography variant="body2" sx={{ mb: 3 }}>
-          {tenantSelector.subtitle}
+          {subtitle}
         </Typography>
         <List disablePadding dense={dense}>
           {tenantLinks.map((tenant, index) => {
@@ -166,7 +171,7 @@ export const TenantList = async ({ dense = false }: TenantListProps) => {
                     href={tenant.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    label={tenantSelector.ctaLabel}
+                    label={ctaLabel}
                     clickable
                     color="primary"
                     sx={{ ml: 2 }}

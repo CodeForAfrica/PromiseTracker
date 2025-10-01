@@ -1,3 +1,8 @@
+import { ActNow } from "@/blocks/ActNow";
+import { EntitySelection } from "@/blocks/EntitySelection";
+import Newsletter from "@/blocks/Newsletter";
+import Partners from "@/blocks/Partners";
+import { TenantSelection } from "@/blocks/TenantSelector";
 import { GlobalConfig } from "payload";
 
 export const HomePage: GlobalConfig = {
@@ -15,6 +20,7 @@ export const HomePage: GlobalConfig = {
   fields: [
     {
       type: "tabs",
+      required: true,
       tabs: [
         {
           label: {
@@ -26,50 +32,16 @@ export const HomePage: GlobalConfig = {
               name: "tenantSelector",
               type: "group",
               label: "",
+              required: true,
               admin: {
                 hideGutter: true,
               },
               fields: [
                 {
-                  name: "title",
-                  type: "text",
+                  name: "blocks",
+                  type: "blocks",
                   required: true,
-                  label: {
-                    en: "Section title",
-                    fr: "Titre de la section",
-                  },
-                  defaultValue: "Select Tenant",
-                },
-                {
-                  name: "subtitle",
-                  type: "textarea",
-                  required: true,
-                  label: {
-                    en: "Section description",
-                    fr: "Description de la section",
-                  },
-                  defaultValue:
-                    "Choose a country to view their tracked promises.",
-                },
-                {
-                  name: "ctaLabel",
-                  required: true,
-                  type: "text",
-                  label: {
-                    en: "CTA label",
-                    fr: "Libellé du CTA",
-                  },
-                  defaultValue: "Open tenant site",
-                },
-                {
-                  name: "emptyListLabel",
-                  type: "text",
-                  required: true,
-                  label: {
-                    en: "Empty Tenant List Label",
-                    fr: "Étiquette de liste de locataires vide",
-                  },
-                  defaultValue: "No tenants created yet",
+                  blocks: [ActNow, TenantSelection, Newsletter, Partners],
                 },
               ],
             },
@@ -84,28 +56,13 @@ export const HomePage: GlobalConfig = {
             {
               name: "entitySelector",
               type: "group",
+              label: "",
               fields: [
                 {
-                  name: "emptyTitle",
-                  type: "text",
+                  type: "blocks",
+                  name: "blocks",
                   required: true,
-                  label: {
-                    en: "Empty List Title",
-                    fr: "Titre de la liste vide",
-                  },
-                  defaultValue:
-                    "No political entities have been published yet for this tenant",
-                },
-                {
-                  name: "EmptySubtitle",
-                  type: "textarea",
-                  required: true,
-                  label: {
-                    en: "Empty List Subtitle",
-                    fr: "Sous-titre de la liste vide",
-                  },
-                  defaultValue:
-                    "Check back soon for newly tracked leaders and their promises.",
+                  blocks: [ActNow, EntitySelection, Newsletter, Partners],
                 },
               ],
             },

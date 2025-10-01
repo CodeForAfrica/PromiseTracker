@@ -14,16 +14,23 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import type { PoliticalEntity, Tenant } from "@/payload-types";
-import { getGlobalPayload } from "@/lib/payload";
+import type { HomePage, PoliticalEntity } from "@/payload-types";
 import { resolveMedia } from "@/lib/data/media";
+import { getDomain } from "@/lib/domain";
+import { getTenantBySubDomain } from "@/lib/data/tenants";
+import {
+  getPoliticalEntitiesByTenant,
+  getPromiseCountsForEntities,
+} from "@/lib/data/politicalEntities";
 
-type PoliticalEntityListProps = {
-  tenant: Tenant;
-  politicalEntities: PoliticalEntity[];
+type EntitySelectionBlock = Extract<
+  HomePage["entitySelector"]["blocks"][number],
+  { blockType: "entity-selection" }
+> & {
   pageSlugs?: string[];
-  promiseCounts?: Record<string, number>;
 };
+
+type PoliticalEntityListProps = EntitySelectionBlock;
 
 const buildHref = (entity: PoliticalEntity, pageSlugs: string[] = []) => {
   const sanitizedPageSlugs = pageSlugs.filter(
@@ -39,15 +46,30 @@ const buildHref = (entity: PoliticalEntity, pageSlugs: string[] = []) => {
 };
 
 export const PoliticalEntityList = async ({
-  politicalEntities,
   pageSlugs = [],
-  promiseCounts = {},
+  emptyTitle,
+  EmptySubtitle,
 }: PoliticalEntityListProps) => {
-  const payload = await getGlobalPayload();
+  const { subdomain } = await getDomain();
+  const tenant = await getTenantBySubDomain(subdomain);
 
-  const { entitySelector } = await payload.findGlobal({
-    slug: "home-page",
-  });
+  if (!tenant) {
+    return null;
+  }
+
+  const politicalEntities = await getPoliticalEntitiesByTenant(tenant);
+  const promiseCounts = politicalEntities.length
+    ? await getPromiseCountsForEntities(
+        politicalEntities.map((entity) => entity.id)
+      )
+    : {};
+
+  const entitiesWithMedia = await Promise.all(
+    politicalEntities.map(async (entity) => ({
+      entity,
+      media: await resolveMedia(entity.image),
+    }))
+  );
 
   if (!politicalEntities.length) {
     return (
@@ -55,10 +77,10 @@ export const PoliticalEntityList = async ({
         <Card variant="outlined">
           <CardContent>
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              {entitySelector.emptyTitle}
+              {emptyTitle}
             </Typography>
             <Typography variant="body2">
-              {entitySelector.EmptySubtitle}
+              {EmptySubtitle}
             </Typography>
           </CardContent>
         </Card>
@@ -71,9 +93,8 @@ export const PoliticalEntityList = async ({
       <Card variant="outlined" sx={{ borderRadius: 2 }}>
         <CardContent sx={{ p: { xs: 2, md: 3 } }}>
           <List disablePadding sx={{ "& > * + *": { mt: 1 } }}>
-            {politicalEntities.map(async (entity, index) => {
+            {entitiesWithMedia.map(({ entity, media }, index) => {
               const href = buildHref(entity, pageSlugs);
-              const media = await resolveMedia(entity.image);
               const promiseCount = promiseCounts[entity.id] ?? 0;
               const initials = entity.name
                 .split(" ")
@@ -139,7 +160,7 @@ export const PoliticalEntityList = async ({
                       </Stack>
                     </ListItemButton>
                   </ListItem>
-                  {index < politicalEntities.length - 1 ? (
+                  {index < entitiesWithMedia.length - 1 ? (
                     <Box
                       component="hr"
                       sx={{
