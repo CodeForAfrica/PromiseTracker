@@ -135,6 +135,7 @@ export const syncMeedanReports = async ({
 
   const existingById = new Map<string, PromiseDoc>();
   const uploadedImages = new Map<string, string>();
+  const mediaCache = new Map<string, Media | null>();
 
   for (const doc of existingDocs) {
     const key = doc.meedanId?.trim();
@@ -231,6 +232,7 @@ export const syncMeedanReports = async ({
         collection: "media",
         data: {
           alt,
+          externalUrl: url,
         },
         filePath,
       })) as Media;
@@ -265,6 +267,30 @@ export const syncMeedanReports = async ({
     }
   };
 
+  const resolveMediaRecord = async (id: string): Promise<Media | null> => {
+    if (mediaCache.has(id)) {
+      return mediaCache.get(id) ?? null;
+    }
+
+    try {
+      const mediaDoc = (await payload.findByID({
+        collection: "media",
+        id,
+        depth: 0,
+      })) as Media;
+
+      mediaCache.set(id, mediaDoc);
+      return mediaDoc;
+    } catch (error) {
+      logger.warn?.("syncMeedanReports:: Failed to resolve media", {
+        mediaId: id,
+        error: error instanceof Error ? error.message : String(error ?? ""),
+      });
+      mediaCache.set(id, null);
+      return null;
+    }
+  };
+
   const resolveImageForReport = async (
     report: PublishedReport,
     existingData: PromiseData | undefined
@@ -275,13 +301,21 @@ export const syncMeedanReports = async ({
       return existingData?.image ?? null;
     }
 
-    if (existingData?.image) {
-      return existingData.image;
-    }
-
     const cached = uploadedImages.get(remoteUrl);
     if (cached) {
       return cached;
+    }
+
+    const existingImageId = existingData?.image ?? null;
+
+    if (existingImageId) {
+      const mediaDoc = await resolveMediaRecord(existingImageId);
+      const storedSource = mediaDoc?.externalUrl?.trim() ?? "";
+
+      if (storedSource && storedSource === remoteUrl) {
+        uploadedImages.set(remoteUrl, existingImageId);
+        return existingImageId;
+      }
     }
 
     const alt = report.title ?? report.description ?? "Meedan promise image";
@@ -289,7 +323,7 @@ export const syncMeedanReports = async ({
     const mediaId = await uploadImageFromUrl(remoteUrl, alt);
 
     if (!mediaId) {
-      return existingData?.image ?? null;
+      return existingImageId ?? null;
     }
 
     uploadedImages.set(remoteUrl, mediaId);

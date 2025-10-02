@@ -209,6 +209,10 @@ export interface Document {
 export interface Media {
   id: string;
   alt: string;
+  /**
+   * Original source URL for synced media
+   */
+  externalUrl?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -988,6 +992,7 @@ export interface PromisesSelect<T extends boolean = true> {
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
+  externalUrl?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
