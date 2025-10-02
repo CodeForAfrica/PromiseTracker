@@ -48,6 +48,7 @@ export const CircleSvgChart = ({
             color: "primary.main",
             fontWeight: 400,
             fontSize: theme.typography.pxToRem(12),
+            whiteSpace: "nowrap",
           })}
         >
           <span style={{ fontSize: 12 }}>{status.label.toLowerCase()}</span>

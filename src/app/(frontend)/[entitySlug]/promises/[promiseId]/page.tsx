@@ -36,7 +36,7 @@ const parseYear = (value?: string | null): number | null => {
 
 const computeTimelineInterval = (
   entityPeriod: { from?: string | null; to?: string | null },
-  statusHistory: { date: string }[],
+  statusHistory: { date: string }[]
 ): [number, number] => {
   const start = parseYear(entityPeriod.from);
   const end = parseYear(entityPeriod.to);
@@ -72,7 +72,7 @@ const formatDate = (value: string, locale: string) => {
 };
 
 const buildStatusDocument = (
-  promise: PromiseDocument,
+  promise: PromiseDocument
 ): PromiseStatusDocument | null => {
   const relation = promise.status;
   if (!relation) {
@@ -156,7 +156,7 @@ export default async function PromiseDetailPage({
 
   const timelineInterval = computeTimelineInterval(
     { from: entity.periodFrom, to: entity.periodTo },
-    timelineStatusHistory,
+    timelineStatusHistory
   );
 
   const image = await resolveMedia(promise.image ?? null);
@@ -188,26 +188,24 @@ export default async function PromiseDetailPage({
         tenantSelectionHref={tenantSelectionHref}
       />
       <Box component="article" sx={{ bgcolor: "background.default" }}>
-        {timelineStatus ? (
-          <Box sx={{ bgcolor: "secondary.light" }}>
-            <Container
-              disableGutters
-              maxWidth="lg"
-              sx={{
-                px: { xs: 3, lg: 0 },
-                py: { xs: 4, lg: 6 },
-              }}
-            >
-              <PromiseTimeline
-                status={timelineStatus}
-                statusHistory={timelineStatusHistory}
-                events={[]}
-                interval={timelineInterval}
-                sx={{ height: { xs: 120, lg: 140 } }}
-              />
-            </Container>
-          </Box>
-        ) : null}
+        <Box sx={{ bgcolor: "secondary.light" }}>
+          <Container
+            disableGutters
+            maxWidth="lg"
+            sx={{
+              px: { xs: 3, lg: 0 },
+              py: { xs: 4, lg: 6 },
+            }}
+          >
+            <PromiseTimeline
+              status={timelineStatus!}
+              statusHistory={timelineStatusHistory}
+              events={[]}
+              interval={timelineInterval}
+              sx={{ height: { xs: 120, lg: 140 } }}
+            />
+          </Container>
+        </Box>
         <Container
           disableGutters
           maxWidth="lg"
@@ -248,7 +246,7 @@ export default async function PromiseDetailPage({
                   sx={{
                     color: "inherit",
                     textDecoration: "none",
-                    "&:hover": { textDecoration: "underline" },
+                    // "&:hover": { textDecoration: "underline" },
                   }}
                 >
                   Promises
@@ -398,9 +396,6 @@ export default async function PromiseDetailPage({
                 <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
                   {entity.name}
                 </Typography>
-                <Typography variant="body2" sx={{ color: "#202020" }}>
-                  Promise ID: {promise.id}
-                </Typography>
               </Box>
             </Grid>
             <Grid
@@ -415,63 +410,16 @@ export default async function PromiseDetailPage({
                 <Typography variant="h4" sx={{ fontWeight: 500, mb: 2 }}>
                   {statusLabelText}
                 </Typography>
-                {statusDoc ? (
-                  <>
-                    <PromiseStatus
-                      {...statusDoc}
-                      sx={{
-                        mt: 0,
-                        px: 3,
-                        py: 1.5,
-                        fontSize: 12,
-                        letterSpacing: 1.4,
-                      }}
-                    />
-                    {statusDoc.description ? (
-                      <Typography
-                        variant="body2"
-                        sx={{ mt: 2, color: "#202020" }}
-                      >
-                        {statusDoc.description}
-                      </Typography>
-                    ) : null}
-                    {formattedStatusDate ? (
-                      <Typography
-                        variant="body2"
-                        sx={{ mt: 2, color: "#202020" }}
-                      >
-                        Last updated {formattedStatusDate}
-                      </Typography>
-                    ) : null}
-                  </>
-                ) : (
-                  <Typography variant="body2" sx={{ color: "#202020" }}>
-                    Status coming soon.
-                  </Typography>
-                )}
-              </Box>
-              <Box>
-                <Typography
-                  variant="h6"
+                <PromiseStatus
+                  {...statusDoc!}
                   sx={{
-                    color: "#202020",
-                    mb: 1,
-                    textTransform: "uppercase",
-                    fontWeight: 900,
-                    fontSize: "24px !important",
+                    mt: 0,
+                    px: 3,
+                    py: 1.5,
+                    fontSize: 12,
+                    letterSpacing: 1.4,
                   }}
-                >
-                  {entity.position}
-                </Typography>
-                <Typography
-                  variant="h5"
-                  sx={{ fontWeight: 600, mb: 1, fontSize: "20px !important" }}
-                >
-                  {entity.name}
-                </Typography>
-                <Typography variant="body2" sx={{ color: "#202020" }}>
-                  Promise ID: {promise.id}
-                </Typography>
+                />
               </Box>
             </Grid>
           </Grid>
