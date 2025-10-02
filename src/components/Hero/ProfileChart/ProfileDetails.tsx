@@ -174,7 +174,6 @@ export const ProfileDetails = ({
               }),
             }}
             link={""}
-            children={undefined}
           />
         </Stack>
       </Grid>

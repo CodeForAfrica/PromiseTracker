@@ -1,5 +1,6 @@
 import React from "react";
 import NextLink from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Box, Button, Container, Grid, Typography } from "@mui/material";
 
@@ -59,18 +60,6 @@ const computeTimelineInterval = (
   return [currentYear, currentYear + 1];
 };
 
-const formatDate = (value: string, locale: string) => {
-  try {
-    return new Intl.DateTimeFormat(locale || "en", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    }).format(new Date(value));
-  } catch (_error) {
-    return value;
-  }
-};
-
 const buildStatusDocument = (
   promise: PromiseDocument
 ): PromiseStatusDocument | null => {
@@ -84,17 +73,6 @@ const buildStatusDocument = (
   }
 
   return null;
-};
-
-const getUniqueSections = (sections: Array<string | null | undefined>) => {
-  const unique: string[] = [];
-  sections.forEach((section) => {
-    const value = section?.trim();
-    if (value && !unique.includes(value)) {
-      unique.push(value);
-    }
-  });
-  return unique;
 };
 
 export default async function PromiseDetailPage({
@@ -161,23 +139,15 @@ export default async function PromiseDetailPage({
 
   const image = await resolveMedia(promise.image ?? null);
   const locale = tenant.locale ?? "en";
-  const formattedStatusDate = statusDate
-    ? formatDate(statusDate, locale)
-    : null;
-
   const titleText = promise.title?.trim() || "Promise";
   const originalArticleUrl = promise.url?.trim();
-
-  const bodySections = getUniqueSections([promise.description]);
-  const statusLabelText = "Promise rating status:";
-  const timelineStatus = statusDoc
-    ? {
-        color: statusColor,
-        label: statusDoc.label,
-        textColor: statusTextColor,
-        date: statusDate ?? undefined,
-      }
-    : null;
+  const descriptionText = promise.description?.trim() || null;
+  const timelineStatus = {
+    color: statusColor,
+    label: statusDoc?.label,
+    textColor: statusTextColor,
+    date: statusDate ?? undefined,
+  };
 
   return (
     <>
@@ -198,7 +168,7 @@ export default async function PromiseDetailPage({
             }}
           >
             <PromiseTimeline
-              status={timelineStatus!}
+              status={timelineStatus}
               statusHistory={timelineStatusHistory}
               events={[]}
               interval={timelineInterval}
@@ -215,27 +185,16 @@ export default async function PromiseDetailPage({
             py: { xs: 6, lg: 10 },
           }}
         >
-          <Grid
-            container
-            columnSpacing={{ xs: 0, lg: 10 }}
-            rowSpacing={{ xs: 6, lg: 0 }}
-            alignItems="flex-start"
-          >
-            <Grid
-              size={{ xs: 12, lg: 8 }}
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
+          <Grid container spacing={{ xs: 6, lg: 8 }} alignItems="flex-start">
+            <Grid size={{ xs: 12, lg: 8 }}>
               <Typography
-                variant="h5"
+                variant="overline"
                 sx={{
-                  mb: 2,
-                  mt: { xs: 4, lg: 6 },
-                  fontSize: { xs: 14, lg: 16 },
-                  fontWeight: 600,
-                  letterSpacing: 1.2,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 1,
+                  fontWeight: 700,
+                  letterSpacing: 2,
                   textTransform: "uppercase",
                   color: "#202020",
                 }}
@@ -246,7 +205,6 @@ export default async function PromiseDetailPage({
                   sx={{
                     color: "inherit",
                     textDecoration: "none",
-                    // "&:hover": { textDecoration: "underline" },
                   }}
                 >
                   Promises
@@ -258,113 +216,77 @@ export default async function PromiseDetailPage({
                   typography: { xs: "h3", lg: "h1" },
                   fontWeight: 600,
                   lineHeight: 1.1,
-                  mb: { xs: 3, lg: 4 },
-                  pb: { lg: 1.5 },
-                  position: { lg: "relative" },
-                  ...(statusDoc
-                    ? {
-                        "&::after": {
-                          content: '""',
-                          position: "absolute",
-                          bottom: 0,
-                          left: 0,
-                          width: "72px",
-                          borderBottom: `8px solid ${statusColor}`,
-                          display: { xs: "none", lg: "block" },
-                        },
-                      }
-                    : {}),
+                  mt: 2,
+                  mb: { xs: 4, lg: 5 },
+                  position: "relative",
+                  "&::after": {
+                    content: '""',
+                    position: "absolute",
+                    bottom: -16,
+                    left: 0,
+                    width: "72px",
+                    borderBottom: `8px solid ${statusColor}`,
+                  },
                 }}
               >
                 {titleText}
               </Typography>
-              <Box
-                sx={{
-                  width: "auto",
-                  height: { xs: "210px", lg: "477px" },
-                  border: {
-                    xs: `6px solid ${statusColor}`,
-                    lg: `10px solid ${statusColor}`,
-                  },
-                  backgroundImage: image
-                    ? `linear-gradient(to right, ${statusColor}, ${statusColor}), url(${image.url})`
-                    : `linear-gradient(to right, ${statusColor}, ${statusColor})`,
-                  backgroundBlendMode: image ? "soft-light" : "normal",
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
-                  backgroundRepeat: "no-repeat",
-                  mb: { xs: 4, lg: 6 },
-                }}
-              />
+              {image ? (
+                <Box
+                  component="figure"
+                  sx={{
+                    position: "relative",
+                    width: "100%",
+                    overflow: "hidden",
+                    border: {
+                      xs: `6px solid ${statusColor}`,
+                      lg: `10px solid ${statusColor}`,
+                    },
+                    borderRadius: 0,
+                    aspectRatio: { xs: "4 / 3", lg: "3 / 2" },
+                    mb: { xs: 4, lg: 6 },
+                  }}
+                >
+                  <Image
+                    src={image.url}
+                    alt={image.alt || titleText}
+                    fill
+                    style={{ objectFit: "cover" }}
+                  />
+                </Box>
+              ) : null}
               {statusDoc ? (
                 <Box
                   sx={{
-                    mt: { xs: 0, lg: 0 },
                     display: { xs: "flex", lg: "none" },
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    borderTop: "1px solid",
-                    borderBottom: "1px solid",
-                    borderColor: "secondary.light",
-                    py: 2,
-                    px: 1,
-                    gap: 2,
+                    justifyContent: "center",
+                    mb: 4,
                   }}
                 >
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {statusLabelText}
-                  </Typography>
                   <PromiseStatus
                     {...statusDoc}
                     sx={{
                       mt: 0,
-                      px: 3,
-                      py: 1.25,
-                      fontSize: 12,
-                      letterSpacing: 1.2,
-                      flexShrink: 0,
-                      whiteSpace: "nowrap",
+                      px: 5,
+                      py: 2,
+                      fontSize: { xs: 10, sm: 12 },
+                      letterSpacing: 1.6,
                     }}
                   />
                 </Box>
               ) : null}
-              {statusDoc?.description ? (
+              {descriptionText ? (
                 <Typography
-                  variant="body2"
-                  sx={{
-                    display: { xs: "block", lg: "none" },
-                    mt: 2,
-                    color: "#202020",
-                  }}
-                >
-                  {statusDoc.description}
-                </Typography>
-              ) : null}
-              {formattedStatusDate ? (
-                <Typography
-                  variant="body2"
-                  sx={{
-                    display: { xs: "block", lg: "none" },
-                    mt: 2,
-                    color: "#202020",
-                  }}
-                >
-                  Last updated {formattedStatusDate}
-                </Typography>
-              ) : null}
-              {bodySections.map((section) => (
-                <Typography
-                  key={section}
                   variant="body1"
                   sx={{
-                    mt: { xs: 3, lg: 4 },
+                    mt: { xs: 4, lg: 5 },
                     color: "text.primary",
                     whiteSpace: "pre-line",
                   }}
                 >
-                  {section}
+                  {descriptionText}
                 </Typography>
-              ))}
+              ) : null}
               {originalArticleUrl ? (
                 <Button
                   component="a"
@@ -381,46 +303,49 @@ export default async function PromiseDetailPage({
                   Read the full report
                 </Button>
               ) : null}
-              <Box
-                sx={{
-                  display: { xs: "block", lg: "none" },
-                  mt: 6,
-                }}
-              >
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: "#202020", mb: 1 }}
-                >
-                  {entity.position}
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
-                  {entity.name}
-                </Typography>
-              </Box>
             </Grid>
-            <Grid
-              size={{ xs: 12, lg: 4 }}
-              sx={{
-                display: { xs: "none", lg: "flex" },
-                flexDirection: "column",
-                gap: 6,
-              }}
-            >
-              <Box>
-                <Typography variant="h4" sx={{ fontWeight: 500, mb: 2 }}>
-                  {statusLabelText}
-                </Typography>
-                <PromiseStatus
-                  {...statusDoc!}
+            <Grid size={{ xs: 12, lg: 4 }}>
+              {statusDoc ? (
+                <Box
                   sx={{
-                    mt: 0,
-                    px: 3,
-                    py: 1.5,
-                    fontSize: 12,
-                    letterSpacing: 1.4,
+                    borderRadius: 0,
+                    bgcolor: "#ffffff",
+                    pt: 4,
+                    pb: 5,
+                    px: 5,
+                    maxWidth: { lg: 320 },
+                    ml: { lg: "auto" },
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 3,
                   }}
-                />
-              </Box>
+                >
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontSize: { xs: "0.875rem", lg: "1rem" },
+                      fontWeight: 600,
+                      letterSpacing: 1.5,
+                      textTransform: "uppercase",
+                      color: "#202020",
+                    }}
+                  >
+                    Promise rating status:
+                  </Typography>
+                  <PromiseStatus
+                    {...statusDoc}
+                    sx={{
+                      mt: 0,
+                      px: 6,
+                      py: 2.4,
+                      fontSize: 12,
+                      letterSpacing: 1.6,
+                      borderRadius: 0,
+                    }}
+                  />
+                </Box>
+              ) : null}
             </Grid>
           </Grid>
         </Container>
