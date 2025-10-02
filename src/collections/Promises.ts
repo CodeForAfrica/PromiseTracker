@@ -19,7 +19,7 @@ export const Promises: CollectionConfig = {
       fr: "Documents",
     },
     useAsTitle: "title",
-    defaultColumns: ["title", "statusLabel", "state", "lastPublished"],
+    defaultColumns: ["title", "status", "politicalEntity", "url"],
   },
   access: {
     read: () => true,
@@ -47,14 +47,6 @@ export const Promises: CollectionConfig = {
       },
     },
     {
-      name: "headline",
-      type: "text",
-      label: {
-        en: "Headline",
-        fr: "Titre court",
-      },
-    },
-    {
       name: "description",
       type: "textarea",
       label: {
@@ -63,30 +55,11 @@ export const Promises: CollectionConfig = {
       },
     },
     {
-      name: "text",
-      type: "textarea",
-      label: {
-        en: "Text",
-        fr: "Texte",
-      },
-    },
-    {
-      name: "introduction",
-      type: "textarea",
-      label: {
-        en: "Introduction",
-        fr: "Introduction",
-      },
-    },
-    {
-      name: "statusLabel",
+      name: "url",
       type: "text",
       label: {
-        en: "Status Label",
-        fr: "Libellé du statut",
-      },
-      admin: {
-        position: "sidebar",
+        en: "URL",
+        fr: "URL",
       },
     },
     {
@@ -96,64 +69,6 @@ export const Promises: CollectionConfig = {
       label: {
         en: "Status",
         fr: "Statut",
-      },
-      admin: {
-        position: "sidebar",
-      },
-    },
-    {
-      name: "themeColor",
-      type: "text",
-      label: {
-        en: "Theme Color",
-        fr: "Couleur du thème",
-      },
-      admin: {
-        position: "sidebar",
-      },
-    },
-    imageField({
-      label: {
-        en: "Image",
-        fr: "Image",
-      },
-    }),
-    {
-      name: "imageUrl",
-      type: "text",
-      admin: {
-        hidden: true,
-      },
-      label: {
-        en: "Image Source URL",
-        fr: "URL source de l'image",
-      },
-    },
-    {
-      name: "publishedArticleUrl",
-      type: "text",
-      label: {
-        en: "Published Article URL",
-        fr: "URL de l'article publié",
-      },
-    },
-    {
-      name: "useVisualCard",
-      type: "checkbox",
-      label: {
-        en: "Use Visual Card",
-        fr: "Utiliser la carte visuelle",
-      },
-      admin: {
-        position: "sidebar",
-      },
-    },
-    {
-      name: "state",
-      type: "text",
-      label: {
-        en: "State",
-        fr: "État",
       },
       admin: {
         position: "sidebar",
@@ -171,19 +86,11 @@ export const Promises: CollectionConfig = {
         position: "sidebar",
       },
     },
-    {
-      name: "lastPublished",
-      type: "date",
-      admin: {
-        date: {
-          displayFormat: "yyyy-MM-dd HH:mm",
-        },
-        position: "sidebar",
-      },
+    imageField({
       label: {
-        en: "Last Published",
-        fr: "Dernière publication",
+        en: "Image",
+        fr: "Image",
       },
-    },
+    }),
   ],
 };

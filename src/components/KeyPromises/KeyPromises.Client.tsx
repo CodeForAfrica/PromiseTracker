@@ -165,13 +165,14 @@ const KeyPromiseCard = ({
                   border: `1px solid transparent`,
                   minHeight: 48,
                   minWidth: { xs: 98, lg: 158 },
-                  textTransform: "none",
+                  textTransform: "uppercase",
                   fontWeight: 600,
                   bgcolor: theme.palette.common.black,
                   color: theme.palette.common.white,
                   "&:hover": {
-                    backgroundColor: theme.palette.common.black,
-                    color: theme.palette.common.white,
+                    backgroundColor: theme.palette.common.white,
+                    color: theme.palette.common.black,
+                    border: `1px solid ${theme.palette.common.black}`,
                   },
                 }}
               >
@@ -187,7 +188,6 @@ const KeyPromiseCard = ({
           statusHistory={item.statusHistory}
           events={item.events}
           interval={timelineInterval}
-          sx={{ mt: { xs: 4, lg: 5 } }}
         />
       </Grid>
     </Grid>
@@ -210,7 +210,7 @@ export const KeyPromisesClient = ({
     }
 
     const dots = Array.from(
-      container.querySelectorAll<HTMLSpanElement>(".MuiMobileStepper-dot"),
+      container.querySelectorAll<HTMLSpanElement>(".MuiMobileStepper-dot")
     );
 
     const cleanups = dots.map((dot, index) => {
@@ -226,7 +226,7 @@ export const KeyPromisesClient = ({
 
   const clampedStep = useMemo(
     () => Math.min(activeStep, Math.max(items.length - 1, 0)),
-    [activeStep, items.length],
+    [activeStep, items.length]
   );
 
   useEffect(() => {
@@ -261,7 +261,11 @@ export const KeyPromisesClient = ({
         <Typography
           component="h2"
           variant="h4"
-          sx={{ mb: { xs: 3, lg: 4 }, mt: 0 }}
+          sx={{
+            mb: { xs: 3, lg: 4 },
+            mt: 0,
+            textTransform: "uppercase",
+          }}
         >
           {displayedTitle}
         </Typography>

@@ -83,8 +83,8 @@ export default buildConfig({
     workflows,
     autoRun: [
       {
-        cron: "* * * * *",
-        queue: "everyMinute",
+        cron: process.env.PAYLOAD_JOBS_CRON_SCHEDULE || "* * * * *",
+        queue: process.env.PAYLOAD_JOBS_QUEUE || "everyMinute",
       },
     ],
   },

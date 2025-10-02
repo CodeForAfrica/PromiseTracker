@@ -1,5 +1,3 @@
-import { fromUnixTime } from "date-fns";
-
 const BASE_URL = "https://check-api.checkmedia.org/api/graphql";
 const DEFAULT_CHANNEL_ID = "1";
 const DEFAULT_PAGE_SIZE = 100;
@@ -7,16 +5,34 @@ const PUBLISHED_REPORTS_QUERY = `
   query PublishedReports($query: String!) {
     search(query: $query) {
       number_of_results
-      item_navigation_offset
       medias {
         edges {
-            node {
-              id
-              status
-              dynamic_annotation_report_design {
-                data
+          node {
+            id
+            full_url
+            title
+            description
+            report_status
+            status
+            annotations(annotation_type: "task") {
+              edges {
+                node {
+                  ... on Task {
+                    type
+                    slug
+                    label
+                    description
+                    fieldset
+                    first_response_value
+                    first_response {
+                      content
+                      file_data
+                    }
+                  }
+                }
               }
             }
+          }
         }
       }
     }
@@ -169,22 +185,38 @@ export interface CreateProjectMediaResponse {
   }>;
 }
 
+type PublishedReportAnnotation = {
+  type?: string | null;
+  slug?: string | null;
+  label?: string | null;
+  description?: string | null;
+  fieldset?: string | null;
+  first_response_value?: unknown;
+  first_response?: {
+    content?: unknown;
+    file_data?: {
+      file_urls?: unknown;
+    } | null;
+  } | null;
+};
+
 export type PublishedReportsResponse = {
   data?: {
     search?: {
       number_of_results?: number;
-      item_navigation_offset?: number;
       medias?: {
         edges?: Array<{
           node?: {
             id?: string | null;
+            full_url?: string | null;
+            title?: string | null;
+            description?: string | null;
+            report_status?: string | null;
             status?: string | null;
-            dynamic_annotation_report_design?: {
-              data?: {
-                options?: Record<string, unknown> | null;
-                state?: string | null;
-                last_published?: string | number | null;
-              } | null;
+            annotations?: {
+              edges?: Array<{
+                node?: PublishedReportAnnotation | null;
+              }> | null;
             } | null;
           } | null;
         }>;
@@ -195,19 +227,11 @@ export type PublishedReportsResponse = {
 
 export interface PublishedReport {
   meedanId: string;
-  introduction: string | null;
-  themeColor: string | null;
-  statusLabel: string | null;
   status: string | null;
   image: string | null;
   title: string | null;
-  headline: string | null;
-  text: string | null;
   description: string | null;
-  publishedArticleUrl: string | null;
-  useVisualCard: boolean;
-  state: string | null;
-  lastPublished: string | null;
+  url: string | null;
 }
 
 export const toNullableString = (value: unknown): string | null => {
@@ -223,56 +247,115 @@ export const toNullableString = (value: unknown): string | null => {
   return null;
 };
 
-export const toBoolean = (value: unknown): boolean => {
-  if (typeof value === "boolean") {
-    return value;
-  }
-
-  if (typeof value === "string") {
-    const normalized = value.trim().toLowerCase();
-    if (normalized === "false" || normalized === "0" || normalized === "") {
-      return false;
-    }
-    return true;
-  }
-
-  if (typeof value === "number") {
-    return value !== 0;
-  }
-
-  return false;
-};
-
-export const toIsoTimestamp = (value: unknown): string | null => {
-  const numericValue =
-    typeof value === "number"
-      ? value
-      : typeof value === "string"
-      ? Number(value.trim())
-      : null;
-
-  if (numericValue === null || Number.isNaN(numericValue)) {
+const extractAnnotationValue = (value: unknown, depth = 0): string | null => {
+  if (depth > 3 || value == null) {
     return null;
   }
 
-  const seconds = numericValue > 1e12 ? numericValue / 1000 : numericValue;
-  return fromUnixTime(seconds).toISOString();
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const extracted = extractAnnotationValue(item, depth + 1);
+      if (extracted) {
+        return extracted;
+      }
+    }
+    return null;
+  }
+
+  if (typeof value === "object") {
+    const candidateKeys = [
+      "value",
+      "label",
+      "name",
+      "text",
+      "title",
+      "selected",
+      "selected_option",
+      "slug",
+      "id",
+    ];
+
+    for (const key of candidateKeys) {
+      if (key in (value as Record<string, unknown>)) {
+        const extracted = extractAnnotationValue(
+          (value as Record<string, unknown>)[key],
+          depth + 1
+        );
+        if (extracted) {
+          return extracted;
+        }
+      }
+    }
+  }
+
+  return null;
 };
 
 export const mapPublishedReports = (
   payload: PublishedReportsResponse
 ): PublishedReport[] => {
-  const edges =
-    payload?.data?.search?.medias?.edges?.filter(Boolean) ?? [];
+  const edges = payload?.data?.search?.medias?.edges?.filter(Boolean) ?? [];
 
   return edges
     .map((edge) => edge?.node)
     .filter((node): node is NonNullable<typeof node> => Boolean(node))
     .map((node) => {
       const meedanId = toNullableString(node.id);
-      const data = node.dynamic_annotation_report_design?.data ?? undefined;
-      const options = (data?.options ?? {}) as Record<string, unknown>;
       const status = toNullableString(node.status ?? null);
+      const url = toNullableString(node.full_url ?? null);
+      const annotations = node.annotations?.edges ?? [];
+
+      const findAnnotationValue = (...slugs: string[]): string | null => {
+        for (const slug of slugs) {
+          const normalisedSlug = slug.trim().toLowerCase();
+          for (const edgeItem of annotations) {
+            const nodeData = edgeItem?.node;
+            const annotationSlug = toNullableString(nodeData?.slug);
+            if (!annotationSlug) {
+              continue;
+            }
+            if (annotationSlug.trim().toLowerCase() !== normalisedSlug) {
+              continue;
+            }
+
+            const fileUrls =
+              nodeData?.first_response?.file_data?.file_urls;
+
+            if (Array.isArray(fileUrls)) {
+              for (const value of fileUrls) {
+                const normalisedUrl = toNullableString(value);
+                if (normalisedUrl) {
+                  return normalisedUrl;
+                }
+              }
+            }
+
+            const extractedValue =
+              extractAnnotationValue(nodeData?.first_response_value) ??
+              extractAnnotationValue(nodeData?.first_response?.content);
+
+            if (extractedValue) {
+              return extractedValue;
+            }
+          }
+        }
+
+        return null;
+      };
+
+      const image = findAnnotationValue(
+        "what_is_the_image_related_to_the_promise",
+        "image"
+      );
 
       if (!meedanId) {
         return null;
@@ -281,18 +364,10 @@ export const mapPublishedReports = (
       return {
         meedanId,
         status,
-        introduction: toNullableString(options["introduction"]),
-        themeColor: toNullableString(options["theme_color"]),
-        statusLabel: toNullableString(options["status_label"]),
-        image: toNullableString(options["image"]),
-        title: toNullableString(options["title"]),
-        headline: toNullableString(options["headline"]),
-        text: toNullableString(options["text"]),
-        description: toNullableString(options["description"]),
-        publishedArticleUrl: toNullableString(options["published_article_url"]),
-        useVisualCard: toBoolean(options["use_visual_card"]),
-        state: toNullableString(data?.state ?? null),
-        lastPublished: toIsoTimestamp(data?.last_published ?? null),
+        image,
+        title: toNullableString(node.title ?? null),
+        description: toNullableString(node.description ?? null),
+        url,
       } satisfies PublishedReport;
     })
     .filter((report): report is PublishedReport => report !== null);

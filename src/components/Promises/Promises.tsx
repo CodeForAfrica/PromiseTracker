@@ -144,13 +144,13 @@ function Promises({
         );
       } else if (sortBy === sortByDeadline?.slug) {
         sortedItems = items.sort((a, b) => {
-          const aDeadline = a.lastPublished
-            ? new Date(a.lastPublished).getTime()
+          const aUpdated = a.updatedAt
+            ? new Date(a.updatedAt).getTime()
             : 0;
-          const bDeadline = b?.lastPublished
-            ? new Date(b.lastPublished).getTime()
+          const bUpdated = b?.updatedAt
+            ? new Date(b.updatedAt).getTime()
             : 1;
-          return bDeadline - aDeadline;
+          return bUpdated - aUpdated;
         });
       }
       setItems(sortedItems);

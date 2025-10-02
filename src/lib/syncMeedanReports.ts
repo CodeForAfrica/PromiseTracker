@@ -13,46 +13,28 @@ import { downloadFile } from "@/utils/files";
 
 type PromiseData = {
   title: string;
-  headline: string;
   description: string;
-  text: string;
-  introduction: string;
-  statusLabel: string;
-  themeColor: string;
-  imageUrl: string;
-  publishedArticleUrl: string;
-  useVisualCard: boolean;
-  state: string;
-  lastPublished: string | null;
   status: string | null;
   politicalEntity: string | null;
   image: string | null;
+  url: string;
 };
 
 const buildPromiseData = (
   report: PublishedReport,
   statusId: string | null,
   politicalEntityId: string | null,
-  image: { mediaId: string | null; sourceUrl: string }
+  imageId: string | null
 ): PromiseData => {
   const coerce = (value: string | null | undefined) => value ?? "";
 
   return {
     title: coerce(report.title),
-    headline: coerce(report.headline),
     description: coerce(report.description),
-    text: coerce(report.text),
-    introduction: coerce(report.introduction),
-    statusLabel: coerce(report.statusLabel),
-    themeColor: coerce(report.themeColor),
-    imageUrl: image.sourceUrl,
-    publishedArticleUrl: coerce(report.publishedArticleUrl),
-    useVisualCard: Boolean(report.useVisualCard),
-    state: coerce(report.state),
-    lastPublished: report.lastPublished ?? null,
     status: statusId,
     politicalEntity: politicalEntityId,
-    image: image.mediaId,
+    image: imageId,
+    url: coerce(report.url),
   };
 };
 
@@ -85,20 +67,11 @@ const normaliseExistingDoc = (doc: PromiseDoc): PromiseData => {
 
   return {
     title: coerce(doc.title),
-    headline: coerce(doc.headline),
     description: coerce(doc.description),
-    text: coerce(doc.text),
-    introduction: coerce(doc.introduction),
-    statusLabel: coerce(doc.statusLabel),
-    themeColor: coerce(doc.themeColor),
-    imageUrl: coerce(doc.imageUrl),
-    publishedArticleUrl: coerce(doc.publishedArticleUrl),
-    useVisualCard: Boolean(doc.useVisualCard),
-    state: coerce(doc.state),
-    lastPublished: doc.lastPublished ?? null,
     status: getRelationId(doc.status),
     politicalEntity: getRelationId(doc.politicalEntity),
     image: getRelationId(doc.image as unknown),
+    url: coerce(doc.url),
   };
 };
 
@@ -162,30 +135,12 @@ export const syncMeedanReports = async ({
 
   const existingById = new Map<string, PromiseDoc>();
   const uploadedImages = new Map<string, string>();
+  const mediaCache = new Map<string, Media | null>();
 
   for (const doc of existingDocs) {
     const key = doc.meedanId?.trim();
     if (key) {
       existingById.set(key, doc);
-    }
-
-    const sourceUrl = doc.imageUrl?.trim();
-    const imageId = getRelationId(doc.image as unknown);
-    if (sourceUrl && imageId) {
-      uploadedImages.set(sourceUrl, imageId);
-    }
-  }
-
-  const { docs: statusDocsRaw } = await payload.find({
-    collection: "promise-status",
-    limit: -1,
-  });
-
-  const statusIdByMeedan = new Map<string, string>();
-  for (const status of statusDocsRaw as PromiseStatusDoc[]) {
-    const key = status.meedanId?.trim().toLowerCase();
-    if (key) {
-      statusIdByMeedan.set(key, status.id);
     }
   }
 
@@ -277,6 +232,7 @@ export const syncMeedanReports = async ({
         collection: "media",
         data: {
           alt,
+          externalUrl: url,
         },
         filePath,
       })) as Media;
@@ -311,88 +267,118 @@ export const syncMeedanReports = async ({
     }
   };
 
+  const resolveMediaRecord = async (id: string): Promise<Media | null> => {
+    if (mediaCache.has(id)) {
+      return mediaCache.get(id) ?? null;
+    }
+
+    try {
+      const mediaDoc = (await payload.findByID({
+        collection: "media",
+        id,
+        depth: 0,
+      })) as Media;
+
+      mediaCache.set(id, mediaDoc);
+      return mediaDoc;
+    } catch (error) {
+      logger.warn?.("syncMeedanReports:: Failed to resolve media", {
+        mediaId: id,
+        error: error instanceof Error ? error.message : String(error ?? ""),
+      });
+      mediaCache.set(id, null);
+      return null;
+    }
+  };
+
   const resolveImageForReport = async (
     report: PublishedReport,
     existingData: PromiseData | undefined
-  ): Promise<{ mediaId: string | null; sourceUrl: string }> => {
+  ): Promise<string | null> => {
     const remoteUrl = report.image?.trim() ?? "";
 
     if (!remoteUrl) {
-      return {
-        mediaId: null,
-        sourceUrl: "",
-      };
-    }
-
-    if (
-      existingData &&
-      existingData.imageUrl === remoteUrl &&
-      existingData.image
-    ) {
-      return {
-        mediaId: existingData.image,
-        sourceUrl: remoteUrl,
-      };
+      return existingData?.image ?? null;
     }
 
     const cached = uploadedImages.get(remoteUrl);
     if (cached) {
-      return {
-        mediaId: cached,
-        sourceUrl: remoteUrl,
-      };
+      return cached;
     }
 
-    const alt =
-      report.title ??
-      report.headline ??
-      report.description ??
-      "Meedan promise image";
+    const existingImageId = existingData?.image ?? null;
+
+    if (existingImageId) {
+      const mediaDoc = await resolveMediaRecord(existingImageId);
+      const storedSource = mediaDoc?.externalUrl?.trim() ?? "";
+
+      if (storedSource && storedSource === remoteUrl) {
+        uploadedImages.set(remoteUrl, existingImageId);
+        return existingImageId;
+      }
+    }
+
+    const alt = report.title ?? report.description ?? "Meedan promise image";
 
     const mediaId = await uploadImageFromUrl(remoteUrl, alt);
 
     if (!mediaId) {
-      return {
-        mediaId: existingData?.image ?? null,
-        sourceUrl: existingData?.imageUrl ?? remoteUrl,
-      };
+      return existingImageId ?? null;
     }
 
-    return {
-      mediaId,
-      sourceUrl: remoteUrl,
-    };
+    uploadedImages.set(remoteUrl, mediaId);
+
+    return mediaId;
   };
 
   for (const report of sanitisedReports) {
-    const statusKey = report.status?.trim().toLowerCase() ?? null;
-    const statusId = statusKey
-      ? (statusIdByMeedan.get(statusKey) ?? null)
-      : null;
+    const statusValue =
+      typeof report.status === "string" ? report.status.trim() : "";
 
-    if (statusKey && !statusId) {
-      logger.warn?.("syncMeedanReports:: Missing status mapping", {
-        meedanStatus: report.status,
+    let resolvedStatusId: string | null = null;
+
+    if (statusValue) {
+      const statusQuery = await payload.find({
+        collection: "promise-status",
+        limit: 1,
+        depth: 0,
+        where: {
+          meedanId: {
+            equals: statusValue,
+          },
+        },
       });
+
+      const statusDoc = statusQuery.docs[0];
+
+      if (!statusDoc) {
+        logger.warn?.("syncMeedanReports:: Missing status mapping", {
+          meedanStatus: statusValue,
+        });
+      } else {
+        resolvedStatusId = statusDoc.id;
+      }
     }
 
-    const politicalEntityId =
+    const stored = existingById.get(report.meedanId);
+    const existingData = stored ? normaliseExistingDoc(stored) : undefined;
+    const extractionPoliticalEntityId =
       extractionEntityIndex.get(report.meedanId) ?? null;
+
+    const politicalEntityId =
+      extractionPoliticalEntityId ?? existingData?.politicalEntity ?? null;
 
     if (!politicalEntityId) {
       logger.warn?.("syncMeedanReports:: Unable to resolve political entity", {
         meedanId: report.meedanId,
       });
     }
-
-    const stored = existingById.get(report.meedanId);
-    const existingData = stored ? normaliseExistingDoc(stored) : undefined;
-    const imageInfo = await resolveImageForReport(report, existingData);
+    const imageId = await resolveImageForReport(report, existingData);
     const data = buildPromiseData(
       report,
-      statusId ?? null,
+      resolvedStatusId,
       politicalEntityId,
-      imageInfo
+      imageId
     );
 
     if (!stored) {

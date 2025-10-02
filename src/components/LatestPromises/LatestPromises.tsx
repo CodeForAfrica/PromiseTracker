@@ -1,5 +1,5 @@
 import { CMSLink as Link } from "@/components/CMSLink";
-import { Box, Button, Grid, Container } from "@mui/material";
+import { Box, Button, Grid, Container, Typography } from "@mui/material";
 import React, { forwardRef } from "react";
 import PromiseCard from "@/components/PromiseCard";
 import { Promise as P, PromiseStatus } from "@/payload-types";
@@ -22,11 +22,20 @@ const LatestPromises: React.FC<Props> = forwardRef(function LatestPromises({
   return (
     <Container
       sx={{
-        pt: 12,
-        pb: 8,
+        pt: { xs: 6, lg: 12 },
+        pb: { xs: 6, lg: 8 },
       }}
-      title={title}
     >
+      <Typography
+        component="h2"
+        variant="h2"
+        sx={{
+          textAlign: { xs: "center", lg: "left" },
+          textTransform: "capitalize",
+        }}
+      >
+        {title}
+      </Typography>
       <Grid container spacing={2}>
         {items.map((promise: P) => (
           <Grid

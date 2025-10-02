@@ -81,8 +81,7 @@ const FALLBACK_GROUP_DEFINITIONS = [
 
 const resolvePromiseStatus = (
   promise: PromiseItem,
-  statusById: StatusById,
-  statusByLabel: Map<string, PromiseStatus>
+  statusById: StatusById
 ): PromiseStatus | null => {
   const statusRef = promise.status;
 
@@ -96,13 +95,7 @@ const resolvePromiseStatus = (
       return statusRef;
     }
   }
-
-  const label = promise.statusLabel?.trim().toLowerCase();
-  if (!label) {
-    return null;
-  }
-
-  return statusByLabel.get(label) ?? null;
+  return null;
 };
 
 const formatUpdatedAt = (date: string): string => {
@@ -134,53 +127,121 @@ const buildChartGroups = (
   blockGroups: HeroBlock["chartGroups"] | undefined | null,
   summaries: StatusSummaryMap
 ): HeroChartGroup[] => {
-  const summaryByLabel = new Map(
-    Array.from(summaries.values()).map((summary) => [
-      summary.label.toLowerCase(),
-      summary,
-    ])
-  );
+  const summariesList = Array.from(summaries.values());
 
-  if (!blockGroups?.length) {
-    return FALLBACK_GROUP_DEFINITIONS.map((definition) => {
-      const statuses = definition.labels
-        .map((label) => summaryByLabel.get(label))
-        .filter((summary): summary is HeroStatusSummary => Boolean(summary));
-
-      if (!statuses.length) {
-        return null;
-      }
-
-      return {
-        title: definition.title,
-        statuses: statuses.map((status) => ({ ...status })),
-      } satisfies HeroChartGroup;
-    }).filter((group): group is HeroChartGroup => group !== null);
+  if (summariesList.length === 0) {
+    return [];
   }
 
-  return blockGroups
-    .slice(0, 3)
-    .map((group) => {
-      const statuses = (group.statuses ?? [])
-        .map((statusRef) => {
-          const statusId =
-            typeof statusRef === "string" ? statusRef : statusRef.id;
-          return summaries.get(statusId);
-        })
-        .filter((summary): summary is HeroStatusSummary => Boolean(summary));
+  const groups: { title: string; statuses: HeroStatusSummary[] }[] = [];
+  const usedIds = new Set<string>();
 
-      if (statuses.length === 0) {
-        return null;
+  const addGroup = (title: string, statuses: HeroStatusSummary[]) => {
+    if (statuses.length === 0) {
+      return;
+    }
+
+    groups.push({ title, statuses });
+    statuses.forEach((status) => usedIds.add(status.id));
+  };
+
+  if (blockGroups?.length) {
+    for (const group of blockGroups.slice(0, 3)) {
+      const statuses: HeroStatusSummary[] = [];
+
+      for (const statusRef of group.statuses ?? []) {
+        const statusId =
+          typeof statusRef === "string" ? statusRef : statusRef.id;
+        const summary = statusId ? summaries.get(statusId) : undefined;
+
+        if (summary) {
+          statuses.push(summary);
+        }
       }
 
-      const title = group.title?.trim() || statuses[0].label;
+      if (statuses.length > 0) {
+        const groupTitle = group.title?.trim() || statuses[0]?.label || "";
+        addGroup(groupTitle, statuses);
+      }
+    }
+  }
 
-      return {
-        title,
-        statuses: statuses.map((status) => ({ ...status })),
-      } satisfies HeroChartGroup;
-    })
-    .filter((group): group is HeroChartGroup => group !== null);
+  if (groups.length === 0) {
+    const summaryByLabel = new Map(
+      summariesList.map((summary) => [
+        summary.label.trim().toLowerCase(),
+        summary,
+      ])
+    );
+
+    for (const definition of FALLBACK_GROUP_DEFINITIONS) {
+      const statuses: HeroStatusSummary[] = [];
+
+      for (const label of definition.labels) {
+        const summary = summaryByLabel.get(label.trim().toLowerCase());
+        if (summary) {
+          statuses.push(summary);
+        }
+      }
+
+      addGroup(definition.title, statuses);
+    }
+  }
+
+  if (groups.length === 0) {
+    const sortedByCount = summariesList
+      .slice()
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+
+    const groupCount = Math.min(3, sortedByCount.length);
+
+    for (let index = 0; index < groupCount; index += 1) {
+      const status = sortedByCount[index];
+      addGroup(status.label, [status]);
+    }
+  }
+
+  const untouched = summariesList.filter((summary) => !usedIds.has(summary.id));
+
+  if (untouched.length > 0 && groups.length > 0) {
+    const sortedUntouched = untouched
+      .slice()
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+
+    for (const status of sortedUntouched) {
+      let targetIndex = 0;
+      let targetSize = groups[0].statuses.length;
+      let targetTotal = groups[0].statuses.reduce(
+        (total, item) => total + item.count,
+        0
+      );
+
+      for (let index = 1; index < groups.length; index += 1) {
+        const current = groups[index];
+        const currentSize = current.statuses.length;
+        const currentTotal = current.statuses.reduce(
+          (total, item) => total + item.count,
+          0
+        );
+
+        if (
+          currentSize < targetSize ||
+          (currentSize === targetSize && currentTotal < targetTotal)
+        ) {
+          targetIndex = index;
+          targetSize = currentSize;
+          targetTotal = currentTotal;
+        }
+      }
+
+      groups[targetIndex].statuses.push(status);
+    }
+  }
+
+  return groups.map((group) => ({
+    title: group.title,
+    statuses: group.statuses.map((status) => ({ ...status })),
+  }));
 };
 
 export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
@@ -217,18 +278,6 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
     statusDocs.map((status) => [status.id, status])
   );
   const statusSummaries = buildStatusSummaries(statusDocs);
-  const statusByLabel = new Map<string, PromiseStatus>();
-  statusDocs.forEach((status) => {
-    const labelKey = status.label?.trim().toLowerCase();
-    if (labelKey) {
-      statusByLabel.set(labelKey, status);
-    }
-
-    const meedanKey = status.meedanId?.trim().toLowerCase();
-    if (meedanKey && !statusByLabel.has(meedanKey)) {
-      statusByLabel.set(meedanKey, status);
-    }
-  });
 
   const { docs: promiseDocs } = await payload.find({
     collection: "promises",
@@ -244,11 +293,7 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
   let totalPromises = 0;
 
   for (const promise of promiseDocs as PromiseItem[]) {
-    const status = resolvePromiseStatus(
-      promise,
-      statusById,
-      statusByLabel
-    );
+    const status = resolvePromiseStatus(promise, statusById);
 
     if (!status) {
       continue;

@@ -11,6 +11,7 @@ import type { SiteSetting } from "@/payload-types";
 import { RichText } from "@/components/RichText";
 import { CMSLink } from "@/components/CMSLink";
 import type { Logo, LegalLinks, SecondaryNavColumn } from "@/types/navigation";
+import CcIcon from "@/assets/cc.svg?url";
 
 type Props = {
   secondaryLogo: Logo;
@@ -248,16 +249,26 @@ export default function Footer({
                   flexDirection: { xs: "column", lg: "row" },
                 }}
               >
-                <Typography
-                  variant="caption"
-                  sx={{
+                <Box
+                  sx={(theme) => ({
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: theme.typography.pxToRem(11),
                     color: "#a4a4a4",
-                    textTransform: "uppercase",
-                    fontWeight: theme.typography.button,
-                  }}
+                  })}
                 >
-                  &copy; {legal?.copyright}
-                </Typography>
+                  <Image src={CcIcon} alt="Creative Commons" width={19} height={19} />
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "inherit",
+                      textTransform: "uppercase",
+                      fontWeight: theme.typography.button,
+                    }}
+                  >
+                    {legal?.copyright}
+                  </Typography>
+                </Box>
                 {legal.links.length > 0 && (
                   <Grid
                     container

@@ -4,12 +4,12 @@ import { getGlobalPayload } from "@/lib/payload";
 
 export default async function Index({
   entitySlug,
-  title = "",
+  title,
   seeAllLink = "View all promises",
 }: {
-  entitySlug?: string;
-  title?: string;
-  seeAllLink?: string;
+  entitySlug: string;
+  title: string;
+  seeAllLink: string;
 }) {
   if (!entitySlug) {
     return null;
