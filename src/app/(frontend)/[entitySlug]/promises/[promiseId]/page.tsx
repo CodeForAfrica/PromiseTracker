@@ -138,7 +138,6 @@ export default async function PromiseDetailPage({
   );
 
   const image = await resolveMedia(promise.image ?? null);
-  const locale = tenant.locale ?? "en";
   const titleText = promise.title?.trim() || "Promise";
   const originalArticleUrl = promise.url?.trim();
   const descriptionText = promise.description?.trim() || null;
