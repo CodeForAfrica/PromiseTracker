@@ -8,8 +8,8 @@ export const airtableWorkflow = defineWorkflow({
   label: "Airtable Workflow",
   schedule: [
     {
-      cron: "* * * * *",
-      queue: "everyMinute",
+      cron: process.env.PAYLOAD_JOBS_CRON_SCHEDULE || "* * * * *",
+      queue: process.env.PAYLOAD_JOBS_QUEUE || "everyMinute",
     },
   ],
   handler: async ({ tasks }) => {
