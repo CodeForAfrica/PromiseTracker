@@ -1,7 +1,8 @@
 import React from "react";
 import NextLink from "next/link";
 import Image from "next/image";
-import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+import { notFound, redirect } from "next/navigation";
 import { Box, Button, Container, Grid, Typography } from "@mui/material";
 
 import Navigation from "@/components/Navigation";
@@ -14,6 +15,12 @@ import { getTenantBySubDomain, getTenantNavigation } from "@/lib/data/tenants";
 import { getPoliticalEntityBySlug } from "@/lib/data/politicalEntities";
 import { getPromiseById } from "@/lib/data/promises";
 import { resolveMedia } from "@/lib/data/media";
+import {
+  buildSeoMetadata,
+  getEntitySeo,
+  composeTitleSegments,
+  resolveTenantSeoContext,
+} from "@/lib/seo";
 import type {
   Promise as PromiseDocument,
   PromiseStatus as PromiseStatusDocument,
@@ -26,6 +33,89 @@ type Params = {
   entitySlug: string;
   promiseId: string;
 };
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<Params>;
+}): Promise<Metadata> {
+  const paramsValue = await params;
+  const { entitySlug, promiseId } = paramsValue;
+
+  const { subdomain } = await getDomain();
+  const tenantResolution = await resolveTenantSeoContext(subdomain);
+
+  if (tenantResolution.status === "missing") {
+    return tenantResolution.metadata;
+  }
+
+  const {
+    tenant,
+    tenantSettings,
+    tenantSeo,
+    tenantTitleBase,
+  } = tenantResolution.context;
+
+  const politicalEntity = await getPoliticalEntityBySlug(tenant, entitySlug);
+
+  if (!politicalEntity) {
+    return buildSeoMetadata({
+      meta: tenantSettings?.meta,
+      defaults: tenantSeo,
+    });
+  }
+
+  const { seo: entitySeo, positionRegion } = getEntitySeo({
+    entity: politicalEntity,
+    tenant,
+    tenantSeo,
+    tenantTitleBase,
+  });
+
+  const promise = await getPromiseById(promiseId);
+
+  if (!promise) {
+    return buildSeoMetadata({
+      meta: politicalEntity.meta,
+      defaults: entitySeo,
+    });
+  }
+
+  const relation = promise.politicalEntity;
+  const promiseEntityId =
+    typeof relation === "string" ? relation : relation?.id ?? null;
+
+  if (!promiseEntityId || promiseEntityId !== politicalEntity.id) {
+    return buildSeoMetadata({
+      meta: politicalEntity.meta,
+      defaults: entitySeo,
+    });
+  }
+
+  const fallbackTitle =
+    composeTitleSegments(
+      promise.title?.trim() || tenantTitleBase || tenantSeo.title,
+      politicalEntity.name,
+      positionRegion,
+    ) ??
+    entitySeo.title ??
+    tenantSeo.title;
+
+  return buildSeoMetadata({
+    meta: promise.meta,
+    defaults: {
+      title: fallbackTitle,
+      description:
+        promise.description?.trim() ||
+        entitySeo.description ||
+        tenantSeo.description,
+      image:
+        promise.image ??
+        entitySeo.image ??
+        tenantSeo.image,
+    },
+  });
+}
 
 const parseYear = (value?: string | null): number | null => {
   if (!value) {
@@ -87,6 +177,12 @@ export default async function PromiseDetailPage({
   const tenant = await getTenantBySubDomain(subdomain);
 
   if (!tenant) {
+    if (subdomain) {
+      const target = tenantSelectionHref || "/";
+      if (target !== "/") {
+        redirect(target);
+      }
+    }
     return <CommonHomePage />;
   }
 

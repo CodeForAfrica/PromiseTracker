@@ -1,7 +1,8 @@
 import React, { Suspense } from "react";
+import type { Metadata } from "next";
+import { notFound, redirect } from "next/navigation";
 
 import { getGlobalPayload, queryPageBySlug } from "@/lib/payload";
-import { notFound, redirect } from "next/navigation";
 import { getDomain } from "@/lib/domain";
 import { CommonHomePage } from "@/components/CommonHomePage";
 import { BlockRenderer } from "@/components/BlockRenderer";
@@ -9,6 +10,12 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { getTenantBySubDomain, getTenantNavigation } from "@/lib/data/tenants";
 import { getPoliticalEntitiesByTenant } from "@/lib/data/politicalEntities";
+import {
+  buildSeoMetadata,
+  getEntitySeo,
+  getPageSeo,
+  resolveTenantSeoContext,
+} from "@/lib/seo";
 
 type Args = {
   params: Promise<{
@@ -16,12 +23,80 @@ type Args = {
   }>;
 };
 
+export async function generateMetadata({ params }: Args): Promise<Metadata> {
+  const paramsValue = await params;
+  const slugs = paramsValue?.slugs ?? [];
+
+  const { subdomain } = await getDomain();
+  const tenantResolution = await resolveTenantSeoContext(subdomain);
+
+  if (tenantResolution.status === "missing") {
+    return tenantResolution.metadata;
+  }
+
+  const {
+    tenant,
+    tenantSettings,
+    tenantSeo,
+    tenantTitleBase,
+  } = tenantResolution.context;
+
+  const politicalEntities = await getPoliticalEntitiesByTenant(tenant);
+  const [maybePoliticalEntitySlug, pageSlugCandidate] = slugs;
+  const politicalEntity = politicalEntities.find(
+    (entity) => entity.slug === maybePoliticalEntitySlug,
+  );
+
+  if (!politicalEntity) {
+    return buildSeoMetadata({
+      meta: tenantSettings?.meta,
+      defaults: tenantSeo,
+    });
+  }
+
+  const { seo: entitySeo, positionRegion } = getEntitySeo({
+    entity: politicalEntity,
+    tenant,
+    tenantSeo,
+    tenantTitleBase,
+  });
+
+  const pageSlug = pageSlugCandidate ?? "index";
+  const page = await queryPageBySlug({ slug: pageSlug, tenant });
+
+  if (!page) {
+    return buildSeoMetadata({
+      meta: politicalEntity.meta,
+      defaults: entitySeo,
+    });
+  }
+
+  const { defaults: pageSeoDefaults, meta: pageSeoMeta } = getPageSeo({
+    page,
+    entity: politicalEntity,
+    tenantSeo,
+    entitySeo,
+    positionRegion,
+  });
+
+  return buildSeoMetadata({
+    meta: pageSeoMeta ?? page.meta,
+    defaults: pageSeoDefaults,
+  });
+}
+
 export default async function Page(params: Args) {
   const { subdomain, tenantSelectionHref } = await getDomain();
 
   const tenant = await getTenantBySubDomain(subdomain);
 
   if (!tenant) {
+    if (subdomain) {
+      const target = tenantSelectionHref || "/";
+      if (target !== "/") {
+        redirect(target);
+      }
+    }
     return <CommonHomePage />;
   }
 
