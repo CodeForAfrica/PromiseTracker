@@ -1,9 +1,8 @@
+"use client";
 import { Box, Grid, Typography, Container } from "@mui/material";
-import React, { FC, forwardRef } from "react";
+import { FC, forwardRef, useEffect, useRef } from "react";
 import Image from "next/image";
 import { Image as ImageType } from "@/types/image";
-
-import email from "@/assets/subscribe-email.svg?url";
 
 interface Props {
   description?: string;
@@ -14,11 +13,60 @@ interface Props {
 }
 const Newsletter: FC<Props> = forwardRef(function Newsletter(
   { description: descriptionProp, title, image, embedCode },
-  ref,
+  ref
 ) {
   const description =
     (descriptionProp && descriptionProp.length > 0 && descriptionProp) ||
     undefined;
+
+  const formContainerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const container = formContainerRef.current;
+
+    if (!container) {
+      return undefined;
+    }
+
+    const emailInputs = Array.from(
+      container.querySelectorAll<HTMLInputElement>("input[type='email']")
+    );
+
+    if (!emailInputs.length) {
+      return undefined;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Enter") {
+        return;
+      }
+
+      const target = event.target as HTMLInputElement | null;
+      const form = target?.form;
+
+      if (!form) {
+        return;
+      }
+
+      event.preventDefault();
+
+      if (typeof form.requestSubmit === "function") {
+        form.requestSubmit();
+      } else {
+        form.submit();
+      }
+    };
+
+    emailInputs.forEach((input) => {
+      input.addEventListener("keydown", handleKeyDown);
+    });
+
+    return () => {
+      emailInputs.forEach((input) => {
+        input.removeEventListener("keydown", handleKeyDown);
+      });
+    };
+  }, [embedCode]);
 
   const formSx = {
     "& #mc_embed_signup": {
@@ -37,41 +85,88 @@ const Newsletter: FC<Props> = forwardRef(function Newsletter(
       borderBottom: "1px solid currentColor",
       borderRadius: 0,
       color: "currentColor",
+      fontFamily: "inherit",
+      fontSize: "18px",
+      fontStyle: "normal",
+      fontWeight: 400,
       margin: "1rem 0",
       width: "100%",
       "&:focus": {
         outline: "none",
       },
       "&::placeholder": {
+        color: "#757575",
+        direction: "inherit",
+        fontFamily: "inherit",
+        fontSize: "18px",
+        fontStyle: "normal",
+        fontWeight: 400,
         opacity: 1.0,
+        pointerEvents: "none",
+        textOrientation: "inherit",
+        WebkitTextSecurity: "none",
+        writingMode: "inherit",
+      },
+      "&::-webkit-input-placeholder": {
+        color: "#757575",
+        direction: "inherit",
+        fontFamily: "inherit",
+        fontSize: "18px",
+        fontStyle: "normal",
+        fontWeight: 400,
+        pointerEvents: "none",
+        textOrientation: "inherit",
+        WebkitTextSecurity: "none",
+        writingMode: "inherit",
+      },
+      "&::-moz-placeholder": {
+        color: "#757575",
+        direction: "inherit",
+        fontFamily: "inherit",
+        fontSize: "18px",
+        fontStyle: "normal",
+        fontWeight: 400,
+        opacity: 1,
+        pointerEvents: "none",
+        textOrientation: "inherit",
+        writingMode: "inherit",
+      },
+      "&:-ms-input-placeholder": {
+        color: "#757575",
+        direction: "inherit",
+        fontFamily: "inherit",
+        fontSize: "18px",
+        fontStyle: "normal",
+        fontWeight: 400,
+        pointerEvents: "none",
+        textOrientation: "inherit",
+        WebkitTextSecurity: "none",
+        writingMode: "inherit",
+      },
+      "&:-moz-placeholder": {
+        color: "#757575",
+        direction: "inherit",
+        fontFamily: "inherit",
+        fontSize: "18px",
+        fontStyle: "normal",
+        fontWeight: 400,
+        opacity: 1,
+        pointerEvents: "none",
+        textOrientation: "inherit",
+        writingMode: "inherit",
       },
     },
+    "& #mc_embed_signup_scroll > input[type='text']": {
+      display: "none",
+    },
+    "& #mc_embed_signup input[type='submit']": {
+      display: "none",
+    },
+    "& #mc_embed_signup .clear": {
+      display: "none",
+    },
     "& #mc_embed_signup .button": {
-      background: "none",
-      outline: "none",
-      backgroundImage: `url("${email}")`,
-      backgroundRepeat: "no-repeat",
-      backgroundSize: `100% 100%`,
-      border: "none",
-      height: "100%",
-      padding: 0,
-      width: "100%",
-      "&:hover": {
-        background: "none",
-        outline: "none",
-        backgroundImage: `url("${email}")`,
-        backgroundRepeat: "no-repeat",
-        backgroundSize: `100% 100%`,
-        border: "none",
-      },
-      "&:focus": {
-        background: "none",
-        outline: "none",
-        backgroundImage: `url("${email}")`,
-        backgroundRepeat: "no-repeat",
-        backgroundSize: `100% 100%`,
-        border: "none",
-      },
+      display: "none",
     },
   };
 
@@ -89,7 +184,7 @@ const Newsletter: FC<Props> = forwardRef(function Newsletter(
       }}
     >
       <Container>
-        <Grid container justifyContent="space-between">
+        <Grid container justifyContent="space-between" alignItems="stretch">
           <Grid
             sx={{
               display: "flex",
@@ -107,14 +202,17 @@ const Newsletter: FC<Props> = forwardRef(function Newsletter(
                 height: { xs: 250, lg: 350 },
                 width: { xs: 314, lg: 458 },
                 position: "relative",
+                m: 0,
+                ml: { lg: "54px" },
               }}
-              component={"figure"}
+              component="figure"
             >
               {image?.url && (
                 <Image
                   src={image.url}
                   alt={image.alt || "Newsletter Subscribe"}
                   fill
+                  style={{ objectFit: "contain" }}
                 />
               )}
             </Box>
@@ -149,6 +247,7 @@ const Newsletter: FC<Props> = forwardRef(function Newsletter(
               )}
               <Box
                 sx={formSx}
+                ref={formContainerRef}
                 dangerouslySetInnerHTML={{
                   __html: embedCode,
                 }}

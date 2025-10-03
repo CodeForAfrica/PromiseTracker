@@ -3,6 +3,7 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { generateObject } from "ai";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
+import { convertLexicalToPlaintext } from "@payloadcms/richtext-lexical/plaintext";
 
 export const ExtractPromises: TaskConfig<"extractPromises"> = {
   slug: "extractPromises",
@@ -106,21 +107,7 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
         }
 
         const plainText = extractedText
-          ?.map((t) => {
-            const ff = t.text?.root.children
-              .map((s) => {
-                if (s.type === "paragraph") {
-                  return (s.children as Array<any>)
-                    .map((child: any) =>
-                      child.type === "text" ? child.text : ""
-                    )
-                    .join("");
-                }
-                return "";
-              })
-              .join("\n");
-            return ff;
-          })
+          ?.map((t) => convertLexicalToPlaintext({ data: t.text! }))
           .join("\n");
 
         if (!plainText || plainText?.length === 0) {
@@ -201,7 +188,9 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
         }
       }
 
-      logger.info(`extractPromises:: Extracted ${processedDocs.length} documents`);
+      logger.info(
+        `extractPromises:: Extracted ${processedDocs.length} documents`
+      );
 
       return {
         output: {},
