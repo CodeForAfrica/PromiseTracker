@@ -3,8 +3,10 @@ import { sentryPlugin } from "@payloadcms/plugin-sentry";
 import * as Sentry from "@sentry/nextjs";
 import { multiTenantPlugin } from "@payloadcms/plugin-multi-tenant";
 import { Config } from "@/payload-types";
-import { isProd } from "@/utils/utils";
+import { capitalizeFirstLetter, isProd } from "@/utils/utils";
 import { s3Storage } from "@payloadcms/storage-s3";
+import { seoPlugin } from "@payloadcms/plugin-seo";
+import { convertLexicalToPlaintext } from "@payloadcms/richtext-lexical/plaintext";
 
 const accessKeyId = process.env.S3_ACCESS_KEY_ID ?? "";
 const bucket = process.env.S3_BUCKET ?? "";
@@ -44,5 +46,41 @@ export const plugins: Plugin[] = [
       region,
     },
     enabled: s3Enabled,
+  }),
+  seoPlugin({
+    collections: ["pages", "political-entities", "promises"],
+    uploadsCollection: "media",
+    generateTitle: async ({ doc, collectionSlug, req }) => {
+      let tenantId = doc.tenant;
+
+      const {
+        docs: [tenant],
+      } = await req.payload.find({
+        collection: "tenants",
+        where: {
+          id: {
+            equals: tenantId,
+          },
+        },
+      });
+
+      if (collectionSlug === "political-entities") {
+        return `${doc.name} - ${doc.position} | ${tenant?.name}`;
+      }
+
+      if (collectionSlug === "pages") {
+        return `${capitalizeFirstLetter(doc.title)} | ${tenant?.name}`;
+      }
+
+      return doc.title || doc.name;
+    },
+    generateDescription: ({ doc }) => {
+      const data = doc?.description || doc?.excerpt;
+      if (data) {
+        return convertLexicalToPlaintext({ data }) || data;
+      }
+      return "";
+    },
+    generateImage: async ({ doc }) => doc?.image || doc?.primaryLogo || "",
   }),
 ];
