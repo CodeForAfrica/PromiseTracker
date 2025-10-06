@@ -185,7 +185,7 @@ export interface Document {
           root: {
             type: string;
             children: {
-              type: string;
+              type: any;
               version: number;
               [k: string]: unknown;
             }[];
@@ -247,6 +247,14 @@ export interface PoliticalEntity {
   periodFrom: string;
   periodTo: string;
   airtableID?: string | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (string | null) | Media;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -377,6 +385,14 @@ export interface Promise {
   status?: (string | null) | PromiseStatus;
   politicalEntity?: (string | null) | PoliticalEntity;
   image?: (string | null) | Media;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (string | null) | Media;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -394,12 +410,7 @@ export interface Page {
     | (
         | ActNowBlock
         | HeroBlock
-        | {
-            image: string | Media;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'newsletter';
-          }
+        | NewsletterBlock
         | {
             title: string;
             partners?: (string | Partner)[] | null;
@@ -430,6 +441,14 @@ export interface Page {
         | KeyPromises
       )[]
     | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (string | null) | Media;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -489,6 +508,16 @@ export interface HeroBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'hero';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "NewsletterBlock".
+ */
+export interface NewsletterBlock {
+  image: string | Media;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'newsletter';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -575,7 +604,7 @@ export interface SiteSetting {
     root: {
       type: string;
       children: {
-        type: string;
+        type: any;
         version: number;
         [k: string]: unknown;
       }[];
@@ -675,6 +704,14 @@ export interface SiteSetting {
     title: string;
     description: string;
     embedCode: string;
+  };
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (string | null) | Media;
   };
   updatedAt: string;
   createdAt: string;
@@ -983,6 +1020,13 @@ export interface PromisesSelect<T extends boolean = true> {
   status?: T;
   politicalEntity?: T;
   image?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1019,13 +1063,7 @@ export interface PagesSelect<T extends boolean = true> {
     | {
         'act-now'?: T | ActNowBlockSelect<T>;
         hero?: T | HeroBlockSelect<T>;
-        newsletter?:
-          | T
-          | {
-              image?: T;
-              id?: T;
-              blockName?: T;
-            };
+        newsletter?: T | NewsletterBlockSelect<T>;
         partners?:
           | T
           | {
@@ -1054,6 +1092,13 @@ export interface PagesSelect<T extends boolean = true> {
               blockName?: T;
             };
         'key-promises'?: T | KeyPromisesSelect<T>;
+      };
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
       };
   updatedAt?: T;
   createdAt?: T;
@@ -1096,6 +1141,15 @@ export interface HeroBlockSelect<T extends boolean = true> {
         statuses?: T;
         id?: T;
       };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "NewsletterBlock_select".
+ */
+export interface NewsletterBlockSelect<T extends boolean = true> {
+  image?: T;
   id?: T;
   blockName?: T;
 }
@@ -1230,6 +1284,13 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         description?: T;
         embedCode?: T;
       };
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1286,6 +1347,13 @@ export interface PoliticalEntitiesSelect<T extends boolean = true> {
   periodFrom?: T;
   periodTo?: T;
   airtableID?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1395,12 +1463,7 @@ export interface HomePage {
           blockName?: string | null;
           blockType: 'tenant-selection';
         }
-      | {
-          image: string | Media;
-          id?: string | null;
-          blockName?: string | null;
-          blockType: 'newsletter';
-        }
+      | NewsletterBlock
       | {
           title: string;
           partners?: (string | Partner)[] | null;
@@ -1420,12 +1483,7 @@ export interface HomePage {
           blockName?: string | null;
           blockType: 'entity-selection';
         }
-      | {
-          image: string | Media;
-          id?: string | null;
-          blockName?: string | null;
-          blockType: 'newsletter';
-        }
+      | NewsletterBlock
       | {
           title: string;
           partners?: (string | Partner)[] | null;
@@ -1499,13 +1557,7 @@ export interface HomePageSelect<T extends boolean = true> {
                     id?: T;
                     blockName?: T;
                   };
-              newsletter?:
-                | T
-                | {
-                    image?: T;
-                    id?: T;
-                    blockName?: T;
-                  };
+              newsletter?: T | NewsletterBlockSelect<T>;
               partners?:
                 | T
                 | {
@@ -1531,13 +1583,7 @@ export interface HomePageSelect<T extends boolean = true> {
                     id?: T;
                     blockName?: T;
                   };
-              newsletter?:
-                | T
-                | {
-                    image?: T;
-                    id?: T;
-                    blockName?: T;
-                  };
+              newsletter?: T | NewsletterBlockSelect<T>;
               partners?:
                 | T
                 | {

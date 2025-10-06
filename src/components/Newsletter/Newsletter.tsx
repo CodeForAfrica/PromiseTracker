@@ -1,24 +1,67 @@
-import { Box, Grid, Typography, Container } from "@mui/material";
-import React, { FC, forwardRef } from "react";
+import { Box, Container, Typography } from "@mui/material";
+import Grid from "@mui/material/Grid";
 import Image from "next/image";
-import { Image as ImageType } from "@/types/image";
 
 import email from "@/assets/subscribe-email.svg?url";
+import { getDomain } from "@/lib/domain";
+import {
+  getTenantBySubDomain,
+  getTenantSiteSettings,
+} from "@/lib/data/tenants";
+import type {
+  Media,
+  NewsletterBlock as NewsletterBlockProps,
+} from "@/payload-types";
 
-interface Props {
-  description?: string;
-  title: string;
-  image?: ImageType;
-  embedCode: TrustedHTML;
-  entitySlug?: string;
-}
-const Newsletter: FC<Props> = forwardRef(function Newsletter(
-  { description: descriptionProp, title, image, embedCode },
-  ref,
-) {
-  const description =
-    (descriptionProp && descriptionProp.length > 0 && descriptionProp) ||
-    undefined;
+const getLocalizedString = (value: unknown): string | null => {
+  if (!value) {
+    return null;
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  if (typeof value === "object") {
+    const entries = Object.values(value as Record<string, unknown>);
+    for (const entry of entries) {
+      if (typeof entry === "string") {
+        const trimmed = entry.trim();
+        if (trimmed.length > 0) {
+          return trimmed;
+        }
+      }
+    }
+  }
+
+  return null;
+};
+
+const Newsletter = async ({ image }: NewsletterBlockProps) => {
+  const { subdomain } = await getDomain();
+  const tenant = await getTenantBySubDomain(subdomain);
+
+  if (!tenant) {
+    return null;
+  }
+
+  const siteSettings = await getTenantSiteSettings(tenant);
+  const newsletter = siteSettings?.newsletter;
+
+  if (!newsletter) {
+    return null;
+  }
+
+  const title = getLocalizedString(newsletter.title);
+  const description = getLocalizedString(newsletter.description);
+  const embedCode = getLocalizedString(newsletter.embedCode);
+
+  if (!title || !embedCode) {
+    return null;
+  }
+  const imageMedia =
+    image && typeof image === "object" ? (image as Media) : null;
 
   const formSx = {
     "& #mc_embed_signup": {
@@ -37,31 +80,41 @@ const Newsletter: FC<Props> = forwardRef(function Newsletter(
       borderBottom: "1px solid currentColor",
       borderRadius: 0,
       color: "currentColor",
+      fontFamily: "inherit",
+      fontSize: "18px",
+      fontStyle: "normal",
+      fontWeight: 400,
       margin: "1rem 0",
       width: "100%",
       "&:focus": {
         outline: "none",
       },
       "&::placeholder": {
-        opacity: 1.0,
+        opacity: 1,
       },
+    },
+    "& #mc_embed_signup input:not(.email):not(.button)": {
+      display: "none",
     },
     "& #mc_embed_signup .button": {
       background: "none",
       outline: "none",
       backgroundImage: `url("${email}")`,
       backgroundRepeat: "no-repeat",
-      backgroundSize: `100% 100%`,
+      backgroundSize: "100% 100%",
       border: "none",
       height: "100%",
       padding: 0,
       width: "100%",
+      color: "transparent",
+      fontSize: 0,
+      textIndent: "-9999px",
       "&:hover": {
         background: "none",
         outline: "none",
         backgroundImage: `url("${email}")`,
         backgroundRepeat: "no-repeat",
-        backgroundSize: `100% 100%`,
+        backgroundSize: "100% 100%",
         border: "none",
       },
       "&:focus": {
@@ -69,15 +122,14 @@ const Newsletter: FC<Props> = forwardRef(function Newsletter(
         outline: "none",
         backgroundImage: `url("${email}")`,
         backgroundRepeat: "no-repeat",
-        backgroundSize: `100% 100%`,
+        backgroundSize: "100% 100%",
         border: "none",
       },
     },
-  };
+  } as const;
 
   return (
     <Box
-      ref={ref}
       component="section"
       sx={{
         backgroundColor: "#90DAFF",
@@ -89,8 +141,9 @@ const Newsletter: FC<Props> = forwardRef(function Newsletter(
       }}
     >
       <Container>
-        <Grid container justifyContent="space-between">
+        <Grid container justifyContent="space-between" rowSpacing={6}>
           <Grid
+            size={{ xs: 12, lg: 8 }}
             sx={{
               display: "flex",
               justifyContent: {
@@ -100,23 +153,25 @@ const Newsletter: FC<Props> = forwardRef(function Newsletter(
               },
               alignItems: "center",
             }}
-            size={{ xs: 12, lg: 8 }}
           >
             <Box
+              component="figure"
               sx={{
                 height: { xs: 250, lg: 350 },
                 width: { xs: 314, lg: 458 },
                 position: "relative",
+                margin: 0,
               }}
-              component={"figure"}
             >
-              {image?.url && (
+              {imageMedia?.url ? (
                 <Image
-                  src={image.url}
-                  alt={image.alt || "Newsletter Subscribe"}
+                  src={imageMedia.url}
+                  alt={imageMedia?.alt || "Newsletter subscribe"}
                   fill
+                  sizes="(max-width: 1200px) 314px, 458px"
+                  style={{ objectFit: "cover" }}
                 />
-              )}
+              ) : null}
             </Box>
           </Grid>
           <Grid size={{ xs: 12, lg: 4 }} display="flex" alignItems="center">
@@ -136,7 +191,7 @@ const Newsletter: FC<Props> = forwardRef(function Newsletter(
               >
                 {title}
               </Typography>
-              {description && (
+              {description ? (
                 <Typography
                   variant="body1"
                   sx={{
@@ -146,7 +201,7 @@ const Newsletter: FC<Props> = forwardRef(function Newsletter(
                 >
                   {description}
                 </Typography>
-              )}
+              ) : null}
               <Box
                 sx={formSx}
                 dangerouslySetInnerHTML={{
@@ -159,6 +214,6 @@ const Newsletter: FC<Props> = forwardRef(function Newsletter(
       </Container>
     </Box>
   );
-});
+};
 
 export default Newsletter;

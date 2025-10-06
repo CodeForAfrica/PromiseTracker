@@ -3,6 +3,7 @@ import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
 import theme from "@/theme/theme";
 import { ThemeProvider } from "@mui/material";
 import { Amiri, Open_Sans, Source_Sans_3 } from "next/font/google";
+import type { Metadata } from "next";
 
 const amiri = Amiri({
   subsets: ["arabic", "latin"],
@@ -27,9 +28,13 @@ const sourceSans = Source_Sans_3({
   variable: "--font-source-sans",
 });
 
-export const metadata = {
+export const metadata: Metadata = {
   description: "PromiseTracker",
   title: "PromiseTracker",
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+  },
 };
 
 export default async function RootLayout(props: { children: React.ReactNode }) {

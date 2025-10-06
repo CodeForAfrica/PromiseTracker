@@ -5,7 +5,6 @@ import type {
   Document as PayloadDocument,
   Media,
   Promise as PromiseDoc,
-  PromiseStatus as PromiseStatusDoc,
 } from "@/payload-types";
 import type { PublishedReport } from "@/lib/meedan";
 import { getGlobalPayload } from "@/lib/payload";

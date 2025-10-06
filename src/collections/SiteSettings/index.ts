@@ -2,6 +2,7 @@ import { CollectionConfig } from "payload";
 import { GeneralTab } from "./tabs/GeneralTab";
 import { NavigationTab } from "./tabs/NavigationTab";
 import { EngagementTab } from "./tabs/EngagementTab";
+import SeoTab from "./tabs/SeoTab";
 
 export const SiteSettings: CollectionConfig = {
   slug: "site-settings",
@@ -24,7 +25,7 @@ export const SiteSettings: CollectionConfig = {
   fields: [
     {
       type: "tabs",
-      tabs: [GeneralTab, NavigationTab, EngagementTab],
+      tabs: [GeneralTab, NavigationTab, EngagementTab, SeoTab],
     },
   ],
 };
