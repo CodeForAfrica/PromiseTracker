@@ -1,72 +1,67 @@
-"use client";
-import { Box, Grid, Typography, Container } from "@mui/material";
-import { FC, forwardRef, useEffect, useRef } from "react";
+import { Box, Container, Typography } from "@mui/material";
+import Grid from "@mui/material/Grid";
 import Image from "next/image";
-import { Image as ImageType } from "@/types/image";
 
-interface Props {
-  description?: string;
-  title: string;
-  image?: ImageType;
-  embedCode: TrustedHTML;
-  entitySlug?: string;
-}
-const Newsletter: FC<Props> = forwardRef(function Newsletter(
-  { description: descriptionProp, title, image, embedCode },
-  ref
-) {
-  const description =
-    (descriptionProp && descriptionProp.length > 0 && descriptionProp) ||
-    undefined;
+import email from "@/assets/subscribe-email.svg?url";
+import { getDomain } from "@/lib/domain";
+import {
+  getTenantBySubDomain,
+  getTenantSiteSettings,
+} from "@/lib/data/tenants";
+import type {
+  Media,
+  NewsletterBlock as NewsletterBlockProps,
+} from "@/payload-types";
 
-  const formContainerRef = useRef<HTMLDivElement | null>(null);
+const getLocalizedString = (value: unknown): string | null => {
+  if (!value) {
+    return null;
+  }
 
-  useEffect(() => {
-    const container = formContainerRef.current;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
 
-    if (!container) {
-      return undefined;
+  if (typeof value === "object") {
+    const entries = Object.values(value as Record<string, unknown>);
+    for (const entry of entries) {
+      if (typeof entry === "string") {
+        const trimmed = entry.trim();
+        if (trimmed.length > 0) {
+          return trimmed;
+        }
+      }
     }
+  }
 
-    const emailInputs = Array.from(
-      container.querySelectorAll<HTMLInputElement>("input[type='email']")
-    );
+  return null;
+};
 
-    if (!emailInputs.length) {
-      return undefined;
-    }
+const Newsletter = async ({ image }: NewsletterBlockProps) => {
+  const { subdomain } = await getDomain();
+  const tenant = await getTenantBySubDomain(subdomain);
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Enter") {
-        return;
-      }
+  if (!tenant) {
+    return null;
+  }
 
-      const target = event.target as HTMLInputElement | null;
-      const form = target?.form;
+  const siteSettings = await getTenantSiteSettings(tenant);
+  const newsletter = siteSettings?.newsletter;
 
-      if (!form) {
-        return;
-      }
+  if (!newsletter) {
+    return null;
+  }
 
-      event.preventDefault();
+  const title = getLocalizedString(newsletter.title);
+  const description = getLocalizedString(newsletter.description);
+  const embedCode = getLocalizedString(newsletter.embedCode);
 
-      if (typeof form.requestSubmit === "function") {
-        form.requestSubmit();
-      } else {
-        form.submit();
-      }
-    };
-
-    emailInputs.forEach((input) => {
-      input.addEventListener("keydown", handleKeyDown);
-    });
-
-    return () => {
-      emailInputs.forEach((input) => {
-        input.removeEventListener("keydown", handleKeyDown);
-      });
-    };
-  }, [embedCode]);
+  if (!title || !embedCode) {
+    return null;
+  }
+  const imageMedia =
+    image && typeof image === "object" ? (image as Media) : null;
 
   const formSx = {
     "& #mc_embed_signup": {
@@ -95,84 +90,46 @@ const Newsletter: FC<Props> = forwardRef(function Newsletter(
         outline: "none",
       },
       "&::placeholder": {
-        color: "#757575",
-        direction: "inherit",
-        fontFamily: "inherit",
-        fontSize: "18px",
-        fontStyle: "normal",
-        fontWeight: 400,
-        opacity: 1.0,
-        pointerEvents: "none",
-        textOrientation: "inherit",
-        WebkitTextSecurity: "none",
-        writingMode: "inherit",
-      },
-      "&::-webkit-input-placeholder": {
-        color: "#757575",
-        direction: "inherit",
-        fontFamily: "inherit",
-        fontSize: "18px",
-        fontStyle: "normal",
-        fontWeight: 400,
-        pointerEvents: "none",
-        textOrientation: "inherit",
-        WebkitTextSecurity: "none",
-        writingMode: "inherit",
-      },
-      "&::-moz-placeholder": {
-        color: "#757575",
-        direction: "inherit",
-        fontFamily: "inherit",
-        fontSize: "18px",
-        fontStyle: "normal",
-        fontWeight: 400,
         opacity: 1,
-        pointerEvents: "none",
-        textOrientation: "inherit",
-        writingMode: "inherit",
-      },
-      "&:-ms-input-placeholder": {
-        color: "#757575",
-        direction: "inherit",
-        fontFamily: "inherit",
-        fontSize: "18px",
-        fontStyle: "normal",
-        fontWeight: 400,
-        pointerEvents: "none",
-        textOrientation: "inherit",
-        WebkitTextSecurity: "none",
-        writingMode: "inherit",
-      },
-      "&:-moz-placeholder": {
-        color: "#757575",
-        direction: "inherit",
-        fontFamily: "inherit",
-        fontSize: "18px",
-        fontStyle: "normal",
-        fontWeight: 400,
-        opacity: 1,
-        pointerEvents: "none",
-        textOrientation: "inherit",
-        writingMode: "inherit",
       },
     },
-    "& #mc_embed_signup_scroll > input[type='text']": {
-      display: "none",
-    },
-    "& #mc_embed_signup input[type='submit']": {
-      display: "none",
-    },
-    "& #mc_embed_signup .clear": {
+    "& #mc_embed_signup input:not(.email):not(.button)": {
       display: "none",
     },
     "& #mc_embed_signup .button": {
-      display: "none",
+      background: "none",
+      outline: "none",
+      backgroundImage: `url("${email}")`,
+      backgroundRepeat: "no-repeat",
+      backgroundSize: "100% 100%",
+      border: "none",
+      height: "100%",
+      padding: 0,
+      width: "100%",
+      color: "transparent",
+      fontSize: 0,
+      textIndent: "-9999px",
+      "&:hover": {
+        background: "none",
+        outline: "none",
+        backgroundImage: `url("${email}")`,
+        backgroundRepeat: "no-repeat",
+        backgroundSize: "100% 100%",
+        border: "none",
+      },
+      "&:focus": {
+        background: "none",
+        outline: "none",
+        backgroundImage: `url("${email}")`,
+        backgroundRepeat: "no-repeat",
+        backgroundSize: "100% 100%",
+        border: "none",
+      },
     },
-  };
+  } as const;
 
   return (
     <Box
-      ref={ref}
       component="section"
       sx={{
         backgroundColor: "#90DAFF",
@@ -184,8 +141,9 @@ const Newsletter: FC<Props> = forwardRef(function Newsletter(
       }}
     >
       <Container>
-        <Grid container justifyContent="space-between" alignItems="stretch">
+        <Grid container justifyContent="space-between" rowSpacing={6}>
           <Grid
+            size={{ xs: 12, lg: 8 }}
             sx={{
               display: "flex",
               justifyContent: {
@@ -195,26 +153,25 @@ const Newsletter: FC<Props> = forwardRef(function Newsletter(
               },
               alignItems: "center",
             }}
-            size={{ xs: 12, lg: 8 }}
           >
             <Box
+              component="figure"
               sx={{
                 height: { xs: 250, lg: 350 },
                 width: { xs: 314, lg: 458 },
                 position: "relative",
-                m: 0,
-                ml: { lg: "54px" },
+                margin: 0,
               }}
-              component="figure"
             >
-              {image?.url && (
+              {imageMedia?.url ? (
                 <Image
-                  src={image.url}
-                  alt={image.alt || "Newsletter Subscribe"}
+                  src={imageMedia.url}
+                  alt={imageMedia?.alt || "Newsletter subscribe"}
                   fill
-                  style={{ objectFit: "contain" }}
+                  sizes="(max-width: 1200px) 314px, 458px"
+                  style={{ objectFit: "cover" }}
                 />
-              )}
+              ) : null}
             </Box>
           </Grid>
           <Grid size={{ xs: 12, lg: 4 }} display="flex" alignItems="center">
@@ -234,7 +191,7 @@ const Newsletter: FC<Props> = forwardRef(function Newsletter(
               >
                 {title}
               </Typography>
-              {description && (
+              {description ? (
                 <Typography
                   variant="body1"
                   sx={{
@@ -244,10 +201,9 @@ const Newsletter: FC<Props> = forwardRef(function Newsletter(
                 >
                   {description}
                 </Typography>
-              )}
+              ) : null}
               <Box
                 sx={formSx}
-                ref={formContainerRef}
                 dangerouslySetInnerHTML={{
                   __html: embedCode,
                 }}
@@ -258,6 +214,6 @@ const Newsletter: FC<Props> = forwardRef(function Newsletter(
       </Container>
     </Box>
   );
-});
+};
 
 export default Newsletter;

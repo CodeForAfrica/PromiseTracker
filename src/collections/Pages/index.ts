@@ -1,6 +1,5 @@
 import { CollectionConfig } from "payload";
 import { ensureUniqueSlug } from "./hooks/ensureUniqueSlug";
-import newsletterSettingsToBlock from "./hooks/newsletterSettingsToBlock";
 import Partners from "@/blocks/Partners";
 import Newsletter from "@/blocks/Newsletter";
 import LatestPromises from "@/blocks/LatestPromises";
@@ -54,7 +53,4 @@ export const Pages: CollectionConfig = {
       ],
     },
   ],
-  hooks: {
-    afterRead: [newsletterSettingsToBlock],
-  },
 };
