@@ -60,3 +60,20 @@ export const getAirtablePoliticalEntities = async ({
   const entities = await db.scan(PoliticalEntitiestable, {});
   return entities;
 };
+
+export const getDocumentsByIds = async ({
+  airtableAPIKey,
+  ids,
+}: {
+  airtableAPIKey: string;
+  ids: string[];
+}) => {
+  if (!ids.length) {
+    return [];
+  }
+
+  const db = new AirtableTs({ apiKey: airtableAPIKey });
+  const documents = await db.scan(documentListTable, {});
+  const idSet = new Set(ids);
+  return documents.filter((doc) => idSet.has(doc.id));
+};

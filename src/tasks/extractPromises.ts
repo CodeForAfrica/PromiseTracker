@@ -106,9 +106,17 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
           continue;
         }
 
-        const plainText = extractedText
-          ?.map((t) => convertLexicalToPlaintext({ data: t.text! }))
-          .join("\n");
+        const plainTextSegments =
+          extractedText?.reduce<string[]>((acc, textEntry) => {
+            if (!textEntry?.text) {
+              return acc;
+            }
+
+            acc.push(convertLexicalToPlaintext({ data: textEntry.text }));
+            return acc;
+          }, []) ?? [];
+
+        const plainText = plainTextSegments.join("\n");
 
         if (!plainText || plainText?.length === 0) {
           logger.error("extractPromises:: No text to process");
