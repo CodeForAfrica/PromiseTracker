@@ -5,9 +5,7 @@ import { useRowLabel, RowLabel, RowLabelProps } from "@payloadcms/ui";
 export const LinkGroupRowLabel = () => {
   const data: any = useRowLabel();
   const {
-    data: {
-      link: { label },
-    },
+    data: { link: { label = "" } = {} },
   } = data;
 
   return <RowLabel {...data} label={label} />;
