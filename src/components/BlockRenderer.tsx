@@ -9,6 +9,7 @@ import { Hero } from "./Hero";
 import Promises from "./Promises";
 import { TenantList } from "./TenantList";
 import { PoliticalEntityList } from "./PoliticalEntityList";
+import PageHeader from "./PageHeader";
 
 type PageBlocks = NonNullable<Page["blocks"]>;
 type PageBlock = PageBlocks extends Array<infer T> ? T : never;
@@ -42,6 +43,7 @@ const blockComponents: Record<string, ComponentType<any>> = {
   "key-promises": KeyPromises,
   "tenant-selection": TenantList,
   "entity-selection": PoliticalEntityList,
+  "page-header": PageHeader,
 };
 
 export const BlockRenderer = ({ blocks, entity }: BlockProps) => {

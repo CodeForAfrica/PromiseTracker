@@ -13,31 +13,6 @@ import type {
   NewsletterBlock as NewsletterBlockProps,
 } from "@/payload-types";
 
-const getLocalizedString = (value: unknown): string | null => {
-  if (!value) {
-    return null;
-  }
-
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    return trimmed.length > 0 ? trimmed : null;
-  }
-
-  if (typeof value === "object") {
-    const entries = Object.values(value as Record<string, unknown>);
-    for (const entry of entries) {
-      if (typeof entry === "string") {
-        const trimmed = entry.trim();
-        if (trimmed.length > 0) {
-          return trimmed;
-        }
-      }
-    }
-  }
-
-  return null;
-};
-
 const Newsletter = async ({ image }: NewsletterBlockProps) => {
   const { subdomain } = await getDomain();
   const tenant = await getTenantBySubDomain(subdomain);
@@ -53,9 +28,7 @@ const Newsletter = async ({ image }: NewsletterBlockProps) => {
     return null;
   }
 
-  const title = getLocalizedString(newsletter.title);
-  const description = getLocalizedString(newsletter.description);
-  const embedCode = getLocalizedString(newsletter.embedCode);
+  const { title, description, embedCode } = newsletter;
 
   if (!title || !embedCode) {
     return null;

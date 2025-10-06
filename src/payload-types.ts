@@ -410,6 +410,7 @@ export interface Page {
     | (
         | ActNowBlock
         | HeroBlock
+        | PageHeaderBlock
         | NewsletterBlock
         | {
             title: string;
@@ -508,6 +509,32 @@ export interface HeroBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'hero';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PageHeaderBlock".
+ */
+export interface PageHeaderBlock {
+  title: string;
+  description: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  image: string | Media;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'page-header';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1063,6 +1090,7 @@ export interface PagesSelect<T extends boolean = true> {
     | {
         'act-now'?: T | ActNowBlockSelect<T>;
         hero?: T | HeroBlockSelect<T>;
+        'page-header'?: T | PageHeaderBlockSelect<T>;
         newsletter?: T | NewsletterBlockSelect<T>;
         partners?:
           | T
@@ -1141,6 +1169,17 @@ export interface HeroBlockSelect<T extends boolean = true> {
         statuses?: T;
         id?: T;
       };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PageHeaderBlock_select".
+ */
+export interface PageHeaderBlockSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  image?: T;
   id?: T;
   blockName?: T;
 }

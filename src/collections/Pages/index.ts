@@ -8,6 +8,7 @@ import { slugField } from "@/fields/slug";
 import { KeyPromises } from "@/blocks/KeyPromises";
 import { ActNow } from "@/blocks/ActNow";
 import { Hero } from "@/blocks/Hero";
+import PageHeader from "@/blocks/PageHeader";
 
 export const Pages: CollectionConfig = {
   slug: "pages",
@@ -45,6 +46,7 @@ export const Pages: CollectionConfig = {
       blocks: [
         ActNow,
         Hero,
+        PageHeader,
         Newsletter,
         Partners,
         LatestPromises,
