@@ -170,10 +170,7 @@ export default async function PromiseDetailPage({
   const tenant = await getTenantBySubDomain(subdomain);
 
   if (!tenant) {
-    if (!tenant) {
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
-      redirect(appUrl);
-    }
+    redirect(tenantSelectionHref);
   }
 
   const { title, description, navigation, footer } =

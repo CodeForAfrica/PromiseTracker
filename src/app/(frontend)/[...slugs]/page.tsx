@@ -87,8 +87,7 @@ export default async function Page(params: Args) {
   const tenant = await getTenantBySubDomain(subdomain);
 
   if (!tenant) {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
-    redirect(appUrl);
+    redirect(tenantSelectionHref);
   }
 
   const { title, description, navigation, footer } =
