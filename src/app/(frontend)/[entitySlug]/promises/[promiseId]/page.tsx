@@ -49,12 +49,8 @@ export async function generateMetadata({
     return tenantResolution.metadata;
   }
 
-  const {
-    tenant,
-    tenantSettings,
-    tenantSeo,
-    tenantTitleBase,
-  } = tenantResolution.context;
+  const { tenant, tenantSettings, tenantSeo, tenantTitleBase } =
+    tenantResolution.context;
 
   const politicalEntity = await getPoliticalEntityBySlug(tenant, entitySlug);
 
@@ -83,7 +79,7 @@ export async function generateMetadata({
 
   const relation = promise.politicalEntity;
   const promiseEntityId =
-    typeof relation === "string" ? relation : relation?.id ?? null;
+    typeof relation === "string" ? relation : (relation?.id ?? null);
 
   if (!promiseEntityId || promiseEntityId !== politicalEntity.id) {
     return buildSeoMetadata({
@@ -96,7 +92,7 @@ export async function generateMetadata({
     composeTitleSegments(
       promise.title?.trim() || tenantTitleBase || tenantSeo.title,
       politicalEntity.name,
-      positionRegion,
+      positionRegion
     ) ??
     entitySeo.title ??
     tenantSeo.title;
@@ -109,10 +105,7 @@ export async function generateMetadata({
         promise.description?.trim() ||
         entitySeo.description ||
         tenantSeo.description,
-      image:
-        promise.image ??
-        entitySeo.image ??
-        tenantSeo.image,
+      image: promise.image ?? entitySeo.image ?? tenantSeo.image,
     },
   });
 }
@@ -177,12 +170,6 @@ export default async function PromiseDetailPage({
   const tenant = await getTenantBySubDomain(subdomain);
 
   if (!tenant) {
-    if (subdomain) {
-      const target = tenantSelectionHref || "/";
-      if (target !== "/") {
-        redirect(target);
-      }
-    }
     return <CommonHomePage />;
   }
 

@@ -34,17 +34,13 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
     return tenantResolution.metadata;
   }
 
-  const {
-    tenant,
-    tenantSettings,
-    tenantSeo,
-    tenantTitleBase,
-  } = tenantResolution.context;
+  const { tenant, tenantSettings, tenantSeo, tenantTitleBase } =
+    tenantResolution.context;
 
   const politicalEntities = await getPoliticalEntitiesByTenant(tenant);
   const [maybePoliticalEntitySlug, pageSlugCandidate] = slugs;
   const politicalEntity = politicalEntities.find(
-    (entity) => entity.slug === maybePoliticalEntitySlug,
+    (entity) => entity.slug === maybePoliticalEntitySlug
   );
 
   if (!politicalEntity) {
@@ -91,12 +87,6 @@ export default async function Page(params: Args) {
   const tenant = await getTenantBySubDomain(subdomain);
 
   if (!tenant) {
-    if (subdomain) {
-      const target = tenantSelectionHref || "/";
-      if (target !== "/") {
-        redirect(target);
-      }
-    }
     return <CommonHomePage />;
   }
 
