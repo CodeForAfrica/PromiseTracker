@@ -170,7 +170,7 @@ export default async function PromiseDetailPage({
   const tenant = await getTenantBySubDomain(subdomain);
 
   if (!tenant) {
-    redirect(tenantSelectionHref);
+    return <CommonHomePage />;
   }
 
   const { title, description, navigation, footer } =

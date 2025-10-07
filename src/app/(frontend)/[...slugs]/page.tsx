@@ -87,7 +87,7 @@ export default async function Page(params: Args) {
   const tenant = await getTenantBySubDomain(subdomain);
 
   if (!tenant) {
-    redirect(tenantSelectionHref);
+    return <CommonHomePage />;
   }
 
   const { title, description, navigation, footer } =
