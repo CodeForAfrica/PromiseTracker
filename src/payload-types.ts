@@ -431,6 +431,7 @@ export interface Page {
             blockName?: string | null;
             blockType: 'partners';
           }
+        | PartnerDetailsBlock
         | {
             title?: string | null;
             filterByLabel?: string | null;
@@ -598,14 +599,22 @@ export interface PageHeaderBlock {
 export interface Partner {
   id: string;
   name: string;
+  description: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
   image: string | Media;
-  links?:
-    | {
-        platform: 'Facebook' | 'Twitter' | 'Instagram' | 'Linkedin' | 'Github' | 'Slack';
-        url: string;
-        id?: string | null;
-      }[]
-    | null;
   url: {
     type?: ('reference' | 'custom') | null;
     newTab?: boolean | null;
@@ -618,6 +627,16 @@ export interface Partner {
   };
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PartnerDetailsBlock".
+ */
+export interface PartnerDetailsBlock {
+  partners: (string | Partner)[];
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'partner-details';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1140,6 +1159,7 @@ export interface PagesSelect<T extends boolean = true> {
               id?: T;
               blockName?: T;
             };
+        'partner-details'?: T | PartnerDetailsBlockSelect<T>;
         'promise-list'?:
           | T
           | {
@@ -1247,6 +1267,15 @@ export interface PageHeaderBlockSelect<T extends boolean = true> {
   title?: T;
   description?: T;
   image?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PartnerDetailsBlock_select".
+ */
+export interface PartnerDetailsBlockSelect<T extends boolean = true> {
+  partners?: T;
   id?: T;
   blockName?: T;
 }
@@ -1398,14 +1427,8 @@ export interface TenantsSelect<T extends boolean = true> {
  */
 export interface PartnersSelect<T extends boolean = true> {
   name?: T;
+  description?: T;
   image?: T;
-  links?:
-    | T
-    | {
-        platform?: T;
-        url?: T;
-        id?: T;
-      };
   url?:
     | T
     | {

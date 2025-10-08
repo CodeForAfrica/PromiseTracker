@@ -10,6 +10,7 @@ import Promises from "./Promises";
 import { TenantList } from "./TenantList";
 import { PoliticalEntityList } from "./PoliticalEntityList";
 import PageHeader from "./PageHeader";
+import PartnerDetails from "./PartnerDetails";
 import FAQ from "./FAQ";
 
 type PageBlocks = NonNullable<Page["blocks"]>;
@@ -43,6 +44,7 @@ const blockComponents: Record<string, ComponentType<any>> = {
   "promise-list": Promises,
   "key-promises": KeyPromises,
   faq: FAQ,
+  "partner-details": PartnerDetails,
   "tenant-selection": TenantList,
   "entity-selection": PoliticalEntityList,
   "page-header": PageHeader,
