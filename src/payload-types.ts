@@ -409,16 +409,9 @@ export interface Page {
   blocks?:
     | (
         | ActNowBlock
+        | FAQBlock
         | HeroBlock
-        | PageHeaderBlock
-        | NewsletterBlock
-        | {
-            title: string;
-            partners?: (string | Partner)[] | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'partners';
-          }
+        | KeyPromises
         | {
             title: string;
             /**
@@ -428,6 +421,15 @@ export interface Page {
             id?: string | null;
             blockName?: string | null;
             blockType: 'latest-promises';
+          }
+        | NewsletterBlock
+        | PageHeaderBlock
+        | {
+            title: string;
+            partners?: (string | Partner)[] | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'partners';
           }
         | {
             title?: string | null;
@@ -439,7 +441,6 @@ export interface Page {
             blockName?: string | null;
             blockType: 'promise-list';
           }
-        | KeyPromises
       )[]
     | null;
   meta?: {
@@ -474,6 +475,35 @@ export interface ActNowBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'act-now';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FAQBlock".
+ */
+export interface FAQBlock {
+  title: string;
+  faqs: {
+    question: string;
+    answer: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    };
+    id?: string | null;
+  }[];
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'faq';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -512,6 +542,31 @@ export interface HeroBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "KeyPromises".
+ */
+export interface KeyPromises {
+  title: string;
+  actionLabel?: string | null;
+  /**
+   * How many highlighted promises to display (minimum 1).
+   */
+  itemsToShow: number;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'key-promises';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "NewsletterBlock".
+ */
+export interface NewsletterBlock {
+  image: string | Media;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'newsletter';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "PageHeaderBlock".
  */
 export interface PageHeaderBlock {
@@ -535,16 +590,6 @@ export interface PageHeaderBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'page-header';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "NewsletterBlock".
- */
-export interface NewsletterBlock {
-  image: string | Media;
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'newsletter';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -573,21 +618,6 @@ export interface Partner {
   };
   updatedAt: string;
   createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "KeyPromises".
- */
-export interface KeyPromises {
-  title: string;
-  actionLabel?: string | null;
-  /**
-   * How many highlighted promises to display (minimum 1).
-   */
-  itemsToShow: number;
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'key-promises';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1089,22 +1119,24 @@ export interface PagesSelect<T extends boolean = true> {
     | T
     | {
         'act-now'?: T | ActNowBlockSelect<T>;
+        faq?: T | FAQBlockSelect<T>;
         hero?: T | HeroBlockSelect<T>;
-        'page-header'?: T | PageHeaderBlockSelect<T>;
-        newsletter?: T | NewsletterBlockSelect<T>;
-        partners?:
-          | T
-          | {
-              title?: T;
-              partners?: T;
-              id?: T;
-              blockName?: T;
-            };
+        'key-promises'?: T | KeyPromisesSelect<T>;
         'latest-promises'?:
           | T
           | {
               title?: T;
               seeAllLink?: T;
+              id?: T;
+              blockName?: T;
+            };
+        newsletter?: T | NewsletterBlockSelect<T>;
+        'page-header'?: T | PageHeaderBlockSelect<T>;
+        partners?:
+          | T
+          | {
+              title?: T;
+              partners?: T;
               id?: T;
               blockName?: T;
             };
@@ -1119,7 +1151,6 @@ export interface PagesSelect<T extends boolean = true> {
               id?: T;
               blockName?: T;
             };
-        'key-promises'?: T | KeyPromisesSelect<T>;
       };
   meta?:
     | T
@@ -1153,6 +1184,22 @@ export interface ActNowBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FAQBlock_select".
+ */
+export interface FAQBlockSelect<T extends boolean = true> {
+  title?: T;
+  faqs?:
+    | T
+    | {
+        question?: T;
+        answer?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "HeroBlock_select".
  */
 export interface HeroBlockSelect<T extends boolean = true> {
@@ -1174,12 +1221,12 @@ export interface HeroBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "PageHeaderBlock_select".
+ * via the `definition` "KeyPromises_select".
  */
-export interface PageHeaderBlockSelect<T extends boolean = true> {
+export interface KeyPromisesSelect<T extends boolean = true> {
   title?: T;
-  description?: T;
-  image?: T;
+  actionLabel?: T;
+  itemsToShow?: T;
   id?: T;
   blockName?: T;
 }
@@ -1194,12 +1241,12 @@ export interface NewsletterBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "KeyPromises_select".
+ * via the `definition` "PageHeaderBlock_select".
  */
-export interface KeyPromisesSelect<T extends boolean = true> {
+export interface PageHeaderBlockSelect<T extends boolean = true> {
   title?: T;
-  actionLabel?: T;
-  itemsToShow?: T;
+  description?: T;
+  image?: T;
   id?: T;
   blockName?: T;
 }

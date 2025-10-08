@@ -2,8 +2,13 @@ import { Block } from "payload";
 
 export const FAQ: Block = {
   slug: "faq",
+  interfaceName: "FAQBlock",
   imageURL: "/cms/faq.png",
   imageAltText: "FAQ",
+  labels: {
+    singular: "FAQS",
+    plural: "FAQS",
+  },
   fields: [
     {
       name: "title",
@@ -14,6 +19,17 @@ export const FAQ: Block = {
       name: "faqs",
       type: "array",
       required: true,
+      minRows: 1,
+      admin: {
+        components: {
+          RowLabel: {
+            path: "@/components/payload/RowLabel#CustomRowLabel",
+            clientProps: {
+              fieldToUse: "question",
+            },
+          },
+        },
+      },
       fields: [
         {
           name: "question",
@@ -22,7 +38,7 @@ export const FAQ: Block = {
         },
         {
           name: "answer",
-          type: "text",
+          type: "richText",
           required: true,
         },
       ],
