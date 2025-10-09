@@ -24,6 +24,7 @@ export const PoliticalEntities: CollectionConfig = {
     },
     defaultColumns: [
       "name",
+      "order",
       "image",
       "region",
       "position",
@@ -53,6 +54,23 @@ export const PoliticalEntities: CollectionConfig = {
         },
       },
     }),
+    {
+      name: "order",
+      type: "number",
+      index: true,
+      min: 0,
+      admin: {
+        position: "sidebar",
+        description: {
+          en: "Lower numbers appear first in listings.",
+          fr: "Les nombres les plus bas apparaissent en premier dans les listes.",
+        },
+      },
+      label: {
+        en: "Order",
+        fr: "Ordre",
+      },
+    },
     {
       name: "region",
       type: "text",

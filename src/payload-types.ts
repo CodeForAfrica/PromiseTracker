@@ -235,6 +235,10 @@ export interface PoliticalEntity {
   name: string;
   slug: string;
   slugLock?: boolean | null;
+  /**
+   * Lower numbers appear first in listings.
+   */
+  order?: number | null;
   region?: string | null;
   /**
    * Title of the entity, i.e President, Governor, Prime Minister
@@ -1450,6 +1454,7 @@ export interface PoliticalEntitiesSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
   slugLock?: T;
+  order?: T;
   region?: T;
   position?: T;
   image?: T;
