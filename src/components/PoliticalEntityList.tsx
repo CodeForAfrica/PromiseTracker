@@ -64,8 +64,21 @@ export const PoliticalEntityList = async ({
       )
     : {};
 
+  const sortedPoliticalEntities = [...politicalEntities].sort((entityA, entityB) => {
+    const orderA = entityA.order ?? Number.POSITIVE_INFINITY;
+    const orderB = entityB.order ?? Number.POSITIVE_INFINITY;
+
+    if (orderA !== orderB) {
+      return orderA - orderB;
+    }
+
+    return entityA.name.localeCompare(entityB.name, undefined, {
+      sensitivity: "base",
+    });
+  });
+
   const entitiesWithMedia = await Promise.all(
-    politicalEntities.map(async (entity) => ({
+    sortedPoliticalEntities.map(async (entity) => ({
       entity,
       media: await resolveMedia(entity.image),
     }))

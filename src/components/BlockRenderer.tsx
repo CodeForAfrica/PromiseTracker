@@ -10,6 +10,8 @@ import Promises from "./Promises";
 import { TenantList } from "./TenantList";
 import { PoliticalEntityList } from "./PoliticalEntityList";
 import PageHeader from "./PageHeader";
+import PartnerDetails from "./PartnerDetails";
+import FAQ from "./FAQ";
 
 type PageBlocks = NonNullable<Page["blocks"]>;
 type PageBlock = PageBlocks extends Array<infer T> ? T : never;
@@ -41,6 +43,8 @@ const blockComponents: Record<string, ComponentType<any>> = {
   "latest-promises": LatestPromises,
   "promise-list": Promises,
   "key-promises": KeyPromises,
+  faq: FAQ,
+  "partner-details": PartnerDetails,
   "tenant-selection": TenantList,
   "entity-selection": PoliticalEntityList,
   "page-header": PageHeader,

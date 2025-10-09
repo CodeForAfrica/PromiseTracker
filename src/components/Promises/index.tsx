@@ -1,25 +1,15 @@
-// Create a component that renders a Promises Component
-
 import { getGlobalPayload } from "@/lib/payload";
 import Promises from "./Promises";
 import { slugify } from "@/utils/utils";
+import { PromiseListBlock } from "@/payload-types";
 
-interface Props {
-  title?: string;
-  filterBy?: string[];
-  sortBy?: string[];
-  filterByLabel?: string;
-  sortByLabel?: string;
+export type PromiseListProps = PromiseListBlock & {
   entitySlug?: string;
-}
-async function Index({
-  title,
-  filterBy,
-  sortBy,
-  filterByLabel,
-  sortByLabel,
-  entitySlug,
-}: Props) {
+};
+
+async function Index(props: PromiseListProps) {
+  const { title, filterBy, sortBy, filterByLabel, sortByLabel, entitySlug } =
+    props;
   const payload = await getGlobalPayload();
 
   const entityQuery = await payload.find({
@@ -61,22 +51,27 @@ async function Index({
       };
     }) ?? [];
 
-  const promiseStatuses = [
-    ...new Set(
-      promises.map((promise) => {
-        if (typeof promise?.status === "object" && promise?.status !== null) {
-          return {
-            slug: slugify(promise.status.label ?? ""),
-            name: promise.status.label ?? "",
-          };
-        }
-        return {
-          slug: slugify(promise.status ?? ""),
-          name: promise.status ?? "",
-        };
-      }),
-    ),
-  ];
+  const promiseStatusesMap = new Map<string, { slug: string; name: string }>();
+
+  promises.forEach((promise) => {
+    const statusLabel =
+      typeof promise?.status === "object" && promise?.status !== null
+        ? promise.status.label ?? ""
+        : (promise.status as string) ?? "";
+
+    const slug = slugify(statusLabel);
+
+    if (!slug || promiseStatusesMap.has(slug)) {
+      return;
+    }
+
+    promiseStatusesMap.set(slug, {
+      slug,
+      name: statusLabel,
+    });
+  });
+
+  const promiseStatuses = Array.from(promiseStatusesMap.values());
   const filterByOptions = {
     label: filterByLabel ?? "",
     items:
@@ -93,10 +88,9 @@ async function Index({
         slug: sort,
       })) ?? [],
   };
-  // Get all promises per entity
   return (
     <Promises
-      title={title}
+      title={title!}
       items={promises}
       withFilter={!!sortBy?.length}
       filterByConfig={filterByOptions}

@@ -9,6 +9,8 @@ import { KeyPromises } from "@/blocks/KeyPromises";
 import { ActNow } from "@/blocks/ActNow";
 import { Hero } from "@/blocks/Hero";
 import PageHeader from "@/blocks/PageHeader";
+import { FAQ } from "@/blocks/FAQ";
+import { PartnerDetails } from "@/blocks/PartnerDetails";
 
 export const Pages: CollectionConfig = {
   slug: "pages",
@@ -45,13 +47,15 @@ export const Pages: CollectionConfig = {
       type: "blocks",
       blocks: [
         ActNow,
+        FAQ,
         Hero,
-        PageHeader,
-        Newsletter,
-        Partners,
-        LatestPromises,
-        PromiseList,
         KeyPromises,
+        LatestPromises,
+        Newsletter,
+        PageHeader,
+        Partners,
+        PartnerDetails,
+        PromiseList,
       ],
     },
   ],

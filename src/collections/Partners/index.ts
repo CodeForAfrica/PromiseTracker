@@ -1,5 +1,4 @@
 import { CollectionConfig } from "payload";
-import { socialLinks } from "@/fields/socialLinks";
 import { image } from "@/fields/image";
 import { link } from "@/fields/link/link";
 
@@ -27,6 +26,11 @@ export const Partners: CollectionConfig = {
       type: "text",
       required: true,
     },
+    {
+      name: "description",
+      type: "richText",
+      required: true,
+    },
     image({
       name: "image",
       label: {
@@ -35,7 +39,6 @@ export const Partners: CollectionConfig = {
       },
       required: true,
     }),
-    socialLinks(),
     link({
       appearances: false,
       overrides: {

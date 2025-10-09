@@ -235,6 +235,10 @@ export interface PoliticalEntity {
   name: string;
   slug: string;
   slugLock?: boolean | null;
+  /**
+   * Lower numbers appear first in listings.
+   */
+  order?: number | null;
   region?: string | null;
   /**
    * Title of the entity, i.e President, Governor, Prime Minister
@@ -409,16 +413,9 @@ export interface Page {
   blocks?:
     | (
         | ActNowBlock
+        | FAQBlock
         | HeroBlock
-        | PageHeaderBlock
-        | NewsletterBlock
-        | {
-            title: string;
-            partners?: (string | Partner)[] | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'partners';
-          }
+        | KeyPromises
         | {
             title: string;
             /**
@@ -429,17 +426,17 @@ export interface Page {
             blockName?: string | null;
             blockType: 'latest-promises';
           }
+        | NewsletterBlock
+        | PageHeaderBlock
         | {
-            title?: string | null;
-            filterByLabel?: string | null;
-            sortByLabel?: string | null;
-            filterBy?: ('status' | 'category')[] | null;
-            sortBy?: ('mostRecent' | 'deadline')[] | null;
+            title: string;
+            partners?: (string | Partner)[] | null;
             id?: string | null;
             blockName?: string | null;
-            blockType: 'promise-list';
+            blockType: 'partners';
           }
-        | KeyPromises
+        | PartnerDetailsBlock
+        | PromiseListBlock
       )[]
     | null;
   meta?: {
@@ -474,6 +471,35 @@ export interface ActNowBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'act-now';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FAQBlock".
+ */
+export interface FAQBlock {
+  title: string;
+  faqs: {
+    question: string;
+    answer: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    };
+    id?: string | null;
+  }[];
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'faq';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -512,6 +538,31 @@ export interface HeroBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "KeyPromises".
+ */
+export interface KeyPromises {
+  title: string;
+  actionLabel?: string | null;
+  /**
+   * How many highlighted promises to display (minimum 1).
+   */
+  itemsToShow: number;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'key-promises';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "NewsletterBlock".
+ */
+export interface NewsletterBlock {
+  image: string | Media;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'newsletter';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "PageHeaderBlock".
  */
 export interface PageHeaderBlock {
@@ -538,29 +589,27 @@ export interface PageHeaderBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "NewsletterBlock".
- */
-export interface NewsletterBlock {
-  image: string | Media;
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'newsletter';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "partners".
  */
 export interface Partner {
   id: string;
   name: string;
+  description: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
   image: string | Media;
-  links?:
-    | {
-        platform: 'Facebook' | 'Twitter' | 'Instagram' | 'Linkedin' | 'Github' | 'Slack';
-        url: string;
-        id?: string | null;
-      }[]
-    | null;
   url: {
     type?: ('reference' | 'custom') | null;
     newTab?: boolean | null;
@@ -576,18 +625,27 @@ export interface Partner {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "KeyPromises".
+ * via the `definition` "PartnerDetailsBlock".
  */
-export interface KeyPromises {
-  title: string;
-  actionLabel?: string | null;
-  /**
-   * How many highlighted promises to display (minimum 1).
-   */
-  itemsToShow: number;
+export interface PartnerDetailsBlock {
+  partners: (string | Partner)[];
   id?: string | null;
   blockName?: string | null;
-  blockType: 'key-promises';
+  blockType: 'partner-details';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PromiseListBlock".
+ */
+export interface PromiseListBlock {
+  title?: string | null;
+  filterByLabel?: string | null;
+  sortByLabel?: string | null;
+  filterBy?: ('status' | 'category')[] | null;
+  sortBy?: ('mostRecent' | 'deadline')[] | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'promise-list';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1089,17 +1147,9 @@ export interface PagesSelect<T extends boolean = true> {
     | T
     | {
         'act-now'?: T | ActNowBlockSelect<T>;
+        faq?: T | FAQBlockSelect<T>;
         hero?: T | HeroBlockSelect<T>;
-        'page-header'?: T | PageHeaderBlockSelect<T>;
-        newsletter?: T | NewsletterBlockSelect<T>;
-        partners?:
-          | T
-          | {
-              title?: T;
-              partners?: T;
-              id?: T;
-              blockName?: T;
-            };
+        'key-promises'?: T | KeyPromisesSelect<T>;
         'latest-promises'?:
           | T
           | {
@@ -1108,18 +1158,18 @@ export interface PagesSelect<T extends boolean = true> {
               id?: T;
               blockName?: T;
             };
-        'promise-list'?:
+        newsletter?: T | NewsletterBlockSelect<T>;
+        'page-header'?: T | PageHeaderBlockSelect<T>;
+        partners?:
           | T
           | {
               title?: T;
-              filterByLabel?: T;
-              sortByLabel?: T;
-              filterBy?: T;
-              sortBy?: T;
+              partners?: T;
               id?: T;
               blockName?: T;
             };
-        'key-promises'?: T | KeyPromisesSelect<T>;
+        'partner-details'?: T | PartnerDetailsBlockSelect<T>;
+        'promise-list'?: T | PromiseListBlockSelect<T>;
       };
   meta?:
     | T
@@ -1153,6 +1203,22 @@ export interface ActNowBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FAQBlock_select".
+ */
+export interface FAQBlockSelect<T extends boolean = true> {
+  title?: T;
+  faqs?:
+    | T
+    | {
+        question?: T;
+        answer?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "HeroBlock_select".
  */
 export interface HeroBlockSelect<T extends boolean = true> {
@@ -1174,12 +1240,12 @@ export interface HeroBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "PageHeaderBlock_select".
+ * via the `definition` "KeyPromises_select".
  */
-export interface PageHeaderBlockSelect<T extends boolean = true> {
+export interface KeyPromisesSelect<T extends boolean = true> {
   title?: T;
-  description?: T;
-  image?: T;
+  actionLabel?: T;
+  itemsToShow?: T;
   id?: T;
   blockName?: T;
 }
@@ -1194,12 +1260,34 @@ export interface NewsletterBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "KeyPromises_select".
+ * via the `definition` "PageHeaderBlock_select".
  */
-export interface KeyPromisesSelect<T extends boolean = true> {
+export interface PageHeaderBlockSelect<T extends boolean = true> {
   title?: T;
-  actionLabel?: T;
-  itemsToShow?: T;
+  description?: T;
+  image?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PartnerDetailsBlock_select".
+ */
+export interface PartnerDetailsBlockSelect<T extends boolean = true> {
+  partners?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PromiseListBlock_select".
+ */
+export interface PromiseListBlockSelect<T extends boolean = true> {
+  title?: T;
+  filterByLabel?: T;
+  sortByLabel?: T;
+  filterBy?: T;
+  sortBy?: T;
   id?: T;
   blockName?: T;
 }
@@ -1351,14 +1439,8 @@ export interface TenantsSelect<T extends boolean = true> {
  */
 export interface PartnersSelect<T extends boolean = true> {
   name?: T;
+  description?: T;
   image?: T;
-  links?:
-    | T
-    | {
-        platform?: T;
-        url?: T;
-        id?: T;
-      };
   url?:
     | T
     | {
@@ -1380,6 +1462,7 @@ export interface PoliticalEntitiesSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
   slugLock?: T;
+  order?: T;
   region?: T;
   position?: T;
   image?: T;
