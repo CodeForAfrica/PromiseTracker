@@ -35,7 +35,6 @@ export function DesktopMenu({ menus, entitySlug }: DesktopMenuProps) {
               height: 48,
               border: 0,
               color: theme.palette.primary.main,
-              padding: "0.8rem  1.2rem",
               margin: "0.3rem",
               textTransform: "uppercase",
               fontFamily: theme.typography.fontFamily,

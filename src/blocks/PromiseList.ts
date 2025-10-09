@@ -3,6 +3,7 @@ import { Block } from "payload";
 const PromiseList: Block = {
   slug: "promise-list",
   imageURL: "/cms/promises-list.png",
+  interfaceName: "PromiseListBlock",
   labels: {
     singular: "Promise List",
     plural: "Promise Lists",

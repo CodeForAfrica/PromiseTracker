@@ -39,19 +39,21 @@ const LatestPromises: React.FC<Props> = forwardRef(function LatestPromises({
       <Grid container spacing={2}>
         {items.map((promise: P) => (
           <Grid
-            key={promise.title}
+            key={promise.id}
             size={{
               xs: 12,
               lg: 4,
             }}
           >
             <PromiseCard
-              {...promise}
               image={
                 typeof promise.image === "string" ? undefined : promise.image
               }
               title={promise.title ?? null}
               status={promise.status as PromiseStatus}
+              description={promise.description ?? null}
+              createdAt={promise.createdAt}
+              href={promise.url ?? undefined}
             />
           </Grid>
         ))}

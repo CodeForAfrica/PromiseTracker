@@ -8,6 +8,8 @@ import { slugify } from "@/utils/utils";
 import { Promise as PromiseItem, PromiseStatus } from "@/payload-types";
 import PromiseCard from "../PromiseCard";
 
+type PromiseWithHref = PromiseItem & { href?: string };
+
 interface SortItem {
   name: string;
   slug: string;
@@ -22,7 +24,7 @@ interface FilterSort {
   items: SortItem[];
 }
 interface PromisesProps {
-  items: PromiseItem[];
+  items: PromiseWithHref[];
   title?: string;
   withFilter?: boolean;
   projectMeta?: ProjectMeta;
@@ -115,7 +117,7 @@ function Promises({
 
   useEffect(() => {
     if (withFilter) {
-      const hasStatus = (item: PromiseItem) => {
+      const hasStatus = (item: PromiseWithHref) => {
         const promiseSlug =
           typeof item?.status === "object" &&
           item?.status !== null &&
@@ -125,7 +127,7 @@ function Promises({
         return selectedFilters.some((c) => c.slug === promiseSlug);
       };
 
-      let filteredItems: PromiseItem[] = [];
+      let filteredItems: PromiseWithHref[] = [];
       if (filterBy === "status") {
         filteredItems = itemsProp.filter(hasStatus);
       }
@@ -232,9 +234,9 @@ function Promises({
         </Grid>
       )}
       <Grid spacing={1} justifyContent="space-between" container>
-        {items.map((card: PromiseItem) => (
+        {items.map((card: PromiseWithHref) => (
           <Grid
-            key={card.title}
+            key={card.id}
             size={{ xs: 12, lg: 4 }}
             sx={{
               pb: {
@@ -244,10 +246,12 @@ function Promises({
             }}
           >
             <PromiseCard
-              {...card}
+              href={card.href}
               title={card.title ?? null}
               image={typeof card.image === "string" ? undefined : card.image}
+              description={card.description ?? null}
               status={card.status as PromiseStatus}
+              createdAt={card.createdAt}
             />
           </Grid>
         ))}

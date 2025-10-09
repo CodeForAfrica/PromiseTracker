@@ -436,16 +436,7 @@ export interface Page {
             blockType: 'partners';
           }
         | PartnerDetailsBlock
-        | {
-            title?: string | null;
-            filterByLabel?: string | null;
-            sortByLabel?: string | null;
-            filterBy?: ('status' | 'category')[] | null;
-            sortBy?: ('mostRecent' | 'deadline')[] | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'promise-list';
-          }
+        | PromiseListBlock
       )[]
     | null;
   meta?: {
@@ -641,6 +632,20 @@ export interface PartnerDetailsBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'partner-details';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PromiseListBlock".
+ */
+export interface PromiseListBlock {
+  title?: string | null;
+  filterByLabel?: string | null;
+  sortByLabel?: string | null;
+  filterBy?: ('status' | 'category')[] | null;
+  sortBy?: ('mostRecent' | 'deadline')[] | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'promise-list';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1164,17 +1169,7 @@ export interface PagesSelect<T extends boolean = true> {
               blockName?: T;
             };
         'partner-details'?: T | PartnerDetailsBlockSelect<T>;
-        'promise-list'?:
-          | T
-          | {
-              title?: T;
-              filterByLabel?: T;
-              sortByLabel?: T;
-              filterBy?: T;
-              sortBy?: T;
-              id?: T;
-              blockName?: T;
-            };
+        'promise-list'?: T | PromiseListBlockSelect<T>;
       };
   meta?:
     | T
@@ -1280,6 +1275,19 @@ export interface PageHeaderBlockSelect<T extends boolean = true> {
  */
 export interface PartnerDetailsBlockSelect<T extends boolean = true> {
   partners?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PromiseListBlock_select".
+ */
+export interface PromiseListBlockSelect<T extends boolean = true> {
+  title?: T;
+  filterByLabel?: T;
+  sortByLabel?: T;
+  filterBy?: T;
+  sortBy?: T;
   id?: T;
   blockName?: T;
 }

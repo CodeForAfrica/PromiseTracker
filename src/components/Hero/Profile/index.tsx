@@ -91,6 +91,7 @@ export const Profile = ({
             color: theme.palette.primary.main,
             textTransform: "uppercase",
             mb: theme.typography.pxToRem(6),
+            whiteSpace: "nowrap",
           })}
         >
           {profileTitle}

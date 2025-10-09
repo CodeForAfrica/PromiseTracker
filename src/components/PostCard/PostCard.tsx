@@ -148,7 +148,6 @@ const PostCard: FC<Props> = function PostCard({
             sx={mediaSx}
           />
         ) : null}
-        {children}
         {description && (
           <CardContent sx={contentSx}>
             <Box display="flex" sx={descriptionContainerSx}>
@@ -156,6 +155,7 @@ const PostCard: FC<Props> = function PostCard({
             </Box>
           </CardContent>
         )}
+        {children}
       </CardActionArea>
     </Card>
   );

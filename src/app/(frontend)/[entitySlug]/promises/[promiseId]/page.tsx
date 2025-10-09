@@ -369,7 +369,7 @@ export default async function PromiseDetailPage({
                   {descriptionText}
                 </Typography>
               ) : null}
-              {originalArticleUrl ? (
+              {/* {originalArticleUrl ? (
                 <Button
                   component="a"
                   href={originalArticleUrl}
@@ -384,7 +384,7 @@ export default async function PromiseDetailPage({
                 >
                   Read the full report
                 </Button>
-              ) : null}
+              ) : null} */}
             </Grid>
             <Grid size={{ xs: 12, lg: 4 }}>
               {statusDoc ? (

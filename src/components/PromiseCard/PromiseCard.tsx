@@ -2,26 +2,31 @@ import React, { FC } from "react";
 
 import PostCard from "@/components/PostCard/PostCard";
 import Status from "@/components/PromiseStatus/PromiseStatus";
-import { PromiseStatus, Promise as P, Media } from "@/payload-types";
+import { PromiseStatus, Media } from "@/payload-types";
 
 interface Props {
   status: PromiseStatus;
   href?: string;
-  title: string | null;
+  title?: string | null;
   image?: Media | null;
+  description?: string | null;
+  createdAt?: string;
 }
+
 const PromiseCard: FC<Props> = function PromiseCard({
   status,
   href,
   title,
   image,
-  ...props
+  description,
+  createdAt,
 }) {
   return (
     <PostCard
-      {...props}
+      createdAt={createdAt}
+      description={description ?? undefined}
       image={image}
-      title={title}
+      title={title ?? null}
       href={href}
       imageSx={{
         border: `8px solid ${status.colors?.color}`,
