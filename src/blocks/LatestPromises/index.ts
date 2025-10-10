@@ -3,6 +3,7 @@ import { Block } from "payload";
 const LatestPromises: Block = {
   slug: "latest-promises",
   imageURL: "/cms/latest-promises.png",
+  interfaceName: "LatestPromisesBlock",
   labels: {
     singular: "Latest Promise",
     plural: "Latest Promises",

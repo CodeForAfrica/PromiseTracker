@@ -416,16 +416,7 @@ export interface Page {
         | FAQBlock
         | HeroBlock
         | KeyPromises
-        | {
-            title: string;
-            /**
-             * Link to the page where all promises can be viewed. E.g. /promises
-             */
-            seeAllLink?: string | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'latest-promises';
-          }
+        | LatestPromisesBlock
         | NewsletterBlock
         | PageHeaderBlock
         | {
@@ -550,6 +541,20 @@ export interface KeyPromises {
   id?: string | null;
   blockName?: string | null;
   blockType: 'key-promises';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LatestPromisesBlock".
+ */
+export interface LatestPromisesBlock {
+  title: string;
+  /**
+   * Link to the page where all promises can be viewed. E.g. /promises
+   */
+  seeAllLink?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'latest-promises';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1150,14 +1155,7 @@ export interface PagesSelect<T extends boolean = true> {
         faq?: T | FAQBlockSelect<T>;
         hero?: T | HeroBlockSelect<T>;
         'key-promises'?: T | KeyPromisesSelect<T>;
-        'latest-promises'?:
-          | T
-          | {
-              title?: T;
-              seeAllLink?: T;
-              id?: T;
-              blockName?: T;
-            };
+        'latest-promises'?: T | LatestPromisesBlockSelect<T>;
         newsletter?: T | NewsletterBlockSelect<T>;
         'page-header'?: T | PageHeaderBlockSelect<T>;
         partners?:
@@ -1246,6 +1244,16 @@ export interface KeyPromisesSelect<T extends boolean = true> {
   title?: T;
   actionLabel?: T;
   itemsToShow?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LatestPromisesBlock_select".
+ */
+export interface LatestPromisesBlockSelect<T extends boolean = true> {
+  title?: T;
+  seeAllLink?: T;
   id?: T;
   blockName?: T;
 }

@@ -1,21 +1,23 @@
 import { CMSLink as Link } from "@/components/CMSLink";
 import { Box, Button, Grid, Container, Typography } from "@mui/material";
-import React, { forwardRef } from "react";
+import React from "react";
 import PromiseCard from "@/components/PromiseCard";
 import { Promise as P, PromiseStatus } from "@/payload-types";
 
+type PromiseWithHref = P & { href?: string };
+
 interface Props {
   actionLabel?: string;
-  items: P[];
+  items: PromiseWithHref[];
   title: string;
   promisePageLink?: string;
 }
-const LatestPromises: React.FC<Props> = forwardRef(function LatestPromises({
+const LatestPromises = ({
   actionLabel,
   items,
   title,
   promisePageLink,
-}) {
+}: Props) => {
   if (!items?.length) {
     return null;
   }
@@ -37,7 +39,7 @@ const LatestPromises: React.FC<Props> = forwardRef(function LatestPromises({
         {title}
       </Typography>
       <Grid container spacing={2}>
-        {items.map((promise: P) => (
+        {items.map((promise) => (
           <Grid
             key={promise.id}
             size={{
@@ -53,7 +55,7 @@ const LatestPromises: React.FC<Props> = forwardRef(function LatestPromises({
               status={promise.status as PromiseStatus}
               description={promise.description ?? null}
               createdAt={promise.createdAt}
-              href={promise.url ?? undefined}
+              href={promise.href ?? undefined}
             />
           </Grid>
         ))}
@@ -84,6 +86,6 @@ const LatestPromises: React.FC<Props> = forwardRef(function LatestPromises({
       )}
     </Container>
   );
-});
+};
 
 export default LatestPromises;
