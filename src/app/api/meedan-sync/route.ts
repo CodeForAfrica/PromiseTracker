@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { unlink } from "node:fs/promises";
 
+import * as Sentry from "@sentry/nextjs";
+
 import { getGlobalPayload } from "@/lib/payload";
 import type { Media, Promise as PromiseDoc } from "@/payload-types";
 import { downloadFile } from "@/utils/files";
@@ -72,9 +74,11 @@ export const POST = async (request: NextRequest) => {
   const configuredSecret = process.env[WEBHOOK_SECRET_ENV_KEY];
 
   if (!configuredSecret) {
-    console.error(
-      "meedan-sync:: Missing WEBHOOK_SECRET_KEY environment variable"
-    );
+    const message =
+      "meedan-sync:: Missing WEBHOOK_SECRET_KEY environment variable";
+
+    console.error(message);
+    Sentry.captureMessage(message, "error");
     return NextResponse.json(
       { ok: false, updated: false, error: "Service misconfigured" },
       { status: 200 }
@@ -92,11 +96,19 @@ export const POST = async (request: NextRequest) => {
   try {
     parsed = (await request.json()) as MeedanWebhookPayload;
   } catch (_error) {
+    const message = "meedan-sync:: Failed to parse JSON payload";
+
+    console.error(message);
+    Sentry.captureMessage(message, "error");
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
   const meedanId = normaliseString(parsed?.data?.id);
 
   if (!meedanId) {
+    const message = "meedan-sync:: Missing Meedan ID";
+
+    console.error(message);
+    Sentry.captureMessage(message, "error");
     return NextResponse.json(
       {
         error: "Missing Meedan ID",
@@ -108,6 +120,10 @@ export const POST = async (request: NextRequest) => {
   const imageUrl = normaliseString(parsed?.object?.file?.[0]?.url ?? null);
 
   if (!imageUrl) {
+    const message = "meedan-sync:: Missing image URL";
+
+    console.error(message);
+    Sentry.captureMessage(message, "error");
     return NextResponse.json(
       { error: "No image URL provided" },
       { status: 400 }
@@ -130,6 +146,10 @@ export const POST = async (request: NextRequest) => {
     const promise = (docs[0] ?? null) as PromiseDoc | null;
 
     if (!promise) {
+      const message = "meedan-sync:: Promise not found";
+
+      console.error(message);
+      Sentry.captureMessage(message, "error");
       return NextResponse.json({ error: "Promise not found" }, { status: 404 });
     }
 
@@ -171,6 +191,19 @@ export const POST = async (request: NextRequest) => {
       }
 
       if (!mediaId) {
+        Sentry.withScope((scope) => {
+          scope.setTag("route", "meedan-sync");
+          scope.setContext("promise", {
+            id: promise.id,
+            existingImageId,
+            meedanId,
+            imageUrl,
+          });
+          Sentry.captureMessage(
+            "meedan-sync:: Failed to cache image after processing webhook",
+            "error"
+          );
+        });
         return NextResponse.json(
           { error: "Failed to cache image" },
           { status: 500 }
@@ -195,11 +228,29 @@ export const POST = async (request: NextRequest) => {
             "meedan-sync:: Failed to clean up temp image",
             cleanupError
           );
+
+          Sentry.withScope((scope) => {
+            scope.setTag("route", "meedan-sync");
+            scope.setLevel("warning");
+            scope.setContext("cleanup", {
+              filePath,
+            });
+            Sentry.captureException(cleanupError);
+          });
         }
       }
     }
   } catch (error) {
     console.error("meedan-sync:: Failed to process webhook", error);
+
+    Sentry.withScope((scope) => {
+      scope.setTag("route", "meedan-sync");
+      scope.setContext("payload", {
+        meedanId,
+        imageUrl,
+      });
+      Sentry.captureException(error);
+    });
     return NextResponse.json(
       { ok: false, updated: false, error: "Failed to process webhook" },
       { status: 200 }
