@@ -102,6 +102,10 @@ export const POST = async (request: NextRequest) => {
     Sentry.captureMessage(message, "error");
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
+  Sentry.captureMessage(
+    `meedan-sync:: Received webhook payload ${JSON.stringify(parsed)}`,
+    "info"
+  );
   const meedanId = normaliseString(parsed?.data?.id);
 
   if (!meedanId) {
