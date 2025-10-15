@@ -130,7 +130,7 @@ export const POST = async (request: NextRequest) => {
     Sentry.captureMessage(message, "error");
     return NextResponse.json(
       { error: "No image URL provided" },
-      { status: 400 }
+      { status: 200 }
     );
   }
 
