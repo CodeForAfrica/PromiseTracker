@@ -8,7 +8,7 @@ import type {
 const payload = await getGlobalPayload();
 
 export const getPoliticalEntitiesByTenant = async (
-  tenant: Tenant
+  tenant: Tenant,
 ): Promise<PoliticalEntity[]> => {
   const { docs } = await payload.find({
     collection: "political-entities",
@@ -27,7 +27,7 @@ export const getPoliticalEntitiesByTenant = async (
 
 export const getPoliticalEntityBySlug = async (
   tenant: Tenant,
-  slug: string
+  slug: string,
 ): Promise<PoliticalEntity | undefined> => {
   const { docs } = await payload.find({
     collection: "political-entities",
@@ -53,7 +53,7 @@ export const getPoliticalEntityBySlug = async (
 };
 
 export const getPromiseCountsForEntities = async (
-  entityIds: string[]
+  entityIds: string[],
 ): Promise<Record<string, number>> => {
   if (entityIds.length === 0) {
     return {};
@@ -81,7 +81,7 @@ export const getPromiseCountsForEntities = async (
   for (const promise of promises as PromiseDoc[]) {
     const relation = promise.politicalEntity;
     const entityId =
-      typeof relation === "string" ? relation : relation?.id ?? null;
+      typeof relation === "string" ? relation : (relation?.id ?? null);
     if (!entityId) {
       continue;
     }
