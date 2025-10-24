@@ -2,16 +2,21 @@ import React from "react";
 import NextLink from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
-import { Box, Button, Container, Grid, Typography } from "@mui/material";
+import { notFound } from "next/navigation";
+import { Box, Container, Grid, Typography } from "@mui/material";
 
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import PromiseStatus from "@/components/PromiseStatus";
 import PromiseTimeline from "@/components/PromiseTimeline";
+import ActNowCard from "@/components/ActNowCard";
 import { CommonHomePage } from "@/components/CommonHomePage";
 import { getDomain } from "@/lib/domain";
-import { getTenantBySubDomain, getTenantNavigation } from "@/lib/data/tenants";
+import {
+  getTenantBySubDomain,
+  getTenantNavigation,
+  getTenantSiteSettings,
+} from "@/lib/data/tenants";
 import { getPoliticalEntityBySlug } from "@/lib/data/politicalEntities";
 import { getPromiseById } from "@/lib/data/promises";
 import { resolveMedia } from "@/lib/data/media";
@@ -53,7 +58,6 @@ export async function generateMetadata({
     tenantResolution.context;
 
   const politicalEntity = await getPoliticalEntityBySlug(tenant, entitySlug);
-
   if (!politicalEntity) {
     return buildSeoMetadata({
       meta: tenantSettings?.meta,
@@ -92,7 +96,7 @@ export async function generateMetadata({
     composeTitleSegments(
       promise.title?.trim() || tenantTitleBase || tenantSeo.title,
       politicalEntity.name,
-      positionRegion
+      positionRegion,
     ) ??
     entitySeo.title ??
     tenantSeo.title;
@@ -120,7 +124,7 @@ const parseYear = (value?: string | null): number | null => {
 
 const computeTimelineInterval = (
   entityPeriod: { from?: string | null; to?: string | null },
-  statusHistory: { date: string }[]
+  statusHistory: { date: string }[],
 ): [number, number] => {
   const start = parseYear(entityPeriod.from);
   const end = parseYear(entityPeriod.to);
@@ -144,7 +148,7 @@ const computeTimelineInterval = (
 };
 
 const buildStatusDocument = (
-  promise: PromiseDocument
+  promise: PromiseDocument,
 ): PromiseStatusDocument | null => {
   const relation = promise.status;
   if (!relation) {
@@ -215,9 +219,12 @@ export default async function PromiseDetailPage({
       ]
     : [];
 
+  const siteSettings = await getTenantSiteSettings(tenant);
+
+  const { actNow } = siteSettings || {};
   const timelineInterval = computeTimelineInterval(
     { from: entity.periodFrom, to: entity.periodTo },
-    timelineStatusHistory
+    timelineStatusHistory,
   );
 
   const image = await resolveMedia(promise.image ?? null);
@@ -337,6 +344,7 @@ export default async function PromiseDetailPage({
                   />
                 </Box>
               ) : null}
+              <ActNowCard {...(actNow as any)} />
               {statusDoc ? (
                 <Box
                   sx={{
