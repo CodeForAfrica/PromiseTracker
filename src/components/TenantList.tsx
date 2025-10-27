@@ -7,6 +7,7 @@ import {
   Card,
   CardContent,
   Chip,
+  Container,
   Divider,
   Link,
   List,
@@ -111,80 +112,80 @@ export const TenantList = async ({
     return (
       <Card>
         <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-          <Typography variant="body1">
-            {emptyListLabel}
-          </Typography>
+          <Typography variant="body1">{emptyListLabel}</Typography>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card variant="outlined" sx={{ borderRadius: 2 }}>
-      <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-        <Typography variant="h5" sx={{ fontWeight: 600 }}>
-          {title}
-        </Typography>
-        <Typography variant="body2" sx={{ mb: 3 }}>
-          {subtitle}
-        </Typography>
-        <List disablePadding dense={dense}>
-          {tenantLinks.map((tenant, index) => {
-            const initials = tenant.name
-              .split(" ")
-              .slice(0, 2)
-              .map((part) => part[0]?.toUpperCase())
-              .join("");
+    <Container maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
+      <Card variant="outlined" sx={{ borderRadius: 2 }}>
+        <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+          <Typography variant="h5" sx={{ fontWeight: 600 }}>
+            {title}
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 3 }}>
+            {subtitle}
+          </Typography>
+          <List disablePadding dense={dense}>
+            {tenantLinks.map((tenant, index) => {
+              const initials = tenant.name
+                .split(" ")
+                .slice(0, 2)
+                .map((part) => part[0]?.toUpperCase())
+                .join("");
 
-            return (
-              <Box key={tenant.id}>
-                <ListItem disableGutters sx={{ py: dense ? 0.75 : 1.25 }}>
-                  <ListItemAvatar sx={{ minWidth: dense ? 36 : 46 }}>
-                    <Avatar
-                      src={tenant.flag ?? undefined}
-                      alt={tenant.name}
-                      sx={{
-                        bgcolor: "primary.light",
-                        color: "primary.dark",
-                        width: dense ? 32 : 40,
-                        height: dense ? 32 : 40,
-                        fontSize: dense ? "0.75rem" : "0.875rem",
+              return (
+                <Box key={tenant.id}>
+                  <ListItem disableGutters sx={{ py: dense ? 0.75 : 1.25 }}>
+                    <ListItemAvatar sx={{ minWidth: dense ? 36 : 46 }}>
+                      <Avatar
+                        src={tenant.flag ?? undefined}
+                        alt={tenant.name}
+                        sx={{
+                          bgcolor: "primary.light",
+                          color: "primary.dark",
+                          width: dense ? 32 : 40,
+                          height: dense ? 32 : 40,
+                          fontSize: dense ? "0.75rem" : "0.875rem",
+                        }}
+                      >
+                        {initials}
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={tenant.name}
+                      secondary={tenant.url.replace(/^https?:\/\//, "")}
+                      primaryTypographyProps={{
+                        variant: "subtitle1",
+                        sx: { fontWeight: 600 },
                       }}
-                    >
-                      {initials}
-                    </Avatar>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={tenant.name}
-                    secondary={tenant.url.replace(/^https?:\/\//, "")}
-                    primaryTypographyProps={{
-                      variant: "subtitle1",
-                      sx: { fontWeight: 600 },
-                    }}
-                    secondaryTypographyProps={{
-                      variant: "body2",
-                      color: "primary.dark",
-                    }}
-                  />
-                  <Chip
-                    component={Link}
-                    href={tenant.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    label={ctaLabel}
-                    clickable
-                    color="primary"
-                    sx={{ ml: 2 }}
-                  />
-                </ListItem>
-                {index < tenantLinks.length - 1 ? (
-                  <Divider component="div" />
-                ) : null}
-              </Box>
-            );
-          })}
-        </List>
-      </CardContent>
-    </Card>
+                      secondaryTypographyProps={{
+                        variant: "body2",
+                        color: "primary.dark",
+                      }}
+                    />
+                    <Chip
+                      component={Link}
+                      href={tenant.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      label={ctaLabel}
+                      clickable
+                      color="primary"
+                      sx={{ ml: 2 }}
+                    />
+                  </ListItem>
+                  {index < tenantLinks.length - 1 ? (
+                    <Divider component="div" />
+                  ) : null}
+                </Box>
+              );
+            })}
+          </List>
+        </CardContent>
+      </Card>
+    </Container>
   );
 };

@@ -76,8 +76,15 @@ const getDefaultTenantNavigation = () => {
   };
 };
 
-export const getTenantNavigation = async (tenant: Tenant) => {
-  const tenantSettings = await getTenantSiteSettings(tenant);
+export const getTenantNavigation = async (tenant?: Tenant) => {
+  let tenantSettings = null;
+  if (tenant) {
+    tenantSettings = await getTenantSiteSettings(tenant);
+  } else {
+    tenantSettings = await payload.findGlobal({
+      slug: "home-page",
+    });
+  }
 
   if (!tenantSettings) {
     return getDefaultTenantNavigation();

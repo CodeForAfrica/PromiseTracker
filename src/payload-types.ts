@@ -1623,6 +1623,112 @@ export interface HomePage {
         }
     )[];
   };
+  title: string;
+  description: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  /**
+   * Shown on main navigation bar.
+   */
+  primaryLogo: string | Media;
+  /**
+   * Shown on main footer. If not provided, primary logo will be reused.
+   */
+  secondaryLogo: string | Media;
+  /**
+   * Shown on secondary footer. If not provided, secondary logo will be reused.
+   */
+  alternateLogo: string | Media;
+  legal?: {
+    copyright?: string | null;
+    /**
+     * Links to legal information, for example, terms of service or privacy policy
+     */
+    links?:
+      | {
+          link: {
+            type?: ('reference' | 'custom') | null;
+            newTab?: boolean | null;
+            reference?: {
+              relationTo: 'pages';
+              value: string | Page;
+            } | null;
+            url?: string | null;
+            label: string;
+          };
+          id?: string | null;
+        }[]
+      | null;
+  };
+  primaryNavigation?: {
+    titles?: string | null;
+    menus?:
+      | {
+          link: {
+            type?: ('reference' | 'custom') | null;
+            newTab?: boolean | null;
+            reference?: {
+              relationTo: 'pages';
+              value: string | Page;
+            } | null;
+            url?: string | null;
+            label: string;
+          };
+          id?: string | null;
+        }[]
+      | null;
+  };
+  secondaryNavigationList: {
+    secondaryNavigation?: {
+      titles?: string | null;
+      menus?:
+        | {
+            link: {
+              type?: ('reference' | 'custom') | null;
+              newTab?: boolean | null;
+              reference?: {
+                relationTo: 'pages';
+                value: string | Page;
+              } | null;
+              url?: string | null;
+              label: string;
+            };
+            id?: string | null;
+          }[]
+        | null;
+    };
+    id?: string | null;
+  }[];
+  connect: {
+    /**
+     * Text that appears on contact links e.g Stay in Touch
+     */
+    title: string;
+    links?:
+      | {
+          platform: 'Facebook' | 'Twitter' | 'Instagram' | 'Linkedin' | 'Github' | 'Slack';
+          url: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  newsletter: {
+    title: string;
+    description: string;
+    embedCode: string;
+  };
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -1723,6 +1829,92 @@ export interface HomePageSelect<T extends boolean = true> {
                     blockName?: T;
                   };
             };
+      };
+  title?: T;
+  description?: T;
+  primaryLogo?: T;
+  secondaryLogo?: T;
+  alternateLogo?: T;
+  legal?:
+    | T
+    | {
+        copyright?: T;
+        links?:
+          | T
+          | {
+              link?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    label?: T;
+                  };
+              id?: T;
+            };
+      };
+  primaryNavigation?:
+    | T
+    | {
+        titles?: T;
+        menus?:
+          | T
+          | {
+              link?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    label?: T;
+                  };
+              id?: T;
+            };
+      };
+  secondaryNavigationList?:
+    | T
+    | {
+        secondaryNavigation?:
+          | T
+          | {
+              titles?: T;
+              menus?:
+                | T
+                | {
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          label?: T;
+                        };
+                    id?: T;
+                  };
+            };
+        id?: T;
+      };
+  connect?:
+    | T
+    | {
+        title?: T;
+        links?:
+          | T
+          | {
+              platform?: T;
+              url?: T;
+              id?: T;
+            };
+      };
+  newsletter?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        embedCode?: T;
       };
   updatedAt?: T;
   createdAt?: T;
