@@ -3,6 +3,9 @@ import { EntitySelection } from "@/blocks/EntitySelection";
 import Newsletter from "@/blocks/Newsletter";
 import Partners from "@/blocks/Partners";
 import { TenantSelection } from "@/blocks/TenantSelector";
+import { EngagementTab } from "@/collections/SiteSettings/tabs/EngagementTab";
+import { GeneralTab } from "@/collections/SiteSettings/tabs/GeneralTab";
+import { NavigationTab } from "@/collections/SiteSettings/tabs/NavigationTab";
 import { GlobalConfig } from "payload";
 
 export const HomePage: GlobalConfig = {
@@ -68,6 +71,9 @@ export const HomePage: GlobalConfig = {
             },
           ],
         },
+        GeneralTab,
+        NavigationTab,
+        EngagementTab,
       ],
     },
   ],

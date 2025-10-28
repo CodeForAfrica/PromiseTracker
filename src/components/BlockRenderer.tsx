@@ -52,7 +52,6 @@ const blockComponents: Record<string, ComponentType<any>> = {
 
 export const BlockRenderer = ({ blocks, entity }: BlockProps) => {
   const hasBlocks = blocks && Array.isArray(blocks) && blocks.length > 0;
-
   if (hasBlocks) {
     return (
       <Fragment>
