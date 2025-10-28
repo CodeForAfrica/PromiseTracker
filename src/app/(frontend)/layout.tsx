@@ -4,6 +4,9 @@ import theme from "@/theme/theme";
 import { ThemeProvider } from "@mui/material";
 import { Amiri, Open_Sans, Source_Sans_3 } from "next/font/google";
 import type { Metadata } from "next";
+import { getDomain } from "@/lib/domain";
+import { getTenantBySubDomain } from "@/lib/data/tenants";
+import { defaultLocale } from "@/utils/locales";
 
 const amiri = Amiri({
   subsets: ["arabic", "latin"],
@@ -40,9 +43,13 @@ export const metadata: Metadata = {
 export default async function RootLayout(props: { children: React.ReactNode }) {
   const { children } = props;
 
+  const { subdomain } = await getDomain();
+  const tenant = await getTenantBySubDomain(subdomain);
+  const locale = tenant?.locale || defaultLocale;
+
   return (
     <html
-      lang="en"
+      lang={locale}
       className={`${amiri.variable} ${openSans.variable} ${sourceSans.variable}`}
     >
       <body style={{ margin: 0 }}>
