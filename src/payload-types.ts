@@ -795,6 +795,13 @@ export interface SiteSetting {
     description: string;
     embedCode: string;
   };
+  actNow: {
+    title: string;
+    share: {
+      title: string;
+      description: string;
+    };
+  };
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -1418,6 +1425,17 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         title?: T;
         description?: T;
         embedCode?: T;
+      };
+  actNow?:
+    | T
+    | {
+        title?: T;
+        share?:
+          | T
+          | {
+              title?: T;
+              description?: T;
+            };
       };
   meta?:
     | T

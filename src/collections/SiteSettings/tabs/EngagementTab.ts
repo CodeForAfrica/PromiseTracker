@@ -74,5 +74,55 @@ export const EngagementTab: Tab = {
         },
       ],
     },
+    {
+      name: "actNow",
+      type: "group",
+      label: {
+        en: "Act Now Section",
+        fr: "Section Agir maintenant",
+      },
+      fields: [
+        {
+          name: "title",
+          type: "text",
+          required: true,
+          label: {
+            en: "Title",
+            fr: "Titre",
+          },
+        },
+        {
+          name: "share",
+          type: "group",
+          label: {
+            en: "Share",
+            fr: "Partager",
+          },
+          admin: {
+            hideGutter: true,
+          },
+          fields: [
+            {
+              name: "title",
+              type: "text",
+              required: true,
+              label: {
+                en: "Share Title",
+                fr: "Partager le titre",
+              },
+            },
+            {
+              name: "description",
+              type: "textarea",
+              required: true,
+              label: {
+                en: "Share Description",
+                fr: "Partager la description",
+              },
+            },
+          ],
+        },
+      ],
+    },
   ],
 };
