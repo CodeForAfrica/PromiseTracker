@@ -51,7 +51,7 @@ export const plugins: Plugin[] = [
     collections: ["pages", "political-entities", "promises"],
     uploadsCollection: "media",
     generateTitle: async ({ doc, collectionSlug, req }) => {
-      let tenantId = doc.tenant;
+      const tenantId = doc.tenant;
 
       const {
         docs: [tenant],

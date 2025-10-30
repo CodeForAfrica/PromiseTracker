@@ -257,7 +257,12 @@ export default function Footer({
                     color: "#a4a4a4",
                   })}
                 >
-                  <Image src={CcIcon} alt="Creative Commons" width={19} height={19} />
+                  <Image
+                    src={CcIcon}
+                    alt="Creative Commons"
+                    width={19}
+                    height={19}
+                  />
                   <Typography
                     variant="caption"
                     sx={{
@@ -314,17 +319,20 @@ export default function Footer({
               alignItems="center"
               gap={1}
             >
-              <Typography
-                variant="button"
-                sx={{
-                  textTransform: "uppercase",
-                  color: theme.palette.secondary.dark,
-                  mr: 2,
-                  fontWeight: theme.typography.button,
-                }}
-              >
-                {connect.title}
-              </Typography>
+              {connect?.links && connect.links.length > 0 && (
+                <Typography
+                  variant="button"
+                  sx={{
+                    textTransform: "uppercase",
+                    color: theme.palette.secondary.dark,
+                    mr: 2,
+                    fontWeight: theme.typography.button,
+                  }}
+                >
+                  {connect.title}
+                </Typography>
+              )}
+
               {connect?.links?.map((l) => (
                 <SocialMediaIconLink
                   key={`${l.platform}-${l.url}`}

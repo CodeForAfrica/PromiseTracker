@@ -1,4 +1,4 @@
-import { CMSLink as Link } from "@/components/CMSLink";
+import { CMSLinkType, CMSLink as Link } from "@/components/CMSLink";
 import { Box, Button, Grid, Container, Typography } from "@mui/material";
 import React from "react";
 import PromiseCard from "@/components/PromiseCard";
@@ -7,17 +7,11 @@ import { Promise as P, PromiseStatus } from "@/payload-types";
 type PromiseWithHref = P & { href?: string };
 
 interface Props {
-  actionLabel?: string;
   items: PromiseWithHref[];
   title: string;
-  promisePageLink?: string;
+  seeAll: CMSLinkType;
 }
-const LatestPromises = ({
-  actionLabel,
-  items,
-  title,
-  promisePageLink,
-}: Props) => {
+const LatestPromises = ({ items, title, seeAll }: Props) => {
   if (!items?.length) {
     return null;
   }
@@ -60,16 +54,8 @@ const LatestPromises = ({
           </Grid>
         ))}
       </Grid>
-      {actionLabel && (
-        <Link
-          url={promisePageLink}
-          sx={{
-            textDecoration: "none",
-            "&:hover": {
-              textDecoration: "none",
-            },
-          }}
-        >
+      {seeAll && (
+        <Link {...seeAll}>
           <Box display="flex" justifyContent="center" mt={4}>
             <Button
               variant="contained"
@@ -77,9 +63,14 @@ const LatestPromises = ({
                 background: "#000",
                 color: "#fff",
                 height: 48,
+                "&:hover": {
+                  background: "#fff",
+                  color: "#000",
+                  border: "1px solid #000",
+                },
               }}
             >
-              {actionLabel}
+              {seeAll.label}
             </Button>
           </Box>
         </Link>

@@ -96,7 +96,7 @@ export async function generateMetadata({
     composeTitleSegments(
       promise.title?.trim() || tenantTitleBase || tenantSeo.title,
       politicalEntity.name,
-      positionRegion,
+      positionRegion
     ) ??
     entitySeo.title ??
     tenantSeo.title;
@@ -124,7 +124,7 @@ const parseYear = (value?: string | null): number | null => {
 
 const computeTimelineInterval = (
   entityPeriod: { from?: string | null; to?: string | null },
-  statusHistory: { date: string }[],
+  statusHistory: { date: string }[]
 ): [number, number] => {
   const start = parseYear(entityPeriod.from);
   const end = parseYear(entityPeriod.to);
@@ -148,7 +148,7 @@ const computeTimelineInterval = (
 };
 
 const buildStatusDocument = (
-  promise: PromiseDocument,
+  promise: PromiseDocument
 ): PromiseStatusDocument | null => {
   const relation = promise.status;
   if (!relation) {
@@ -224,12 +224,11 @@ export default async function PromiseDetailPage({
   const { actNow } = siteSettings || {};
   const timelineInterval = computeTimelineInterval(
     { from: entity.periodFrom, to: entity.periodTo },
-    timelineStatusHistory,
+    timelineStatusHistory
   );
 
   const image = await resolveMedia(promise.image ?? null);
   const titleText = promise.title?.trim() || "Promise";
-  const originalArticleUrl = promise.url?.trim();
   const descriptionText = promise.description?.trim() || null;
   const timelineStatus = {
     color: statusColor,
@@ -325,6 +324,7 @@ export default async function PromiseDetailPage({
                   component="figure"
                   sx={{
                     position: "relative",
+                    m: 0,
                     width: "100%",
                     overflow: "hidden",
                     border: {
@@ -344,7 +344,7 @@ export default async function PromiseDetailPage({
                   />
                 </Box>
               ) : null}
-              <ActNowCard {...(actNow as any)} />
+              <ActNowCard {...actNow} sx={{ width: "100%" }} />
               {statusDoc ? (
                 <Box
                   sx={{
@@ -377,22 +377,6 @@ export default async function PromiseDetailPage({
                   {descriptionText}
                 </Typography>
               ) : null}
-              {/* {originalArticleUrl ? (
-                <Button
-                  component="a"
-                  href={originalArticleUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  variant="outlined"
-                  sx={{
-                    alignSelf: { xs: "stretch", sm: "flex-start" },
-                    mt: { xs: 4, lg: 5 },
-                    textTransform: "none",
-                  }}
-                >
-                  Read the full report
-                </Button>
-              ) : null} */}
             </Grid>
             <Grid size={{ xs: 12, lg: 4 }}>
               {statusDoc ? (

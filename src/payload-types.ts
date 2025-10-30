@@ -551,7 +551,20 @@ export interface LatestPromisesBlock {
   /**
    * Link to the page where all promises can be viewed. E.g. /promises
    */
-  seeAllLink?: string | null;
+  seeAllLink: {
+    type?: ('reference' | 'custom') | null;
+    newTab?: boolean | null;
+    reference?: {
+      relationTo: 'pages';
+      value: string | Page;
+    } | null;
+    url?: string | null;
+    label: string;
+    /**
+     * Choose how the link should be rendered.
+     */
+    appearance?: ('default' | 'outline') | null;
+  };
   id?: string | null;
   blockName?: string | null;
   blockType: 'latest-promises';
@@ -1260,7 +1273,16 @@ export interface KeyPromisesSelect<T extends boolean = true> {
  */
 export interface LatestPromisesBlockSelect<T extends boolean = true> {
   title?: T;
-  seeAllLink?: T;
+  seeAllLink?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        label?: T;
+        appearance?: T;
+      };
   id?: T;
   blockName?: T;
 }
