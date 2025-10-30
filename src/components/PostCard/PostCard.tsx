@@ -67,6 +67,9 @@ const PostCard: FC<Props> = function PostCard({
     height: 510,
     p: 2,
     borderTop: "8px solid transparent",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "stretch",
     "&:hover": {
       borderTopColor: `${status.colors?.color}`,
     },
@@ -155,7 +158,13 @@ const PostCard: FC<Props> = function PostCard({
             </Box>
           </CardContent>
         )}
-        {children}
+        {children ? (
+          <Box
+            sx={{ display: "flex", justifyContent: "flex-start", mt: "auto" }}
+          >
+            {children}
+          </Box>
+        ) : null}
       </CardActionArea>
     </Card>
   );
