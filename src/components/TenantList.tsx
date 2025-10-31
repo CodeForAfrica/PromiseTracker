@@ -16,6 +16,7 @@ import {
   ListItemText,
   Typography,
 } from "@mui/material";
+import { OpenInNew } from "@mui/icons-material";
 
 export type TenantLink = {
   id: string;
@@ -41,7 +42,7 @@ const buildTenantUrl = (
   hostname: string | null,
   baseDomain: string | null,
   isLocalhost: boolean,
-  port: string,
+  port: string
 ) => {
   const subdomain = getSubdomain(tenant);
   if (!subdomain) return null;
@@ -75,7 +76,7 @@ export const getTenantLinks = async (): Promise<TenantLink[]> => {
       hostname,
       baseDomain ?? null,
       isLocalhost,
-      port,
+      port
     );
     if (!url) continue;
     entries.push({
@@ -174,7 +175,8 @@ export const TenantList = async ({
                       label={ctaLabel}
                       clickable
                       color="primary"
-                      sx={{ ml: 2 }}
+                      sx={{ px: 1 }}
+                      icon={<OpenInNew fontSize="small" />}
                     />
                   </ListItem>
                   {index < tenantLinks.length - 1 ? (

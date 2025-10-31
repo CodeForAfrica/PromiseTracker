@@ -4333,11 +4333,11 @@ export const allCountries = countries.map((country) => ({
   label: country.label,
 }));
 
-export const getCountryFlag = (countryCode: string) => {
+export const getCountryFlag = (countryCode: string, width = 40) => {
   const country = countries.find(
     (c) => c.alpha2 === countryCode || c.alpha3 === countryCode,
   );
   return country
-    ? `https://flagcdn.com/w40/${country.alpha2.toLowerCase()}.png`
+    ? `https://flagcdn.com/w${width}/${country.alpha2.toLowerCase()}.png`
     : null;
 };

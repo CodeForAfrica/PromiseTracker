@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
   const politicalEntities = await getPoliticalEntitiesByTenant(tenant);
   const [maybePoliticalEntitySlug, pageSlugCandidate] = slugs;
   const politicalEntity = politicalEntities.find(
-    (entity) => entity.slug === maybePoliticalEntitySlug,
+    (entity) => entity.slug === maybePoliticalEntitySlug
   );
 
   if (!politicalEntity) {
@@ -96,9 +96,9 @@ export default async function Page(params: Args) {
           title={title}
           {...navigation}
           tenantSelectionHref={tenantSelectionHref}
+          showSearch={false}
         />
         <CommonHomePage />
-        <Footer title={title} description={description} {...footer} />
       </>
     );
   }
@@ -110,7 +110,7 @@ export default async function Page(params: Args) {
   const politicalEntities = await getPoliticalEntitiesByTenant(tenant);
 
   const politicalEntity = politicalEntities.find(
-    (entity) => entity.slug === maybePoliticalEntitySlug,
+    (entity) => entity.slug === maybePoliticalEntitySlug
   );
 
   if (!politicalEntity) {
@@ -119,10 +119,10 @@ export default async function Page(params: Args) {
       if (onlyEntity) {
         const fallbackPageSlugs = slugs.length > 0 ? slugs : ["index"];
         const sanitizedPageSlugs = fallbackPageSlugs.filter(
-          (slug) => slug && slug !== "index",
+          (slug) => slug && slug !== "index"
         );
         const segments = [onlyEntity.slug, ...sanitizedPageSlugs].filter(
-          Boolean,
+          Boolean
         );
         const targetPath = segments.length > 0 ? `/${segments.join("/")}` : "/";
         redirect(targetPath);
@@ -137,7 +137,7 @@ export default async function Page(params: Args) {
       (block) =>
         block.blockType === "entity-selection"
           ? { ...block, pageSlugs: fallbackPageSlugs }
-          : block,
+          : block
     );
 
     return (

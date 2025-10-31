@@ -3,7 +3,7 @@ import React from "react";
 import type { Page } from "@/payload-types";
 import { Link, SxProps, Theme } from "@mui/material";
 
-type CMSLinkType = {
+export type CMSLinkType = {
   children?: React.ReactNode;
   label?: string;
   newTab?: boolean | null;
@@ -37,15 +37,15 @@ export const CMSLink: React.FC<CMSLinkType> = (props) => {
       reference.value.slug
     ) {
       switch (reference.relationTo) {
-        case "pages":
-          {
-            const pageSlug = reference.value.slug === "index" ? "" : reference.value.slug;
-            const segments = [entitySlug, pageSlug].filter(Boolean);
-            if (segments.length === 0) {
-              return "/";
-            }
-            return `/${segments.join("/")}`;
+        case "pages": {
+          const pageSlug =
+            reference.value.slug === "index" ? "" : reference.value.slug;
+          const segments = [entitySlug, pageSlug].filter(Boolean);
+          if (segments.length === 0) {
+            return "/";
           }
+          return `/${segments.join("/")}`;
+        }
         default:
           return "";
       }
@@ -63,8 +63,7 @@ export const CMSLink: React.FC<CMSLinkType> = (props) => {
 
   return (
     <Link href={href} {...newTabProps} sx={sx}>
-      {label && label}
-      {children && children}
+      {children ? children : label}
     </Link>
   );
 };

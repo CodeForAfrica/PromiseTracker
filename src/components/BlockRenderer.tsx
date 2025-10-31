@@ -6,6 +6,7 @@ import Newsletter from "./Newsletter";
 import Partners from "./Partners";
 import LatestPromises from "./LatestPromises";
 import { Hero } from "./Hero";
+import { EntityHero } from "./EntityHero";
 import Promises from "./Promises";
 import { TenantList } from "./TenantList";
 import { PoliticalEntityList } from "./PoliticalEntityList";
@@ -43,6 +44,7 @@ const blockComponents: Record<string, ComponentType<any>> = {
   "latest-promises": LatestPromises,
   "promise-list": Promises,
   "key-promises": KeyPromises,
+  "entity-hero": EntityHero,
   faq: FAQ,
   "partner-details": PartnerDetails,
   "tenant-selection": TenantList,

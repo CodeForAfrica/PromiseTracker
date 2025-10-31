@@ -201,10 +201,13 @@ export const CreatePoliticalEntity: TaskConfig = {
             mediaExternalUrlCache.set(imageRef, url);
             return url;
           } catch (error) {
-            logger.warn(
-              "createPoliticalEntity:: Unable to resolve media external URL",
-              { error, mediaId: imageRef }
-            );
+            logger.warn({
+              message:
+                "createPoliticalEntity:: Unable to resolve media external URL",
+              error:
+                error instanceof Error ? error.message : String(error ?? ""),
+              mediaId: imageRef,
+            });
             return "";
           }
         }
@@ -272,16 +275,19 @@ export const CreatePoliticalEntity: TaskConfig = {
         const tenantForEntity = getTenantForEntity(entity.country?.[0]);
 
         if (!tenantForEntity) {
-          logger.warn(
-            "createPoliticalEntity:: Tenant not found for entity country",
-            { entityId: entity.id, country: entity.country }
-          );
+          logger.warn({
+            message:
+              "createPoliticalEntity:: Tenant not found for entity country",
+            entityId: entity.id,
+            country: entity.country,
+          });
           continue;
         }
 
         const imageUrl = entity.image?.[0];
         if (!imageUrl) {
-          logger.warn("createPoliticalEntity:: Skipping entity without image", {
+          logger.warn({
+            message: "createPoliticalEntity:: Skipping entity without image",
             entityId: entity.id,
           });
           continue;
@@ -297,10 +303,11 @@ export const CreatePoliticalEntity: TaskConfig = {
           entity.title?.trim() || (existingEntity?.position ?? "Unknown");
 
         if (!periodFrom || !periodTo) {
-          logger.warn(
-            "createPoliticalEntity:: Skipping entity without valid term dates",
-            { entityId: entity.id }
-          );
+          logger.warn({
+            message:
+              "createPoliticalEntity:: Skipping entity without valid term dates",
+            entityId: entity.id,
+          });
           continue;
         }
 
@@ -415,16 +422,18 @@ export const CreatePoliticalEntity: TaskConfig = {
         }
       }
 
-      logger.info("createPoliticalEntity:: Sync complete", {
+      logger.info({
+        message: "createPoliticalEntity:: Sync complete",
         created: createdCount,
         updated: updatedCount,
         total: entities.length,
       });
     } catch (error) {
-      logger.error(
-        "createPoliticalEntity:: Error Fetching Document from AIrtable",
-        { error }
-      );
+      logger.error({
+        message:
+          "createPoliticalEntity:: Error Fetching Document from AIrtable",
+        error: error instanceof Error ? error.message : String(error ?? ""),
+      });
     }
 
     return {

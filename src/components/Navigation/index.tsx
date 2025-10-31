@@ -25,6 +25,7 @@ type NavigationProps = {
   title: string;
   entitySlug?: string;
   tenantSelectionHref?: string;
+  showSearch?: boolean;
 };
 
 export default function Navigation({
@@ -33,6 +34,7 @@ export default function Navigation({
   title,
   entitySlug,
   tenantSelectionHref,
+  showSearch = true,
 }: NavigationProps) {
   const theme = useTheme();
   const logoSrc = primaryLogo?.url || null;
@@ -106,7 +108,7 @@ export default function Navigation({
                       justifyContent: "flex-start",
                     }}
                   >
-                    <Search />
+                    {showSearch && <Search />}
                   </Box>
                 </Grid>
                 <MobileMenu menus={menus} entitySlug={entitySlug} />

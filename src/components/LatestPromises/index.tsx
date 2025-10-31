@@ -1,16 +1,17 @@
 import LatestPromises from "./LatestPromises";
+import { LatestPromisesBlock } from "@/payload-types";
 
 import { getGlobalPayload } from "@/lib/payload";
+
+export type LatestPromisesProps = LatestPromisesBlock & {
+  entitySlug: string;
+};
 
 export default async function Index({
   entitySlug,
   title,
-  seeAllLink = "View all promises",
-}: {
-  entitySlug: string;
-  title: string;
-  seeAllLink: string;
-}) {
+  seeAllLink,
+}: LatestPromisesProps) {
   if (!entitySlug) {
     return null;
   }
@@ -56,12 +57,5 @@ export default async function Index({
       };
     }) ?? [];
 
-  return (
-    <LatestPromises
-      title={title}
-      actionLabel={seeAllLink}
-      items={promises}
-      promisePageLink={`/${entity.slug}/promises`}
-    />
-  );
+  return <LatestPromises title={title} items={promises} seeAll={seeAllLink} />;
 }

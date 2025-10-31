@@ -1,3 +1,4 @@
+import { link } from "@/fields/link/link";
 import { Block } from "payload";
 
 const LatestPromises: Block = {
@@ -15,16 +16,17 @@ const LatestPromises: Block = {
       required: true,
       localized: true,
     },
-    {
-      name: "seeAllLink",
-      type: "text",
-      required: false,
-      localized: true,
-      admin: {
-        description:
-          "Link to the page where all promises can be viewed. E.g. /promises",
+    link({
+      overrides: {
+        required: true,
+        label: "See All Link",
+        name: "seeAllLink",
+        admin: {
+          description:
+            "Link to the page where all promises can be viewed. E.g. /promises",
+        },
       },
-    },
+    }),
   ],
 };
 

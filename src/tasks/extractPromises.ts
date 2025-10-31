@@ -85,13 +85,12 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
         const existingExtraction = existingExtractions[0];
 
         if (existingExtraction) {
-          logger.info(
-            "extractPromises:: Skipping document with existing AI extraction",
-            {
-              documentId: document.id,
-              extractionId: existingExtraction.id,
-            }
-          );
+          logger.info({
+            message:
+              "extractPromises:: Skipping document with existing AI extraction",
+            documentId: document.id,
+            extractionId: existingExtraction.id,
+          });
 
           if (!document.fullyProcessed) {
             await payload.update({
@@ -190,21 +189,25 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
           });
         } catch (error) {
           console.log("Error::", { error });
-          logger.error("extractPromises:: Error generating AI Response::", {
-            error,
+          logger.error({
+            message: "extractPromises:: Error generating AI Response::",
+            error: error instanceof Error ? error.message : String(error),
           });
         }
       }
 
-      logger.info(
-        `extractPromises:: Extracted ${processedDocs.length} documents`
-      );
+      logger.info({
+        message: `extractPromises:: Extracted ${processedDocs.length} documents`,
+      });
 
       return {
         output: {},
       };
     } catch (error) {
-      logger.error("Error:", { error });
+      logger.error({
+        message: "Error:",
+        error: error instanceof Error ? error.message : String(error),
+      });
       throw error;
     }
   },

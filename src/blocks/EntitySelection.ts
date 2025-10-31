@@ -16,6 +16,12 @@ export const EntitySelection: Block = {
   },
   fields: [
     {
+      name: "title",
+      type: "text",
+      required: true,
+      defaultValue: "Select an entity to view their promises",
+    },
+    {
       name: "emptyTitle",
       type: "text",
       required: true,

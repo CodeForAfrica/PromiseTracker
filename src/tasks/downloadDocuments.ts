@@ -40,7 +40,8 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
 
       for (const doc of documents) {
         try {
-          logger.info("downloadDocuments:: Processing document", {
+          logger.info({
+            message: "downloadDocuments:: Processing document",
             title: doc.title,
           });
           const { url, docURLs } = doc;
@@ -51,7 +52,8 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
           ).filter((candidate): candidate is string => Boolean(candidate));
 
           if (urlsToFetch.length === 0) {
-            logger.warn("downloadDocuments:: Document has no URL", {
+            logger.warn({
+              message: "downloadDocuments:: Document has no URL",
               title: doc.title,
             });
             continue;
@@ -71,7 +73,8 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
               files.push(mediaUpload);
               await unlink(filePath);
             } catch (downloadError) {
-              logger.warn("downloadDocuments:: Failed to download URL", {
+              logger.warn({
+                message: "downloadDocuments:: Failed to download URL",
                 title: doc.title,
                 url: fileUrl,
                 error:
@@ -83,12 +86,11 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
           }
 
           if (files.length === 0) {
-            logger.warn(
-              "downloadDocuments:: No files were downloaded for document",
-              {
-                title: doc.title,
-              }
-            );
+            logger.warn({
+              message:
+                "downloadDocuments:: No files were downloaded for document",
+              title: doc.title,
+            });
             continue;
           }
 
@@ -100,12 +102,14 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
             },
           });
 
-          logger.info("downloadDocuments:: Document processed successfully", {
+          logger.info({
+            message: "downloadDocuments:: Document processed successfully",
             title: doc.title,
           });
           processedDocs.push({ id: doc.id });
         } catch (docError) {
-          logger.error("downloadDocuments:: Error processing document", {
+          logger.error({
+            message: "downloadDocuments:: Error processing document",
             id: doc.id,
             error:
               docError instanceof Error ? docError.message : String(docError),
@@ -120,7 +124,8 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
         output: {},
       };
     } catch (error) {
-      logger.error("downloadDocuments:: Error in document download task", {
+      logger.error({
+        message: "downloadDocuments:: Error in document download task",
         error: error instanceof Error ? error.message : String(error),
       });
       throw error;
