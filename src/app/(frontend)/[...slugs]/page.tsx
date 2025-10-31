@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
   const politicalEntities = await getPoliticalEntitiesByTenant(tenant);
   const [maybePoliticalEntitySlug, pageSlugCandidate] = slugs;
   const politicalEntity = politicalEntities.find(
-    (entity) => entity.slug === maybePoliticalEntitySlug
+    (entity) => entity.slug === maybePoliticalEntitySlug,
   );
 
   if (!politicalEntity) {
@@ -86,12 +86,22 @@ export default async function Page(params: Args) {
 
   const tenant = await getTenantBySubDomain(subdomain);
 
-  if (!tenant) {
-    return <CommonHomePage />;
-  }
-
   const { title, description, navigation, footer } =
     await getTenantNavigation(tenant);
+
+  if (!tenant) {
+    return (
+      <>
+        <Navigation
+          title={title}
+          {...navigation}
+          tenantSelectionHref={tenantSelectionHref}
+        />
+        <CommonHomePage />
+        <Footer title={title} description={description} {...footer} />
+      </>
+    );
+  }
 
   const paramsValue = await params.params;
   const slugs = paramsValue?.slugs ?? [];
@@ -100,7 +110,7 @@ export default async function Page(params: Args) {
   const politicalEntities = await getPoliticalEntitiesByTenant(tenant);
 
   const politicalEntity = politicalEntities.find(
-    (entity) => entity.slug === maybePoliticalEntitySlug
+    (entity) => entity.slug === maybePoliticalEntitySlug,
   );
 
   if (!politicalEntity) {
@@ -109,10 +119,10 @@ export default async function Page(params: Args) {
       if (onlyEntity) {
         const fallbackPageSlugs = slugs.length > 0 ? slugs : ["index"];
         const sanitizedPageSlugs = fallbackPageSlugs.filter(
-          (slug) => slug && slug !== "index"
+          (slug) => slug && slug !== "index",
         );
         const segments = [onlyEntity.slug, ...sanitizedPageSlugs].filter(
-          Boolean
+          Boolean,
         );
         const targetPath = segments.length > 0 ? `/${segments.join("/")}` : "/";
         redirect(targetPath);
@@ -127,7 +137,7 @@ export default async function Page(params: Args) {
       (block) =>
         block.blockType === "entity-selection"
           ? { ...block, pageSlugs: fallbackPageSlugs }
-          : block
+          : block,
     );
 
     return (

@@ -12,16 +12,22 @@ import type {
   Media,
   NewsletterBlock as NewsletterBlockProps,
 } from "@/payload-types";
+import { getGlobalPayload } from "@/lib/payload";
+
+const payload = await getGlobalPayload();
 
 const Newsletter = async ({ image }: NewsletterBlockProps) => {
   const { subdomain } = await getDomain();
   const tenant = await getTenantBySubDomain(subdomain);
-
+  let siteSettings;
   if (!tenant) {
-    return null;
+    siteSettings = await payload.findGlobal({
+      slug: "home-page",
+    });
+  } else {
+    siteSettings = await getTenantSiteSettings(tenant);
   }
 
-  const siteSettings = await getTenantSiteSettings(tenant);
   const newsletter = siteSettings?.newsletter;
 
   if (!newsletter) {
