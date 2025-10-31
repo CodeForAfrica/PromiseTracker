@@ -57,8 +57,9 @@ export const FetchPromiseStatuses: TaskConfig<"fetchPromiseStatuses"> = {
         output: { created },
       };
     } catch (error) {
-      logger.error("fetchPromiseStatuses:: Failed to fetch/save statuses", {
-        error,
+      logger.error({
+        message: "fetchPromiseStatuses:: Failed to fetch/save statuses",
+        error: error instanceof Error ? error.message : String(error),
       });
       throw error;
     }

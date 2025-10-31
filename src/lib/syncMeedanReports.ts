@@ -104,7 +104,7 @@ export const syncMeedanReports = async ({
     }))
     .filter((report) => {
       if (!report.meedanId) {
-        logger.warn?.("syncMeedanReports:: Report missing Meedan ID, skipping");
+        logger.warn("syncMeedanReports:: Report missing Meedan ID, skipping");
         return false;
       }
       return true;
@@ -173,13 +173,12 @@ export const syncMeedanReports = async ({
       documentCache.set(value, doc);
       return doc;
     } catch (error) {
-      logger.warn?.(
-        "syncMeedanReports:: Failed to resolve document for AI extraction",
-        {
-          documentId: value,
-          error: error instanceof Error ? error.message : String(error ?? ""),
-        }
-      );
+      logger.warn({
+        message:
+          "syncMeedanReports:: Failed to resolve document for AI extraction",
+        documentId: value,
+        error: error instanceof Error ? error.message : String(error ?? ""),
+      });
       documentCache.set(value, null);
       return null;
     }
@@ -244,7 +243,8 @@ export const syncMeedanReports = async ({
 
       return mediaId ?? null;
     } catch (error) {
-      logger.warn?.("syncMeedanReports:: Failed to cache image", {
+      logger.warn({
+        message: "syncMeedanReports:: Failed to cache image",
         url,
         error: error instanceof Error ? error.message : String(error ?? ""),
       });
@@ -254,7 +254,8 @@ export const syncMeedanReports = async ({
         try {
           await unlink(filePath);
         } catch (cleanupError) {
-          logger.warn?.("syncMeedanReports:: Failed to remove temp image", {
+          logger.warn({
+            message: "syncMeedanReports:: Failed to remove temp image",
             url,
             error:
               cleanupError instanceof Error
@@ -281,7 +282,8 @@ export const syncMeedanReports = async ({
       mediaCache.set(id, mediaDoc);
       return mediaDoc;
     } catch (error) {
-      logger.warn?.("syncMeedanReports:: Failed to resolve media", {
+      logger.warn({
+        message: "syncMeedanReports:: Failed to resolve media",
         mediaId: id,
         error: error instanceof Error ? error.message : String(error ?? ""),
       });
@@ -351,7 +353,8 @@ export const syncMeedanReports = async ({
       const statusDoc = statusQuery.docs[0];
 
       if (!statusDoc) {
-        logger.warn?.("syncMeedanReports:: Missing status mapping", {
+        logger.warn({
+          message: "syncMeedanReports:: Missing status mapping",
           meedanStatus: statusValue,
         });
       } else {
@@ -368,7 +371,8 @@ export const syncMeedanReports = async ({
       extractionPoliticalEntityId ?? existingData?.politicalEntity ?? null;
 
     if (!politicalEntityId) {
-      logger.warn?.("syncMeedanReports:: Unable to resolve political entity", {
+      logger.warn({
+        message: "syncMeedanReports:: Unable to resolve political entity",
         meedanId: report.meedanId,
       });
     }
@@ -389,7 +393,8 @@ export const syncMeedanReports = async ({
         },
       });
       created += 1;
-      logger.info?.("syncMeedanReports:: Created promise", {
+      logger.info({
+        message: "syncMeedanReports:: Created promise",
         meedanId: report.meedanId,
       });
       continue;
@@ -408,7 +413,8 @@ export const syncMeedanReports = async ({
     });
 
     updated += 1;
-    logger.info?.("syncMeedanReports:: Updated promise", {
+    logger.info({
+      message: "syncMeedanReports:: Updated promise",
       meedanId: report.meedanId,
     });
   }

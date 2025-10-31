@@ -96,10 +96,11 @@ export const FetchAirtableDocuments: TaskConfig<"fetchAirtableDocuments"> = {
         output: {},
       };
     } catch (error) {
-      logger.error(
-        "fetchAirtableDocuments:: Error Fetching Document from AIrtable",
-        { error }
-      );
+      logger.error({
+        message:
+          "fetchAirtableDocuments:: Error Fetching Document from AIrtable",
+        error: error instanceof Error ? error.message : String(error),
+      });
       throw error;
     }
   },

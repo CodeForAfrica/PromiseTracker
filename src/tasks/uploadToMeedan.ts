@@ -123,13 +123,11 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
           const returnedStatus =
             response.data.createProjectMedia.project_media.status;
 
-          logger.info(
-            `uploadToMeedan:: Successfully uploaded extraction ${extraction.uniqueId} to CheckMedia`,
-            {
-              checkMediaId,
-              checkMediaURL,
-            }
-          );
+          logger.info({
+            message: `uploadToMeedan:: Successfully uploaded extraction ${extraction.uniqueId} to CheckMedia`,
+            checkMediaId,
+            checkMediaURL,
+          });
 
           let statusRelationId: string | undefined;
           if (returnedStatus) {
@@ -179,7 +177,10 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
         output: {},
       };
     } catch (error) {
-      logger.error("uploadToMeedan::  Uploading to Meedan failed:", { error });
+      logger.error({
+        message: "uploadToMeedan::  Uploading to Meedan failed:",
+        error: error instanceof Error ? error.message : String(error),
+      });
       throw error;
     }
   },

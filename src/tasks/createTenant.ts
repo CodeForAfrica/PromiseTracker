@@ -67,10 +67,11 @@ export const CreateTenantFromAirtable: TaskConfig<"createTenantFromAirtable"> =
           }
         }
       } catch (error) {
-        logger.error(
-          "createTenantFromAirtable:: Error Fetching Document from AIrtable",
-          { error }
-        );
+        logger.error({
+          message:
+            "createTenantFromAirtable:: Error Fetching Document from AIrtable",
+          error: error instanceof Error ? error.message : String(error ?? ""),
+        });
       }
 
       return {

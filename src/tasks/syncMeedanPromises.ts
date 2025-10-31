@@ -36,7 +36,10 @@ export const SyncMeedanPromises: TaskConfig<"syncMeedanPromises"> = {
       reports,
     });
 
-    logger.info("syncMeedanPromises:: Completed", result);
+    logger.info({
+      message: "syncMeedanPromises:: Completed",
+      result,
+    });
 
     return {
       output: result,

@@ -51,7 +51,8 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
         return { output: {} };
       }
 
-      logger.info("extractDocuments:: Documents to extract", {
+      logger.info({
+        message: "extractDocuments:: Documents to extract",
         count: documents.length,
       });
 
@@ -60,7 +61,8 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
       for (const doc of documents) {
         try {
           if (!doc.files?.length) {
-            logger.warn("extractDocuments:: Document has no file attachment", {
+            logger.warn({
+              message: "extractDocuments:: Document has no file attachment",
               id: doc.id,
             });
             continue;
@@ -90,35 +92,31 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
                 console.log(`Tempfilepath: ${tempFilePath}`);
                 fileInput = tempFilePath;
 
-                logger.info(
-                  "extractDocuments:: Downloaded file from remote storage",
-                  {
-                    id: doc.id,
-                    fileId: file.id,
-                  }
-                );
+                logger.info({
+                  message:
+                    "extractDocuments:: Downloaded file from remote storage",
+                  id: doc.id,
+                  fileId: file.id,
+                });
               } catch (downloadError) {
-                logger.error(
-                  "extractDocuments:: Error downloading remote file",
-                  {
-                    id: doc.id,
-                    fileId: file.id,
-                    error:
-                      downloadError instanceof Error
-                        ? downloadError.message
-                        : String(downloadError),
-                  }
-                );
+                logger.error({
+                  message: "extractDocuments:: Error downloading remote file",
+                  id: doc.id,
+                  fileId: file.id,
+                  error:
+                    downloadError instanceof Error
+                      ? downloadError.message
+                      : String(downloadError),
+                });
                 continue;
               }
             } else {
-              logger.warn(
-                "extractDocuments:: File unavailable locally and has no URL",
-                {
-                  id: doc.id,
-                  fileId: file.id,
-                }
-              );
+              logger.warn({
+                message:
+                  "extractDocuments:: File unavailable locally and has no URL",
+                id: doc.id,
+                fileId: file.id,
+              });
               continue;
             }
 
@@ -126,16 +124,15 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
               const extractedText = await extractTextFromDoc(fileInput);
 
               if (extractedText.length === 0) {
-                logger.warn(
-                  "extractDocuments:: No text extracted from document",
-                  {
-                    id: doc.id,
-                  }
-                );
+                logger.warn({
+                  message: "extractDocuments:: No text extracted from document",
+                  id: doc.id,
+                });
                 continue;
               }
 
-              logger.info("extractDocuments:: Successfully extracted text", {
+              logger.info({
+                message: "extractDocuments:: Successfully extracted text",
                 id: doc.id,
                 textLength: extractedText.join("\n").length,
               });
@@ -160,7 +157,8 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
                 try {
                   await unlink(tempFilePath);
                 } catch (cleanupError) {
-                  logger.warn("extractDocuments:: Failed to delete temp file", {
+                  logger.warn({
+                    message: "extractDocuments:: Failed to delete temp file",
                     id: doc.id,
                     fileId: file.id,
                     error:
@@ -174,10 +172,11 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
           }
 
           if (!hasExtractedText) {
-            logger.warn(
-              "extractDocuments:: Skipping document update - no readable text",
-              { id: doc.id }
-            );
+            logger.warn({
+              message:
+                "extractDocuments:: Skipping document update - no readable text",
+              id: doc.id,
+            });
             continue;
           }
 
@@ -195,23 +194,22 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
             id: doc.id,
           });
 
-          logger.info(
-            "extractDocuments:: Updated document with extracted text",
-            { id: doc.id }
-          );
+          logger.info({
+            message: "extractDocuments:: Updated document with extracted text",
+            id: doc.id,
+          });
         } catch (docError) {
-          logger.error(
-            "extractDocuments:: Error processing individual document",
-            {
-              id: doc.id,
-              error:
-                docError instanceof Error ? docError.message : String(docError),
-            }
-          );
+          logger.error({
+            message: "extractDocuments:: Error processing individual document",
+            id: doc.id,
+            error:
+              docError instanceof Error ? docError.message : String(docError),
+          });
         }
       }
 
-      logger.info("extractDocuments:: Text extraction completed", {
+      logger.info({
+        message: "extractDocuments:: Text extraction completed",
         processed: processedDocs.length,
         total: documents.length,
       });
@@ -220,8 +218,9 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
         output: {},
       };
     } catch (error) {
-      logger.error("extractDocuments:: Error in document extraction task", {
-        error,
+      logger.error({
+        message: "extractDocuments:: Error in document extraction task",
+        error: error instanceof Error ? error.message : String(error),
       });
       throw error;
     }
