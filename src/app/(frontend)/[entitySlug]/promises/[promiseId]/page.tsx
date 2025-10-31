@@ -3,7 +3,8 @@ import NextLink from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Box, Container, Grid, Typography } from "@mui/material";
+import { Box, Container, Grid, Stack, Typography, Button } from "@mui/material";
+import ArrowBackIosNewRoundedIcon from "@mui/icons-material/ArrowBackIosNewRounded";
 
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -228,6 +229,7 @@ export default async function PromiseDetailPage({
   );
 
   const image = await resolveMedia(promise.image ?? null);
+  const entityImage = await resolveMedia(entity.image ?? null);
   const titleText = promise.title?.trim() || "Promise";
   const descriptionText = promise.description?.trim() || null;
   const timelineStatus = {
@@ -246,66 +248,59 @@ export default async function PromiseDetailPage({
         tenantSelectionHref={tenantSelectionHref}
       />
       <Box component="article" sx={{ bgcolor: "background.default" }}>
-        <Box sx={{ bgcolor: "secondary.light" }}>
-          <Container
-            disableGutters
-            maxWidth="lg"
-            sx={{
-              px: { xs: 3, lg: 0 },
-              py: { xs: 4, lg: 6 },
-            }}
-          >
-            <PromiseTimeline
-              status={timelineStatus}
-              statusHistory={timelineStatusHistory}
-              events={[]}
-              interval={timelineInterval}
-              sx={{ height: { xs: 120, lg: 140 } }}
-            />
-          </Container>
-        </Box>
         <Container
           disableGutters
           maxWidth="lg"
           sx={{
             width: "100%",
             px: { xs: 3, lg: 0 },
-            py: { xs: 6, lg: 10 },
+            py: { xs: 6, lg: 8 },
           }}
         >
-          <Grid container spacing={{ xs: 6, lg: 8 }} alignItems="flex-start">
-            <Grid size={{ xs: 12, lg: 8 }}>
-              <Typography
-                variant="overline"
+          <Stack spacing={{ xs: 4, lg: 6 }}>
+            <Stack spacing={2} sx={{ maxWidth: { lg: "50%" } }}>
+              <Button
+                component={NextLink}
+                href={`/${entity.slug}/promises`}
+                startIcon={
+                  <ArrowBackIosNewRoundedIcon
+                    fontSize="small"
+                    sx={{ transform: "translateY(-1px)" }}
+                  />
+                }
                 sx={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 1,
-                  fontWeight: 700,
-                  letterSpacing: 2,
-                  textTransform: "uppercase",
-                  color: "#202020",
+                  alignSelf: "flex-start",
+                  px: 0,
+                  color: "text.primary",
+                  fontWeight: 600,
+                  textTransform: "none",
+                  "&:hover": {
+                    backgroundColor: "transparent",
+                    textDecoration: "underline",
+                  },
                 }}
               >
-                <Box
-                  component={NextLink}
-                  href={`/${entity.slug}/promises`}
+                {entity.name}
+              </Button>
+              {statusDoc ? (
+                <PromiseStatus
+                  {...statusDoc}
                   sx={{
-                    color: "inherit",
-                    textDecoration: "none",
+                    mt: 0,
+                    px: 4,
+                    py: 1.5,
+                    fontSize: 12,
+                    letterSpacing: 1.6,
+                    alignSelf: "flex-start",
                   }}
-                >
-                  Promises
-                </Box>
-              </Typography>
+                />
+              ) : null}
               <Typography
                 component="h1"
                 sx={{
                   typography: { xs: "h3", lg: "h1" },
                   fontWeight: 600,
                   lineHeight: 1.1,
-                  mt: 2,
-                  mb: { xs: 4, lg: 5 },
                   position: "relative",
                   "&::after": {
                     content: '""',
@@ -319,109 +314,75 @@ export default async function PromiseDetailPage({
               >
                 {titleText}
               </Typography>
-              {image ? (
-                <Box
-                  component="figure"
-                  sx={{
-                    position: "relative",
-                    m: 0,
-                    width: "100%",
-                    overflow: "hidden",
-                    border: {
-                      xs: `6px solid ${statusColor}`,
-                      lg: `10px solid ${statusColor}`,
-                    },
-                    borderRadius: 0,
-                    aspectRatio: { xs: "4 / 3", lg: "3 / 2" },
-                    mb: { xs: 4, lg: 6 },
-                  }}
-                >
-                  <Image
-                    src={image.url}
-                    alt={image.alt || titleText}
-                    fill
-                    style={{ objectFit: "cover" }}
-                  />
-                </Box>
-              ) : null}
-              <ActNowCard {...actNow} sx={{ width: "100%" }} />
-              {statusDoc ? (
-                <Box
-                  sx={{
-                    display: { xs: "flex", lg: "none" },
-                    justifyContent: "center",
-                    mb: 4,
-                  }}
-                >
-                  <PromiseStatus
-                    {...statusDoc}
+            </Stack>
+
+            <Grid container spacing={{ xs: 6, lg: 8 }} alignItems="stretch">
+              <Grid size={{ xs: 12, lg: 6 }}>
+                {image ? (
+                  <Box
+                    component="figure"
                     sx={{
-                      mt: 0,
-                      px: 5,
-                      py: 2,
-                      fontSize: { xs: 10, sm: 12 },
-                      letterSpacing: 1.6,
-                    }}
-                  />
-                </Box>
-              ) : null}
-              {descriptionText ? (
-                <Typography
-                  variant="body1"
-                  sx={{
-                    mt: { xs: 4, lg: 5 },
-                    color: "text.primary",
-                    whiteSpace: "pre-line",
-                  }}
-                >
-                  {descriptionText}
-                </Typography>
-              ) : null}
-            </Grid>
-            <Grid size={{ xs: 12, lg: 4 }}>
-              {statusDoc ? (
-                <Box
-                  sx={{
-                    borderRadius: 0,
-                    bgcolor: "#ffffff",
-                    pt: 4,
-                    pb: 5,
-                    px: 5,
-                    maxWidth: { lg: 320 },
-                    ml: { lg: "auto" },
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: 3,
-                  }}
-                >
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      fontSize: { xs: "0.875rem", lg: "1rem" },
-                      fontWeight: 600,
-                      letterSpacing: 1.5,
-                      textTransform: "uppercase",
-                      color: "#202020",
+                      position: "relative",
+                      m: 0,
+                      width: "100%",
+                      overflow: "hidden",
+                      border: {
+                        xs: `6px solid ${statusColor}`,
+                        lg: `10px solid ${statusColor}`,
+                      },
+                      borderRadius: 0,
+                      aspectRatio: { xs: "4 / 3", lg: "3 / 2" },
                     }}
                   >
-                    Promise rating status:
-                  </Typography>
-                  <PromiseStatus
-                    {...statusDoc}
+                    <Image
+                      src={image.url}
+                      alt={image.alt || titleText}
+                      fill
+                      style={{ objectFit: "cover" }}
+                    />
+                  </Box>
+                ) : null}
+                {descriptionText ? (
+                  <Typography
+                    variant="body1"
                     sx={{
-                      mt: 0,
-                      px: 6,
-                      py: 2.4,
-                      fontSize: 12,
-                      letterSpacing: 1.6,
-                      borderRadius: 0,
+                      mt: { xs: 4, lg: 5 },
+                      color: "text.primary",
+                      whiteSpace: "pre-line",
                     }}
-                  />
-                </Box>
-              ) : null}
+                  >
+                    {descriptionText}
+                  </Typography>
+                ) : null}
+                <PromiseTimeline
+                  status={timelineStatus}
+                  statusHistory={timelineStatusHistory}
+                  events={[]}
+                  interval={timelineInterval}
+                  sx={{
+                    mt: { xs: 5, lg: 6 },
+                    width: "100%",
+                    maxWidth: "100%",
+                    minHeight: { xs: 120, sm: 140, lg: 160 },
+                  }}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, lg: 6 }}>
+                <ActNowCard
+                  {...actNow}
+                  entity={{
+                    name: entity.name,
+                    position: entity.position,
+                    region: entity.region ?? null,
+                    image: entityImage,
+                  }}
+                  sx={{
+                    width: "100%",
+                  }}
+                />
+              </Grid>
             </Grid>
-          </Grid>
+          </Stack>
         </Container>
       </Box>
       <Footer
