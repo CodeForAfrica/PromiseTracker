@@ -1,5 +1,6 @@
 import { ActNow } from "@/blocks/ActNow";
 import { EntitySelection } from "@/blocks/EntitySelection";
+import { EntityHero } from "@/blocks/Hero/EntityHero";
 import Newsletter from "@/blocks/Newsletter";
 import Partners from "@/blocks/Partners";
 import { TenantSelection } from "@/blocks/TenantSelector";
@@ -41,6 +42,7 @@ export const HomePage: GlobalConfig = {
               },
               fields: [
                 {
+                  localized: true,
                   name: "blocks",
                   type: "blocks",
                   required: true,
@@ -62,10 +64,17 @@ export const HomePage: GlobalConfig = {
               label: "",
               fields: [
                 {
+                  localized: true,
                   type: "blocks",
                   name: "blocks",
                   required: true,
-                  blocks: [ActNow, EntitySelection, Newsletter, Partners],
+                  blocks: [
+                    ActNow,
+                    EntitySelection,
+                    EntityHero,
+                    Newsletter,
+                    Partners,
+                  ],
                 },
               ],
             },

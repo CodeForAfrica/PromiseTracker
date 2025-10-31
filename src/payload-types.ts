@@ -1647,12 +1647,14 @@ export interface HomePage {
     blocks: (
       | ActNowBlock
       | {
+          title: string;
           emptyTitle: string;
           EmptySubtitle: string;
           id?: string | null;
           blockName?: string | null;
           blockType: 'entity-selection';
         }
+      | EntityHeroBlock
       | NewsletterBlock
       | {
           title: string;
@@ -1769,8 +1771,37 @@ export interface HomePage {
     description: string;
     embedCode: string;
   };
+  actNow: {
+    title: string;
+    share: {
+      title: string;
+      description: string;
+    };
+  };
   updatedAt?: string | null;
   createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "EntityHeroBlock".
+ */
+export interface EntityHeroBlock {
+  title: string;
+  description: string;
+  /**
+   * Select promise statuses to highlight in lists and hero sections.
+   */
+  statusGroups?:
+    | {
+        title: string;
+        color: string;
+        statuses: (string | PromiseStatus)[];
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'entity-hero';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1854,11 +1885,13 @@ export interface HomePageSelect<T extends boolean = true> {
               'entity-selection'?:
                 | T
                 | {
+                    title?: T;
                     emptyTitle?: T;
                     EmptySubtitle?: T;
                     id?: T;
                     blockName?: T;
                   };
+              'entity-hero'?: T | EntityHeroBlockSelect<T>;
               newsletter?: T | NewsletterBlockSelect<T>;
               partners?:
                 | T
@@ -1956,9 +1989,38 @@ export interface HomePageSelect<T extends boolean = true> {
         description?: T;
         embedCode?: T;
       };
+  actNow?:
+    | T
+    | {
+        title?: T;
+        share?:
+          | T
+          | {
+              title?: T;
+              description?: T;
+            };
+      };
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "EntityHeroBlock_select".
+ */
+export interface EntityHeroBlockSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  statusGroups?:
+    | T
+    | {
+        title?: T;
+        color?: T;
+        statuses?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
