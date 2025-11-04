@@ -54,9 +54,7 @@ export interface ActNowButtonCardProps {
   petition?: ActionContent;
   follow?: ActionContent;
   update?: ActionContent;
-  updateContent?: {
-    embedCode: string;
-  } | null;
+  updateEmbed?: string | null;
   entity?: EntitySummary | null;
   sx?: SxProps<Theme>;
 }
@@ -101,7 +99,7 @@ export const ActNowCard = ({
   petition,
   follow,
   update,
-  updateContent,
+  updateEmbed,
   entity,
   sx,
 }: ActNowButtonCardProps) => {
@@ -150,7 +148,7 @@ export const ActNowCard = ({
     );
   };
 
-  const embedCode = (updateContent?.embedCode ?? "").trim();
+  const embedCode = (updateEmbed ?? "").trim();
   const payloadConfigured = Boolean(embedCode);
 
   const updateButtonLabel = (update?.title ?? "").trim() || "Update";

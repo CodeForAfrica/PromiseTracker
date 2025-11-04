@@ -21,7 +21,7 @@ import {
 import { getPoliticalEntityBySlug } from "@/lib/data/politicalEntities";
 import { getPromiseById } from "@/lib/data/promises";
 import { resolveMedia } from "@/lib/data/media";
-import { getPromiseUpdateContent } from "@/lib/data/promiseUpdates";
+import { getPromiseUpdateEmbed } from "@/lib/data/promiseUpdates";
 import {
   buildSeoMetadata,
   getEntitySeo,
@@ -35,6 +35,23 @@ import type {
 
 const FALLBACK_STATUS_COLOR = "#909090";
 const FALLBACK_STATUS_TEXT_COLOR = "#202020";
+
+const prefillAirtableForm = (embedCode: string, promiseUrl: string) => {
+  if (!promiseUrl.trim()) {
+    return embedCode;
+  }
+
+  return embedCode.replace(/src="([^"]+)"/, (match, src) => {
+    try {
+      const url = new URL(src);
+      url.searchParams.set("prefill_Promise", promiseUrl);
+      return `src="${url.toString()}"`;
+    } catch (error) {
+      const separator = src.includes("?") ? "&" : "?";
+      return `src="${src}${separator}prefill_Promise=${encodeURIComponent(promiseUrl)}"`;
+    }
+  });
+};
 
 type Params = {
   entitySlug: string;
@@ -221,8 +238,12 @@ export default async function PromiseDetailPage({
       ]
     : [];
 
+  const promiseUrl = typeof promise.url === "string" ? promise.url : "";
+  const rawPromiseUpdateEmbed = await getPromiseUpdateEmbed();
   const siteSettings = await getTenantSiteSettings(tenant);
-  const promiseUpdateContent = await getPromiseUpdateContent();
+  const promiseUpdateEmbed = rawPromiseUpdateEmbed
+    ? prefillAirtableForm(rawPromiseUpdateEmbed, promiseUrl)
+    : null;
 
   const { actNow } = siteSettings || {};
   const timelineInterval = computeTimelineInterval(
@@ -372,7 +393,7 @@ export default async function PromiseDetailPage({
               <Grid size={{ xs: 12, lg: 6 }}>
                 <ActNowCard
                   {...actNow}
-                  updateContent={promiseUpdateContent}
+                  updateEmbed={promiseUpdateEmbed}
                   entity={{
                     name: entity.name,
                     position: entity.position,

@@ -2,21 +2,15 @@ import { getGlobalPayload } from "@/lib/payload";
 
 const payload = await getGlobalPayload();
 
-export const getPromiseUpdateContent = async () => {
+export const getPromiseUpdateEmbed = async () => {
   try {
-    const doc = await payload.findGlobal({
-      slug: "promise-updates",
-    });
-
+    const doc = await payload.findGlobal({ slug: "promise-updates" });
     const { embedCode } = doc;
 
-    return {
-      embedCode,
-    };
+    return embedCode;
   } catch (error) {
     payload.logger.error({
-      message:
-        "getPromiseUpdateContent:: Failed to load promise update content",
+      message: "getPromiseUpdateEmbed:: Failed to load promise update embed",
       error,
     });
     return null;
