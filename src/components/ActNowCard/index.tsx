@@ -22,8 +22,9 @@ import ShareIcon from "@mui/icons-material/Share";
 import FacebookIcon from "@mui/icons-material/Facebook";
 import InstagramIcon from "@mui/icons-material/Instagram";
 import LinkIcon from "@mui/icons-material/Link";
-import TwitterIcon from "@mui/icons-material/Twitter";
+import XIcon from "@mui/icons-material/X";
 import { WhatsApp } from "@mui/icons-material";
+import UpdateDialog from "./UpdateDialog";
 
 type ShareContent = {
   title?: string;
@@ -53,6 +54,7 @@ export interface ActNowButtonCardProps {
   petition?: ActionContent;
   follow?: ActionContent;
   update?: ActionContent;
+  updateEmbed?: string | null;
   entity?: EntitySummary | null;
   sx?: SxProps<Theme>;
 }
@@ -75,10 +77,7 @@ const shareIconButtonStyles: SxProps<Theme> = {
 };
 
 const getShareMetadata = (share?: ShareContent) => {
-  const currentUrl =
-    typeof window !== "undefined"
-      ? window.location.href
-      : "";
+  const currentUrl = typeof window !== "undefined" ? window.location.href : "";
 
   const pageTitle =
     share?.title ||
@@ -100,10 +99,12 @@ export const ActNowCard = ({
   petition,
   follow,
   update,
+  updateEmbed,
   entity,
   sx,
 }: ActNowButtonCardProps) => {
   const [shareOpen, setShareOpen] = useState(false);
+  const [updateOpen, setUpdateOpen] = useState(false);
 
   const handleCopyLink = async () => {
     const { rawUrl } = getShareMetadata(share);
@@ -123,7 +124,7 @@ export const ActNowCard = ({
     window.open(
       twitterUrl,
       "twitter-share",
-      "width=600,height=400,scrollbars=yes,resizable=yes",
+      "width=600,height=400,scrollbars=yes,resizable=yes"
     );
   };
 
@@ -133,7 +134,7 @@ export const ActNowCard = ({
     window.open(
       whatsappUrl,
       "whatsapp-share",
-      "width=600,height=400,scrollbars=yes,resizable=yes",
+      "width=600,height=400,scrollbars=yes,resizable=yes"
     );
   };
 
@@ -143,30 +144,42 @@ export const ActNowCard = ({
     window.open(
       facebookUrl,
       "facebook-share",
-      "width=600,height=400,scrollbars=yes,resizable=yes",
+      "width=600,height=400,scrollbars=yes,resizable=yes"
     );
+  };
+
+  const embedCode = (updateEmbed ?? "").trim();
+  const payloadConfigured = Boolean(embedCode);
+
+  const updateButtonLabel = (update?.title ?? "").trim() || "Update";
+
+  const handleOpenUpdate = () => {
+    if (!payloadConfigured) {
+      return;
+    }
+    setUpdateOpen(true);
+  };
+
+  const handleCloseUpdate = () => {
+    setUpdateOpen(false);
   };
 
   const disabledActions: Array<{
     label: string;
     icon: React.ReactNode;
   }> = [
-    {
-      label: connect?.title || "Connect",
-      icon: <AllInclusiveIcon />,
-    },
-    {
-      label: petition?.title || "Petition",
-      icon: <ChatBubbleOutlineIcon />,
-    },
-    {
-      label: follow?.title || "Follow",
-      icon: <ControlPointIcon />,
-    },
-    {
-      label: update?.title || "Update",
-      icon: <NotificationsNoneIcon />,
-    },
+    // {
+    //   label: connect?.title || "Connect",
+    //   icon: <AllInclusiveIcon />,
+    // },
+    // {
+    //   label: petition?.title || "Petition",
+    //   icon: <ChatBubbleOutlineIcon />,
+    // },
+    // {
+    //   label: follow?.title || "Follow",
+    //   icon: <ControlPointIcon />,
+    // },
   ];
 
   const avatarSrc = entity?.image?.url ?? undefined;
@@ -231,12 +244,32 @@ export const ActNowCard = ({
           </Tooltip>
         </Stack>
 
-       <Stack
+        <Stack
           direction={{ xs: "column", lg: "row" }}
           spacing={1}
           useFlexGap
           flexWrap="wrap"
         >
+          <Button
+            startIcon={<NotificationsNoneIcon />}
+            variant="contained"
+            onClick={handleOpenUpdate}
+            sx={{
+              ...baseButtonStyles,
+              backgroundColor: "text.primary",
+              color: "common.white",
+              "&:hover": {
+                backgroundColor: "text.primary",
+              },
+              "&.Mui-disabled": {
+                backgroundColor: "grey.400",
+                color: "common.white",
+              },
+            }}
+            disabled={!payloadConfigured}
+          >
+            {updateButtonLabel}
+          </Button>
           {disabledActions.map((action) => (
             <Button
               key={action.label}
@@ -297,7 +330,7 @@ export const ActNowCard = ({
                   sx={shareIconButtonStyles}
                   color="primary"
                 >
-                  <TwitterIcon />
+                  <XIcon />
                 </IconButton>
               </Tooltip>
               <Tooltip title="Share on WhatsApp">
@@ -322,6 +355,13 @@ export const ActNowCard = ({
           </Stack>
         </Collapse>
       </Stack>
+      {payloadConfigured ? (
+        <UpdateDialog
+          open={updateOpen}
+          onClose={handleCloseUpdate}
+          embedCode={embedCode}
+        />
+      ) : null}
     </Card>
   );
 };

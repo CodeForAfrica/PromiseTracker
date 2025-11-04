@@ -1,7 +1,7 @@
 import FacebookIcon from "@mui/icons-material/Facebook";
 import InstagramIcon from "@mui/icons-material/Instagram";
 import LinkIcon from "@mui/icons-material/Link";
-import TwitterIcon from "@mui/icons-material/Twitter";
+import XIcon from "@mui/icons-material/X";
 import { WhatsApp } from "@mui/icons-material";
 import { Box, IconButton } from "@mui/material";
 import React from "react";
@@ -76,7 +76,7 @@ function ShareCard({
     window.open(
       twitterUrl,
       "twitter-share",
-      "width=600,height=400,scrollbars=yes,resizable=yes",
+      "width=600,height=400,scrollbars=yes,resizable=yes"
     );
   };
 
@@ -86,7 +86,7 @@ function ShareCard({
     window.open(
       whatsappUrl,
       "whatsapp-share",
-      "width=600,height=400,scrollbars=yes,resizable=yes",
+      "width=600,height=400,scrollbars=yes,resizable=yes"
     );
   };
 
@@ -96,7 +96,7 @@ function ShareCard({
     window.open(
       facebookUrl,
       "facebook-share",
-      "width=600,height=400,scrollbars=yes,resizable=yes",
+      "width=600,height=400,scrollbars=yes,resizable=yes"
     );
   };
   return (
@@ -136,7 +136,7 @@ function ShareCard({
           color="primary"
           size="large"
         >
-          <TwitterIcon />
+          <XIcon />
         </IconButton>
         {/* Whatsapp */}
         <IconButton

@@ -107,11 +107,13 @@ export interface Config {
   globals: {
     'home-page': HomePage;
     settings: Setting;
+    'promise-updates': PromiseUpdate;
     'payload-jobs-stats': PayloadJobsStat;
   };
   globalsSelect: {
     'home-page': HomePageSelect<false> | HomePageSelect<true>;
     settings: SettingsSelect<false> | SettingsSelect<true>;
+    'promise-updates': PromiseUpdatesSelect<false> | PromiseUpdatesSelect<true>;
     'payload-jobs-stats': PayloadJobsStatsSelect<false> | PayloadJobsStatsSelect<true>;
   };
   locale: 'en' | 'fr';
@@ -1826,6 +1828,19 @@ export interface Setting {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promise-updates".
+ */
+export interface PromiseUpdate {
+  id: string;
+  /**
+   * Paste the Airtable embed snippet that should appear inside the update dialog.
+   */
+  embedCode: string;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-jobs-stats".
  */
 export interface PayloadJobsStat {
@@ -2045,6 +2060,16 @@ export interface SettingsSelect<T extends boolean = true> {
         meedanAPIKey?: T;
         teamId?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promise-updates_select".
+ */
+export interface PromiseUpdatesSelect<T extends boolean = true> {
+  embedCode?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
