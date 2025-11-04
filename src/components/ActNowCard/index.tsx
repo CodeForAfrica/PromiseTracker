@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import {
   Avatar,
   Box,
@@ -24,35 +24,7 @@ import InstagramIcon from "@mui/icons-material/Instagram";
 import LinkIcon from "@mui/icons-material/Link";
 import XIcon from "@mui/icons-material/X";
 import { WhatsApp } from "@mui/icons-material";
-import type {
-  PromiseUpdateContent,
-  PromiseUpdateQuestion,
-} from "@/types/promiseUpdates";
 import UpdateDialog from "./UpdateDialog";
-
-type UpdateFormState = Record<string, string>;
-
-const createInitialUpdateState = (
-  questions: PromiseUpdateQuestion[]
-): UpdateFormState =>
-  questions
-    .filter((question) => question.type !== "upload")
-    .reduce<UpdateFormState>((acc, question) => {
-      acc[question.id] = "";
-      return acc;
-    }, {});
-
-type UpdateFileState = Record<string, File[]>;
-
-const createInitialFileState = (
-  questions: PromiseUpdateQuestion[]
-): UpdateFileState =>
-  questions
-    .filter((question) => question.type === "upload")
-    .reduce<UpdateFileState>((acc, question) => {
-      acc[question.id] = [];
-      return acc;
-    }, {});
 
 type ShareContent = {
   title?: string;
@@ -82,7 +54,9 @@ export interface ActNowButtonCardProps {
   petition?: ActionContent;
   follow?: ActionContent;
   update?: ActionContent;
-  updateContent?: PromiseUpdateContent | null;
+  updateContent?: {
+    embedCode: string;
+  } | null;
   entity?: EntitySummary | null;
   sx?: SxProps<Theme>;
 }
@@ -134,32 +108,6 @@ export const ActNowCard = ({
   const [shareOpen, setShareOpen] = useState(false);
   const [updateOpen, setUpdateOpen] = useState(false);
 
-  const questions = useMemo<PromiseUpdateQuestion[]>(() => {
-    if (updateContent?.questions?.length) {
-      return updateContent.questions;
-    }
-    return [];
-  }, [updateContent]);
-
-  const hasQuestions = questions.length > 0;
-
-  const [updateForm, setUpdateForm] = useState<UpdateFormState>(() =>
-    createInitialUpdateState(questions)
-  );
-  const [fileAnswers, setFileAnswers] = useState<UpdateFileState>(() =>
-    createInitialFileState(questions)
-  );
-
-  useEffect(() => {
-    setUpdateForm(createInitialUpdateState(questions));
-    setFileAnswers(createInitialFileState(questions));
-  }, [questions]);
-
-  const resetUpdateForm = () => {
-    setUpdateForm(createInitialUpdateState(questions));
-    setFileAnswers(createInitialFileState(questions));
-  };
-
   const handleCopyLink = async () => {
     const { rawUrl } = getShareMetadata(share);
     if (!rawUrl) {
@@ -202,58 +150,20 @@ export const ActNowCard = ({
     );
   };
 
+  const embedCode = (updateContent?.embedCode ?? "").trim();
+  const payloadConfigured = Boolean(embedCode);
+
+  const updateButtonLabel = (update?.title ?? "").trim() || "Update";
+
   const handleOpenUpdate = () => {
-    if (!isUpdateEnabled) {
+    if (!payloadConfigured) {
       return;
     }
-    resetUpdateForm();
     setUpdateOpen(true);
   };
 
   const handleCloseUpdate = () => {
     setUpdateOpen(false);
-    resetUpdateForm();
-  };
-
-  const handleUpdateFieldChange =
-    (id: string) =>
-    (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      setUpdateForm((prev) => ({
-        ...prev,
-        [id]: event.target.value,
-      }));
-    };
-
-  const handleFileSelection = (questionId: string, files: FileList | null) => {
-    setFileAnswers((prev) => ({
-      ...prev,
-      [questionId]: files ? Array.from(files) : [],
-    }));
-  };
-
-  const handleFileInputChange =
-    (questionId: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
-      handleFileSelection(questionId, event.target.files);
-    };
-
-  const handleDrop =
-    (questionId: string) => (event: React.DragEvent<HTMLDivElement>) => {
-      event.preventDefault();
-      handleFileSelection(questionId, event.dataTransfer.files);
-    };
-
-  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-  };
-
-  const handleSubmitUpdate = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    console.info("Update submitted", {
-      answers: updateForm,
-      files: fileAnswers,
-    });
-    setUpdateOpen(false);
-    resetUpdateForm();
   };
 
   const disabledActions: Array<{
@@ -279,24 +189,6 @@ export const ActNowCard = ({
   const secondaryLine = [entity?.position, entity?.region]
     .filter(Boolean)
     .join(" · ");
-
-  const dialogTitle = (updateContent?.title ?? "").trim();
-  const dialogDescription = (updateContent?.description ?? "").trim();
-  const submitButtonText = (updateContent?.submitButtonText ?? "").trim();
-  const uploadDropLabel = (updateContent?.uploadDropLabel ?? "").trim();
-  const uploadBrowseLabel = (updateContent?.uploadBrowseLabel ?? "").trim();
-
-  const payloadConfigured = Boolean(
-    dialogTitle &&
-      dialogDescription &&
-      submitButtonText &&
-      uploadDropLabel &&
-      uploadBrowseLabel
-  );
-
-  const updateActionLabel = (update?.title ?? "").trim();
-  const updateButtonLabel = updateActionLabel || dialogTitle;
-  const isUpdateEnabled = hasQuestions && payloadConfigured;
 
   return (
     <Card
@@ -376,9 +268,9 @@ export const ActNowCard = ({
                 color: "common.white",
               },
             }}
-            disabled={!isUpdateEnabled}
+            disabled={!payloadConfigured}
           >
-            Update
+            {updateButtonLabel}
           </Button>
           {disabledActions.map((action) => (
             <Button
@@ -469,19 +361,7 @@ export const ActNowCard = ({
         <UpdateDialog
           open={updateOpen}
           onClose={handleCloseUpdate}
-          onSubmit={handleSubmitUpdate}
-          title={dialogTitle}
-          description={dialogDescription}
-          submitLabel={submitButtonText}
-          uploadDropLabel={uploadDropLabel}
-          uploadBrowseLabel={uploadBrowseLabel}
-          questions={questions}
-          answers={updateForm}
-          fileAnswers={fileAnswers}
-          onFieldChange={handleUpdateFieldChange}
-          onFileChange={handleFileInputChange}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
+          embedCode={embedCode}
         />
       ) : null}
     </Card>

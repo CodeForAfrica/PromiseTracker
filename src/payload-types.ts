@@ -1832,20 +1832,10 @@ export interface Setting {
  */
 export interface PromiseUpdate {
   id: string;
-  title: string;
-  description: string;
-  questions?:
-    | {
-        question: string;
-        description?: string | null;
-        required?: boolean | null;
-        type: 'text' | 'upload';
-        id?: string | null;
-      }[]
-    | null;
-  submitButtonText: string;
-  uploadDropLabel: string;
-  uploadBrowseLabel: string;
+  /**
+   * Paste the Airtable embed snippet that should appear inside the update dialog.
+   */
+  embedCode: string;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -2079,20 +2069,7 @@ export interface SettingsSelect<T extends boolean = true> {
  * via the `definition` "promise-updates_select".
  */
 export interface PromiseUpdatesSelect<T extends boolean = true> {
-  title?: T;
-  description?: T;
-  questions?:
-    | T
-    | {
-        question?: T;
-        description?: T;
-        required?: T;
-        type?: T;
-        id?: T;
-      };
-  submitButtonText?: T;
-  uploadDropLabel?: T;
-  uploadBrowseLabel?: T;
+  embedCode?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
