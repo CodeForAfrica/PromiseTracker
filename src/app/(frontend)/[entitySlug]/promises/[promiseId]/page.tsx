@@ -21,6 +21,7 @@ import {
 import { getPoliticalEntityBySlug } from "@/lib/data/politicalEntities";
 import { getPromiseById } from "@/lib/data/promises";
 import { resolveMedia } from "@/lib/data/media";
+import { getPromiseUpdateContent } from "@/lib/data/promiseUpdates";
 import {
   buildSeoMetadata,
   getEntitySeo,
@@ -221,6 +222,7 @@ export default async function PromiseDetailPage({
     : [];
 
   const siteSettings = await getTenantSiteSettings(tenant);
+  const promiseUpdateContent = await getPromiseUpdateContent();
 
   const { actNow } = siteSettings || {};
   const timelineInterval = computeTimelineInterval(
@@ -370,6 +372,7 @@ export default async function PromiseDetailPage({
               <Grid size={{ xs: 12, lg: 6 }}>
                 <ActNowCard
                   {...actNow}
+                  updateContent={promiseUpdateContent}
                   entity={{
                     name: entity.name,
                     position: entity.position,

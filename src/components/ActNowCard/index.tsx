@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Avatar,
   Box,
@@ -24,6 +24,35 @@ import InstagramIcon from "@mui/icons-material/Instagram";
 import LinkIcon from "@mui/icons-material/Link";
 import TwitterIcon from "@mui/icons-material/Twitter";
 import { WhatsApp } from "@mui/icons-material";
+import type {
+  PromiseUpdateContent,
+  PromiseUpdateQuestion,
+} from "@/types/promiseUpdates";
+import UpdateDialog from "./UpdateDialog";
+
+type UpdateFormState = Record<string, string>;
+
+const createInitialUpdateState = (
+  questions: PromiseUpdateQuestion[]
+): UpdateFormState =>
+  questions
+    .filter((question) => question.type !== "upload")
+    .reduce<UpdateFormState>((acc, question) => {
+      acc[question.id] = "";
+      return acc;
+    }, {});
+
+type UpdateFileState = Record<string, File[]>;
+
+const createInitialFileState = (
+  questions: PromiseUpdateQuestion[]
+): UpdateFileState =>
+  questions
+    .filter((question) => question.type === "upload")
+    .reduce<UpdateFileState>((acc, question) => {
+      acc[question.id] = [];
+      return acc;
+    }, {});
 
 type ShareContent = {
   title?: string;
@@ -53,6 +82,7 @@ export interface ActNowButtonCardProps {
   petition?: ActionContent;
   follow?: ActionContent;
   update?: ActionContent;
+  updateContent?: PromiseUpdateContent | null;
   entity?: EntitySummary | null;
   sx?: SxProps<Theme>;
 }
@@ -75,10 +105,7 @@ const shareIconButtonStyles: SxProps<Theme> = {
 };
 
 const getShareMetadata = (share?: ShareContent) => {
-  const currentUrl =
-    typeof window !== "undefined"
-      ? window.location.href
-      : "";
+  const currentUrl = typeof window !== "undefined" ? window.location.href : "";
 
   const pageTitle =
     share?.title ||
@@ -100,10 +127,38 @@ export const ActNowCard = ({
   petition,
   follow,
   update,
+  updateContent,
   entity,
   sx,
 }: ActNowButtonCardProps) => {
   const [shareOpen, setShareOpen] = useState(false);
+  const [updateOpen, setUpdateOpen] = useState(false);
+
+  const questions = useMemo<PromiseUpdateQuestion[]>(() => {
+    if (updateContent?.questions?.length) {
+      return updateContent.questions;
+    }
+    return [];
+  }, [updateContent]);
+
+  const hasQuestions = questions.length > 0;
+
+  const [updateForm, setUpdateForm] = useState<UpdateFormState>(() =>
+    createInitialUpdateState(questions)
+  );
+  const [fileAnswers, setFileAnswers] = useState<UpdateFileState>(() =>
+    createInitialFileState(questions)
+  );
+
+  useEffect(() => {
+    setUpdateForm(createInitialUpdateState(questions));
+    setFileAnswers(createInitialFileState(questions));
+  }, [questions]);
+
+  const resetUpdateForm = () => {
+    setUpdateForm(createInitialUpdateState(questions));
+    setFileAnswers(createInitialFileState(questions));
+  };
 
   const handleCopyLink = async () => {
     const { rawUrl } = getShareMetadata(share);
@@ -123,7 +178,7 @@ export const ActNowCard = ({
     window.open(
       twitterUrl,
       "twitter-share",
-      "width=600,height=400,scrollbars=yes,resizable=yes",
+      "width=600,height=400,scrollbars=yes,resizable=yes"
     );
   };
 
@@ -133,7 +188,7 @@ export const ActNowCard = ({
     window.open(
       whatsappUrl,
       "whatsapp-share",
-      "width=600,height=400,scrollbars=yes,resizable=yes",
+      "width=600,height=400,scrollbars=yes,resizable=yes"
     );
   };
 
@@ -143,8 +198,62 @@ export const ActNowCard = ({
     window.open(
       facebookUrl,
       "facebook-share",
-      "width=600,height=400,scrollbars=yes,resizable=yes",
+      "width=600,height=400,scrollbars=yes,resizable=yes"
     );
+  };
+
+  const handleOpenUpdate = () => {
+    if (!isUpdateEnabled) {
+      return;
+    }
+    resetUpdateForm();
+    setUpdateOpen(true);
+  };
+
+  const handleCloseUpdate = () => {
+    setUpdateOpen(false);
+    resetUpdateForm();
+  };
+
+  const handleUpdateFieldChange =
+    (id: string) =>
+    (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setUpdateForm((prev) => ({
+        ...prev,
+        [id]: event.target.value,
+      }));
+    };
+
+  const handleFileSelection = (questionId: string, files: FileList | null) => {
+    setFileAnswers((prev) => ({
+      ...prev,
+      [questionId]: files ? Array.from(files) : [],
+    }));
+  };
+
+  const handleFileInputChange =
+    (questionId: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
+      handleFileSelection(questionId, event.target.files);
+    };
+
+  const handleDrop =
+    (questionId: string) => (event: React.DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      handleFileSelection(questionId, event.dataTransfer.files);
+    };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+  };
+
+  const handleSubmitUpdate = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    console.info("Update submitted", {
+      answers: updateForm,
+      files: fileAnswers,
+    });
+    setUpdateOpen(false);
+    resetUpdateForm();
   };
 
   const disabledActions: Array<{
@@ -163,10 +272,6 @@ export const ActNowCard = ({
       label: follow?.title || "Follow",
       icon: <ControlPointIcon />,
     },
-    {
-      label: update?.title || "Update",
-      icon: <NotificationsNoneIcon />,
-    },
   ];
 
   const avatarSrc = entity?.image?.url ?? undefined;
@@ -174,6 +279,24 @@ export const ActNowCard = ({
   const secondaryLine = [entity?.position, entity?.region]
     .filter(Boolean)
     .join(" · ");
+
+  const dialogTitle = (updateContent?.title ?? "").trim();
+  const dialogDescription = (updateContent?.description ?? "").trim();
+  const submitButtonText = (updateContent?.submitButtonText ?? "").trim();
+  const uploadDropLabel = (updateContent?.uploadDropLabel ?? "").trim();
+  const uploadBrowseLabel = (updateContent?.uploadBrowseLabel ?? "").trim();
+
+  const payloadConfigured = Boolean(
+    dialogTitle &&
+      dialogDescription &&
+      submitButtonText &&
+      uploadDropLabel &&
+      uploadBrowseLabel
+  );
+
+  const updateActionLabel = (update?.title ?? "").trim();
+  const updateButtonLabel = updateActionLabel || dialogTitle;
+  const isUpdateEnabled = hasQuestions && payloadConfigured;
 
   return (
     <Card
@@ -231,12 +354,32 @@ export const ActNowCard = ({
           </Tooltip>
         </Stack>
 
-       <Stack
+        <Stack
           direction={{ xs: "column", lg: "row" }}
           spacing={1}
           useFlexGap
           flexWrap="wrap"
         >
+          <Button
+            startIcon={<NotificationsNoneIcon />}
+            variant="contained"
+            onClick={handleOpenUpdate}
+            sx={{
+              ...baseButtonStyles,
+              backgroundColor: "text.primary",
+              color: "common.white",
+              "&:hover": {
+                backgroundColor: "text.primary",
+              },
+              "&.Mui-disabled": {
+                backgroundColor: "grey.400",
+                color: "common.white",
+              },
+            }}
+            disabled={!isUpdateEnabled}
+          >
+            Update
+          </Button>
           {disabledActions.map((action) => (
             <Button
               key={action.label}
@@ -322,6 +465,25 @@ export const ActNowCard = ({
           </Stack>
         </Collapse>
       </Stack>
+      {payloadConfigured ? (
+        <UpdateDialog
+          open={updateOpen}
+          onClose={handleCloseUpdate}
+          onSubmit={handleSubmitUpdate}
+          title={dialogTitle}
+          description={dialogDescription}
+          submitLabel={submitButtonText}
+          uploadDropLabel={uploadDropLabel}
+          uploadBrowseLabel={uploadBrowseLabel}
+          questions={questions}
+          answers={updateForm}
+          fileAnswers={fileAnswers}
+          onFieldChange={handleUpdateFieldChange}
+          onFileChange={handleFileInputChange}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+        />
+      ) : null}
     </Card>
   );
 };
