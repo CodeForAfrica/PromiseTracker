@@ -168,18 +168,18 @@ export const ActNowCard = ({
     label: string;
     icon: React.ReactNode;
   }> = [
-    {
-      label: connect?.title || "Connect",
-      icon: <AllInclusiveIcon />,
-    },
-    {
-      label: petition?.title || "Petition",
-      icon: <ChatBubbleOutlineIcon />,
-    },
-    {
-      label: follow?.title || "Follow",
-      icon: <ControlPointIcon />,
-    },
+    // {
+    //   label: connect?.title || "Connect",
+    //   icon: <AllInclusiveIcon />,
+    // },
+    // {
+    //   label: petition?.title || "Petition",
+    //   icon: <ChatBubbleOutlineIcon />,
+    // },
+    // {
+    //   label: follow?.title || "Follow",
+    //   icon: <ControlPointIcon />,
+    // },
   ];
 
   const avatarSrc = entity?.image?.url ?? undefined;
