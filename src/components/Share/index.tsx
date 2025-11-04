@@ -14,7 +14,7 @@ import {
 import ShareOutlinedIcon from "@mui/icons-material/ShareOutlined";
 import FacebookIcon from "@mui/icons-material/Facebook";
 import LinkedInIcon from "@mui/icons-material/LinkedIn";
-import TwitterIcon from "@mui/icons-material/Twitter";
+import XIcon from "@mui/icons-material/X";
 import React, { useMemo, useState } from "react";
 import {
   FacebookShareButton,
@@ -104,7 +104,7 @@ export const Share = ({
                     url={shareUrl}
                     onClick={handleShareClick("twitter")}
                   >
-                    <TwitterIcon fontSize="small" />
+                    <XIcon fontSize="small" />
                   </TwitterShareButton>
                   <FacebookShareButton
                     content={title}

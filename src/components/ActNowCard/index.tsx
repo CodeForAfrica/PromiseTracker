@@ -22,7 +22,7 @@ import ShareIcon from "@mui/icons-material/Share";
 import FacebookIcon from "@mui/icons-material/Facebook";
 import InstagramIcon from "@mui/icons-material/Instagram";
 import LinkIcon from "@mui/icons-material/Link";
-import TwitterIcon from "@mui/icons-material/Twitter";
+import XIcon from "@mui/icons-material/X";
 import { WhatsApp } from "@mui/icons-material";
 import type {
   PromiseUpdateContent,
@@ -440,7 +440,7 @@ export const ActNowCard = ({
                   sx={shareIconButtonStyles}
                   color="primary"
                 >
-                  <TwitterIcon />
+                  <XIcon />
                 </IconButton>
               </Tooltip>
               <Tooltip title="Share on WhatsApp">
