@@ -1,11 +1,14 @@
+"use client";
+
 import FacebookIcon from "@mui/icons-material/Facebook";
 import InstagramIcon from "@mui/icons-material/Instagram";
 import LinkIcon from "@mui/icons-material/Link";
 import XIcon from "@mui/icons-material/X";
 import { WhatsApp } from "@mui/icons-material";
-import { Box, IconButton } from "@mui/material";
-import React from "react";
+import { Alert, Box, IconButton, Snackbar } from "@mui/material";
+import { useState } from "react";
 
+import { copyToClipboard } from "@/utils/copyToClipboard";
 import BaseContent from "./BaseContent";
 import { usePathname } from "next/navigation";
 
@@ -23,6 +26,7 @@ function ShareCard({
   closeCard,
   promiseActNow = { share: {} },
 }: ShareCardProps) {
+  const [copySuccess, setCopySuccess] = useState(false);
   const iconButton = {
     backgroundColor: "#EBEBEB",
     margin: "10px",
@@ -47,6 +51,7 @@ function ShareCard({
     const pageDescription = shareDescription || pageTitle;
 
     return {
+      rawUrl: currentUrl,
       url: encodeURIComponent(currentUrl),
       title: encodeURIComponent(pageTitle),
       description: encodeURIComponent(pageDescription),
@@ -56,9 +61,12 @@ function ShareCard({
   // Share handlers
   const handleCopyLink = async () => {
     try {
-      const { url } = getCurrentPageData();
-      const decodedUrl = decodeURIComponent(url);
-      await navigator.clipboard.writeText(decodedUrl);
+      const { rawUrl } = getCurrentPageData();
+      const copied = await copyToClipboard(rawUrl);
+      if (!copied) {
+        throw new Error("Unsupported clipboard API");
+      }
+      setCopySuccess(true);
     } catch (err) {
       console.error("Failed to copy: ", err);
     }
@@ -98,6 +106,13 @@ function ShareCard({
       "facebook-share",
       "width=600,height=400,scrollbars=yes,resizable=yes"
     );
+  };
+
+  const handleCopySnackbarClose = (_event?: unknown, reason?: string) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setCopySuccess(false);
   };
   return (
     <BaseContent
@@ -156,6 +171,20 @@ function ShareCard({
           <FacebookIcon />
         </IconButton>
       </Box>
+      <Snackbar
+        open={copySuccess}
+        autoHideDuration={3000}
+        onClose={handleCopySnackbarClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCopySnackbarClose}
+          severity="success"
+          variant="filled"
+        >
+          Link copied to clipboard
+        </Alert>
+      </Snackbar>
     </BaseContent>
   );
 }

@@ -36,19 +36,74 @@ import type {
 const FALLBACK_STATUS_COLOR = "#909090";
 const FALLBACK_STATUS_TEXT_COLOR = "#202020";
 
-const prefillAirtableForm = (embedCode: string, promiseUrl: string) => {
-  if (!promiseUrl.trim()) {
+/**
+ * Prefill Airtable embed with Promise(title), CheckMedia Link(url), Date(update date)
+ * - injects query params into iframe `src` safely; encodes spaces in keys
+ * - formats date as `YYYY-MM-DD`; gracefully no-ops if values missing
+ */
+const prefillAirtableForm = (
+  embedCode: string,
+  promiseTitle?: string,
+  promiseUrl?: string,
+  updateDate?: string | Date
+) => {
+  const hasAny = Boolean(
+    (promiseTitle && promiseTitle.trim()) ||
+      (promiseUrl && promiseUrl.trim()) ||
+      (updateDate && String(updateDate).trim())
+  );
+
+  if (!hasAny) {
     return embedCode;
   }
 
   return embedCode.replace(/src="([^"]+)"/, (match, src) => {
+    const formatDate = (value: string | Date | undefined) => {
+      if (!value) return null;
+      const d = new Date(value);
+      return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
+    };
+
     try {
       const url = new URL(src);
-      url.searchParams.set("prefill_Promise", promiseUrl);
+      if (promiseTitle && promiseTitle.trim()) {
+        url.searchParams.set("prefill_Promise", promiseTitle.trim());
+      }
+      if (promiseUrl && promiseUrl.trim()) {
+        url.searchParams.set("prefill_CheckMedia Link", promiseUrl.trim());
+      }
+      const formattedDate = formatDate(updateDate);
+      if (formattedDate) {
+        url.searchParams.set("prefill_Date", formattedDate);
+      }
       return `src="${url.toString()}"`;
     } catch (error) {
       const separator = src.includes("?") ? "&" : "?";
-      return `src="${src}${separator}prefill_Promise=${encodeURIComponent(promiseUrl)}"`;
+      const params: string[] = [];
+      if (promiseTitle && promiseTitle.trim()) {
+        params.push(
+          `${encodeURIComponent("prefill_Promise")}=${encodeURIComponent(
+            promiseTitle.trim()
+          )}`
+        );
+      }
+      if (promiseUrl && promiseUrl.trim()) {
+        params.push(
+          `${encodeURIComponent("prefill_CheckMedia Link")}=${encodeURIComponent(
+            promiseUrl.trim()
+          )}`
+        );
+      }
+      const formattedDate = formatDate(updateDate);
+      if (formattedDate) {
+        params.push(
+          `${encodeURIComponent("prefill_Date")}=${encodeURIComponent(formattedDate)}`
+        );
+      }
+      if (!params.length) {
+        return match;
+      }
+      return `src="${src}${separator}${params.join("&")}"`;
     }
   });
 };
@@ -239,10 +294,11 @@ export default async function PromiseDetailPage({
     : [];
 
   const promiseUrl = typeof promise.url === "string" ? promise.url : "";
+  const titleText = promise.title?.trim() || "Promise";
   const rawPromiseUpdateEmbed = await getPromiseUpdateEmbed();
   const siteSettings = await getTenantSiteSettings(tenant);
   const promiseUpdateEmbed = rawPromiseUpdateEmbed
-    ? prefillAirtableForm(rawPromiseUpdateEmbed, promiseUrl)
+    ? prefillAirtableForm(rawPromiseUpdateEmbed, titleText, promiseUrl, statusDate)
     : null;
 
   const { actNow } = siteSettings || {};
@@ -253,7 +309,6 @@ export default async function PromiseDetailPage({
 
   const image = await resolveMedia(promise.image ?? null);
   const entityImage = await resolveMedia(entity.image ?? null);
-  const titleText = promise.title?.trim() || "Promise";
   const descriptionText = promise.description?.trim() || null;
   const timelineStatus = {
     color: statusColor,
