@@ -38,9 +38,7 @@ const buildHref = (entity: PoliticalEntity, pageSlugs: string[] = []) => {
     return "/";
   }
 
-  const baseSegments = pageSlugs.filter(
-    (slug) => slug && slug !== "index"
-  );
+  const baseSegments = pageSlugs.filter((slug) => slug && slug !== "index");
 
   if (baseSegments.length === 0) {
     return `/${entitySlug}`;
@@ -151,9 +149,7 @@ export const PoliticalEntityList = async ({
         id: `fallback-${status.id}-${index}`,
         title: status.label,
         color:
-          status.colors?.textColor ||
-          status.colors?.color ||
-          "#000000",
+          status.colors?.textColor || status.colors?.color || "#000000",
         statusIds: [status.id],
       });
     });
@@ -231,6 +227,15 @@ export const PoliticalEntityList = async ({
     })),
   ];
 
+  const statusDefinitions: PoliticalEntityListClientProps["statusDefinitions"] =
+    statusDocs.map((status) => ({
+      id: status.id,
+      label: status.label,
+      description: status.description ?? "",
+      color: status.colors?.color ?? null,
+      textColor: status.colors?.textColor ?? null,
+    }));
+
   return (
     <Container component="section" sx={{ py: { xs: 5, md: 6 } }}>
       <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
@@ -242,6 +247,7 @@ export const PoliticalEntityList = async ({
             statusGroups={statusGroups}
             filterOptions={filterOptions}
             items={listItems}
+            statusDefinitions={statusDefinitions}
           />
         </CardContent>
       </Card>
