@@ -5,6 +5,7 @@ import { countries, getCountryFlag } from "@/data/countries";
 import { getTenantBySubDomain } from "@/lib/data/tenants";
 import { getDomain } from "@/lib/domain";
 import type { EntityHeroBlock } from "@/payload-types";
+import { resolveTenantLocale } from "@/utils/locales";
 
 const FLAG_WIDTH = 320;
 
@@ -29,7 +30,7 @@ export const EntityHero = async ({ title, description }: EntityHeroBlock) => {
         slug === normalizedCountryCode
       );
     }) || null;
-  const locale = tenant.locale ?? "en";
+  const locale = resolveTenantLocale(tenant);
   const countryName =
     (country &&
       (country.label?.[locale] ?? country.label?.en ?? country.name)) ??

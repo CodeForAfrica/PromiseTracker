@@ -32,6 +32,7 @@ import type {
   Promise as PromiseDocument,
   PromiseStatus as PromiseStatusDocument,
 } from "@/payload-types";
+import { resolveTenantLocale } from "@/utils/locales";
 
 const FALLBACK_STATUS_COLOR = "#909090";
 const FALLBACK_STATUS_TEXT_COLOR = "#202020";
@@ -130,6 +131,7 @@ export async function generateMetadata({
 
   const { tenant, tenantSettings, tenantSeo, tenantTitleBase } =
     tenantResolution.context;
+  const tenantLocale = resolveTenantLocale(tenant);
 
   const politicalEntity = await getPoliticalEntityBySlug(tenant, entitySlug);
   if (!politicalEntity) {
@@ -146,7 +148,9 @@ export async function generateMetadata({
     tenantTitleBase,
   });
 
-  const promise = await getPromiseById(promiseId);
+  const promise = await getPromiseById(promiseId, {
+    locale: tenantLocale,
+  });
 
   if (!promise) {
     return buildSeoMetadata({
@@ -250,6 +254,7 @@ export default async function PromiseDetailPage({
   if (!tenant) {
     return <CommonHomePage />;
   }
+  const locale = resolveTenantLocale(tenant);
 
   const { title, description, navigation, footer } =
     await getTenantNavigation(tenant);
@@ -260,7 +265,7 @@ export default async function PromiseDetailPage({
     return notFound();
   }
 
-  const promise = await getPromiseById(promiseId);
+  const promise = await getPromiseById(promiseId, { locale });
 
   if (!promise) {
     return notFound();

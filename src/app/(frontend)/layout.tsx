@@ -6,7 +6,7 @@ import { Amiri, Open_Sans, Source_Sans_3 } from "next/font/google";
 import type { Metadata } from "next";
 import { getDomain } from "@/lib/domain";
 import { getTenantBySubDomain } from "@/lib/data/tenants";
-import { defaultLocale } from "@/utils/locales";
+import { resolveTenantLocale } from "@/utils/locales";
 
 const amiri = Amiri({
   subsets: ["arabic", "latin"],
@@ -45,7 +45,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
 
   const { subdomain } = await getDomain();
   const tenant = await getTenantBySubDomain(subdomain);
-  const locale = tenant?.locale || defaultLocale;
+  const locale = resolveTenantLocale(tenant);
 
   return (
     <html

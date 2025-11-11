@@ -1,5 +1,6 @@
 import { resolveMedia } from "@/lib/data/media";
 import { getGlobalPayload } from "@/lib/payload";
+import { resolveEntityLocale } from "@/utils/locales";
 import type {
   HeroBlock,
   PoliticalEntity,
@@ -267,11 +268,13 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
   if (!entity) {
     return null;
   }
+  const locale = resolveEntityLocale(entity);
 
   const { docs: statusDocs } = await payload.find({
     collection: "promise-status",
     limit: -1,
     depth: 0,
+    locale,
   });
 
   const statusById: StatusById = new Map(

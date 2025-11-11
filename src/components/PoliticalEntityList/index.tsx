@@ -4,6 +4,7 @@ import { resolveMedia } from "@/lib/data/media";
 import { getDomain } from "@/lib/domain";
 import { getTenantBySubDomain } from "@/lib/data/tenants";
 import { getGlobalPayload } from "@/lib/payload";
+import { resolveTenantLocale } from "@/utils/locales";
 import {
   getPoliticalEntitiesByTenant,
   getPromiseCountsForEntities,
@@ -61,6 +62,7 @@ export const PoliticalEntityList = async ({
   if (!tenant) {
     return null;
   }
+  const locale = resolveTenantLocale(tenant);
 
   const politicalEntities = await getPoliticalEntitiesByTenant(tenant);
 
@@ -87,6 +89,7 @@ export const PoliticalEntityList = async ({
       collection: "promise-status",
       limit: -1,
       depth: 0,
+      locale,
     }),
   ]);
 
