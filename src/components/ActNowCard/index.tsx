@@ -310,14 +310,6 @@ export const ActNowCard = ({
 
         <Collapse in={shareOpen} unmountOnExit>
           <Stack spacing={1.5}>
-            {share?.description ? (
-              <Typography
-                variant="body2"
-                sx={{ color: "text.secondary", maxWidth: 360 }}
-              >
-                {share.description}
-              </Typography>
-            ) : null}
             <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
               <Tooltip title="Copy link">
                 <IconButton

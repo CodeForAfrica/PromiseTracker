@@ -40,6 +40,7 @@ export const PromiseStatus: CollectionConfig = {
             en: "Label",
             fr: "Étiquette",
           },
+          localized: true,
         },
         {
           name: "meedanId",
@@ -55,6 +56,7 @@ export const PromiseStatus: CollectionConfig = {
       name: "description",
       type: "textarea",
       required: true,
+      localized: true,
       label: {
         en: "Description",
         fr: "Description",
