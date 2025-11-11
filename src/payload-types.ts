@@ -1652,6 +1652,17 @@ export interface HomePage {
           title: string;
           emptyTitle: string;
           EmptySubtitle: string;
+          /**
+           * Select promise statuses to highlight in entity lists and hero sections.
+           */
+          statusGroups?:
+            | {
+                title: string;
+                color: string;
+                statuses: (string | PromiseStatus)[];
+                id?: string | null;
+              }[]
+            | null;
           id?: string | null;
           blockName?: string | null;
           blockType: 'entity-selection';
@@ -1790,17 +1801,6 @@ export interface HomePage {
 export interface EntityHeroBlock {
   title: string;
   description: string;
-  /**
-   * Select promise statuses to highlight in lists and hero sections.
-   */
-  statusGroups?:
-    | {
-        title: string;
-        color: string;
-        statuses: (string | PromiseStatus)[];
-        id?: string | null;
-      }[]
-    | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'entity-hero';
@@ -1903,6 +1903,14 @@ export interface HomePageSelect<T extends boolean = true> {
                     title?: T;
                     emptyTitle?: T;
                     EmptySubtitle?: T;
+                    statusGroups?:
+                      | T
+                      | {
+                          title?: T;
+                          color?: T;
+                          statuses?: T;
+                          id?: T;
+                        };
                     id?: T;
                     blockName?: T;
                   };
@@ -2026,14 +2034,6 @@ export interface HomePageSelect<T extends boolean = true> {
 export interface EntityHeroBlockSelect<T extends boolean = true> {
   title?: T;
   description?: T;
-  statusGroups?:
-    | T
-    | {
-        title?: T;
-        color?: T;
-        statuses?: T;
-        id?: T;
-      };
   id?: T;
   blockName?: T;
 }

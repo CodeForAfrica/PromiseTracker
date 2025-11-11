@@ -1,9 +1,4 @@
-import {
-  Card,
-  CardContent,
-  Container,
-  Typography,
-} from "@mui/material";
+import { Card, CardContent, Container, Typography } from "@mui/material";
 import type { HomePage, PoliticalEntity, PromiseStatus } from "@/payload-types";
 import { resolveMedia } from "@/lib/data/media";
 import { getDomain } from "@/lib/domain";
@@ -18,27 +13,21 @@ import {
   type PoliticalEntityListClientProps,
 } from "./PoliticalEntityList.client";
 
-type EntitySelectionBlock = Extract<
-  HomePage["entitySelector"]["blocks"][number],
-  { blockType: "entity-selection" }
-> & {
-  pageSlugs?: string[];
-};
-
-type PoliticalEntityListProps = EntitySelectionBlock;
-
-type EntityHeroStatusConfig = {
+type StatusGroupConfig = {
   title?: string | null;
   color?: string | null;
   statuses?: (string | PromiseStatus)[];
 };
 
-type EntityHeroBlockWithStatuses = Extract<
+type EntitySelectionBlock = Extract<
   HomePage["entitySelector"]["blocks"][number],
-  { blockType: "entity-hero" }
+  { blockType: "entity-selection" }
 > & {
-  statusGroups?: EntityHeroStatusConfig[];
+  pageSlugs?: string[];
+  statusGroups?: StatusGroupConfig[];
 };
+
+type PoliticalEntityListProps = EntitySelectionBlock;
 
 type NormalizedStatusGroup =
   PoliticalEntityListClientProps["statusGroups"][number];
@@ -66,6 +55,7 @@ export const PoliticalEntityList = async ({
   emptyTitle,
   EmptySubtitle,
   title,
+  statusGroups: configuredStatusGroups = [],
 }: PoliticalEntityListProps) => {
   const { subdomain } = await getDomain();
   const tenant = await getTenantBySubDomain(subdomain);
@@ -93,32 +83,19 @@ export const PoliticalEntityList = async ({
 
   const payload = await getGlobalPayload();
 
-  const [promiseCounts, statusDocsResult, homePage] = await Promise.all([
+  const [promiseCounts, statusDocsResult] = await Promise.all([
     getPromiseCountsForEntities(politicalEntities.map((entity) => entity.id)),
     payload.find({
       collection: "promise-status",
       limit: -1,
       depth: 0,
     }),
-    payload.findGlobal({
-      slug: "home-page",
-      depth: 2,
-    }),
   ]);
 
   const statusDocs = (statusDocsResult?.docs ?? []) as PromiseStatus[];
   const statusById = new Map(statusDocs.map((status) => [status.id, status]));
 
-  const entitySelectorBlocks = Array.isArray(homePage?.entitySelector?.blocks)
-    ? (homePage?.entitySelector?.blocks as HomePage["entitySelector"]["blocks"])
-    : [];
-
-  const entityHeroBlock = entitySelectorBlocks.find(
-    (block): block is EntityHeroBlockWithStatuses =>
-      Boolean(block && "blockType" in block && block.blockType === "entity-hero")
-  );
-
-  const configuredGroups = entityHeroBlock?.statusGroups ?? [];
+  const configuredGroups = configuredStatusGroups ?? [];
 
   const statusGroups: NormalizedStatusGroup[] = configuredGroups
     .map((group, index) => {
