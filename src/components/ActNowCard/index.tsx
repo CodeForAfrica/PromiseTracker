@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import {
+  Alert,
   Avatar,
   Box,
   Button,
   Card,
   Collapse,
   IconButton,
+  Snackbar,
   Stack,
   Tooltip,
   Typography,
@@ -24,6 +26,7 @@ import InstagramIcon from "@mui/icons-material/Instagram";
 import LinkIcon from "@mui/icons-material/Link";
 import XIcon from "@mui/icons-material/X";
 import { WhatsApp } from "@mui/icons-material";
+import { copyToClipboard } from "@/utils/copyToClipboard";
 import UpdateDialog from "./UpdateDialog";
 
 type ShareContent = {
@@ -105,17 +108,27 @@ export const ActNowCard = ({
 }: ActNowButtonCardProps) => {
   const [shareOpen, setShareOpen] = useState(false);
   const [updateOpen, setUpdateOpen] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   const handleCopyLink = async () => {
     const { rawUrl } = getShareMetadata(share);
     if (!rawUrl) {
       return;
     }
-    try {
-      await navigator.clipboard.writeText(rawUrl);
-    } catch (error) {
-      console.error("Failed to copy link", error);
+
+    const copied = await copyToClipboard(rawUrl);
+    if (copied) {
+      setCopySuccess(true);
+    } else {
+      console.error("Failed to copy link");
     }
+  };
+
+  const handleCopySnackbarClose = (_event?: unknown, reason?: string) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setCopySuccess(false);
   };
 
   const handleTwitterShare = () => {
@@ -297,14 +310,6 @@ export const ActNowCard = ({
 
         <Collapse in={shareOpen} unmountOnExit>
           <Stack spacing={1.5}>
-            {share?.description ? (
-              <Typography
-                variant="body2"
-                sx={{ color: "text.secondary", maxWidth: 360 }}
-              >
-                {share.description}
-              </Typography>
-            ) : null}
             <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
               <Tooltip title="Copy link">
                 <IconButton
@@ -362,6 +367,20 @@ export const ActNowCard = ({
           embedCode={embedCode}
         />
       ) : null}
+      <Snackbar
+        open={copySuccess}
+        autoHideDuration={3000}
+        onClose={handleCopySnackbarClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCopySnackbarClose}
+          severity="success"
+          variant="filled"
+        >
+          Link copied to clipboard
+        </Alert>
+      </Snackbar>
     </Card>
   );
 };

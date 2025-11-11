@@ -65,6 +65,10 @@ type VerificationStatusesResponse = {
               label?: string;
               description?: string;
             };
+            fr?: {
+              label?: string;
+              description?: string;
+            };
           };
           style?: {
             color?: string;
@@ -75,11 +79,20 @@ type VerificationStatusesResponse = {
   };
 };
 
+type StatusLocaleContent = {
+  label: string;
+  description: string;
+};
+
 export interface PromiseStatusItem {
   id: string;
   label: string;
   description: string;
   color: string | null;
+  locales: {
+    en: StatusLocaleContent;
+    fr?: StatusLocaleContent;
+  };
 }
 
 const createStatusesQuery = (useSlug: boolean) => {
@@ -132,14 +145,31 @@ export const fetchVerificationStatuses = async ({
   const statuses = json?.data?.team?.verification_statuses?.statuses ?? [];
 
   return statuses.map((s) => {
+    const frLabel = s?.locales?.fr?.label ?? "";
+    const frDescription = s?.locales?.fr?.description ?? "";
     const enLabel = s?.locales?.en?.label ?? s?.label ?? "";
     const enDescription = s?.locales?.en?.description ?? "";
     const color = s?.style?.color ?? null;
+
     return {
       id: s.id,
       label: enLabel,
       description: enDescription,
       color,
+      locales: {
+        en: {
+          label: enLabel,
+          description: enDescription,
+        },
+        ...(frLabel || frDescription
+          ? {
+              fr: {
+                label: frLabel || enLabel,
+                description: frDescription || "",
+              },
+            }
+          : {}),
+      },
     } satisfies PromiseStatusItem;
   });
 };

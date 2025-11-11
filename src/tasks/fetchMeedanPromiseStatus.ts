@@ -33,8 +33,9 @@ export const FetchPromiseStatuses: TaskConfig<"fetchPromiseStatuses"> = {
         });
 
         if (existing.totalDocs === 0) {
-          await payload.create({
+          const createdStatus = await payload.create({
             collection: "promise-status",
+            locale: "en",
             data: {
               meedanId: status.id,
               label: status.label,
@@ -42,6 +43,20 @@ export const FetchPromiseStatuses: TaskConfig<"fetchPromiseStatuses"> = {
               colors: status.color ? { color: status.color } : {},
             },
           });
+
+          const frenchLocale = status.locales?.fr;
+          if (frenchLocale) {
+            await payload.update({
+              collection: "promise-status",
+              id: createdStatus.id,
+              locale: "fr",
+              data: {
+                label: frenchLocale.label || status.label,
+                description: frenchLocale.description || status.description,
+              },
+            });
+          }
+
           created += 1;
           logger.info(
             `fetchPromiseStatuses:: Created new status ${status.id} (${status.label})`

@@ -1,14 +1,10 @@
-import {
-  Card,
-  CardContent,
-  Container,
-  Typography,
-} from "@mui/material";
+import { Card, CardContent, Container, Typography } from "@mui/material";
 import type { HomePage, PoliticalEntity, PromiseStatus } from "@/payload-types";
 import { resolveMedia } from "@/lib/data/media";
 import { getDomain } from "@/lib/domain";
 import { getTenantBySubDomain } from "@/lib/data/tenants";
 import { getGlobalPayload } from "@/lib/payload";
+import { resolveTenantLocale } from "@/utils/locales";
 import {
   getPoliticalEntitiesByTenant,
   getPromiseCountsForEntities,
@@ -18,27 +14,21 @@ import {
   type PoliticalEntityListClientProps,
 } from "./PoliticalEntityList.client";
 
-type EntitySelectionBlock = Extract<
-  HomePage["entitySelector"]["blocks"][number],
-  { blockType: "entity-selection" }
-> & {
-  pageSlugs?: string[];
-};
-
-type PoliticalEntityListProps = EntitySelectionBlock;
-
-type EntityHeroStatusConfig = {
+type StatusGroupConfig = {
   title?: string | null;
   color?: string | null;
   statuses?: (string | PromiseStatus)[];
 };
 
-type EntityHeroBlockWithStatuses = Extract<
+type EntitySelectionBlock = Extract<
   HomePage["entitySelector"]["blocks"][number],
-  { blockType: "entity-hero" }
+  { blockType: "entity-selection" }
 > & {
-  statusGroups?: EntityHeroStatusConfig[];
+  pageSlugs?: string[];
+  statusGroups?: StatusGroupConfig[];
 };
+
+type PoliticalEntityListProps = EntitySelectionBlock;
 
 type NormalizedStatusGroup =
   PoliticalEntityListClientProps["statusGroups"][number];
@@ -49,9 +39,7 @@ const buildHref = (entity: PoliticalEntity, pageSlugs: string[] = []) => {
     return "/";
   }
 
-  const baseSegments = pageSlugs.filter(
-    (slug) => slug && slug !== "index"
-  );
+  const baseSegments = pageSlugs.filter((slug) => slug && slug !== "index");
 
   if (baseSegments.length === 0) {
     return `/${entitySlug}`;
@@ -66,6 +54,7 @@ export const PoliticalEntityList = async ({
   emptyTitle,
   EmptySubtitle,
   title,
+  statusGroups: configuredStatusGroups = [],
 }: PoliticalEntityListProps) => {
   const { subdomain } = await getDomain();
   const tenant = await getTenantBySubDomain(subdomain);
@@ -73,6 +62,7 @@ export const PoliticalEntityList = async ({
   if (!tenant) {
     return null;
   }
+  const locale = resolveTenantLocale(tenant);
 
   const politicalEntities = await getPoliticalEntitiesByTenant(tenant);
 
@@ -93,32 +83,20 @@ export const PoliticalEntityList = async ({
 
   const payload = await getGlobalPayload();
 
-  const [promiseCounts, statusDocsResult, homePage] = await Promise.all([
+  const [promiseCounts, statusDocsResult] = await Promise.all([
     getPromiseCountsForEntities(politicalEntities.map((entity) => entity.id)),
     payload.find({
       collection: "promise-status",
       limit: -1,
       depth: 0,
-    }),
-    payload.findGlobal({
-      slug: "home-page",
-      depth: 2,
+      locale,
     }),
   ]);
 
   const statusDocs = (statusDocsResult?.docs ?? []) as PromiseStatus[];
   const statusById = new Map(statusDocs.map((status) => [status.id, status]));
 
-  const entitySelectorBlocks = Array.isArray(homePage?.entitySelector?.blocks)
-    ? (homePage?.entitySelector?.blocks as HomePage["entitySelector"]["blocks"])
-    : [];
-
-  const entityHeroBlock = entitySelectorBlocks.find(
-    (block): block is EntityHeroBlockWithStatuses =>
-      Boolean(block && "blockType" in block && block.blockType === "entity-hero")
-  );
-
-  const configuredGroups = entityHeroBlock?.statusGroups ?? [];
+  const configuredGroups = configuredStatusGroups ?? [];
 
   const statusGroups: NormalizedStatusGroup[] = configuredGroups
     .map((group, index) => {
@@ -174,9 +152,7 @@ export const PoliticalEntityList = async ({
         id: `fallback-${status.id}-${index}`,
         title: status.label,
         color:
-          status.colors?.textColor ||
-          status.colors?.color ||
-          "#000000",
+          status.colors?.textColor || status.colors?.color || "#000000",
         statusIds: [status.id],
       });
     });
@@ -254,6 +230,15 @@ export const PoliticalEntityList = async ({
     })),
   ];
 
+  const statusDefinitions: PoliticalEntityListClientProps["statusDefinitions"] =
+    statusDocs.map((status) => ({
+      id: status.id,
+      label: status.label,
+      description: status.description ?? "",
+      color: status.colors?.color ?? null,
+      textColor: status.colors?.textColor ?? null,
+    }));
+
   return (
     <Container component="section" sx={{ py: { xs: 5, md: 6 } }}>
       <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
@@ -265,6 +250,7 @@ export const PoliticalEntityList = async ({
             statusGroups={statusGroups}
             filterOptions={filterOptions}
             items={listItems}
+            statusDefinitions={statusDefinitions}
           />
         </CardContent>
       </Card>

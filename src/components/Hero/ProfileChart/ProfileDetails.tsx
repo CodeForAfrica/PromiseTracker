@@ -8,8 +8,10 @@ import { Box, IconButton, Stack, Theme, Typography } from "@mui/material";
 
 import type { HeroStatusSummary } from "../index";
 import Share from "@/components/Share";
-import DesktopInfoStatusPopover from "./DesktopInfoStatusPopover";
-import MobileInfoStatusPopover from "./MobileInfoStatusPopover";
+import {
+  DesktopInfoStatusPopover,
+  MobileInfoStatusPopover,
+} from "@/components/PromiseStatusInfo";
 
 type ProfileDetailsProps = {
   headline: {

@@ -8,7 +8,7 @@ import type { SiteSetting } from "@/payload-types";
 
 import FacebookIcon from "@/assets/icons/Type=facebook, Size=24, Color=CurrentColor.svg";
 import GitHubIcon from "@/assets/icons/Type=github, Size=24, Color=CurrentColor.svg";
-import InstagramIcon from "@/assets/icons/Type=instagram, Size=24, Color=CurrentColor.svg";
+import InstagramIcon from "@mui/icons-material/Instagram";
 import LinkedInIcon from "@/assets/icons/Type=linkedin, Size=24, Color=CurrentColor.svg";
 import SlackIcon from "@/assets/icons/Type=slack, Size=24, Color=CurrentColor.svg";
 import TwitterIcon from "@/assets/icons/Type=twitter, Size=24, Color=CurrentColor.svg";

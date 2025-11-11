@@ -14,6 +14,12 @@ import {
   Typography,
 } from "@mui/material";
 
+import {
+  DesktopInfoStatusPopover,
+  MobileInfoStatusPopover,
+} from "@/components/PromiseStatusInfo";
+import type { PromiseStatusListProps } from "@/components/PromiseStatusList";
+
 export type PoliticalEntityListClientProps = {
   statusGroups: {
     id: string;
@@ -41,15 +47,19 @@ export type PoliticalEntityListClientProps = {
     statusCounts: Record<string, number>;
     filterKey: string;
   }[];
+  statusDefinitions: PromiseStatusListProps["statuses"];
+  statusInfoTitle?: string;
 };
 
 export const PoliticalEntityListClient = ({
   statusGroups,
   filterOptions,
   items,
+  statusDefinitions,
+  statusInfoTitle = "Promise status definitions",
 }: PoliticalEntityListClientProps) => {
   const [activeFilter, setActiveFilter] = useState(
-    filterOptions[0]?.key ?? "all",
+    filterOptions[0]?.key ?? "all"
   );
 
   const visibleItems = useMemo(() => {
@@ -63,6 +73,8 @@ export const PoliticalEntityListClient = ({
   const handleFilterClick = (key: string) => {
     setActiveFilter(key);
   };
+
+  const hasStatusDefinitions = statusDefinitions.length > 0;
 
   return (
     <Stack spacing={2.5}>
@@ -78,6 +90,7 @@ export const PoliticalEntityListClient = ({
           flexWrap="wrap"
           useFlexGap
           alignItems="center"
+          sx={{ flexGrow: 1 }}
         >
           {filterOptions.map((option) => {
             const isActive = option.key === activeFilter;
@@ -102,6 +115,30 @@ export const PoliticalEntityListClient = ({
             );
           })}
         </Stack>
+        {hasStatusDefinitions ? (
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            sx={{
+              width: { xs: "100%", md: "auto" },
+              justifyContent: { xs: "flex-start", md: "flex-end" },
+            }}
+          >
+            <Box sx={{ display: { xs: "none", md: "flex" } }}>
+              <DesktopInfoStatusPopover
+                title={statusInfoTitle}
+                statuses={statusDefinitions}
+              />
+            </Box>
+            <Box sx={{ display: { xs: "flex", md: "none" } }}>
+              <MobileInfoStatusPopover
+                title={statusInfoTitle}
+                statuses={statusDefinitions}
+              />
+            </Box>
+          </Stack>
+        ) : null}
       </Stack>
 
       <Divider />
@@ -120,7 +157,7 @@ export const PoliticalEntityListClient = ({
                 const count = group.statusIds.reduce(
                   (total, statusId) =>
                     total + (item.statusCounts[statusId] ?? 0),
-                  0,
+                  0
                 );
 
                 if (count === 0) {
@@ -135,8 +172,14 @@ export const PoliticalEntityListClient = ({
                 };
               })
               .filter(
-                (value): value is { id: string; title: string; color: string; count: number } =>
-                  Boolean(value),
+                (
+                  value
+                ): value is {
+                  id: string;
+                  title: string;
+                  color: string;
+                  count: number;
+                } => Boolean(value)
               );
 
             return (
@@ -242,7 +285,9 @@ export const PoliticalEntityListClient = ({
                               ? "common.white"
                               : "text.primary",
                           borderColor:
-                            item.totalPromises > 0 ? "transparent" : "divider",
+                            item.totalPromises > 0
+                              ? "transparent"
+                              : "divider",
                           borderWidth: 1,
                           borderStyle: "solid",
                           "& .MuiChip-label": {
@@ -253,7 +298,9 @@ export const PoliticalEntityListClient = ({
                     </Stack>
                   </ListItemButton>
                 </ListItem>
-                {index < visibleItems.length - 1 ? <Divider sx={{ my: 0.5 }} /> : null}
+                {index < visibleItems.length - 1 ? (
+                  <Divider sx={{ my: 0.5 }} />
+                ) : null}
               </React.Fragment>
             );
           })}

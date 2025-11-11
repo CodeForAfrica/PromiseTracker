@@ -12,7 +12,10 @@ import {
   Typography,
 } from "@mui/material";
 
-import { PromiseStatusList, type PromiseStatusListProps } from "@/components/PromiseStatusList";
+import {
+  PromiseStatusList,
+  type PromiseStatusListProps,
+} from "@/components/PromiseStatusList";
 
 export type MobileInfoStatusPopoverProps = {
   title?: string;

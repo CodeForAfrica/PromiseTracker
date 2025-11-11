@@ -2,6 +2,7 @@ import { getGlobalPayload } from "@/lib/payload";
 import Promises from "./Promises";
 import { slugify } from "@/utils/utils";
 import { PromiseListBlock } from "@/payload-types";
+import { resolveEntityLocale } from "@/utils/locales";
 
 export type PromiseListProps = PromiseListBlock & {
   entitySlug?: string;
@@ -28,6 +29,7 @@ async function Index(props: PromiseListProps) {
   if (!entity) {
     return null;
   }
+  const locale = resolveEntityLocale(entity);
   const { docs } = await payload.find({
     collection: "promises",
     where: {
@@ -37,6 +39,7 @@ async function Index(props: PromiseListProps) {
     },
     depth: 2,
     sort: "-createdAt",
+    locale,
   });
 
   if (!docs || docs.length === 0) {
@@ -56,8 +59,8 @@ async function Index(props: PromiseListProps) {
   promises.forEach((promise) => {
     const statusLabel =
       typeof promise?.status === "object" && promise?.status !== null
-        ? promise.status.label ?? ""
-        : (promise.status as string) ?? "";
+        ? (promise.status.label ?? "")
+        : ((promise.status as string) ?? "");
 
     const slug = slugify(statusLabel);
 
