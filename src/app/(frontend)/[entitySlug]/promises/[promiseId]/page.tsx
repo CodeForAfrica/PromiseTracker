@@ -338,6 +338,8 @@ export default async function PromiseDetailPage({
         {...navigation}
         entitySlug={entity.slug}
         tenantSelectionHref={tenantSelectionHref}
+        tenantFlag={tenant?.flag ?? null}
+        tenantFlagLabel={tenant?.name ?? tenant?.country ?? null}
       />
       <Box component="article" sx={{ bgcolor: "background.default" }}>
         <Container

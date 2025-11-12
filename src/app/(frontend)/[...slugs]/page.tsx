@@ -169,6 +169,8 @@ export default async function Page(params: Args) {
         {...navigation}
         entitySlug={politicalEntity.slug}
         tenantSelectionHref={tenantSelectionHref}
+        tenantFlag={tenant?.flag ?? null}
+        tenantFlagLabel={tenant?.name ?? tenant?.country ?? null}
       />
       <Suspense>
         <BlockRenderer blocks={blocks} entity={politicalEntity} />

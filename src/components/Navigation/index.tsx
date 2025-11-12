@@ -26,6 +26,8 @@ type NavigationProps = {
   entitySlug?: string;
   tenantSelectionHref?: string;
   showSearch?: boolean;
+  tenantFlag?: string | null;
+  tenantFlagLabel?: string | null;
 };
 
 export default function Navigation({
@@ -35,6 +37,8 @@ export default function Navigation({
   entitySlug,
   tenantSelectionHref,
   showSearch = true,
+  tenantFlag,
+  tenantFlagLabel,
 }: NavigationProps) {
   const theme = useTheme();
   const logoSrc = primaryLogo?.url || null;
@@ -45,6 +49,11 @@ export default function Navigation({
     logoHref.startsWith("https://") ||
     logoHref.startsWith("//");
   const LogoComponent: ElementType = isExternalLogoHref ? "a" : NextLink;
+  const showTenantFlag = Boolean(entitySlug && tenantFlag);
+  const flagAltText = tenantFlagLabel
+    ? `${tenantFlagLabel} flag`
+    : `${title} flag`;
+  const tenantHomeHref = "/";
 
   return (
     <AppBar
@@ -69,34 +78,93 @@ export default function Navigation({
                 justifyContent="space-between"
               >
                 <Grid size={4}>
-                  <IconButton
-                    component={LogoComponent}
-                    href={logoHref}
-                    disableRipple
-                    disableFocusRipple
+                  <Box
                     sx={{
-                      p: 0,
-                      "&:hover": { backgroundColor: "transparent" },
-                      width: {
-                        xs: theme.typography.pxToRem(135),
-                        lg: theme.typography.pxToRem(236),
-                      },
+                      display: "flex",
+                      alignItems: "center",
+                      gap: showTenantFlag ? 1 : 0,
                     }}
                   >
-                    {logoSrc ? (
-                      <Image
-                        src={logoSrc}
-                        alt={logoAlt}
-                        width={236}
-                        height={31}
-                        style={{ width: "100%", height: "auto" }}
-                      />
-                    ) : (
-                      <Box component="span" sx={{ fontWeight: 700 }}>
-                        {title}
+                    <IconButton
+                      component={LogoComponent}
+                      href={logoHref}
+                      disableRipple
+                      disableFocusRipple
+                      sx={{
+                        p: 0,
+                        "&:hover": { backgroundColor: "transparent" },
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          width: {
+                            xs: theme.typography.pxToRem(135),
+                            lg: theme.typography.pxToRem(236),
+                          },
+                          display: "inline-flex",
+                          alignItems: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {logoSrc ? (
+                          <Image
+                            src={logoSrc}
+                            alt={logoAlt}
+                            width={236}
+                            height={31}
+                            style={{ width: "100%", height: "auto" }}
+                          />
+                        ) : (
+                          <Box component="span" sx={{ fontWeight: 700 }}>
+                            {title}
+                          </Box>
+                        )}
                       </Box>
-                    )}
-                  </IconButton>
+                    </IconButton>
+                    {showTenantFlag ? (
+                      <Box
+                        component={NextLink}
+                        href={tenantHomeHref}
+                        aria-label={
+                          tenantFlagLabel
+                            ? `Go to ${tenantFlagLabel} page`
+                            : "Go to tenant page"
+                        }
+                        sx={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          textDecoration: "none",
+                          color: "text.primary",
+                          gap: 1,
+                        }}
+                      >
+                        <Box
+                          component="span"
+                          sx={{
+                            fontWeight: 700,
+                            fontSize: theme.typography.pxToRem(20),
+                            lineHeight: 1,
+                          }}
+                        >
+                          /
+                        </Box>
+                        <Box
+                          component="img"
+                          src={tenantFlag as string}
+                          alt={flagAltText}
+                          loading="lazy"
+                          sx={{
+                            height: theme.typography.pxToRem(32),
+                            width: theme.typography.pxToRem(32),
+                            display: "block",
+                            borderRadius: "50%",
+                            objectFit: "cover",
+                            boxShadow: "0px 6px 16px rgba(0,0,0,0.12)",
+                          }}
+                        />
+                      </Box>
+                    ) : null}
+                  </Box>
                 </Grid>
                 <DesktopMenu menus={menus} entitySlug={entitySlug} />
                 <Grid size={3} sx={{ display: { xs: "none", lg: "flex" } }}>
