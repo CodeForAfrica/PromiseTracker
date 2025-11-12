@@ -44,8 +44,6 @@ export const Profile = ({
         flexDirection: "column",
         gap: theme.typography.pxToRem(20),
         pt: { xs: theme.typography.pxToRem(20), lg: 0 },
-        position: "relative",
-        left: { xs: 0, lg: theme.typography.pxToRem(-55) },
       })}
     >
       <Box

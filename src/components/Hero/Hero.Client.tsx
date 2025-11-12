@@ -1,7 +1,9 @@
 "use client";
 
-import { Box, Container } from "@mui/material";
+import NextLink from "next/link";
+import { Box, Container, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
+import { ArrowBack } from "@mui/icons-material";
 
 import type { HeroResolvedData } from "./index";
 import Profile from "./Profile";
@@ -12,13 +14,17 @@ export type HeroClientProps = {
 };
 
 export const HeroClient = ({ data }: HeroClientProps) => {
-  const {
-    entity,
-    copy,
-    metrics,
-    headline,
-  } = data;
+  const { entity, copy, metrics, headline, navigation } = data;
   const { tagline, name: entityName } = headline;
+  const showBackLink = Boolean(
+    navigation?.tenantHref && navigation?.tenantName
+  );
+  const backLinkLabel =
+    navigation?.backToLabel?.trim() || (showBackLink ? "Back to" : "");
+  const backLinkText = [backLinkLabel, navigation?.tenantName]
+    .filter(Boolean)
+    .join(" ");
+  const backLinkHref = navigation?.tenantHref ?? "/";
 
   const shareTitle = [
     tagline ? `${tagline} ${entityName}` : entityName,
@@ -44,6 +50,37 @@ export const HeroClient = ({ data }: HeroClientProps) => {
       })}
     >
       <Container maxWidth="lg">
+        {showBackLink ? (
+          <Box
+            sx={(theme) => ({
+              display: "flex",
+              justifyContent: { xs: "center", lg: "flex-start" },
+              mb: theme.typography.pxToRem(16),
+            })}
+          >
+            <Box
+              component={NextLink}
+              href={backLinkHref}
+              aria-label={backLinkText}
+              sx={{
+                display: "inline-flex",
+                alignItems: "center",
+                textDecoration: "none",
+                color: "#005DFD",
+              }}
+            >
+              <ArrowBack
+                sx={(theme) => ({
+                  fontSize: theme.typography.pxToRem(16),
+                  mr: 1,
+                })}
+              />
+              <Typography variant="body1" component="span">
+                {backLinkText}
+              </Typography>
+            </Box>
+          </Box>
+        ) : null}
         <Grid
           container
           rowSpacing={{ xs: 3, lg: 6 }}
