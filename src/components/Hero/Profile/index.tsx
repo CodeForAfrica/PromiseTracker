@@ -15,6 +15,10 @@ type ProfileProps = {
   updatedAtLabel: string;
   updatedAtDisplay: string;
   image: ProfileImage | null;
+  headline: {
+    tagline?: string;
+    name: string;
+  };
 };
 
 const MOBILE_SIZE = 149;
@@ -26,6 +30,7 @@ export const Profile = ({
   updatedAtLabel,
   updatedAtDisplay,
   image,
+  headline,
 }: ProfileProps) => {
   const dateLine = [updatedAtLabel?.trim(), updatedAtDisplay]
     .filter(Boolean)
@@ -35,9 +40,9 @@ export const Profile = ({
     <Box
       sx={(theme) => ({
         display: "flex",
-        alignItems: "center",
-        flexDirection: { xs: "row", lg: "column" },
-        gap: theme.typography.pxToRem(16),
+        alignItems: { xs: "center", lg: "flex-start" },
+        flexDirection: "column",
+        gap: theme.typography.pxToRem(20),
         pt: { xs: theme.typography.pxToRem(20), lg: 0 },
         position: "relative",
         left: { xs: 0, lg: theme.typography.pxToRem(-55) },
@@ -84,14 +89,47 @@ export const Profile = ({
           </Box>
         )}
       </Box>
-      <Box sx={{ minWidth: { xs: MOBILE_SIZE, lg: "auto" } }}>
+      <Box
+        sx={{
+          minWidth: { xs: MOBILE_SIZE, lg: "auto" },
+          textAlign: { xs: "center", lg: "left" },
+          width: "100%",
+        }}
+      >
+        {headline.tagline || headline.name ? (
+          <Typography
+            component="h1"
+            variant="h1"
+            sx={(theme) => ({
+              mb: theme.typography.pxToRem(12),
+            })}
+          >
+            {headline.tagline ? (
+              <>
+                <Typography
+                  component="span"
+                  variant="inherit"
+                  sx={{ color: "#005DFD" }}
+                >
+                  {headline.tagline}
+                </Typography>{" "}
+                {headline.name}
+              </>
+            ) : (
+              headline.name
+            )}
+          </Typography>
+        ) : null}
         <Typography
           variant="h5"
           sx={(theme) => ({
             color: theme.palette.primary.main,
             textTransform: "uppercase",
             mb: theme.typography.pxToRem(6),
-            whiteSpace: "nowrap",
+            whiteSpace: {
+              xs: "wrap",
+              md: "nowrap",
+            },
           })}
         >
           {profileTitle}

@@ -139,34 +139,50 @@ export const TenantList = async ({
 
               return (
                 <Box key={tenant.id}>
-                  <ListItem disableGutters sx={{ py: dense ? 0.75 : 1.25 }}>
-                    <ListItemAvatar sx={{ minWidth: dense ? 36 : 46 }}>
-                      <Avatar
-                        src={tenant.flag ?? undefined}
-                        alt={tenant.name}
-                        sx={{
-                          bgcolor: "primary.light",
-                          color: "primary.dark",
-                          width: dense ? 32 : 40,
-                          height: dense ? 32 : 40,
-                          fontSize: dense ? "0.75rem" : "0.875rem",
+                  <ListItem
+                    disableGutters
+                    sx={{
+                      py: dense ? 0.75 : 1.25,
+                      flexDirection: { xs: "column", sm: "row" },
+                      alignItems: { xs: "flex-start", sm: "center" },
+                      gap: { xs: 1.5, sm: 0 },
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        width: "100%",
+                      }}
+                    >
+                      <ListItemAvatar sx={{ minWidth: dense ? 36 : 46 }}>
+                        <Avatar
+                          src={tenant.flag ?? undefined}
+                          alt={tenant.name}
+                          sx={{
+                            bgcolor: "primary.light",
+                            color: "primary.dark",
+                            width: dense ? 32 : 40,
+                            height: dense ? 32 : 40,
+                            fontSize: dense ? "0.75rem" : "0.875rem",
+                          }}
+                        >
+                          {initials}
+                        </Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={tenant.name}
+                        secondary={tenant.url.replace(/^https?:\/\//, "")}
+                        primaryTypographyProps={{
+                          variant: "subtitle1",
+                          sx: { fontWeight: 600 },
                         }}
-                      >
-                        {initials}
-                      </Avatar>
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={tenant.name}
-                      secondary={tenant.url.replace(/^https?:\/\//, "")}
-                      primaryTypographyProps={{
-                        variant: "subtitle1",
-                        sx: { fontWeight: 600 },
-                      }}
-                      secondaryTypographyProps={{
-                        variant: "body2",
-                        color: "primary.dark",
-                      }}
-                    />
+                        secondaryTypographyProps={{
+                          variant: "body2",
+                          color: "primary.dark",
+                        }}
+                      />
+                    </Box>
                     <Chip
                       component={Link}
                       href={tenant.url}
@@ -175,7 +191,12 @@ export const TenantList = async ({
                       label={ctaLabel}
                       clickable
                       color="primary"
-                      sx={{ px: 1 }}
+                      sx={{
+                        px: 1,
+                        width: { xs: "100%", sm: "auto" },
+                        alignSelf: { xs: "stretch", sm: "center" },
+                        justifyContent: "center",
+                      }}
                       icon={<OpenInNew fontSize="small" />}
                     />
                   </ListItem>

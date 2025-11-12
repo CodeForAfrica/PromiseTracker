@@ -55,6 +55,8 @@ export default function Footer({
             <Grid
               size={12}
               display="flex"
+              flexDirection={{ xs: "column", md: "row" }}
+              alignItems={{ xs: "center", md: "flex-start" }}
               justifyContent={{ xs: "center", md: "flex-start" }}
             >
               <Box

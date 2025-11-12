@@ -14,10 +14,6 @@ import {
 } from "@/components/PromiseStatusInfo";
 
 type ProfileDetailsProps = {
-  headline: {
-    tagline?: string;
-    name: string;
-  };
   name: string;
   position: string;
   promiseLabel: string;
@@ -46,7 +42,6 @@ const buildSummary = (
 };
 
 export const ProfileDetails = ({
-  headline,
   name,
   position,
   promiseLabel,
@@ -74,28 +69,6 @@ export const ProfileDetails = ({
     >
       <Grid size={{ xs: 12, lg: 8 }}>
         <Stack spacing={1.5}>
-          {headline.tagline || headline.name ? (
-            <Typography
-              component="h1"
-              variant="h1"
-              sx={{ display: { xs: "none", lg: "block" } }}
-            >
-              {headline.tagline ? (
-                <>
-                  <Typography
-                    component="span"
-                    variant="inherit"
-                    sx={{ color: "#005DFD" }}
-                  >
-                    {headline.tagline}
-                  </Typography>{" "}
-                  {headline.name}
-                </>
-              ) : (
-                headline.name
-              )}
-            </Typography>
-          ) : null}
           <Typography variant="body2" color="text.primary">
             {summary.intro}
             {summary.highlight ? " " : ""}

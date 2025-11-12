@@ -10,10 +10,6 @@ import ProfileDetails from "./ProfileDetails";
 import RectChart from "./RectChart";
 
 type ProfileChartProps = {
-  headline: {
-    tagline?: string;
-    name: string;
-  };
   promiseLabel: string;
   trailText: string;
   name: string;
@@ -26,7 +22,6 @@ type ProfileChartProps = {
 };
 
 export const ProfileChart = ({
-  headline,
   promiseLabel,
   trailText,
   name,
@@ -48,7 +43,6 @@ export const ProfileChart = ({
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <ProfileDetails
-        headline={headline}
         name={name}
         position={position}
         promiseLabel={promiseLabel}
