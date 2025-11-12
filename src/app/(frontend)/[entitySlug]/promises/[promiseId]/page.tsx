@@ -72,6 +72,7 @@ const prefillAirtableForm = (
       }
       if (promiseUrl && promiseUrl.trim()) {
         url.searchParams.set("prefill_CheckMedia Link", promiseUrl.trim());
+        url.searchParams.set("hide_CheckMedia Link", "true");
       }
       const formattedDate = formatDate(updateDate);
       if (formattedDate) {
@@ -93,6 +94,9 @@ const prefillAirtableForm = (
           `${encodeURIComponent("prefill_CheckMedia Link")}=${encodeURIComponent(
             promiseUrl.trim()
           )}`
+        );
+        params.push(
+          `${encodeURIComponent("hide_CheckMedia Link")}=${encodeURIComponent("true")}`
         );
       }
       const formattedDate = formatDate(updateDate);
@@ -303,7 +307,12 @@ export default async function PromiseDetailPage({
   const rawPromiseUpdateEmbed = await getPromiseUpdateEmbed();
   const siteSettings = await getTenantSiteSettings(tenant);
   const promiseUpdateEmbed = rawPromiseUpdateEmbed
-    ? prefillAirtableForm(rawPromiseUpdateEmbed, titleText, promiseUrl, statusDate)
+    ? prefillAirtableForm(
+        rawPromiseUpdateEmbed,
+        titleText,
+        promiseUrl,
+        statusDate
+      )
     : null;
 
   const { actNow } = siteSettings || {};
@@ -459,9 +468,6 @@ export default async function PromiseDetailPage({
                     position: entity.position,
                     region: entity.region ?? null,
                     image: entityImage,
-                  }}
-                  sx={{
-                    width: "100%",
                   }}
                 />
               </Grid>

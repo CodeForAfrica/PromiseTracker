@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Container, Typography } from "@mui/material";
+import { Box, Container } from "@mui/material";
 import Grid from "@mui/material/Grid";
 
 import type { HeroResolvedData } from "./index";
@@ -16,8 +16,9 @@ export const HeroClient = ({ data }: HeroClientProps) => {
     entity,
     copy,
     metrics,
-    headline: { tagline, name: entityName },
+    headline,
   } = data;
+  const { tagline, name: entityName } = headline;
 
   const shareTitle = [
     tagline ? `${tagline} ${entityName}` : entityName,
@@ -43,28 +44,6 @@ export const HeroClient = ({ data }: HeroClientProps) => {
       })}
     >
       <Container maxWidth="lg">
-        {tagline || entityName ? (
-          <Typography
-            component="h1"
-            variant="h1"
-            sx={(theme) => ({
-              display: { xs: "block", lg: "none" },
-              color: theme.palette.primary.dark,
-              mb: theme.typography.pxToRem(24),
-            })}
-          >
-            {tagline ? (
-              <>
-                <Typography component="span" variant="inherit" sx={{ color: "#005DFD" }}>
-                  {tagline}
-                </Typography>{" "}
-                {entityName}
-              </>
-            ) : (
-              entityName
-            )}
-          </Typography>
-        ) : null}
         <Grid
           container
           rowSpacing={{ xs: 3, lg: 6 }}
@@ -74,6 +53,7 @@ export const HeroClient = ({ data }: HeroClientProps) => {
           <Grid size={{ xs: 12, lg: 4 }}>
             <Profile
               name={entity.name}
+              headline={headline}
               profileTitle={copy.profileTitle}
               updatedAtLabel={copy.updatedAtLabel}
               updatedAtDisplay={entity.updatedAtDisplay}
@@ -82,7 +62,6 @@ export const HeroClient = ({ data }: HeroClientProps) => {
           </Grid>
           <Grid size={{ xs: 12, lg: 8 }}>
             <ProfileChart
-              headline={{ tagline, name: entityName }}
               promiseLabel={copy.promiseLabel}
               trailText={copy.trailText}
               name={entity.name}

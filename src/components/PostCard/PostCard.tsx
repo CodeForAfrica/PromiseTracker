@@ -43,7 +43,10 @@ const PostCard: FC<Props> = function PostCard({
 }) {
   const date = new Date(createdAt ?? "").toISOString().split("T")[0];
   const rootSx = {
-    minWidth: 314,
+    minWidth: {
+      xs: "auto",
+      md: 314,
+    },
     maxHeight: 510,
     height: 510,
     width: "100%",
