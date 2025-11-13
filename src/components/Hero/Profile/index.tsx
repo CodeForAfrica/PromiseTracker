@@ -92,6 +92,10 @@ export const Profile = ({
           minWidth: { xs: MOBILE_SIZE, lg: "auto" },
           textAlign: { xs: "center", lg: "left" },
           width: "100%",
+          whiteSpace: {
+            xs: "wrap",
+            md: "nowrap",
+          },
         }}
       >
         {headline.tagline || headline.name ? (
