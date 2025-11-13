@@ -309,7 +309,7 @@ const PromiseStatus = ({
   const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
   return (
     <>
-      <rect x="8" y="65" width={width} height="10" style={{ fill: color }} />
+      <rect x="0" y="65" width={width} height="10" style={{ fill: color }} />
       {isDesktop && children}
       <TimelineEvent
         title={title}

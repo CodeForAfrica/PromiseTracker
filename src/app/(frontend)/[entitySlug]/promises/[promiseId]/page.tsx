@@ -356,7 +356,7 @@ export default async function PromiseDetailPage({
           }}
         >
           <Stack spacing={{ xs: 4, lg: 6 }}>
-            <Stack spacing={2} sx={{ maxWidth: { lg: "50%" } }}>
+            <Stack spacing={2} sx={{ maxWidth: { lg: "80%" } }}>
               <Button
                 component={NextLink}
                 href={`/${entity.slug}/promises`}
@@ -412,8 +412,18 @@ export default async function PromiseDetailPage({
               </Box>
             </Stack>
 
-            <Grid container spacing={{ xs: 6, lg: 8 }} alignItems="stretch">
-              <Grid size={{ xs: 12, lg: 6 }}>
+            <Grid
+              container
+              spacing={{ xs: 6, lg: 8 }}
+              alignItems="stretch"
+              justifyContent="space-between"
+            >
+              <Grid
+                size={{ xs: 12, lg: 10 }}
+                sx={{
+                  width: { xs: "100%", lg: "80%" },
+                }}
+              >
                 {image ? (
                   <Box
                     component="figure"
@@ -463,6 +473,10 @@ export default async function PromiseDetailPage({
                   }}
                 />
               </Grid>
+              <Grid
+                size={{ xs: 12, lg: 2 }}
+                sx={{ display: { xs: "none", lg: "block" } }}
+              />
             </Grid>
           </Stack>
         </Container>
