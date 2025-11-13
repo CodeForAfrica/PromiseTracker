@@ -142,8 +142,10 @@ export default function Navigation({
                           component="span"
                           sx={{
                             fontWeight: 700,
-                            fontSize: theme.typography.pxToRem(20),
+                            fontSize: theme.typography.pxToRem(40),
                             lineHeight: 1,
+                            display: "inline-flex",
+                            alignItems: "center",
                           }}
                         >
                           /

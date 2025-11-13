@@ -52,6 +52,7 @@ const filterGridSx = {
 const sectionSx = { mb: "2rem" };
 const sectionTitleSx = {
   m: "2rem 0rem",
+  mt: 0,
   position: "relative",
   "&::after": {
     borderBottom: "5px solid #000000",

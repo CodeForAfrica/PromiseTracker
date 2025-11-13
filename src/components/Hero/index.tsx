@@ -347,7 +347,6 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
   const copyTrailText = block.trailText?.trim() || "tracked on PromiseTracker.";
   const statusListTitle =
     block.statusListTitle?.trim() || "Promise status definitions";
-  const backToLabel = block.backToLabel?.trim();
   const tenantRecord =
     entity.tenant && typeof entity.tenant === "object"
       ? (entity.tenant as { name?: string | null })
@@ -359,7 +358,6 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
   const resolvedData: HeroResolvedData = {
     headline,
     copy: {
-      backToLabel,
       promiseLabel: copyPromiseLabel,
       trailText: copyTrailText,
       updatedAtLabel,
@@ -380,7 +378,6 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
     },
     navigation: {
       entitySlug,
-      backToLabel,
       tenantName,
       tenantHref,
     },

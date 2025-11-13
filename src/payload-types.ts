@@ -516,7 +516,6 @@ export interface HeroBlock {
    * Optional text that replaces the political entity position shown above the last updated date.
    */
   profileTitleOverride?: string | null;
-  backToLabel?: string | null;
   statusListTitle?: string | null;
   /**
    * Define exactly three groups of promise statuses to display in the charts.
@@ -1249,7 +1248,6 @@ export interface HeroBlockSelect<T extends boolean = true> {
   trailText?: T;
   updatedAtLabel?: T;
   profileTitleOverride?: T;
-  backToLabel?: T;
   statusListTitle?: T;
   chartGroups?:
     | T

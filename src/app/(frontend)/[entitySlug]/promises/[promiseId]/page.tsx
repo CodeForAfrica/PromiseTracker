@@ -369,7 +369,7 @@ export default async function PromiseDetailPage({
                 sx={{
                   alignSelf: "flex-start",
                   px: 0,
-                  color: "text.primary",
+                  color: "#005DFD",
                   fontWeight: 600,
                   textTransform: "none",
                   "&:hover": {

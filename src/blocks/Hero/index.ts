@@ -81,15 +81,6 @@ export const Hero: Block = {
       },
     },
     {
-      name: "backToLabel",
-      type: "text",
-      label: {
-        en: "Back to Label",
-        fr: "Retour à l'étiquette",
-      },
-      defaultValue: "Back to",
-    },
-    {
       name: "statusListTitle",
       type: "text",
       label: {
