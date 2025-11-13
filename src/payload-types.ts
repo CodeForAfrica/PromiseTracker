@@ -1837,6 +1837,10 @@ export interface Setting {
 export interface PromiseUpdate {
   id: string;
   /**
+   * The default image that should be used for a promise.
+   */
+  defaultImage: string | Media;
+  /**
    * Paste the Airtable embed snippet that should appear inside the update dialog.
    */
   embedCode: string;
@@ -2077,6 +2081,7 @@ export interface SettingsSelect<T extends boolean = true> {
  * via the `definition` "promise-updates_select".
  */
 export interface PromiseUpdatesSelect<T extends boolean = true> {
+  defaultImage?: T;
   embedCode?: T;
   updateLabel?: T;
   updatedAt?: T;

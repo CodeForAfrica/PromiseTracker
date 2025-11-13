@@ -322,7 +322,11 @@ export default async function PromiseDetailPage({
     timelineStatusHistory
   );
 
-  const image = await resolveMedia(promise.image ?? null);
+  const promiseImage = await resolveMedia(promise.image ?? null);
+  const fallbackImage = promiseUpdateSettings?.defaultImage
+    ? await resolveMedia(promiseUpdateSettings.defaultImage)
+    : null;
+  const image = promiseImage ?? fallbackImage;
   const descriptionText = promise.description?.trim() || null;
   const timelineStatus = {
     color: statusColor,

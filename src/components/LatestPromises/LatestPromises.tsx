@@ -2,7 +2,7 @@ import { CMSLinkType, CMSLink as Link } from "@/components/CMSLink";
 import { Box, Button, Grid, Container, Typography } from "@mui/material";
 import React from "react";
 import PromiseCard from "@/components/PromiseCard";
-import { Promise as P, PromiseStatus } from "@/payload-types";
+import { Promise as P, PromiseStatus, Media } from "@/payload-types";
 
 type PromiseWithHref = P & { href?: string };
 
@@ -10,8 +10,14 @@ interface Props {
   items: PromiseWithHref[];
   title: string;
   seeAll: CMSLinkType;
+  fallbackImage?: Media | null;
 }
-const LatestPromises = ({ items, title, seeAll }: Props) => {
+const LatestPromises = ({
+  items,
+  title,
+  seeAll,
+  fallbackImage = null,
+}: Props) => {
   if (!items?.length) {
     return null;
   }
@@ -33,7 +39,11 @@ const LatestPromises = ({ items, title, seeAll }: Props) => {
         {title}
       </Typography>
       <Grid container spacing={2}>
-        {items.map((promise) => (
+        {items.map((promise) => {
+          const promiseImage =
+            typeof promise.image === "string" ? null : (promise.image as Media | null);
+          const cardImage = promiseImage ?? fallbackImage ?? null;
+          return (
           <Grid
             key={promise.id}
             size={{
@@ -42,17 +52,16 @@ const LatestPromises = ({ items, title, seeAll }: Props) => {
             }}
           >
             <PromiseCard
-              image={
-                typeof promise.image === "string" ? undefined : promise.image
-              }
+              image={cardImage ?? undefined}
               title={promise.title ?? null}
-              status={promise.status as PromiseStatus}
-              description={promise.description ?? null}
+                status={promise.status as PromiseStatus}
+                description={promise.description ?? null}
               createdAt={promise.createdAt}
               href={promise.href ?? undefined}
             />
           </Grid>
-        ))}
+        );
+        })}
       </Grid>
       {seeAll && (
         <Link {...seeAll}>

@@ -2,6 +2,7 @@ import LatestPromises from "./LatestPromises";
 import { LatestPromisesBlock } from "@/payload-types";
 
 import { getGlobalPayload } from "@/lib/payload";
+import { getPromiseUpdateEmbed } from "@/lib/data/promiseUpdates";
 
 export type LatestPromisesProps = LatestPromisesBlock & {
   entitySlug: string;
@@ -57,5 +58,15 @@ export default async function Index({
       };
     }) ?? [];
 
-  return <LatestPromises title={title} items={promises} seeAll={seeAllLink} />;
+  const promiseUpdateSettings = await getPromiseUpdateEmbed();
+  const fallbackImage = promiseUpdateSettings?.defaultImage ?? null;
+
+  return (
+    <LatestPromises
+      title={title}
+      items={promises}
+      seeAll={seeAllLink}
+      fallbackImage={fallbackImage}
+    />
+  );
 }

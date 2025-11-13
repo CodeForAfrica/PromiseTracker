@@ -7,7 +7,7 @@ import React, { useState, useEffect } from "react";
 import Filter from "./Filter";
 import Sort from "./Sort";
 import { slugify } from "@/utils/utils";
-import { Promise as PromiseItem, PromiseStatus } from "@/payload-types";
+import { Promise as PromiseItem, PromiseStatus, Media } from "@/payload-types";
 import PromiseCard from "../PromiseCard";
 
 type PromiseWithHref = PromiseItem & { href?: string };
@@ -42,6 +42,7 @@ interface PromisesProps {
     slug: string;
   };
   backLabel?: string;
+  fallbackImage?: Media | null;
 }
 
 const filterGridSx = {
@@ -83,6 +84,7 @@ function Promises({
   sortByConfig,
   entity,
   backLabel = "Back to",
+  fallbackImage = null,
 }: PromisesProps) {
   const sortByDeadline = sortLabels?.sortByDeadline;
   const sortByMostRecent = sortLabels?.sortByMostRecent;
@@ -267,27 +269,35 @@ function Promises({
         </Grid>
       )}
       <Grid spacing={1} justifyContent="space-between" container>
-        {items.map((card: PromiseWithHref) => (
-          <Grid
-            key={card.id}
-            size={{ xs: 12, lg: 4 }}
-            sx={{
-              pb: {
-                xs: 3.75,
-                lg: 2,
-              },
-            }}
-          >
-            <PromiseCard
-              href={card.href}
-              title={card.title ?? null}
-              image={typeof card.image === "string" ? undefined : card.image}
-              description={card.description ?? null}
-              status={card.status as PromiseStatus}
-              createdAt={card.createdAt}
-            />
-          </Grid>
-        ))}
+        {items.map((card: PromiseWithHref) => {
+          const promiseImage =
+            typeof card.image === "string"
+              ? null
+              : (card.image as Media | null);
+          const cardImage = promiseImage ?? fallbackImage ?? null;
+
+          return (
+            <Grid
+              key={card.id}
+              size={{ xs: 12, lg: 4 }}
+              sx={{
+                pb: {
+                  xs: 3.75,
+                  lg: 2,
+                },
+              }}
+            >
+              <PromiseCard
+                href={card.href}
+                title={card.title ?? null}
+                image={cardImage ?? undefined}
+                description={card.description ?? null}
+                status={card.status as PromiseStatus}
+                createdAt={card.createdAt}
+              />
+            </Grid>
+          );
+        })}
       </Grid>
     </Container>
   );
