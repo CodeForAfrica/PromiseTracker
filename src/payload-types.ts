@@ -659,7 +659,6 @@ export interface PartnerDetailsBlock {
  */
 export interface PromiseListBlock {
   title?: string | null;
-  backLabel?: string | null;
   filterByLabel?: string | null;
   sortByLabel?: string | null;
   filterBy?: ('status' | 'category')[] | null;
@@ -1324,7 +1323,6 @@ export interface PartnerDetailsBlockSelect<T extends boolean = true> {
  */
 export interface PromiseListBlockSelect<T extends boolean = true> {
   title?: T;
-  backLabel?: T;
   filterByLabel?: T;
   sortByLabel?: T;
   filterBy?: T;

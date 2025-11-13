@@ -1,7 +1,5 @@
 "use client";
-import NextLink from "next/link";
 import { Grid, Typography, Chip, Container, Box } from "@mui/material";
-import ArrowBackIosNewRoundedIcon from "@mui/icons-material/ArrowBackIosNewRounded";
 import React, { useState, useEffect } from "react";
 
 import Filter from "./Filter";
@@ -9,6 +7,7 @@ import Sort from "./Sort";
 import { slugify } from "@/utils/utils";
 import { Promise as PromiseItem, PromiseStatus, Media } from "@/payload-types";
 import PromiseCard from "../PromiseCard";
+import EntityBackLink from "@/components/EntityBackLink";
 
 type PromiseWithHref = PromiseItem & { href?: string };
 
@@ -40,8 +39,8 @@ interface PromisesProps {
   entity?: {
     name: string;
     slug: string;
+    image?: Media | null;
   };
-  backLabel?: string;
   fallbackImage?: Media | null;
 }
 
@@ -49,7 +48,9 @@ const filterGridSx = {
   mb: 4,
   mt: 2,
 };
-const sectionSx = { mb: "2rem" };
+const sectionSx = {
+  pt: { xs: 6, lg: 8 },
+};
 const sectionTitleSx = {
   m: "2rem 0rem",
   mt: 0,
@@ -84,7 +85,6 @@ function Promises({
   filterByConfig,
   sortByConfig,
   entity,
-  backLabel = "Back to",
   fallbackImage = null,
 }: PromisesProps) {
   const sortByDeadline = sortLabels?.sortByDeadline;
@@ -170,31 +170,16 @@ function Promises({
   return (
     <Container sx={sectionSx}>
       {entity?.slug ? (
-        <Box
-          sx={(theme) => ({
-            display: "flex",
-            justifyContent: { xs: "center", lg: "flex-start" },
-            mt: theme.typography.pxToRem(12),
-          })}
-        >
-          <Box
-            component={NextLink}
+        <Box>
+          <EntityBackLink
             href={`/${entity.slug}`}
-            aria-label={`${backLabel} ${entity.name}`}
-            sx={{
-              display: "inline-flex",
-              alignItems: "center",
-              textDecoration: "none",
-              color: "#005DFD",
-            }}
-          >
-            <ArrowBackIosNewRoundedIcon
-              sx={(theme) => ({ fontSize: theme.typography.pxToRem(16) })}
-            />
-            <Typography variant="body2" component="span">
-              {backLabel} {entity.name}
-            </Typography>
-          </Box>
+            name={entity.name}
+            image={
+              entity.image && typeof entity.image !== "string"
+                ? entity.image
+                : null
+            }
+          />
         </Box>
       ) : null}
       <Typography variant="h1" sx={sectionTitleSx}>

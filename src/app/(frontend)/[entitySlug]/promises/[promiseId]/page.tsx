@@ -1,16 +1,15 @@
 import React from "react";
-import NextLink from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Box, Container, Grid, Stack, Typography, Button } from "@mui/material";
-import ArrowBackIosNewRoundedIcon from "@mui/icons-material/ArrowBackIosNewRounded";
+import { Box, Container, Grid, Stack, Typography } from "@mui/material";
 
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import PromiseStatus from "@/components/PromiseStatus";
 import PromiseTimeline from "@/components/PromiseTimeline";
 import PromiseActions from "@/components/PromiseActions";
+import EntityBackLink from "@/components/EntityBackLink";
 import { CommonHomePage } from "@/components/CommonHomePage";
 import { getDomain } from "@/lib/domain";
 import {
@@ -29,6 +28,7 @@ import {
   resolveTenantSeoContext,
 } from "@/lib/seo";
 import type {
+  Media,
   Promise as PromiseDocument,
   PromiseStatus as PromiseStatusDocument,
 } from "@/payload-types";
@@ -323,6 +323,7 @@ export default async function PromiseDetailPage({
   );
 
   const promiseImage = await resolveMedia(promise.image ?? null);
+  const entityImage = await resolveMedia(entity.image ?? null);
   const fallbackImage = promiseUpdateSettings?.defaultImage
     ? await resolveMedia(promiseUpdateSettings.defaultImage)
     : null;
@@ -358,29 +359,13 @@ export default async function PromiseDetailPage({
         >
           <Stack spacing={{ xs: 4, lg: 6 }}>
             <Stack spacing={2} sx={{ maxWidth: { lg: "80%" } }}>
-              <Button
-                component={NextLink}
-                href={`/${entity.slug}/promises`}
-                startIcon={
-                  <ArrowBackIosNewRoundedIcon
-                    fontSize="small"
-                    sx={{ transform: "translateY(-1px)" }}
-                  />
-                }
-                sx={{
-                  alignSelf: "flex-start",
-                  px: 0,
-                  color: "#005DFD",
-                  fontWeight: 600,
-                  textTransform: "none",
-                  "&:hover": {
-                    backgroundColor: "transparent",
-                    textDecoration: "underline",
-                  },
-                }}
-              >
-                {entity.name}
-              </Button>
+              <Box sx={{ alignSelf: "flex-start" }}>
+                <EntityBackLink
+                  href={`/${entity.slug}/promises`}
+                  name={entity.name}
+                  image={entityImage as Media | null}
+                />
+              </Box>
               {statusDoc ? (
                 <PromiseStatus
                   {...statusDoc}
