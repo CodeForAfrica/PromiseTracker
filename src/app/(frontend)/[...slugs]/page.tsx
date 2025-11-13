@@ -168,6 +168,7 @@ export default async function Page(params: Args) {
         title={title}
         {...navigation}
         entitySlug={politicalEntity.slug}
+        tenantName={tenant?.name ?? null}
         tenantSelectionHref={tenantSelectionHref}
         tenantFlag={tenant?.flag ?? null}
         tenantFlagLabel={tenant?.name ?? tenant?.country ?? null}

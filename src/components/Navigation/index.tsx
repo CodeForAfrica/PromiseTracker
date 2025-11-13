@@ -28,6 +28,7 @@ type NavigationProps = {
   showSearch?: boolean;
   tenantFlag?: string | null;
   tenantFlagLabel?: string | null;
+  tenantName?: string | null;
 };
 
 export default function Navigation({
@@ -35,6 +36,7 @@ export default function Navigation({
   menus,
   title,
   entitySlug,
+  tenantName,
   tenantSelectionHref,
   showSearch = true,
   tenantFlag,
@@ -54,6 +56,7 @@ export default function Navigation({
     ? `${tenantFlagLabel} flag`
     : `${title} flag`;
   const tenantHomeHref = "/";
+  const entityNameDisplay = tenantName?.toUpperCase() ?? null;
 
   return (
     <AppBar
@@ -126,9 +129,11 @@ export default function Navigation({
                         component={NextLink}
                         href={tenantHomeHref}
                         aria-label={
-                          tenantFlagLabel
-                            ? `Go to ${tenantFlagLabel} page`
-                            : "Go to tenant page"
+                          tenantName
+                            ? `Go to ${tenantName} page`
+                            : tenantFlagLabel
+                              ? `Go to ${tenantFlagLabel} page`
+                              : "Go to tenant page"
                         }
                         sx={{
                           display: "inline-flex",
@@ -164,6 +169,22 @@ export default function Navigation({
                             boxShadow: "0px 6px 16px rgba(0,0,0,0.12)",
                           }}
                         />
+                        {entityNameDisplay ? (
+                          <Box
+                            component="span"
+                            sx={{
+                              ml: 1,
+                              fontWeight: 700,
+                              fontSize: theme.typography.pxToRem(16),
+                              textTransform: "uppercase",
+                              color: "text.primary",
+                              display: { xs: "none", md: "inline-flex" },
+                              alignItems: "center",
+                            }}
+                          >
+                            {entityNameDisplay}
+                          </Box>
+                        ) : null}
                       </Box>
                     ) : null}
                   </Box>

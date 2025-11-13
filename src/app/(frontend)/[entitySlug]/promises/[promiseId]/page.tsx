@@ -341,6 +341,7 @@ export default async function PromiseDetailPage({
         title={title}
         {...navigation}
         entitySlug={entity.slug}
+        tenantName={tenant?.name ?? null}
         tenantSelectionHref={tenantSelectionHref}
         tenantFlag={tenant?.flag ?? null}
         tenantFlagLabel={tenant?.name ?? tenant?.country ?? null}
