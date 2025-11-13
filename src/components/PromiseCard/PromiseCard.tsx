@@ -25,12 +25,15 @@ const PromiseCard: FC<Props> = function PromiseCard({
     <PostCard
       createdAt={createdAt}
       description={description ?? undefined}
-      image={image}
+      image={image ?? undefined}
       title={title ?? null}
       href={href}
       imageSx={{
         border: `8px solid ${status.colors?.color}`,
-        background: `linear-gradient(to right, ${status.colors?.color || "#000"}, ${status.colors?.color || "#000"}), url("${image?.url}") center center / cover no-repeat`,
+        backgroundColor: status.colors?.color || "#000",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
       }}
       status={status}
     >

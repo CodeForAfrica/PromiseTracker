@@ -219,7 +219,11 @@ export const PoliticalEntityListClient = ({
                         <Box sx={{ minWidth: 0 }}>
                           <Typography
                             variant="subtitle1"
-                            sx={{ fontWeight: 700, lineHeight: 1.2 }}
+                            sx={{
+                              fontWeight: 700,
+                              lineHeight: 1.2,
+                              textTransform: "capitalize",
+                            }}
                           >
                             {item.name}
                           </Typography>
@@ -285,13 +289,17 @@ export const PoliticalEntityListClient = ({
                               ? "common.white"
                               : "text.primary",
                           borderColor:
-                            item.totalPromises > 0
-                              ? "transparent"
-                              : "divider",
+                            item.totalPromises > 0 ? "transparent" : "divider",
                           borderWidth: 1,
                           borderStyle: "solid",
                           "& .MuiChip-label": {
                             px: 1.5,
+                            fontFamily: (theme) =>
+                              theme.typography.body2.fontFamily,
+                            fontSize: (theme) =>
+                              theme.typography.body2.fontSize,
+                            fontWeight: 600,
+                            textTransform: "capitalize",
                           },
                         }}
                       />

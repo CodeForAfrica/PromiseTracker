@@ -12,13 +12,11 @@ export type HeroClientProps = {
 };
 
 export const HeroClient = ({ data }: HeroClientProps) => {
-  const {
-    entity,
-    copy,
-    metrics,
-    headline,
-  } = data;
+  const { entity, copy, metrics, headline, navigation } = data;
   const { tagline, name: entityName } = headline;
+  const showBackLink = Boolean(
+    navigation?.tenantHref && navigation?.tenantName
+  );
 
   const shareTitle = [
     tagline ? `${tagline} ${entityName}` : entityName,

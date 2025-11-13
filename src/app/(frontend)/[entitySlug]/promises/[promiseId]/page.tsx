@@ -1,16 +1,15 @@
 import React from "react";
-import NextLink from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Box, Container, Grid, Stack, Typography, Button } from "@mui/material";
-import ArrowBackIosNewRoundedIcon from "@mui/icons-material/ArrowBackIosNewRounded";
+import { Box, Container, Grid, Stack, Typography } from "@mui/material";
 
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import PromiseStatus from "@/components/PromiseStatus";
 import PromiseTimeline from "@/components/PromiseTimeline";
-import ActNowCard from "@/components/ActNowCard";
+import PromiseActions from "@/components/PromiseActions";
+import EntityBackLink from "@/components/EntityBackLink";
 import { CommonHomePage } from "@/components/CommonHomePage";
 import { getDomain } from "@/lib/domain";
 import {
@@ -29,6 +28,7 @@ import {
   resolveTenantSeoContext,
 } from "@/lib/seo";
 import type {
+  Media,
   Promise as PromiseDocument,
   PromiseStatus as PromiseStatusDocument,
 } from "@/payload-types";
@@ -304,8 +304,9 @@ export default async function PromiseDetailPage({
 
   const promiseUrl = typeof promise.url === "string" ? promise.url : "";
   const titleText = promise.title?.trim() || "Promise";
-  const rawPromiseUpdateEmbed = await getPromiseUpdateEmbed();
+  const promiseUpdateSettings = await getPromiseUpdateEmbed();
   const siteSettings = await getTenantSiteSettings(tenant);
+  const rawPromiseUpdateEmbed = promiseUpdateSettings?.embedCode ?? null;
   const promiseUpdateEmbed = rawPromiseUpdateEmbed
     ? prefillAirtableForm(
         rawPromiseUpdateEmbed,
@@ -321,8 +322,12 @@ export default async function PromiseDetailPage({
     timelineStatusHistory
   );
 
-  const image = await resolveMedia(promise.image ?? null);
+  const promiseImage = await resolveMedia(promise.image ?? null);
   const entityImage = await resolveMedia(entity.image ?? null);
+  const fallbackImage = promiseUpdateSettings?.defaultImage
+    ? await resolveMedia(promiseUpdateSettings.defaultImage)
+    : null;
+  const image = promiseImage ?? fallbackImage;
   const descriptionText = promise.description?.trim() || null;
   const timelineStatus = {
     color: statusColor,
@@ -337,7 +342,10 @@ export default async function PromiseDetailPage({
         title={title}
         {...navigation}
         entitySlug={entity.slug}
+        tenantName={tenant?.name ?? null}
         tenantSelectionHref={tenantSelectionHref}
+        tenantFlag={tenant?.flag ?? null}
+        tenantFlagLabel={tenant?.name ?? tenant?.country ?? null}
       />
       <Box component="article" sx={{ bgcolor: "background.default" }}>
         <Container
@@ -350,30 +358,14 @@ export default async function PromiseDetailPage({
           }}
         >
           <Stack spacing={{ xs: 4, lg: 6 }}>
-            <Stack spacing={2} sx={{ maxWidth: { lg: "50%" } }}>
-              <Button
-                component={NextLink}
-                href={`/${entity.slug}/promises`}
-                startIcon={
-                  <ArrowBackIosNewRoundedIcon
-                    fontSize="small"
-                    sx={{ transform: "translateY(-1px)" }}
-                  />
-                }
-                sx={{
-                  alignSelf: "flex-start",
-                  px: 0,
-                  color: "text.primary",
-                  fontWeight: 600,
-                  textTransform: "none",
-                  "&:hover": {
-                    backgroundColor: "transparent",
-                    textDecoration: "underline",
-                  },
-                }}
-              >
-                {entity.name}
-              </Button>
+            <Stack spacing={2} sx={{ maxWidth: { lg: "80%" } }}>
+              <Box sx={{ alignSelf: "flex-start" }}>
+                <EntityBackLink
+                  href={`/${entity.slug}/promises`}
+                  name={entity.name}
+                  image={entityImage as Media | null}
+                />
+              </Box>
               {statusDoc ? (
                 <PromiseStatus
                   {...statusDoc}
@@ -393,23 +385,31 @@ export default async function PromiseDetailPage({
                   typography: { xs: "h3", lg: "h1" },
                   fontWeight: 600,
                   lineHeight: 1.1,
-                  position: "relative",
-                  "&::after": {
-                    content: '""',
-                    position: "absolute",
-                    bottom: -16,
-                    left: 0,
-                    width: "72px",
-                    borderBottom: `8px solid ${statusColor}`,
-                  },
                 }}
               >
                 {titleText}
               </Typography>
+              <Box sx={{ mt: 2 }}>
+                <PromiseActions
+                  share={actNow?.share ?? null}
+                  updateEmbed={promiseUpdateEmbed}
+                  updateLabel={promiseUpdateSettings?.updateLabel ?? null}
+                />
+              </Box>
             </Stack>
 
-            <Grid container spacing={{ xs: 6, lg: 8 }} alignItems="stretch">
-              <Grid size={{ xs: 12, lg: 6 }}>
+            <Grid
+              container
+              spacing={{ xs: 6, lg: 8 }}
+              alignItems="stretch"
+              justifyContent="space-between"
+            >
+              <Grid
+                size={{ xs: 12, lg: 10 }}
+                sx={{
+                  width: { xs: "100%", lg: "80%" },
+                }}
+              >
                 {image ? (
                   <Box
                     component="figure"
@@ -459,18 +459,10 @@ export default async function PromiseDetailPage({
                   }}
                 />
               </Grid>
-              <Grid size={{ xs: 12, lg: 6 }}>
-                <ActNowCard
-                  {...actNow}
-                  updateEmbed={promiseUpdateEmbed}
-                  entity={{
-                    name: entity.name,
-                    position: entity.position,
-                    region: entity.region ?? null,
-                    image: entityImage,
-                  }}
-                />
-              </Grid>
+              <Grid
+                size={{ xs: 12, lg: 2 }}
+                sx={{ display: { xs: "none", lg: "block" } }}
+              />
             </Grid>
           </Stack>
         </Container>

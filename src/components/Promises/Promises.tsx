@@ -1,12 +1,13 @@
 "use client";
-import { Grid, Typography, Chip, Container } from "@mui/material";
+import { Grid, Typography, Chip, Container, Box } from "@mui/material";
 import React, { useState, useEffect } from "react";
 
 import Filter from "./Filter";
 import Sort from "./Sort";
 import { slugify } from "@/utils/utils";
-import { Promise as PromiseItem, PromiseStatus } from "@/payload-types";
+import { Promise as PromiseItem, PromiseStatus, Media } from "@/payload-types";
 import PromiseCard from "../PromiseCard";
+import EntityBackLink from "@/components/EntityBackLink";
 
 type PromiseWithHref = PromiseItem & { href?: string };
 
@@ -35,15 +36,24 @@ interface PromisesProps {
   };
   filterByConfig?: FilterSort;
   sortByConfig?: FilterSort;
+  entity?: {
+    name: string;
+    slug: string;
+    image?: Media | null;
+  };
+  fallbackImage?: Media | null;
 }
 
 const filterGridSx = {
   mb: 4,
   mt: 2,
 };
-const sectionSx = { mb: "2rem" };
+const sectionSx = {
+  pt: { xs: 6, lg: 8 },
+};
 const sectionTitleSx = {
   m: "2rem 0rem",
+  mt: 0,
   position: "relative",
   "&::after": {
     borderBottom: "5px solid #000000",
@@ -74,6 +84,8 @@ function Promises({
   sortLabels,
   filterByConfig,
   sortByConfig,
+  entity,
+  fallbackImage = null,
 }: PromisesProps) {
   const sortByDeadline = sortLabels?.sortByDeadline;
   const sortByMostRecent = sortLabels?.sortByMostRecent;
@@ -142,16 +154,12 @@ function Promises({
       let sortedItems = items;
       if (sortBy === sortByMostRecent?.slug) {
         sortedItems = items.sort(
-          (a, b) => a.createdAt?.localeCompare(b.createdAt ?? "") ?? 0,
+          (a, b) => a.createdAt?.localeCompare(b.createdAt ?? "") ?? 0
         );
       } else if (sortBy === sortByDeadline?.slug) {
         sortedItems = items.sort((a, b) => {
-          const aUpdated = a.updatedAt
-            ? new Date(a.updatedAt).getTime()
-            : 0;
-          const bUpdated = b?.updatedAt
-            ? new Date(b.updatedAt).getTime()
-            : 1;
+          const aUpdated = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+          const bUpdated = b?.updatedAt ? new Date(b.updatedAt).getTime() : 1;
           return bUpdated - aUpdated;
         });
       }
@@ -161,6 +169,19 @@ function Promises({
 
   return (
     <Container sx={sectionSx}>
+      {entity?.slug ? (
+        <Box>
+          <EntityBackLink
+            href={`/${entity.slug}`}
+            name={entity.name}
+            image={
+              entity.image && typeof entity.image !== "string"
+                ? entity.image
+                : null
+            }
+          />
+        </Box>
+      ) : null}
       <Typography variant="h1" sx={sectionTitleSx}>
         {title || "Promises"}
       </Typography>
@@ -234,27 +255,35 @@ function Promises({
         </Grid>
       )}
       <Grid spacing={1} justifyContent="space-between" container>
-        {items.map((card: PromiseWithHref) => (
-          <Grid
-            key={card.id}
-            size={{ xs: 12, lg: 4 }}
-            sx={{
-              pb: {
-                xs: 3.75,
-                lg: 2,
-              },
-            }}
-          >
-            <PromiseCard
-              href={card.href}
-              title={card.title ?? null}
-              image={typeof card.image === "string" ? undefined : card.image}
-              description={card.description ?? null}
-              status={card.status as PromiseStatus}
-              createdAt={card.createdAt}
-            />
-          </Grid>
-        ))}
+        {items.map((card: PromiseWithHref) => {
+          const promiseImage =
+            typeof card.image === "string"
+              ? null
+              : (card.image as Media | null);
+          const cardImage = promiseImage ?? fallbackImage ?? null;
+
+          return (
+            <Grid
+              key={card.id}
+              size={{ xs: 12, lg: 4 }}
+              sx={{
+                pb: {
+                  xs: 3.75,
+                  lg: 2,
+                },
+              }}
+            >
+              <PromiseCard
+                href={card.href}
+                title={card.title ?? null}
+                image={cardImage ?? undefined}
+                description={card.description ?? null}
+                status={card.status as PromiseStatus}
+                createdAt={card.createdAt}
+              />
+            </Grid>
+          );
+        })}
       </Grid>
     </Container>
   );

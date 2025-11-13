@@ -37,6 +37,7 @@ export type HeroResolvedData = {
     updatedAtLabel: string;
     profileTitle: string;
     statusListTitle: string;
+    backToLabel?: string;
   };
   entity: {
     name: string;
@@ -52,6 +53,12 @@ export type HeroResolvedData = {
     total: number;
     statuses: HeroStatusSummary[];
     groups: HeroChartGroup[];
+  };
+  navigation: {
+    entitySlug?: string;
+    backToLabel?: string;
+    tenantName?: string;
+    tenantHref: string;
   };
 };
 
@@ -340,6 +347,12 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
   const copyTrailText = block.trailText?.trim() || "tracked on PromiseTracker.";
   const statusListTitle =
     block.statusListTitle?.trim() || "Promise status definitions";
+  const tenantRecord =
+    entity.tenant && typeof entity.tenant === "object"
+      ? (entity.tenant as { name?: string | null })
+      : null;
+  const tenantName = tenantRecord?.name ?? undefined;
+  const tenantHref = "/";
   const updatedAtLabel = block.updatedAtLabel?.trim() || "Last updated";
 
   const resolvedData: HeroResolvedData = {
@@ -362,6 +375,11 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
       total: totalPromises,
       statuses: summaries,
       groups,
+    },
+    navigation: {
+      entitySlug,
+      tenantName,
+      tenantHref,
     },
   };
 

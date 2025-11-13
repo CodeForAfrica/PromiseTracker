@@ -3,6 +3,7 @@ import Promises from "./Promises";
 import { slugify } from "@/utils/utils";
 import { PromiseListBlock } from "@/payload-types";
 import { resolveEntityLocale } from "@/utils/locales";
+import { getPromiseUpdateEmbed } from "@/lib/data/promiseUpdates";
 
 export type PromiseListProps = PromiseListBlock & {
   entitySlug?: string;
@@ -30,6 +31,9 @@ async function Index(props: PromiseListProps) {
     return null;
   }
   const locale = resolveEntityLocale(entity);
+  const promiseUpdateSettings = await getPromiseUpdateEmbed();
+  const fallbackImage = promiseUpdateSettings?.defaultImage ?? null;
+
   const { docs } = await payload.find({
     collection: "promises",
     where: {
@@ -75,6 +79,8 @@ async function Index(props: PromiseListProps) {
   });
 
   const promiseStatuses = Array.from(promiseStatusesMap.values());
+  const entityImage =
+    typeof entity.image === "string" ? null : (entity.image ?? null);
   const filterByOptions = {
     label: filterByLabel ?? "",
     items:
@@ -99,6 +105,8 @@ async function Index(props: PromiseListProps) {
       filterByConfig={filterByOptions}
       sortByConfig={sortByOptions}
       promiseStatuses={promiseStatuses}
+      entity={{ name: entity.name, slug: entity.slug, image: entityImage }}
+      fallbackImage={fallbackImage}
     />
   );
 }

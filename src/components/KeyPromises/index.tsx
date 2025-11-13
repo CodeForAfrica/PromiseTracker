@@ -7,6 +7,7 @@ import type {
   PromiseStatus,
 } from "@/payload-types";
 import { KeyPromisesClient, type KeyPromiseItem } from "./KeyPromises.Client";
+import { getPromiseUpdateEmbed } from "@/lib/data/promiseUpdates";
 
 const DEFAULT_ITEMS = 5;
 
@@ -91,6 +92,10 @@ export const KeyPromises = async ({
   });
 
   const promiseDocs = promisesQuery.docs as PromiseDocument[];
+  const promiseUpdateSettings = await getPromiseUpdateEmbed();
+  const fallbackImage = promiseUpdateSettings?.defaultImage
+    ? await resolveMedia(promiseUpdateSettings.defaultImage)
+    : null;
 
   const items: KeyPromiseItem[] = [];
 
@@ -113,6 +118,7 @@ export const KeyPromises = async ({
     }
 
     const image = await resolveMedia(promise.image ?? null);
+    const displayImage = image ?? fallbackImage;
     const titleText = promise.title?.trim() || "Promise";
     const description = promise.description?.trim() || undefined;
     const href = `/${entity.slug}/promises/${promise.id}`;
@@ -132,7 +138,7 @@ export const KeyPromises = async ({
       title: titleText,
       description,
       href,
-      imageUrl: image?.url ?? undefined,
+      imageUrl: displayImage?.url ?? undefined,
       status: { ...statusDetails, date: statusDate },
       statusHistory,
       events: [],
