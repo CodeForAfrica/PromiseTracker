@@ -186,16 +186,16 @@ const PromiseActions = ({
           <Tooltip title="Share">
             <IconButton
               onClick={handleToggleShare}
-              sx={{
-                px: 1.5,
-                py: 1,
+              sx={(theme) => ({
+                width: theme.spacing(6),
+                height: theme.spacing(6),
                 borderRadius: "50%",
                 backgroundColor: shareOpen ? "text.primary" : "grey.100",
                 color: shareOpen ? "common.white" : "text.primary",
                 "&:hover": {
                   backgroundColor: shareOpen ? "text.primary" : "grey.200",
                 },
-              }}
+              })}
             >
               <ShareIcon />
             </IconButton>
