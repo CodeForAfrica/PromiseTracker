@@ -9,8 +9,15 @@ export type PromiseListProps = PromiseListBlock & {
 };
 
 async function Index(props: PromiseListProps) {
-  const { title, filterBy, sortBy, filterByLabel, sortByLabel, entitySlug } =
-    props;
+  const {
+    title,
+    filterBy,
+    sortBy,
+    filterByLabel,
+    sortByLabel,
+    entitySlug,
+    backLabel,
+  } = props;
   const payload = await getGlobalPayload();
 
   const entityQuery = await payload.find({
@@ -99,6 +106,8 @@ async function Index(props: PromiseListProps) {
       filterByConfig={filterByOptions}
       sortByConfig={sortByOptions}
       promiseStatuses={promiseStatuses}
+      entity={{ name: entity.name, slug: entity.slug }}
+      backLabel={backLabel!}
     />
   );
 }

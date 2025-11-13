@@ -1,5 +1,7 @@
 "use client";
-import { Grid, Typography, Chip, Container } from "@mui/material";
+import NextLink from "next/link";
+import { Grid, Typography, Chip, Container, Box } from "@mui/material";
+import ArrowBackIosNewRoundedIcon from "@mui/icons-material/ArrowBackIosNewRounded";
 import React, { useState, useEffect } from "react";
 
 import Filter from "./Filter";
@@ -35,6 +37,11 @@ interface PromisesProps {
   };
   filterByConfig?: FilterSort;
   sortByConfig?: FilterSort;
+  entity?: {
+    name: string;
+    slug: string;
+  };
+  backLabel?: string;
 }
 
 const filterGridSx = {
@@ -74,6 +81,8 @@ function Promises({
   sortLabels,
   filterByConfig,
   sortByConfig,
+  entity,
+  backLabel = "Back to",
 }: PromisesProps) {
   const sortByDeadline = sortLabels?.sortByDeadline;
   const sortByMostRecent = sortLabels?.sortByMostRecent;
@@ -142,16 +151,12 @@ function Promises({
       let sortedItems = items;
       if (sortBy === sortByMostRecent?.slug) {
         sortedItems = items.sort(
-          (a, b) => a.createdAt?.localeCompare(b.createdAt ?? "") ?? 0,
+          (a, b) => a.createdAt?.localeCompare(b.createdAt ?? "") ?? 0
         );
       } else if (sortBy === sortByDeadline?.slug) {
         sortedItems = items.sort((a, b) => {
-          const aUpdated = a.updatedAt
-            ? new Date(a.updatedAt).getTime()
-            : 0;
-          const bUpdated = b?.updatedAt
-            ? new Date(b.updatedAt).getTime()
-            : 1;
+          const aUpdated = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+          const bUpdated = b?.updatedAt ? new Date(b.updatedAt).getTime() : 1;
           return bUpdated - aUpdated;
         });
       }
@@ -161,6 +166,34 @@ function Promises({
 
   return (
     <Container sx={sectionSx}>
+      {entity?.slug ? (
+        <Box
+          sx={(theme) => ({
+            display: "flex",
+            justifyContent: { xs: "center", lg: "flex-start" },
+            mt: theme.typography.pxToRem(12),
+          })}
+        >
+          <Box
+            component={NextLink}
+            href={`/${entity.slug}`}
+            aria-label={`${backLabel} ${entity.name}`}
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              textDecoration: "none",
+              color: "#005DFD",
+            }}
+          >
+            <ArrowBackIosNewRoundedIcon
+              sx={(theme) => ({ fontSize: theme.typography.pxToRem(16) })}
+            />
+            <Typography variant="body2" component="span">
+              {backLabel} {entity.name}
+            </Typography>
+          </Box>
+        </Box>
+      ) : null}
       <Typography variant="h1" sx={sectionTitleSx}>
         {title || "Promises"}
       </Typography>

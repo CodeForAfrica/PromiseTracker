@@ -16,6 +16,13 @@ const PromiseList: Block = {
       localized: false,
     },
     {
+      name: "backLabel",
+      type: "text",
+      required: false,
+      localized: true,
+      defaultValue: "Back to",
+    },
+    {
       name: "filterByLabel",
       type: "text",
       required: false,
