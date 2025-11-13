@@ -29,5 +29,17 @@ export const PromiseUpdates: GlobalConfig = {
         fr: "Code d'intégration Airtable",
       },
     },
+    {
+      name: "updateLabel",
+      type: "text",
+      required: true,
+      defaultValue: "Update Promise",
+      admin: {
+        description: {
+          en: "The label that should appear on the update dialog trigger button.",
+          fr: "Le libellé qui doit apparaître sur le bouton de déclenchement de la boîte de dialogue de mise à jour.",
+        },
+      },
+    },
   ],
 };

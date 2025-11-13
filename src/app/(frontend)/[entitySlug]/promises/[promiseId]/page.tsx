@@ -10,7 +10,7 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import PromiseStatus from "@/components/PromiseStatus";
 import PromiseTimeline from "@/components/PromiseTimeline";
-import ActNowCard from "@/components/ActNowCard";
+import PromiseActions from "@/components/PromiseActions";
 import { CommonHomePage } from "@/components/CommonHomePage";
 import { getDomain } from "@/lib/domain";
 import {
@@ -304,8 +304,9 @@ export default async function PromiseDetailPage({
 
   const promiseUrl = typeof promise.url === "string" ? promise.url : "";
   const titleText = promise.title?.trim() || "Promise";
-  const rawPromiseUpdateEmbed = await getPromiseUpdateEmbed();
+  const promiseUpdateSettings = await getPromiseUpdateEmbed();
   const siteSettings = await getTenantSiteSettings(tenant);
+  const rawPromiseUpdateEmbed = promiseUpdateSettings?.embedCode ?? null;
   const promiseUpdateEmbed = rawPromiseUpdateEmbed
     ? prefillAirtableForm(
         rawPromiseUpdateEmbed,
@@ -322,7 +323,6 @@ export default async function PromiseDetailPage({
   );
 
   const image = await resolveMedia(promise.image ?? null);
-  const entityImage = await resolveMedia(entity.image ?? null);
   const descriptionText = promise.description?.trim() || null;
   const timelineStatus = {
     color: statusColor,
@@ -395,19 +395,17 @@ export default async function PromiseDetailPage({
                   typography: { xs: "h3", lg: "h1" },
                   fontWeight: 600,
                   lineHeight: 1.1,
-                  position: "relative",
-                  "&::after": {
-                    content: '""',
-                    position: "absolute",
-                    bottom: -16,
-                    left: 0,
-                    width: "72px",
-                    borderBottom: `8px solid ${statusColor}`,
-                  },
                 }}
               >
                 {titleText}
               </Typography>
+              <Box sx={{ mt: 2 }}>
+                <PromiseActions
+                  share={actNow?.share ?? null}
+                  updateEmbed={promiseUpdateEmbed}
+                  updateLabel={promiseUpdateSettings?.updateLabel ?? null}
+                />
+              </Box>
             </Stack>
 
             <Grid container spacing={{ xs: 6, lg: 8 }} alignItems="stretch">
@@ -458,18 +456,6 @@ export default async function PromiseDetailPage({
                     width: "100%",
                     maxWidth: "100%",
                     minHeight: { xs: 120, sm: 140, lg: 160 },
-                  }}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, lg: 6 }}>
-                <ActNowCard
-                  {...actNow}
-                  updateEmbed={promiseUpdateEmbed}
-                  entity={{
-                    name: entity.name,
-                    position: entity.position,
-                    region: entity.region ?? null,
-                    image: entityImage,
                   }}
                 />
               </Grid>

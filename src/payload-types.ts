@@ -1840,6 +1840,10 @@ export interface PromiseUpdate {
    * Paste the Airtable embed snippet that should appear inside the update dialog.
    */
   embedCode: string;
+  /**
+   * The label that should appear on the update dialog trigger button.
+   */
+  updateLabel: string;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -2074,6 +2078,7 @@ export interface SettingsSelect<T extends boolean = true> {
  */
 export interface PromiseUpdatesSelect<T extends boolean = true> {
   embedCode?: T;
+  updateLabel?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
