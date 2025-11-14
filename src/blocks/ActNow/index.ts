@@ -11,20 +11,24 @@ export const ActNow: Block = {
     image({
       name: "logo",
       required: true,
+      localized: true,
     }),
     {
       name: "description",
       type: "textarea",
       required: true,
+      localized: true,
     },
     image({
       name: "image",
       required: true,
+      localized: true,
     }),
     link({
       appearances: false,
       overrides: {
         required: true,
+        localized: true,
       },
     }),
   ],

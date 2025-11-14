@@ -1,6 +1,6 @@
 import { getDomain } from "@/lib/domain";
 import { getAllTenants } from "@/lib/data/tenants";
-import type { HomePage, Tenant } from "@/payload-types";
+import type { Tenant, TenantSelectorBlock } from "@/payload-types";
 import {
   Avatar,
   Box,
@@ -91,12 +91,7 @@ export const getTenantLinks = async (): Promise<TenantLink[]> => {
   return entries.sort((a, b) => a.name.localeCompare(b.name));
 };
 
-type TenantSelectionBlock = Extract<
-  HomePage["tenantSelector"]["blocks"][number],
-  { blockType: "tenant-selection" }
->;
-
-type TenantListProps = TenantSelectionBlock & {
+type TenantListProps = TenantSelectorBlock & {
   dense?: boolean;
 };
 

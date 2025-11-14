@@ -3,6 +3,7 @@ import { Block } from "payload";
 const Partners: Block = {
   slug: "partners",
   imageURL: "/cms/partners.png",
+  interfaceName: "PartnersBlock",
   labels: {
     singular: "Partners",
     plural: "Partners",

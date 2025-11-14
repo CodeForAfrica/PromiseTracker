@@ -5,6 +5,7 @@ export const EntitySelection: Block = {
   slug: "entity-selection",
   imageURL: "/cms/entity-selection.png",
   imageAltText: "Entity Selection",
+  interfaceName: "EntitySelectionBlock",
   labels: {
     singular: {
       en: "Entity Selection",
@@ -21,11 +22,13 @@ export const EntitySelection: Block = {
       type: "text",
       required: true,
       defaultValue: "Select an entity to view their promises",
+      localized: true,
     },
     {
       name: "emptyTitle",
       type: "text",
       required: true,
+      localized: true,
       label: {
         en: "Empty List Title",
         fr: "Titre de la liste vide",
@@ -37,6 +40,7 @@ export const EntitySelection: Block = {
       name: "EmptySubtitle",
       type: "textarea",
       required: true,
+      localized: true,
       label: {
         en: "Empty List Subtitle",
         fr: "Sous-titre de la liste vide",
@@ -64,6 +68,7 @@ export const EntitySelection: Block = {
           name: "title",
           type: "text",
           required: true,
+          localized: true,
           label: {
             en: "Group title",
             fr: "Titre du groupe",

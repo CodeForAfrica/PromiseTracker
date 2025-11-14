@@ -6,6 +6,7 @@ import type {
   LegalLinks,
 } from "@/types/navigation";
 import type { Media, Page, SiteSetting, Tenant } from "@/payload-types";
+import type { PayloadLocale } from "@/utils/locales";
 
 const payload = await getGlobalPayload();
 
@@ -31,7 +32,10 @@ export const getTenantBySubDomain = async (subdomain: string | null) => {
   return tenant;
 };
 
-export const getTenantSiteSettings = async (tenant: Tenant) => {
+export const getTenantSiteSettings = async (
+  tenant: Tenant,
+  locale?: PayloadLocale,
+) => {
   const { docs } = await payload.find({
     collection: "site-settings",
     where: {
@@ -40,6 +44,7 @@ export const getTenantSiteSettings = async (tenant: Tenant) => {
       },
     },
     depth: 2,
+    ...(locale ? { locale } : {}),
   });
 
   return docs[0];
@@ -76,13 +81,17 @@ const getDefaultTenantNavigation = () => {
   };
 };
 
-export const getTenantNavigation = async (tenant?: Tenant) => {
+export const getTenantNavigation = async (
+  tenant?: Tenant,
+  locale?: PayloadLocale,
+) => {
   let tenantSettings = null;
   if (tenant) {
-    tenantSettings = await getTenantSiteSettings(tenant);
+    tenantSettings = await getTenantSiteSettings(tenant, locale);
   } else {
     tenantSettings = await payload.findGlobal({
-      slug: "home-page",
+      slug: "global-site-settings",
+      ...(locale ? { locale } : {}),
     });
   }
 

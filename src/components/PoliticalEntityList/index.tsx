@@ -1,5 +1,9 @@
 import { Card, CardContent, Container, Typography } from "@mui/material";
-import type { HomePage, PoliticalEntity, PromiseStatus } from "@/payload-types";
+import type {
+  PoliticalEntity,
+  PromiseStatus,
+  EntityPage,
+} from "@/payload-types";
 import { resolveMedia } from "@/lib/data/media";
 import { getDomain } from "@/lib/domain";
 import { getTenantBySubDomain } from "@/lib/data/tenants";
@@ -21,7 +25,7 @@ type StatusGroupConfig = {
 };
 
 type EntitySelectionBlock = Extract<
-  HomePage["entitySelector"]["blocks"][number],
+  EntityPage["entitySelector"]["blocks"][number],
   { blockType: "entity-selection" }
 > & {
   pageSlugs?: string[];
@@ -41,12 +45,8 @@ const buildHref = (entity: PoliticalEntity, pageSlugs: string[] = []) => {
 
   const baseSegments = pageSlugs.filter((slug) => slug && slug !== "index");
 
-  if (baseSegments.length === 0) {
-    return `/${entitySlug}`;
-  }
-
-  const basePath = baseSegments.join("/");
-  return `/${basePath}/${entitySlug}`;
+  const segments = [entitySlug, ...baseSegments];
+  return `/${segments.join("/")}`;
 };
 
 export const PoliticalEntityList = async ({
@@ -64,7 +64,7 @@ export const PoliticalEntityList = async ({
   }
   const locale = resolveTenantLocale(tenant);
 
-  const politicalEntities = await getPoliticalEntitiesByTenant(tenant);
+  const politicalEntities = await getPoliticalEntitiesByTenant(tenant, locale);
 
   if (!politicalEntities.length) {
     return (
@@ -151,8 +151,7 @@ export const PoliticalEntityList = async ({
       statusGroups.push({
         id: `fallback-${status.id}-${index}`,
         title: status.label,
-        color:
-          status.colors?.textColor || status.colors?.color || "#000000",
+        color: status.colors?.textColor || status.colors?.color || "#000000",
         statusIds: [status.id],
       });
     });

@@ -72,6 +72,7 @@ export interface Config {
     promises: Promise;
     media: Media;
     pages: Page;
+    'global-pages': GlobalPage;
     users: User;
     'site-settings': SiteSetting;
     tenants: Tenant;
@@ -90,6 +91,7 @@ export interface Config {
     promises: PromisesSelect<false> | PromisesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
+    'global-pages': GlobalPagesSelect<false> | GlobalPagesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     tenants: TenantsSelect<false> | TenantsSelect<true>;
@@ -105,15 +107,17 @@ export interface Config {
     defaultIDType: string;
   };
   globals: {
-    'home-page': HomePage;
+    'entity-page': EntityPage;
     settings: Setting;
     'promise-updates': PromiseUpdate;
+    'global-site-settings': GlobalSiteSetting;
     'payload-jobs-stats': PayloadJobsStat;
   };
   globalsSelect: {
-    'home-page': HomePageSelect<false> | HomePageSelect<true>;
+    'entity-page': EntityPageSelect<false> | EntityPageSelect<true>;
     settings: SettingsSelect<false> | SettingsSelect<true>;
     'promise-updates': PromiseUpdatesSelect<false> | PromiseUpdatesSelect<true>;
+    'global-site-settings': GlobalSiteSettingsSelect<false> | GlobalSiteSettingsSelect<true>;
     'payload-jobs-stats': PayloadJobsStatsSelect<false> | PayloadJobsStatsSelect<true>;
   };
   locale: 'en' | 'fr';
@@ -417,17 +421,11 @@ export interface Page {
         | ActNowBlock
         | FAQBlock
         | HeroBlock
-        | KeyPromises
+        | KeyPromisesBlock
         | LatestPromisesBlock
         | NewsletterBlock
         | PageHeaderBlock
-        | {
-            title: string;
-            partners?: (string | Partner)[] | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'partners';
-          }
+        | PartnersBlock
         | PartnerDetailsBlock
         | PromiseListBlock
       )[]
@@ -531,9 +529,9 @@ export interface HeroBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "KeyPromises".
+ * via the `definition` "KeyPromisesBlock".
  */
-export interface KeyPromises {
+export interface KeyPromisesBlock {
   title: string;
   actionLabel?: string | null;
   /**
@@ -609,6 +607,17 @@ export interface PageHeaderBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PartnersBlock".
+ */
+export interface PartnersBlock {
+  title: string;
+  partners?: (string | Partner)[] | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'partners';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "partners".
  */
 export interface Partner {
@@ -666,6 +675,42 @@ export interface PromiseListBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'promise-list';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "global-pages".
+ */
+export interface GlobalPage {
+  id: string;
+  title: string;
+  slug: string;
+  slugLock?: boolean | null;
+  blocks?:
+    | (
+        | ActNowBlock
+        | FAQBlock
+        | NewsletterBlock
+        | PageHeaderBlock
+        | PartnersBlock
+        | PartnerDetailsBlock
+        | TenantSelectorBlock
+      )[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TenantSelectorBlock".
+ */
+export interface TenantSelectorBlock {
+  title: string;
+  subtitle: string;
+  ctaLabel: string;
+  emptyListLabel: string;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'tenant-selection';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -771,27 +816,29 @@ export interface SiteSetting {
         }[]
       | null;
   };
-  secondaryNavigationList: {
-    secondaryNavigation?: {
-      titles?: string | null;
-      menus?:
-        | {
-            link: {
-              type?: ('reference' | 'custom') | null;
-              newTab?: boolean | null;
-              reference?: {
-                relationTo: 'pages';
-                value: string | Page;
-              } | null;
-              url?: string | null;
-              label: string;
-            };
-            id?: string | null;
-          }[]
-        | null;
-    };
-    id?: string | null;
-  }[];
+  secondaryNavigationList?:
+    | {
+        secondaryNavigation?: {
+          titles?: string | null;
+          menus?:
+            | {
+                link: {
+                  type?: ('reference' | 'custom') | null;
+                  newTab?: boolean | null;
+                  reference?: {
+                    relationTo: 'pages';
+                    value: string | Page;
+                  } | null;
+                  url?: string | null;
+                  label: string;
+                };
+                id?: string | null;
+              }[]
+            | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
   connect: {
     /**
      * Text that appears on contact links e.g Stay in Touch
@@ -1001,6 +1048,10 @@ export interface PayloadLockedDocument {
         value: string | Page;
       } | null)
     | ({
+        relationTo: 'global-pages';
+        value: string | GlobalPage;
+      } | null)
+    | ({
         relationTo: 'users';
         value: string | User;
       } | null)
@@ -1176,18 +1227,11 @@ export interface PagesSelect<T extends boolean = true> {
         'act-now'?: T | ActNowBlockSelect<T>;
         faq?: T | FAQBlockSelect<T>;
         hero?: T | HeroBlockSelect<T>;
-        'key-promises'?: T | KeyPromisesSelect<T>;
+        'key-promises'?: T | KeyPromisesBlockSelect<T>;
         'latest-promises'?: T | LatestPromisesBlockSelect<T>;
         newsletter?: T | NewsletterBlockSelect<T>;
         'page-header'?: T | PageHeaderBlockSelect<T>;
-        partners?:
-          | T
-          | {
-              title?: T;
-              partners?: T;
-              id?: T;
-              blockName?: T;
-            };
+        partners?: T | PartnersBlockSelect<T>;
         'partner-details'?: T | PartnerDetailsBlockSelect<T>;
         'promise-list'?: T | PromiseListBlockSelect<T>;
       };
@@ -1260,9 +1304,9 @@ export interface HeroBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "KeyPromises_select".
+ * via the `definition` "KeyPromisesBlock_select".
  */
-export interface KeyPromisesSelect<T extends boolean = true> {
+export interface KeyPromisesBlockSelect<T extends boolean = true> {
   title?: T;
   actionLabel?: T;
   itemsToShow?: T;
@@ -1310,6 +1354,16 @@ export interface PageHeaderBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PartnersBlock_select".
+ */
+export interface PartnersBlockSelect<T extends boolean = true> {
+  title?: T;
+  partners?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "PartnerDetailsBlock_select".
  */
 export interface PartnerDetailsBlockSelect<T extends boolean = true> {
@@ -1327,6 +1381,40 @@ export interface PromiseListBlockSelect<T extends boolean = true> {
   sortByLabel?: T;
   filterBy?: T;
   sortBy?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "global-pages_select".
+ */
+export interface GlobalPagesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  slugLock?: T;
+  blocks?:
+    | T
+    | {
+        'act-now'?: T | ActNowBlockSelect<T>;
+        faq?: T | FAQBlockSelect<T>;
+        newsletter?: T | NewsletterBlockSelect<T>;
+        'page-header'?: T | PageHeaderBlockSelect<T>;
+        partners?: T | PartnersBlockSelect<T>;
+        'partner-details'?: T | PartnerDetailsBlockSelect<T>;
+        'tenant-selection'?: T | TenantSelectorBlockSelect<T>;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TenantSelectorBlock_select".
+ */
+export interface TenantSelectorBlockSelect<T extends boolean = true> {
+  title?: T;
+  subtitle?: T;
+  ctaLabel?: T;
+  emptyListLabel?: T;
   id?: T;
   blockName?: T;
 }
@@ -1619,65 +1707,98 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "home-page".
+ * via the `definition` "entity-page".
  */
-export interface HomePage {
+export interface EntityPage {
   id: string;
-  tenantSelector: {
-    blocks: (
-      | ActNowBlock
-      | {
-          title: string;
-          subtitle: string;
-          ctaLabel: string;
-          emptyListLabel: string;
-          id?: string | null;
-          blockName?: string | null;
-          blockType: 'tenant-selection';
-        }
-      | NewsletterBlock
-      | {
-          title: string;
-          partners?: (string | Partner)[] | null;
-          id?: string | null;
-          blockName?: string | null;
-          blockType: 'partners';
-        }
-    )[];
-  };
   entitySelector: {
-    blocks: (
-      | ActNowBlock
-      | {
-          title: string;
-          emptyTitle: string;
-          EmptySubtitle: string;
-          /**
-           * Select promise statuses to highlight in entity lists and hero sections.
-           */
-          statusGroups?:
-            | {
-                title: string;
-                color: string;
-                statuses: (string | PromiseStatus)[];
-                id?: string | null;
-              }[]
-            | null;
-          id?: string | null;
-          blockName?: string | null;
-          blockType: 'entity-selection';
-        }
-      | EntityHeroBlock
-      | NewsletterBlock
-      | {
-          title: string;
-          partners?: (string | Partner)[] | null;
-          id?: string | null;
-          blockName?: string | null;
-          blockType: 'partners';
-        }
-    )[];
+    blocks: (ActNowBlock | EntitySelectionBlock | EntityHeroBlock | NewsletterBlock | PartnersBlock)[];
   };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "EntitySelectionBlock".
+ */
+export interface EntitySelectionBlock {
+  title: string;
+  emptyTitle: string;
+  EmptySubtitle: string;
+  /**
+   * Select promise statuses to highlight in entity lists and hero sections.
+   */
+  statusGroups?:
+    | {
+        title: string;
+        color: string;
+        statuses: (string | PromiseStatus)[];
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'entity-selection';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "EntityHeroBlock".
+ */
+export interface EntityHeroBlock {
+  title: string;
+  description: string;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'entity-hero';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "settings".
+ */
+export interface Setting {
+  id: string;
+  airtable: {
+    airtableAPIKey: string;
+    airtableBaseID: string;
+  };
+  ai: {
+    model: 'gemini-2.5-pro' | 'gemini-2.5-flash-lite';
+    apiKey: string;
+  };
+  meedan: {
+    meedanAPIKey: string;
+    teamId: string;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promise-updates".
+ */
+export interface PromiseUpdate {
+  id: string;
+  /**
+   * The default image that should be used for a promise.
+   */
+  defaultImage: string | Media;
+  /**
+   * Paste the Airtable embed snippet that should appear inside the update dialog.
+   */
+  embedCode: string;
+  /**
+   * The label that should appear on the update dialog trigger button.
+   */
+  updateLabel: string;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "global-site-settings".
+ */
+export interface GlobalSiteSetting {
+  id: string;
   title: string;
   description: {
     root: {
@@ -1745,27 +1866,29 @@ export interface HomePage {
         }[]
       | null;
   };
-  secondaryNavigationList: {
-    secondaryNavigation?: {
-      titles?: string | null;
-      menus?:
-        | {
-            link: {
-              type?: ('reference' | 'custom') | null;
-              newTab?: boolean | null;
-              reference?: {
-                relationTo: 'pages';
-                value: string | Page;
-              } | null;
-              url?: string | null;
-              label: string;
-            };
-            id?: string | null;
-          }[]
-        | null;
-    };
-    id?: string | null;
-  }[];
+  secondaryNavigationList?:
+    | {
+        secondaryNavigation?: {
+          titles?: string | null;
+          menus?:
+            | {
+                link: {
+                  type?: ('reference' | 'custom') | null;
+                  newTab?: boolean | null;
+                  reference?: {
+                    relationTo: 'pages';
+                    value: string | Page;
+                  } | null;
+                  url?: string | null;
+                  label: string;
+                };
+                id?: string | null;
+              }[]
+            | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
   connect: {
     /**
      * Text that appears on contact links e.g Stay in Touch
@@ -1791,59 +1914,14 @@ export interface HomePage {
       description: string;
     };
   };
-  updatedAt?: string | null;
-  createdAt?: string | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "EntityHeroBlock".
- */
-export interface EntityHeroBlock {
-  title: string;
-  description: string;
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'entity-hero';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "settings".
- */
-export interface Setting {
-  id: string;
-  airtable: {
-    airtableAPIKey: string;
-    airtableBaseID: string;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (string | null) | Media;
   };
-  ai: {
-    model: 'gemini-2.5-pro' | 'gemini-2.5-flash-lite';
-    apiKey: string;
-  };
-  meedan: {
-    meedanAPIKey: string;
-    teamId: string;
-  };
-  updatedAt?: string | null;
-  createdAt?: string | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "promise-updates".
- */
-export interface PromiseUpdate {
-  id: string;
-  /**
-   * The default image that should be used for a promise.
-   */
-  defaultImage: string | Media;
-  /**
-   * Paste the Airtable embed snippet that should appear inside the update dialog.
-   */
-  embedCode: string;
-  /**
-   * The label that should appear on the update dialog trigger button.
-   */
-  updateLabel: string;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -1867,37 +1945,9 @@ export interface PayloadJobsStat {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "home-page_select".
+ * via the `definition` "entity-page_select".
  */
-export interface HomePageSelect<T extends boolean = true> {
-  tenantSelector?:
-    | T
-    | {
-        blocks?:
-          | T
-          | {
-              'act-now'?: T | ActNowBlockSelect<T>;
-              'tenant-selection'?:
-                | T
-                | {
-                    title?: T;
-                    subtitle?: T;
-                    ctaLabel?: T;
-                    emptyListLabel?: T;
-                    id?: T;
-                    blockName?: T;
-                  };
-              newsletter?: T | NewsletterBlockSelect<T>;
-              partners?:
-                | T
-                | {
-                    title?: T;
-                    partners?: T;
-                    id?: T;
-                    blockName?: T;
-                  };
-            };
-      };
+export interface EntityPageSelect<T extends boolean = true> {
   entitySelector?:
     | T
     | {
@@ -1905,35 +1955,89 @@ export interface HomePageSelect<T extends boolean = true> {
           | T
           | {
               'act-now'?: T | ActNowBlockSelect<T>;
-              'entity-selection'?:
-                | T
-                | {
-                    title?: T;
-                    emptyTitle?: T;
-                    EmptySubtitle?: T;
-                    statusGroups?:
-                      | T
-                      | {
-                          title?: T;
-                          color?: T;
-                          statuses?: T;
-                          id?: T;
-                        };
-                    id?: T;
-                    blockName?: T;
-                  };
+              'entity-selection'?: T | EntitySelectionBlockSelect<T>;
               'entity-hero'?: T | EntityHeroBlockSelect<T>;
               newsletter?: T | NewsletterBlockSelect<T>;
-              partners?:
-                | T
-                | {
-                    title?: T;
-                    partners?: T;
-                    id?: T;
-                    blockName?: T;
-                  };
+              partners?: T | PartnersBlockSelect<T>;
             };
       };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "EntitySelectionBlock_select".
+ */
+export interface EntitySelectionBlockSelect<T extends boolean = true> {
+  title?: T;
+  emptyTitle?: T;
+  EmptySubtitle?: T;
+  statusGroups?:
+    | T
+    | {
+        title?: T;
+        color?: T;
+        statuses?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "EntityHeroBlock_select".
+ */
+export interface EntityHeroBlockSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "settings_select".
+ */
+export interface SettingsSelect<T extends boolean = true> {
+  airtable?:
+    | T
+    | {
+        airtableAPIKey?: T;
+        airtableBaseID?: T;
+      };
+  ai?:
+    | T
+    | {
+        model?: T;
+        apiKey?: T;
+      };
+  meedan?:
+    | T
+    | {
+        meedanAPIKey?: T;
+        teamId?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promise-updates_select".
+ */
+export interface PromiseUpdatesSelect<T extends boolean = true> {
+  defaultImage?: T;
+  embedCode?: T;
+  updateLabel?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "global-site-settings_select".
+ */
+export interface GlobalSiteSettingsSelect<T extends boolean = true> {
   title?: T;
   description?: T;
   primaryLogo?: T;
@@ -2031,55 +2135,13 @@ export interface HomePageSelect<T extends boolean = true> {
               description?: T;
             };
       };
-  updatedAt?: T;
-  createdAt?: T;
-  globalType?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "EntityHeroBlock_select".
- */
-export interface EntityHeroBlockSelect<T extends boolean = true> {
-  title?: T;
-  description?: T;
-  id?: T;
-  blockName?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "settings_select".
- */
-export interface SettingsSelect<T extends boolean = true> {
-  airtable?:
+  meta?:
     | T
     | {
-        airtableAPIKey?: T;
-        airtableBaseID?: T;
+        title?: T;
+        description?: T;
+        image?: T;
       };
-  ai?:
-    | T
-    | {
-        model?: T;
-        apiKey?: T;
-      };
-  meedan?:
-    | T
-    | {
-        meedanAPIKey?: T;
-        teamId?: T;
-      };
-  updatedAt?: T;
-  createdAt?: T;
-  globalType?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "promise-updates_select".
- */
-export interface PromiseUpdatesSelect<T extends boolean = true> {
-  defaultImage?: T;
-  embedCode?: T;
-  updateLabel?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

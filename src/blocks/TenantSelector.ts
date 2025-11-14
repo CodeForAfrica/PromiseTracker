@@ -4,6 +4,7 @@ export const TenantSelection: Block = {
   slug: "tenant-selection",
   imageURL: "/cms/tenant-selector.png",
   imageAltText: "Tenant Selector",
+  interfaceName: "TenantSelectorBlock",
   fields: [
     {
       name: "title",
@@ -14,11 +15,13 @@ export const TenantSelection: Block = {
         fr: "Titre de la section",
       },
       defaultValue: "Select Tenant",
+      localized: true,
     },
     {
       name: "subtitle",
       type: "textarea",
       required: true,
+      localized: true,
       label: {
         en: "Section description",
         fr: "Description de la section",
@@ -28,6 +31,7 @@ export const TenantSelection: Block = {
     {
       name: "ctaLabel",
       required: true,
+      localized: true,
       type: "text",
       label: {
         en: "CTA label",
@@ -39,6 +43,7 @@ export const TenantSelection: Block = {
       name: "emptyListLabel",
       type: "text",
       required: true,
+      localized: true,
       label: {
         en: "Empty Tenant List Label",
         fr: "Étiquette de liste de locataires vide",

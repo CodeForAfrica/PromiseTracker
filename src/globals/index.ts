@@ -1,6 +1,12 @@
 import { GlobalConfig } from "payload";
 import { Settings } from "./Settings";
 import { PromiseUpdates } from "./PromiseUpdates";
-import { HomePage } from "./HomePage";
+import { EntityPage } from "./EntityPage";
+import { GlobalSiteSettings } from "./GlobalSettings";
 
-export const globals: GlobalConfig[] = [HomePage, Settings, PromiseUpdates];
+export const globals: GlobalConfig[] = [
+  EntityPage,
+  Settings,
+  PromiseUpdates,
+  GlobalSiteSettings,
+];
