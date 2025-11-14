@@ -4,6 +4,7 @@ export const TenantSelection: Block = {
   slug: "tenant-selection",
   imageURL: "/cms/tenant-selector.png",
   imageAltText: "Tenant Selector",
+  interfaceName: "TenantSelectorBlock",
   fields: [
     {
       name: "title",

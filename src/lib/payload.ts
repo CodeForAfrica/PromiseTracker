@@ -39,3 +39,20 @@ export const queryPageBySlug = async ({
 
   return pages[0];
 };
+
+export const queryGlobalPageBySlug = async ({ slug }: { slug: string }) => {
+  const payload = await getGlobalPayload();
+  const { docs: pages } = await payload.find({
+    collection: "global-pages",
+    pagination: false,
+    limit: 1,
+    depth: 6,
+    where: {
+      slug: {
+        equals: slug,
+      },
+    },
+  });
+
+  return pages[0];
+};

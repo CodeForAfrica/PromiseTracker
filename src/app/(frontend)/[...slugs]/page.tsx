@@ -2,9 +2,12 @@ import React, { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
-import { getGlobalPayload, queryPageBySlug } from "@/lib/payload";
+import {
+  getGlobalPayload,
+  queryGlobalPageBySlug,
+  queryPageBySlug,
+} from "@/lib/payload";
 import { getDomain } from "@/lib/domain";
-import { CommonHomePage } from "@/components/CommonHomePage";
 import { BlockRenderer } from "@/components/BlockRenderer";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -12,6 +15,7 @@ import { getTenantBySubDomain, getTenantNavigation } from "@/lib/data/tenants";
 import { getPoliticalEntitiesByTenant } from "@/lib/data/politicalEntities";
 import {
   buildSeoMetadata,
+  composeTitleSegments,
   getEntitySeo,
   getPageSeo,
   resolveTenantSeoContext,
@@ -26,12 +30,24 @@ type Args = {
 export async function generateMetadata({ params }: Args): Promise<Metadata> {
   const paramsValue = await params;
   const slugs = paramsValue?.slugs ?? [];
+  const pageSlug = slugs[0] ?? "index";
 
   const { subdomain } = await getDomain();
   const tenantResolution = await resolveTenantSeoContext(subdomain);
 
   if (tenantResolution.status === "missing") {
-    return tenantResolution.metadata;
+    const globalPage = await queryGlobalPageBySlug({ slug: pageSlug });
+
+    if (!globalPage) {
+      return tenantResolution.metadata;
+    }
+
+    return buildSeoMetadata({
+      defaults: {
+        ...tenantResolution.defaultSeo,
+        title: globalPage.title || tenantResolution.defaultSeo.title,
+      },
+    });
   }
 
   const { tenant, tenantSettings, tenantSeo, tenantTitleBase } =
@@ -57,10 +73,23 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
     tenantTitleBase,
   });
 
-  const pageSlug = pageSlugCandidate ?? "index";
-  const page = await queryPageBySlug({ slug: pageSlug, tenant });
+  const tenantPageSlug = pageSlugCandidate ?? "index";
+  const page = await queryPageBySlug({ slug: tenantPageSlug, tenant });
 
   if (!page) {
+    const globalPage = await queryGlobalPageBySlug({ slug: tenantPageSlug });
+
+    if (globalPage) {
+      return buildSeoMetadata({
+        defaults: {
+          ...entitySeo,
+          title:
+            composeTitleSegments(globalPage.title, politicalEntity.name) ||
+            entitySeo.title,
+        },
+      });
+    }
+
     return buildSeoMetadata({
       meta: politicalEntity.meta,
       defaults: entitySeo,
@@ -89,7 +118,17 @@ export default async function Page(params: Args) {
   const { title, description, navigation, footer } =
     await getTenantNavigation(tenant);
 
+  const paramsValue = await params.params;
+  const slugs = paramsValue?.slugs ?? [];
+
   if (!tenant) {
+    const pageSlug = slugs[0] ?? "index";
+    const globalPage = await queryGlobalPageBySlug({ slug: pageSlug });
+
+    if (!globalPage) {
+      return notFound();
+    }
+
     return (
       <>
         <Navigation
@@ -98,13 +137,13 @@ export default async function Page(params: Args) {
           tenantSelectionHref={tenantSelectionHref}
           showSearch={false}
         />
-        <CommonHomePage />
+        <Suspense>
+          <BlockRenderer blocks={globalPage.blocks} />
+        </Suspense>
       </>
     );
   }
 
-  const paramsValue = await params.params;
-  const slugs = paramsValue?.slugs ?? [];
   const [maybePoliticalEntitySlug, pageSlugCandidate] = slugs;
 
   const politicalEntities = await getPoliticalEntitiesByTenant(tenant);
@@ -128,17 +167,12 @@ export default async function Page(params: Args) {
         redirect(targetPath);
       }
     }
-    const fallbackPageSlugs = slugs.length > 0 ? slugs : ["index"];
+
     const payload = await getGlobalPayload();
     const homePage = await payload.findGlobal({
       slug: "home-page",
     });
-    const entityBlocks = (homePage?.entitySelector?.blocks ?? []).map(
-      (block) =>
-        block.blockType === "entity-selection"
-          ? { ...block, pageSlugs: fallbackPageSlugs }
-          : block
-    );
+    const entityBlocks = homePage?.entitySelector?.blocks ?? [];
 
     return (
       <>
@@ -147,18 +181,46 @@ export default async function Page(params: Args) {
           {...navigation}
           tenantSelectionHref={tenantSelectionHref}
         />
-        <BlockRenderer blocks={entityBlocks} />
+        <Suspense>
+          <BlockRenderer blocks={entityBlocks} />
+        </Suspense>
         <Footer title={title} description={description} {...footer} />
       </>
     );
   }
 
-  const pageSlug = pageSlugCandidate ?? "index";
+  const tenantPageSlug = pageSlugCandidate ?? "index";
 
-  const page = await queryPageBySlug({ slug: pageSlug, tenant });
+  const page = await queryPageBySlug({ slug: tenantPageSlug, tenant });
 
   if (!page) {
-    return notFound();
+    const globalPage = await queryGlobalPageBySlug({ slug: tenantPageSlug });
+    if (!globalPage) {
+      return notFound();
+    }
+
+    return (
+      <>
+        <Navigation
+          title={title}
+          {...navigation}
+          entitySlug={politicalEntity.slug}
+          tenantName={tenant?.name ?? null}
+          tenantSelectionHref={tenantSelectionHref}
+          tenantFlag={tenant?.flag ?? null}
+          tenantFlagLabel={tenant?.name ?? tenant?.country ?? null}
+        />
+        <Suspense>
+          <BlockRenderer blocks={globalPage.blocks} entity={politicalEntity} />
+        </Suspense>
+        <Footer
+          title={title}
+          description={description}
+          {...footer}
+          entitySlug={politicalEntity.slug}
+        />
+      </>
+    );
   }
 
   const { blocks } = page;

@@ -28,32 +28,6 @@ export const HomePage: GlobalConfig = {
       tabs: [
         {
           label: {
-            en: "Tenant Selector",
-            fr: "Sélecteur de locataire",
-          },
-          fields: [
-            {
-              name: "tenantSelector",
-              type: "group",
-              label: "",
-              required: true,
-              admin: {
-                hideGutter: true,
-              },
-              fields: [
-                {
-                  localized: true,
-                  name: "blocks",
-                  type: "blocks",
-                  required: true,
-                  blocks: [ActNow, TenantSelection, Newsletter, Partners],
-                },
-              ],
-            },
-          ],
-        },
-        {
-          label: {
             en: "Entity Selector",
             fr: "Sélecteur d'entité",
           },

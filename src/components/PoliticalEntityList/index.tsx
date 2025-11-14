@@ -41,12 +41,8 @@ const buildHref = (entity: PoliticalEntity, pageSlugs: string[] = []) => {
 
   const baseSegments = pageSlugs.filter((slug) => slug && slug !== "index");
 
-  if (baseSegments.length === 0) {
-    return `/${entitySlug}`;
-  }
-
-  const basePath = baseSegments.join("/");
-  return `/${basePath}/${entitySlug}`;
+  const segments = [entitySlug, ...baseSegments];
+  return `/${segments.join("/")}`;
 };
 
 export const PoliticalEntityList = async ({
@@ -151,8 +147,7 @@ export const PoliticalEntityList = async ({
       statusGroups.push({
         id: `fallback-${status.id}-${index}`,
         title: status.label,
-        color:
-          status.colors?.textColor || status.colors?.color || "#000000",
+        color: status.colors?.textColor || status.colors?.color || "#000000",
         statusIds: [status.id],
       });
     });

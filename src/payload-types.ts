@@ -72,6 +72,7 @@ export interface Config {
     promises: Promise;
     media: Media;
     pages: Page;
+    'global-pages': GlobalPage;
     users: User;
     'site-settings': SiteSetting;
     tenants: Tenant;
@@ -90,6 +91,7 @@ export interface Config {
     promises: PromisesSelect<false> | PromisesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
+    'global-pages': GlobalPagesSelect<false> | GlobalPagesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     tenants: TenantsSelect<false> | TenantsSelect<true>;
@@ -669,6 +671,48 @@ export interface PromiseListBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "global-pages".
+ */
+export interface GlobalPage {
+  id: string;
+  title: string;
+  slug: string;
+  slugLock?: boolean | null;
+  blocks?:
+    | (
+        | ActNowBlock
+        | FAQBlock
+        | NewsletterBlock
+        | PageHeaderBlock
+        | {
+            title: string;
+            partners?: (string | Partner)[] | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'partners';
+          }
+        | PartnerDetailsBlock
+        | TenantSelectorBlock
+      )[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TenantSelectorBlock".
+ */
+export interface TenantSelectorBlock {
+  title: string;
+  subtitle: string;
+  ctaLabel: string;
+  emptyListLabel: string;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'tenant-selection';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
 export interface User {
@@ -999,6 +1043,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'pages';
         value: string | Page;
+      } | null)
+    | ({
+        relationTo: 'global-pages';
+        value: string | GlobalPage;
       } | null)
     | ({
         relationTo: 'users';
@@ -1332,6 +1380,47 @@ export interface PromiseListBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "global-pages_select".
+ */
+export interface GlobalPagesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  slugLock?: T;
+  blocks?:
+    | T
+    | {
+        'act-now'?: T | ActNowBlockSelect<T>;
+        faq?: T | FAQBlockSelect<T>;
+        newsletter?: T | NewsletterBlockSelect<T>;
+        'page-header'?: T | PageHeaderBlockSelect<T>;
+        partners?:
+          | T
+          | {
+              title?: T;
+              partners?: T;
+              id?: T;
+              blockName?: T;
+            };
+        'partner-details'?: T | PartnerDetailsBlockSelect<T>;
+        'tenant-selection'?: T | TenantSelectorBlockSelect<T>;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TenantSelectorBlock_select".
+ */
+export interface TenantSelectorBlockSelect<T extends boolean = true> {
+  title?: T;
+  subtitle?: T;
+  ctaLabel?: T;
+  emptyListLabel?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
@@ -1623,28 +1712,6 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
  */
 export interface HomePage {
   id: string;
-  tenantSelector: {
-    blocks: (
-      | ActNowBlock
-      | {
-          title: string;
-          subtitle: string;
-          ctaLabel: string;
-          emptyListLabel: string;
-          id?: string | null;
-          blockName?: string | null;
-          blockType: 'tenant-selection';
-        }
-      | NewsletterBlock
-      | {
-          title: string;
-          partners?: (string | Partner)[] | null;
-          id?: string | null;
-          blockName?: string | null;
-          blockType: 'partners';
-        }
-    )[];
-  };
   entitySelector: {
     blocks: (
       | ActNowBlock
@@ -1870,34 +1937,6 @@ export interface PayloadJobsStat {
  * via the `definition` "home-page_select".
  */
 export interface HomePageSelect<T extends boolean = true> {
-  tenantSelector?:
-    | T
-    | {
-        blocks?:
-          | T
-          | {
-              'act-now'?: T | ActNowBlockSelect<T>;
-              'tenant-selection'?:
-                | T
-                | {
-                    title?: T;
-                    subtitle?: T;
-                    ctaLabel?: T;
-                    emptyListLabel?: T;
-                    id?: T;
-                    blockName?: T;
-                  };
-              newsletter?: T | NewsletterBlockSelect<T>;
-              partners?:
-                | T
-                | {
-                    title?: T;
-                    partners?: T;
-                    id?: T;
-                    blockName?: T;
-                  };
-            };
-      };
   entitySelector?:
     | T
     | {

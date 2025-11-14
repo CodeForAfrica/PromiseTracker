@@ -10,6 +10,7 @@ import { SiteSettings } from "./SiteSettings";
 import { Partners } from "./Partners";
 import { PoliticalEntities } from "./PoliticalEntities";
 import { PromiseStatus } from "./PromiseStatus";
+import { GlobalPages } from "./Pages/GlobalPages";
 
 export const collections: CollectionConfig[] = [
   Documents,
@@ -17,6 +18,7 @@ export const collections: CollectionConfig[] = [
   Promises,
   Media,
   Pages,
+  GlobalPages,
   Users,
   SiteSettings,
   Tenants,
