@@ -20,6 +20,8 @@ import {
   getPageSeo,
   resolveTenantSeoContext,
 } from "@/lib/seo";
+import { resolveTenantLocale } from "@/utils/locales";
+import { resolveBrowserLocale } from "../layout";
 
 type Args = {
   params: Promise<{
@@ -36,7 +38,8 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
   const tenantResolution = await resolveTenantSeoContext(subdomain);
 
   if (tenantResolution.status === "missing") {
-    const globalPage = await queryGlobalPageBySlug({ slug: pageSlug });
+    const locale = await resolveBrowserLocale();
+    const globalPage = await queryGlobalPageBySlug({ slug: pageSlug, locale });
 
     if (!globalPage) {
       return tenantResolution.metadata;
@@ -52,8 +55,12 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
 
   const { tenant, tenantSettings, tenantSeo, tenantTitleBase } =
     tenantResolution.context;
+  const tenantLocale = resolveTenantLocale(tenant);
 
-  const politicalEntities = await getPoliticalEntitiesByTenant(tenant);
+  const politicalEntities = await getPoliticalEntitiesByTenant(
+    tenant,
+    tenantLocale,
+  );
   const [maybePoliticalEntitySlug, pageSlugCandidate] = slugs;
   const politicalEntity = politicalEntities.find(
     (entity) => entity.slug === maybePoliticalEntitySlug
@@ -74,10 +81,17 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
   });
 
   const tenantPageSlug = pageSlugCandidate ?? "index";
-  const page = await queryPageBySlug({ slug: tenantPageSlug, tenant });
+  const page = await queryPageBySlug({
+    slug: tenantPageSlug,
+    tenant,
+    locale: tenantLocale,
+  });
 
   if (!page) {
-    const globalPage = await queryGlobalPageBySlug({ slug: tenantPageSlug });
+    const globalPage = await queryGlobalPageBySlug({
+      slug: tenantPageSlug,
+      locale: tenantLocale,
+    });
 
     if (globalPage) {
       return buildSeoMetadata({
@@ -114,16 +128,19 @@ export default async function Page(params: Args) {
   const { subdomain, tenantSelectionHref } = await getDomain();
 
   const tenant = await getTenantBySubDomain(subdomain);
+  const locale = tenant
+    ? resolveTenantLocale(tenant)
+    : await resolveBrowserLocale();
 
   const { title, description, navigation, footer } =
-    await getTenantNavigation(tenant);
+    await getTenantNavigation(tenant, locale);
 
   const paramsValue = await params.params;
   const slugs = paramsValue?.slugs ?? [];
 
   if (!tenant) {
     const pageSlug = slugs[0] ?? "index";
-    const globalPage = await queryGlobalPageBySlug({ slug: pageSlug });
+    const globalPage = await queryGlobalPageBySlug({ slug: pageSlug, locale });
 
     if (!globalPage) {
       return notFound();
@@ -146,7 +163,7 @@ export default async function Page(params: Args) {
 
   const [maybePoliticalEntitySlug, pageSlugCandidate] = slugs;
 
-  const politicalEntities = await getPoliticalEntitiesByTenant(tenant);
+  const politicalEntities = await getPoliticalEntitiesByTenant(tenant, locale);
 
   const politicalEntity = politicalEntities.find(
     (entity) => entity.slug === maybePoliticalEntitySlug
@@ -171,6 +188,7 @@ export default async function Page(params: Args) {
     const payload = await getGlobalPayload();
     const homePage = await payload.findGlobal({
       slug: "home-page",
+      locale,
     });
     const entityBlocks = homePage?.entitySelector?.blocks ?? [];
 
@@ -191,10 +209,17 @@ export default async function Page(params: Args) {
 
   const tenantPageSlug = pageSlugCandidate ?? "index";
 
-  const page = await queryPageBySlug({ slug: tenantPageSlug, tenant });
+  const page = await queryPageBySlug({
+    slug: tenantPageSlug,
+    tenant,
+    locale,
+  });
 
   if (!page) {
-    const globalPage = await queryGlobalPageBySlug({ slug: tenantPageSlug });
+    const globalPage = await queryGlobalPageBySlug({
+      slug: tenantPageSlug,
+      locale,
+    });
     if (!globalPage) {
       return notFound();
     }

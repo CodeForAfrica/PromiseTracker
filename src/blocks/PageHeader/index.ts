@@ -39,6 +39,7 @@ export const PageHeader: Block = {
     image({
       name: "image",
       required: true,
+      localized: true,
       label: {
         en: "Image",
         fr: "Image",

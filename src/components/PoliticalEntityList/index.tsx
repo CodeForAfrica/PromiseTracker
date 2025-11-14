@@ -60,7 +60,10 @@ export const PoliticalEntityList = async ({
   }
   const locale = resolveTenantLocale(tenant);
 
-  const politicalEntities = await getPoliticalEntitiesByTenant(tenant);
+  const politicalEntities = await getPoliticalEntitiesByTenant(
+    tenant,
+    locale,
+  );
 
   if (!politicalEntities.length) {
     return (

@@ -17,10 +17,8 @@ import FAQ from "./FAQ";
 type PageBlocks = NonNullable<Page["blocks"]>;
 type PageBlock = PageBlocks extends Array<infer T> ? T : never;
 
-type TenantSelectorBlocks = HomePage["tenantSelector"]["blocks"];
-type TenantSelectionBlockBase =
-  TenantSelectorBlocks extends Array<infer T> ? T : never;
-type TenantSelectionBlock = TenantSelectionBlockBase;
+type GlobalPageBlocks = NonNullable<GlobalPage["blocks"]>;
+type GlobalPageBlock = GlobalPageBlocks extends Array<infer T> ? T : never;
 
 type EntitySelectorBlocks = HomePage["entitySelector"]["blocks"];
 type EntitySelectionBlockBase =
@@ -29,14 +27,7 @@ type EntitySelectionBlock = EntitySelectionBlockBase & {
   pageSlugs?: string[];
 };
 
-type GlobalPageBlocks = NonNullable<GlobalPage["blocks"]>;
-type GlobalPageBlock = GlobalPageBlocks extends Array<infer T> ? T : never;
-
-type ResolvedBlock =
-  | PageBlock
-  | TenantSelectionBlock
-  | EntitySelectionBlock
-  | GlobalPageBlock;
+type ResolvedBlock = PageBlock | EntitySelectionBlock | GlobalPageBlock;
 
 type BlockProps = {
   blocks: ResolvedBlock[] | null | undefined;

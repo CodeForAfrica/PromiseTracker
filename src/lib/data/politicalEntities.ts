@@ -4,17 +4,20 @@ import type {
   Tenant,
   Promise as PromiseDoc,
 } from "@/payload-types";
+import type { PayloadLocale } from "@/utils/locales";
 
 const payload = await getGlobalPayload();
 
 export const getPoliticalEntitiesByTenant = async (
   tenant: Tenant,
+  locale?: PayloadLocale,
 ): Promise<PoliticalEntity[]> => {
   const { docs } = await payload.find({
     collection: "political-entities",
     limit: -1,
     depth: 2,
     sort: "name",
+    ...(locale ? { locale } : {}),
     where: {
       tenant: {
         equals: tenant,
@@ -28,11 +31,13 @@ export const getPoliticalEntitiesByTenant = async (
 export const getPoliticalEntityBySlug = async (
   tenant: Tenant,
   slug: string,
+  locale?: PayloadLocale,
 ): Promise<PoliticalEntity | undefined> => {
   const { docs } = await payload.find({
     collection: "political-entities",
     limit: 1,
     depth: 2,
+    ...(locale ? { locale } : {}),
     where: {
       and: [
         {

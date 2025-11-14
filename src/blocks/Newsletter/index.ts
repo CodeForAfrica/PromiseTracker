@@ -11,6 +11,7 @@ export const Newsletter: Block = {
   },
   fields: [
     image({
+      localized: true,
       name: "image",
       label: {
         en: "Image",

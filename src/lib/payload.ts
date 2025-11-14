@@ -1,6 +1,7 @@
 import { BasePayload, getPayload } from "payload";
 import config from "@/payload.config";
 import { Tenant } from "@/payload-types";
+import type { PayloadLocale } from "@/utils/locales";
 
 export const getGlobalPayload = async (): Promise<BasePayload> => {
   const payloadConfig = await config;
@@ -11,9 +12,11 @@ export const getGlobalPayload = async (): Promise<BasePayload> => {
 export const queryPageBySlug = async ({
   slug,
   tenant,
+  locale,
 }: {
   slug: string;
   tenant?: Tenant;
+  locale?: PayloadLocale;
 }) => {
   const payload = await getGlobalPayload();
   const { docs: pages } = await payload.find({
@@ -21,6 +24,7 @@ export const queryPageBySlug = async ({
     pagination: false,
     limit: 1,
     depth: 6,
+    ...(locale ? { locale } : {}),
     where: {
       and: [
         {
@@ -40,13 +44,20 @@ export const queryPageBySlug = async ({
   return pages[0];
 };
 
-export const queryGlobalPageBySlug = async ({ slug }: { slug: string }) => {
+export const queryGlobalPageBySlug = async ({
+  slug,
+  locale,
+}: {
+  slug: string;
+  locale?: PayloadLocale;
+}) => {
   const payload = await getGlobalPayload();
   const { docs: pages } = await payload.find({
     collection: "global-pages",
     pagination: false,
     limit: 1,
     depth: 6,
+    ...(locale ? { locale } : {}),
     where: {
       slug: {
         equals: slug,

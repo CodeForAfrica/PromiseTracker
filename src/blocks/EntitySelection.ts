@@ -5,6 +5,7 @@ export const EntitySelection: Block = {
   slug: "entity-selection",
   imageURL: "/cms/entity-selection.png",
   imageAltText: "Entity Selection",
+  interfaceName: "EntitySelectionBlock",
   labels: {
     singular: {
       en: "Entity Selection",

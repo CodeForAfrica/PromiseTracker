@@ -137,7 +137,11 @@ export async function generateMetadata({
     tenantResolution.context;
   const tenantLocale = resolveTenantLocale(tenant);
 
-  const politicalEntity = await getPoliticalEntityBySlug(tenant, entitySlug);
+  const politicalEntity = await getPoliticalEntityBySlug(
+    tenant,
+    entitySlug,
+    tenantLocale,
+  );
   if (!politicalEntity) {
     return buildSeoMetadata({
       meta: tenantSettings?.meta,
@@ -261,9 +265,9 @@ export default async function PromiseDetailPage({
   const locale = resolveTenantLocale(tenant);
 
   const { title, description, navigation, footer } =
-    await getTenantNavigation(tenant);
+    await getTenantNavigation(tenant, locale);
 
-  const entity = await getPoliticalEntityBySlug(tenant, entitySlug);
+  const entity = await getPoliticalEntityBySlug(tenant, entitySlug, locale);
 
   if (!entity) {
     return notFound();
@@ -305,7 +309,7 @@ export default async function PromiseDetailPage({
   const promiseUrl = typeof promise.url === "string" ? promise.url : "";
   const titleText = promise.title?.trim() || "Promise";
   const promiseUpdateSettings = await getPromiseUpdateEmbed();
-  const siteSettings = await getTenantSiteSettings(tenant);
+  const siteSettings = await getTenantSiteSettings(tenant, locale);
   const rawPromiseUpdateEmbed = promiseUpdateSettings?.embedCode ?? null;
   const promiseUpdateEmbed = rawPromiseUpdateEmbed
     ? prefillAirtableForm(

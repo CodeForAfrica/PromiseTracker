@@ -2,7 +2,7 @@ import { Block } from "payload";
 
 export const KeyPromises: Block = {
   slug: "key-promises",
-  interfaceName: "KeyPromises",
+  interfaceName: "KeyPromisesBlock",
   imageURL: "/cms/key-promises.png",
   imageAltText: "Key Promises",
   fields: [

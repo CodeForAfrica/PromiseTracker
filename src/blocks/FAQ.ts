@@ -14,11 +14,13 @@ export const FAQ: Block = {
       name: "title",
       type: "text",
       required: true,
+      localized: true,
     },
     {
       name: "faqs",
       type: "array",
       required: true,
+      localized: true,
       minRows: 1,
       admin: {
         components: {
@@ -35,11 +37,13 @@ export const FAQ: Block = {
           name: "question",
           type: "text",
           required: true,
+          localized: true,
         },
         {
           name: "answer",
           type: "richText",
           required: true,
+          localized: true,
         },
       ],
     },

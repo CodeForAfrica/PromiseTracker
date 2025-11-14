@@ -419,17 +419,11 @@ export interface Page {
         | ActNowBlock
         | FAQBlock
         | HeroBlock
-        | KeyPromises
+        | KeyPromisesBlock
         | LatestPromisesBlock
         | NewsletterBlock
         | PageHeaderBlock
-        | {
-            title: string;
-            partners?: (string | Partner)[] | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'partners';
-          }
+        | PartnersBlock
         | PartnerDetailsBlock
         | PromiseListBlock
       )[]
@@ -533,9 +527,9 @@ export interface HeroBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "KeyPromises".
+ * via the `definition` "KeyPromisesBlock".
  */
-export interface KeyPromises {
+export interface KeyPromisesBlock {
   title: string;
   actionLabel?: string | null;
   /**
@@ -608,6 +602,17 @@ export interface PageHeaderBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'page-header';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PartnersBlock".
+ */
+export interface PartnersBlock {
+  title: string;
+  partners?: (string | Partner)[] | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'partners';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -684,13 +689,7 @@ export interface GlobalPage {
         | FAQBlock
         | NewsletterBlock
         | PageHeaderBlock
-        | {
-            title: string;
-            partners?: (string | Partner)[] | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'partners';
-          }
+        | PartnersBlock
         | PartnerDetailsBlock
         | TenantSelectorBlock
       )[]
@@ -1224,18 +1223,11 @@ export interface PagesSelect<T extends boolean = true> {
         'act-now'?: T | ActNowBlockSelect<T>;
         faq?: T | FAQBlockSelect<T>;
         hero?: T | HeroBlockSelect<T>;
-        'key-promises'?: T | KeyPromisesSelect<T>;
+        'key-promises'?: T | KeyPromisesBlockSelect<T>;
         'latest-promises'?: T | LatestPromisesBlockSelect<T>;
         newsletter?: T | NewsletterBlockSelect<T>;
         'page-header'?: T | PageHeaderBlockSelect<T>;
-        partners?:
-          | T
-          | {
-              title?: T;
-              partners?: T;
-              id?: T;
-              blockName?: T;
-            };
+        partners?: T | PartnersBlockSelect<T>;
         'partner-details'?: T | PartnerDetailsBlockSelect<T>;
         'promise-list'?: T | PromiseListBlockSelect<T>;
       };
@@ -1308,9 +1300,9 @@ export interface HeroBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "KeyPromises_select".
+ * via the `definition` "KeyPromisesBlock_select".
  */
-export interface KeyPromisesSelect<T extends boolean = true> {
+export interface KeyPromisesBlockSelect<T extends boolean = true> {
   title?: T;
   actionLabel?: T;
   itemsToShow?: T;
@@ -1358,6 +1350,16 @@ export interface PageHeaderBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PartnersBlock_select".
+ */
+export interface PartnersBlockSelect<T extends boolean = true> {
+  title?: T;
+  partners?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "PartnerDetailsBlock_select".
  */
 export interface PartnerDetailsBlockSelect<T extends boolean = true> {
@@ -1393,14 +1395,7 @@ export interface GlobalPagesSelect<T extends boolean = true> {
         faq?: T | FAQBlockSelect<T>;
         newsletter?: T | NewsletterBlockSelect<T>;
         'page-header'?: T | PageHeaderBlockSelect<T>;
-        partners?:
-          | T
-          | {
-              title?: T;
-              partners?: T;
-              id?: T;
-              blockName?: T;
-            };
+        partners?: T | PartnersBlockSelect<T>;
         'partner-details'?: T | PartnerDetailsBlockSelect<T>;
         'tenant-selection'?: T | TenantSelectorBlockSelect<T>;
       };
@@ -1713,37 +1708,7 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
 export interface HomePage {
   id: string;
   entitySelector: {
-    blocks: (
-      | ActNowBlock
-      | {
-          title: string;
-          emptyTitle: string;
-          EmptySubtitle: string;
-          /**
-           * Select promise statuses to highlight in entity lists and hero sections.
-           */
-          statusGroups?:
-            | {
-                title: string;
-                color: string;
-                statuses: (string | PromiseStatus)[];
-                id?: string | null;
-              }[]
-            | null;
-          id?: string | null;
-          blockName?: string | null;
-          blockType: 'entity-selection';
-        }
-      | EntityHeroBlock
-      | NewsletterBlock
-      | {
-          title: string;
-          partners?: (string | Partner)[] | null;
-          id?: string | null;
-          blockName?: string | null;
-          blockType: 'partners';
-        }
-    )[];
+    blocks: (ActNowBlock | EntitySelectionBlock | EntityHeroBlock | NewsletterBlock | PartnersBlock)[];
   };
   title: string;
   description: {
@@ -1863,6 +1828,29 @@ export interface HomePage {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "EntitySelectionBlock".
+ */
+export interface EntitySelectionBlock {
+  title: string;
+  emptyTitle: string;
+  EmptySubtitle: string;
+  /**
+   * Select promise statuses to highlight in entity lists and hero sections.
+   */
+  statusGroups?:
+    | {
+        title: string;
+        color: string;
+        statuses: (string | PromiseStatus)[];
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'entity-selection';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "EntityHeroBlock".
  */
 export interface EntityHeroBlock {
@@ -1944,33 +1932,10 @@ export interface HomePageSelect<T extends boolean = true> {
           | T
           | {
               'act-now'?: T | ActNowBlockSelect<T>;
-              'entity-selection'?:
-                | T
-                | {
-                    title?: T;
-                    emptyTitle?: T;
-                    EmptySubtitle?: T;
-                    statusGroups?:
-                      | T
-                      | {
-                          title?: T;
-                          color?: T;
-                          statuses?: T;
-                          id?: T;
-                        };
-                    id?: T;
-                    blockName?: T;
-                  };
+              'entity-selection'?: T | EntitySelectionBlockSelect<T>;
               'entity-hero'?: T | EntityHeroBlockSelect<T>;
               newsletter?: T | NewsletterBlockSelect<T>;
-              partners?:
-                | T
-                | {
-                    title?: T;
-                    partners?: T;
-                    id?: T;
-                    blockName?: T;
-                  };
+              partners?: T | PartnersBlockSelect<T>;
             };
       };
   title?: T;
@@ -2073,6 +2038,25 @@ export interface HomePageSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "EntitySelectionBlock_select".
+ */
+export interface EntitySelectionBlockSelect<T extends boolean = true> {
+  title?: T;
+  emptyTitle?: T;
+  EmptySubtitle?: T;
+  statusGroups?:
+    | T
+    | {
+        title?: T;
+        color?: T;
+        statuses?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

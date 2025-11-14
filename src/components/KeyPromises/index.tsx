@@ -1,7 +1,7 @@
 import { resolveMedia } from "@/lib/data/media";
 import { getGlobalPayload } from "@/lib/payload";
 import type {
-  KeyPromises as KeyPromisesBlock,
+  KeyPromisesBlock,
   PoliticalEntity,
   Promise as PromiseDocument,
   PromiseStatus,
