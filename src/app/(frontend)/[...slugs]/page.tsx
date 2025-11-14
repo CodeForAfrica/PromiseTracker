@@ -59,7 +59,7 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
 
   const politicalEntities = await getPoliticalEntitiesByTenant(
     tenant,
-    tenantLocale,
+    tenantLocale
   );
   const [maybePoliticalEntitySlug, pageSlugCandidate] = slugs;
   const politicalEntity = politicalEntities.find(
@@ -132,8 +132,10 @@ export default async function Page(params: Args) {
     ? resolveTenantLocale(tenant)
     : await resolveBrowserLocale();
 
-  const { title, description, navigation, footer } =
-    await getTenantNavigation(tenant, locale);
+  const { title, description, navigation, footer } = await getTenantNavigation(
+    tenant,
+    locale
+  );
 
   const paramsValue = await params.params;
   const slugs = paramsValue?.slugs ?? [];
@@ -157,6 +159,7 @@ export default async function Page(params: Args) {
         <Suspense>
           <BlockRenderer blocks={globalPage.blocks} />
         </Suspense>
+        <Footer title={title} description={description} {...footer} />
       </>
     );
   }
@@ -187,7 +190,7 @@ export default async function Page(params: Args) {
 
     const payload = await getGlobalPayload();
     const homePage = await payload.findGlobal({
-      slug: "home-page",
+      slug: "entity-page",
       locale,
     });
     const entityBlocks = homePage?.entitySelector?.blocks ?? [];

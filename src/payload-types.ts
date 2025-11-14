@@ -107,15 +107,17 @@ export interface Config {
     defaultIDType: string;
   };
   globals: {
-    'home-page': HomePage;
+    'entity-page': EntityPage;
     settings: Setting;
     'promise-updates': PromiseUpdate;
+    'global-site-settings': GlobalSiteSetting;
     'payload-jobs-stats': PayloadJobsStat;
   };
   globalsSelect: {
-    'home-page': HomePageSelect<false> | HomePageSelect<true>;
+    'entity-page': EntityPageSelect<false> | EntityPageSelect<true>;
     settings: SettingsSelect<false> | SettingsSelect<true>;
     'promise-updates': PromiseUpdatesSelect<false> | PromiseUpdatesSelect<true>;
+    'global-site-settings': GlobalSiteSettingsSelect<false> | GlobalSiteSettingsSelect<true>;
     'payload-jobs-stats': PayloadJobsStatsSelect<false> | PayloadJobsStatsSelect<true>;
   };
   locale: 'en' | 'fr';
@@ -814,27 +816,29 @@ export interface SiteSetting {
         }[]
       | null;
   };
-  secondaryNavigationList: {
-    secondaryNavigation?: {
-      titles?: string | null;
-      menus?:
-        | {
-            link: {
-              type?: ('reference' | 'custom') | null;
-              newTab?: boolean | null;
-              reference?: {
-                relationTo: 'pages';
-                value: string | Page;
-              } | null;
-              url?: string | null;
-              label: string;
-            };
-            id?: string | null;
-          }[]
-        | null;
-    };
-    id?: string | null;
-  }[];
+  secondaryNavigationList?:
+    | {
+        secondaryNavigation?: {
+          titles?: string | null;
+          menus?:
+            | {
+                link: {
+                  type?: ('reference' | 'custom') | null;
+                  newTab?: boolean | null;
+                  reference?: {
+                    relationTo: 'pages';
+                    value: string | Page;
+                  } | null;
+                  url?: string | null;
+                  label: string;
+                };
+                id?: string | null;
+              }[]
+            | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
   connect: {
     /**
      * Text that appears on contact links e.g Stay in Touch
@@ -1703,125 +1707,12 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "home-page".
+ * via the `definition` "entity-page".
  */
-export interface HomePage {
+export interface EntityPage {
   id: string;
   entitySelector: {
     blocks: (ActNowBlock | EntitySelectionBlock | EntityHeroBlock | NewsletterBlock | PartnersBlock)[];
-  };
-  title: string;
-  description: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  };
-  /**
-   * Shown on main navigation bar.
-   */
-  primaryLogo: string | Media;
-  /**
-   * Shown on main footer. If not provided, primary logo will be reused.
-   */
-  secondaryLogo: string | Media;
-  /**
-   * Shown on secondary footer. If not provided, secondary logo will be reused.
-   */
-  alternateLogo: string | Media;
-  legal?: {
-    copyright?: string | null;
-    /**
-     * Links to legal information, for example, terms of service or privacy policy
-     */
-    links?:
-      | {
-          link: {
-            type?: ('reference' | 'custom') | null;
-            newTab?: boolean | null;
-            reference?: {
-              relationTo: 'pages';
-              value: string | Page;
-            } | null;
-            url?: string | null;
-            label: string;
-          };
-          id?: string | null;
-        }[]
-      | null;
-  };
-  primaryNavigation?: {
-    titles?: string | null;
-    menus?:
-      | {
-          link: {
-            type?: ('reference' | 'custom') | null;
-            newTab?: boolean | null;
-            reference?: {
-              relationTo: 'pages';
-              value: string | Page;
-            } | null;
-            url?: string | null;
-            label: string;
-          };
-          id?: string | null;
-        }[]
-      | null;
-  };
-  secondaryNavigationList: {
-    secondaryNavigation?: {
-      titles?: string | null;
-      menus?:
-        | {
-            link: {
-              type?: ('reference' | 'custom') | null;
-              newTab?: boolean | null;
-              reference?: {
-                relationTo: 'pages';
-                value: string | Page;
-              } | null;
-              url?: string | null;
-              label: string;
-            };
-            id?: string | null;
-          }[]
-        | null;
-    };
-    id?: string | null;
-  }[];
-  connect: {
-    /**
-     * Text that appears on contact links e.g Stay in Touch
-     */
-    title: string;
-    links?:
-      | {
-          platform: 'Facebook' | 'Twitter' | 'Instagram' | 'Linkedin' | 'Github' | 'Slack';
-          url: string;
-          id?: string | null;
-        }[]
-      | null;
-  };
-  newsletter: {
-    title: string;
-    description: string;
-    embedCode: string;
-  };
-  actNow: {
-    title: string;
-    share: {
-      title: string;
-      description: string;
-    };
   };
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -1904,6 +1795,138 @@ export interface PromiseUpdate {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "global-site-settings".
+ */
+export interface GlobalSiteSetting {
+  id: string;
+  title: string;
+  description: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  /**
+   * Shown on main navigation bar.
+   */
+  primaryLogo: string | Media;
+  /**
+   * Shown on main footer. If not provided, primary logo will be reused.
+   */
+  secondaryLogo: string | Media;
+  /**
+   * Shown on secondary footer. If not provided, secondary logo will be reused.
+   */
+  alternateLogo: string | Media;
+  legal?: {
+    copyright?: string | null;
+    /**
+     * Links to legal information, for example, terms of service or privacy policy
+     */
+    links?:
+      | {
+          link: {
+            type?: ('reference' | 'custom') | null;
+            newTab?: boolean | null;
+            reference?: {
+              relationTo: 'pages';
+              value: string | Page;
+            } | null;
+            url?: string | null;
+            label: string;
+          };
+          id?: string | null;
+        }[]
+      | null;
+  };
+  primaryNavigation?: {
+    titles?: string | null;
+    menus?:
+      | {
+          link: {
+            type?: ('reference' | 'custom') | null;
+            newTab?: boolean | null;
+            reference?: {
+              relationTo: 'pages';
+              value: string | Page;
+            } | null;
+            url?: string | null;
+            label: string;
+          };
+          id?: string | null;
+        }[]
+      | null;
+  };
+  secondaryNavigationList?:
+    | {
+        secondaryNavigation?: {
+          titles?: string | null;
+          menus?:
+            | {
+                link: {
+                  type?: ('reference' | 'custom') | null;
+                  newTab?: boolean | null;
+                  reference?: {
+                    relationTo: 'pages';
+                    value: string | Page;
+                  } | null;
+                  url?: string | null;
+                  label: string;
+                };
+                id?: string | null;
+              }[]
+            | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
+  connect: {
+    /**
+     * Text that appears on contact links e.g Stay in Touch
+     */
+    title: string;
+    links?:
+      | {
+          platform: 'Facebook' | 'Twitter' | 'Instagram' | 'Linkedin' | 'Github' | 'Slack';
+          url: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  newsletter: {
+    title: string;
+    description: string;
+    embedCode: string;
+  };
+  actNow: {
+    title: string;
+    share: {
+      title: string;
+      description: string;
+    };
+  };
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (string | null) | Media;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-jobs-stats".
  */
 export interface PayloadJobsStat {
@@ -1922,9 +1945,9 @@ export interface PayloadJobsStat {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "home-page_select".
+ * via the `definition` "entity-page_select".
  */
-export interface HomePageSelect<T extends boolean = true> {
+export interface EntityPageSelect<T extends boolean = true> {
   entitySelector?:
     | T
     | {
@@ -1938,6 +1961,83 @@ export interface HomePageSelect<T extends boolean = true> {
               partners?: T | PartnersBlockSelect<T>;
             };
       };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "EntitySelectionBlock_select".
+ */
+export interface EntitySelectionBlockSelect<T extends boolean = true> {
+  title?: T;
+  emptyTitle?: T;
+  EmptySubtitle?: T;
+  statusGroups?:
+    | T
+    | {
+        title?: T;
+        color?: T;
+        statuses?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "EntityHeroBlock_select".
+ */
+export interface EntityHeroBlockSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "settings_select".
+ */
+export interface SettingsSelect<T extends boolean = true> {
+  airtable?:
+    | T
+    | {
+        airtableAPIKey?: T;
+        airtableBaseID?: T;
+      };
+  ai?:
+    | T
+    | {
+        model?: T;
+        apiKey?: T;
+      };
+  meedan?:
+    | T
+    | {
+        meedanAPIKey?: T;
+        teamId?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promise-updates_select".
+ */
+export interface PromiseUpdatesSelect<T extends boolean = true> {
+  defaultImage?: T;
+  embedCode?: T;
+  updateLabel?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "global-site-settings_select".
+ */
+export interface GlobalSiteSettingsSelect<T extends boolean = true> {
   title?: T;
   description?: T;
   primaryLogo?: T;
@@ -2035,74 +2135,13 @@ export interface HomePageSelect<T extends boolean = true> {
               description?: T;
             };
       };
-  updatedAt?: T;
-  createdAt?: T;
-  globalType?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "EntitySelectionBlock_select".
- */
-export interface EntitySelectionBlockSelect<T extends boolean = true> {
-  title?: T;
-  emptyTitle?: T;
-  EmptySubtitle?: T;
-  statusGroups?:
+  meta?:
     | T
     | {
         title?: T;
-        color?: T;
-        statuses?: T;
-        id?: T;
+        description?: T;
+        image?: T;
       };
-  id?: T;
-  blockName?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "EntityHeroBlock_select".
- */
-export interface EntityHeroBlockSelect<T extends boolean = true> {
-  title?: T;
-  description?: T;
-  id?: T;
-  blockName?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "settings_select".
- */
-export interface SettingsSelect<T extends boolean = true> {
-  airtable?:
-    | T
-    | {
-        airtableAPIKey?: T;
-        airtableBaseID?: T;
-      };
-  ai?:
-    | T
-    | {
-        model?: T;
-        apiKey?: T;
-      };
-  meedan?:
-    | T
-    | {
-        meedanAPIKey?: T;
-        teamId?: T;
-      };
-  updatedAt?: T;
-  createdAt?: T;
-  globalType?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "promise-updates_select".
- */
-export interface PromiseUpdatesSelect<T extends boolean = true> {
-  defaultImage?: T;
-  embedCode?: T;
-  updateLabel?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

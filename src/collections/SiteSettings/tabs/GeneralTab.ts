@@ -19,11 +19,13 @@ export const GeneralTab: Tab = {
           name: "title",
           type: "text",
           required: true,
+          localized: true,
         },
         {
           name: "description",
           type: "richText",
           required: true,
+          localized: true,
         },
       ],
     },
@@ -40,6 +42,7 @@ export const GeneralTab: Tab = {
             en: "Primary Logo",
             fr: "Logo principal",
           },
+          localized: true,
           required: true,
           admin: {
             description: {
@@ -51,6 +54,7 @@ export const GeneralTab: Tab = {
         image({
           name: "secondaryLogo",
           required: true,
+          localized: true,
           label: {
             en: "Secondary Logo",
             fr: "Logo secondaire",
@@ -65,6 +69,7 @@ export const GeneralTab: Tab = {
         image({
           name: "alternateLogo",
           required: true,
+          localized: true,
           label: {
             en: "Alternate Logo",
             fr: "Logo alternatif",
@@ -96,6 +101,7 @@ export const GeneralTab: Tab = {
                 en: "Copyright",
                 fr: "Droit d'auteur",
               },
+              localized: true,
               defaultValue: "PromiseTracker",
               admin: {
                 position: "sidebar",
@@ -103,6 +109,7 @@ export const GeneralTab: Tab = {
             },
             linkGroup({
               overrides: {
+                localized: true,
                 admin: {
                   description: {
                     en: "Links to legal information, for example, terms of service or privacy policy",

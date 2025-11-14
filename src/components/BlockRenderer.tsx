@@ -1,5 +1,5 @@
 import ActNow from "@/blocks/ActNow/Component";
-import { GlobalPage, HomePage, Page, PoliticalEntity } from "@/payload-types";
+import { GlobalPage, EntityPage, Page, PoliticalEntity } from "@/payload-types";
 import { Fragment, type ComponentType } from "react";
 import { KeyPromises } from "./KeyPromises";
 import Newsletter from "./Newsletter";
@@ -20,7 +20,7 @@ type PageBlock = PageBlocks extends Array<infer T> ? T : never;
 type GlobalPageBlocks = NonNullable<GlobalPage["blocks"]>;
 type GlobalPageBlock = GlobalPageBlocks extends Array<infer T> ? T : never;
 
-type EntitySelectorBlocks = HomePage["entitySelector"]["blocks"];
+type EntitySelectorBlocks = EntityPage["entitySelector"]["blocks"];
 type EntitySelectionBlockBase =
   EntitySelectorBlocks extends Array<infer T> ? T : never;
 type EntitySelectionBlock = EntitySelectionBlockBase & {

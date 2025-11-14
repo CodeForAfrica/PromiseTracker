@@ -21,9 +21,11 @@ export const NavigationTab: Tab = {
             {
               name: "titles",
               type: "text",
+              localized: true,
             },
             linkGroup({
               overrides: {
+                localized: true,
                 name: "menus",
                 labels: {
                   singular: {
@@ -45,8 +47,6 @@ export const NavigationTab: Tab = {
     {
       name: "secondaryNavigationList",
       type: "array",
-      required: true,
-      minRows: 1,
       fields: [
         {
           name: "secondaryNavigation",
@@ -62,10 +62,12 @@ export const NavigationTab: Tab = {
                 {
                   name: "titles",
                   type: "text",
+                  localized: true,
                 },
                 linkGroup({
                   overrides: {
                     name: "menus",
+                    localized: true,
                     labels: {
                       singular: {
                         en: "Menu",

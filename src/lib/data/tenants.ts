@@ -90,7 +90,7 @@ export const getTenantNavigation = async (
     tenantSettings = await getTenantSiteSettings(tenant, locale);
   } else {
     tenantSettings = await payload.findGlobal({
-      slug: "home-page",
+      slug: "global-site-settings",
       ...(locale ? { locale } : {}),
     });
   }

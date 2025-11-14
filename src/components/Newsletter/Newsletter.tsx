@@ -13,19 +13,25 @@ import type {
   NewsletterBlock as NewsletterBlockProps,
 } from "@/payload-types";
 import { getGlobalPayload } from "@/lib/payload";
+import { resolveTenantLocale } from "@/utils/locales";
+import { resolveBrowserLocale } from "@/app/(frontend)/layout";
 
 const payload = await getGlobalPayload();
 
 const Newsletter = async ({ image }: NewsletterBlockProps) => {
   const { subdomain } = await getDomain();
   const tenant = await getTenantBySubDomain(subdomain);
+  const locale = tenant
+    ? resolveTenantLocale(tenant)
+    : await resolveBrowserLocale();
   let siteSettings;
   if (!tenant) {
     siteSettings = await payload.findGlobal({
-      slug: "home-page",
+      slug: "global-site-settings",
+      locale,
     });
   } else {
-    siteSettings = await getTenantSiteSettings(tenant);
+    siteSettings = await getTenantSiteSettings(tenant, locale);
   }
 
   const newsletter = siteSettings?.newsletter;

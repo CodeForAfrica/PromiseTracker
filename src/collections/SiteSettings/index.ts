@@ -8,12 +8,12 @@ export const SiteSettings: CollectionConfig = {
   slug: "site-settings",
   labels: {
     singular: {
-      en: "Site Settings",
-      fr: "Paramètres du site",
+      en: "Tenant Site Settings",
+      fr: "Paramètres du site locataire",
     },
     plural: {
-      en: "Site Settings",
-      fr: "Paramètres du site",
+      en: "Tenant Site Settings",
+      fr: "Paramètres du site locataire",
     },
   },
   admin: {

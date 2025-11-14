@@ -30,6 +30,7 @@ export const EngagementTab: Tab = {
                 en: "Title",
                 fr: "Titre",
               },
+              localized: true,
               admin: {
                 description: {
                   en: "Text that appears on contact links e.g Stay in Touch",
@@ -45,8 +46,10 @@ export const EngagementTab: Tab = {
     {
       name: "newsletter",
       type: "group",
-      label: "Email Newsletter",
-      localized: true,
+      label: {
+        en: "Email Newsletter",
+        fr: "Newsletter par e-mail",
+      },
       fields: [
         {
           type: "collapsible",
@@ -56,11 +59,13 @@ export const EngagementTab: Tab = {
               name: "title",
               type: "text",
               required: true,
+              localized: true,
             },
             {
               name: "description",
               type: "textarea",
               required: true,
+              localized: true,
             },
             {
               name: "embedCode",
@@ -86,6 +91,7 @@ export const EngagementTab: Tab = {
           name: "title",
           type: "text",
           required: true,
+          localized: true,
           label: {
             en: "Title",
             fr: "Titre",
@@ -106,6 +112,7 @@ export const EngagementTab: Tab = {
               name: "title",
               type: "text",
               required: true,
+              localized: true,
               label: {
                 en: "Share Title",
                 fr: "Partager le titre",
@@ -115,6 +122,7 @@ export const EngagementTab: Tab = {
               name: "description",
               type: "textarea",
               required: true,
+              localized: true,
               label: {
                 en: "Share Description",
                 fr: "Partager la description",
