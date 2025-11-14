@@ -10,7 +10,6 @@ import PromiseStatus from "@/components/PromiseStatus";
 import PromiseTimeline from "@/components/PromiseTimeline";
 import PromiseActions from "@/components/PromiseActions";
 import EntityBackLink from "@/components/EntityBackLink";
-import { CommonHomePage } from "@/components/CommonHomePage";
 import { getDomain } from "@/lib/domain";
 import {
   getTenantBySubDomain,
@@ -140,7 +139,7 @@ export async function generateMetadata({
   const politicalEntity = await getPoliticalEntityBySlug(
     tenant,
     entitySlug,
-    tenantLocale,
+    tenantLocale
   );
   if (!politicalEntity) {
     return buildSeoMetadata({
@@ -260,12 +259,14 @@ export default async function PromiseDetailPage({
   const tenant = await getTenantBySubDomain(subdomain);
 
   if (!tenant) {
-    return <CommonHomePage />;
+    return notFound();
   }
   const locale = resolveTenantLocale(tenant);
 
-  const { title, description, navigation, footer } =
-    await getTenantNavigation(tenant, locale);
+  const { title, description, navigation, footer } = await getTenantNavigation(
+    tenant,
+    locale
+  );
 
   const entity = await getPoliticalEntityBySlug(tenant, entitySlug, locale);
 

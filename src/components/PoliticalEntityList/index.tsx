@@ -1,5 +1,9 @@
 import { Card, CardContent, Container, Typography } from "@mui/material";
-import type { HomePage, PoliticalEntity, PromiseStatus } from "@/payload-types";
+import type {
+  PoliticalEntity,
+  PromiseStatus,
+  EntityPage,
+} from "@/payload-types";
 import { resolveMedia } from "@/lib/data/media";
 import { getDomain } from "@/lib/domain";
 import { getTenantBySubDomain } from "@/lib/data/tenants";
@@ -21,7 +25,7 @@ type StatusGroupConfig = {
 };
 
 type EntitySelectionBlock = Extract<
-  HomePage["entitySelector"]["blocks"][number],
+  EntityPage["entitySelector"]["blocks"][number],
   { blockType: "entity-selection" }
 > & {
   pageSlugs?: string[];
@@ -60,10 +64,7 @@ export const PoliticalEntityList = async ({
   }
   const locale = resolveTenantLocale(tenant);
 
-  const politicalEntities = await getPoliticalEntitiesByTenant(
-    tenant,
-    locale,
-  );
+  const politicalEntities = await getPoliticalEntitiesByTenant(tenant, locale);
 
   if (!politicalEntities.length) {
     return (
