@@ -180,6 +180,7 @@ export default function Navigation({
                               color: "text.primary",
                               display: { xs: "none", md: "inline-flex" },
                               alignItems: "center",
+                              whiteSpace: "nowrap",
                             }}
                           >
                             {entityNameDisplay}
