@@ -46,6 +46,10 @@ export const PoliticalEntities: CollectionConfig = {
       slugOverrides: {
         index: true,
         required: true,
+        label: {
+          en: "Slug",
+          fr: "URL",
+        },
         admin: {
           position: "sidebar",
         },

@@ -92,5 +92,13 @@ export const Promises: CollectionConfig = {
         fr: "Image",
       },
     }),
+    {
+      name: "publishStatus",
+      type: "text",
+      admin: {
+        position: "sidebar",
+      },
+    },
   ],
+  versions: true,
 };

@@ -67,6 +67,7 @@ export default async function Index({
       items={promises}
       seeAll={seeAllLink}
       fallbackImage={fallbackImage}
+      entitySlug={entitySlug}
     />
   );
 }

@@ -25,11 +25,19 @@ export const Partners: CollectionConfig = {
       name: "name",
       type: "text",
       required: true,
+      label: {
+        en: "Name",
+        fr: "Nom",
+      },
     },
     {
       name: "description",
       type: "richText",
       required: true,
+      label: {
+        en: "Description",
+        fr: "Description",
+      },
     },
     image({
       name: "image",
@@ -44,6 +52,10 @@ export const Partners: CollectionConfig = {
       overrides: {
         name: "url",
         required: true,
+        label: {
+          en: "URL",
+          fr: "URL",
+        },
       },
     }),
   ],

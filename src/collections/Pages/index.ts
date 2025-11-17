@@ -23,6 +23,10 @@ export const Pages: CollectionConfig = {
     {
       name: "title",
       type: "text",
+      label: {
+        en: "Title",
+        fr: "Titre",
+      },
       required: true,
       admin: {
         components: {
@@ -32,6 +36,10 @@ export const Pages: CollectionConfig = {
     },
     ...slugField("title", {
       slugOverrides: {
+        label: {
+          en: "Slug",
+          fr: "URL",
+        },
         index: true,
         required: true,
         admin: {
@@ -45,6 +53,10 @@ export const Pages: CollectionConfig = {
     {
       name: "blocks",
       type: "blocks",
+      label: {
+        en: "Blocks",
+        fr: "Blocs",
+      },
       blocks: [
         ActNow,
         FAQ,

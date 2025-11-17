@@ -21,9 +21,17 @@ export const GlobalPages: CollectionConfig = {
       name: "title",
       type: "text",
       required: true,
+      label: {
+        en: "Title",
+        fr: "Titre",
+      },
     },
     ...slugField("title", {
       slugOverrides: {
+        label: {
+          en: "Slug",
+          fr: "URL",
+        },
         index: true,
         required: true,
         admin: {
@@ -37,6 +45,10 @@ export const GlobalPages: CollectionConfig = {
     {
       name: "blocks",
       type: "blocks",
+      label: {
+        en: "Blocks",
+        fr: "Blocs",
+      },
       blocks: [
         ActNow,
         FAQ,

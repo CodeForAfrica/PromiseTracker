@@ -18,6 +18,10 @@ export const PromiseUpdates: GlobalConfig = {
       type: "upload",
       relationTo: "media",
       required: true,
+      label: {
+        en: "Default Image",
+        fr: "Image par défaut",
+      },
       admin: {
         description: {
           en: "The default image that should be used for a promise.",
@@ -46,6 +50,10 @@ export const PromiseUpdates: GlobalConfig = {
       type: "text",
       required: true,
       defaultValue: "Update Promise",
+      label: {
+        en: "Update Promise Label",
+        fr: "Libellé de mise à jour de promesse",
+      },
       admin: {
         description: {
           en: "The label that should appear on the update dialog trigger button.",

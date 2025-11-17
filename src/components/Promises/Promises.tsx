@@ -254,7 +254,7 @@ function Promises({
           </Grid>
         </Grid>
       )}
-      <Grid spacing={1} justifyContent="space-between" container>
+      <Grid spacing={1} justifyContent="start" container>
         {items.map((card: PromiseWithHref) => {
           const promiseImage =
             typeof card.image === "string"
