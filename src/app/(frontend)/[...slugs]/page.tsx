@@ -1,6 +1,6 @@
 import React, { Suspense } from "react";
 import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 
 import {
   getGlobalPayload,
@@ -22,11 +22,49 @@ import {
 } from "@/lib/seo";
 import { resolveTenantLocale } from "@/utils/locales";
 import { resolveBrowserLocale } from "../layout";
+import type { EntityPage } from "@/payload-types";
+import type { MenuLink } from "@/types/navigation";
 
 type Args = {
   params: Promise<{
     slugs?: string[];
   }>;
+};
+
+type EntityNavMenu = NonNullable<
+  NonNullable<EntityPage["primaryNavigation"]>["menus"]
+>[number];
+
+const toMenuLink = (
+  menu?: EntityNavMenu | EntityNavMenu["link"] | null | undefined
+): MenuLink | null => {
+  if (!menu) return null;
+  const link = "link" in menu ? menu.link : menu;
+  if (!link?.label) return null;
+
+  const refValue = link.reference?.value;
+  let normalizedRef: MenuLink["reference"] = null;
+  if (refValue !== undefined && refValue !== null) {
+    if (typeof refValue === "string" || typeof refValue === "number") {
+      normalizedRef = {
+        relationTo: link.reference?.relationTo ?? "pages",
+        value: refValue,
+      } as MenuLink["reference"];
+    } else if ("slug" in refValue) {
+      normalizedRef = {
+        relationTo: link.reference?.relationTo ?? "pages",
+        value: { slug: refValue.slug as string },
+      } as MenuLink["reference"];
+    }
+  }
+
+  return {
+    label: link.label,
+    newTab: link.newTab ?? null,
+    type: link.type ?? null,
+    url: link.url ?? null,
+    reference: normalizedRef,
+  };
 };
 
 export async function generateMetadata({ params }: Args): Promise<Metadata> {
@@ -171,26 +209,60 @@ export default async function Page(params: Args) {
   const politicalEntity = politicalEntities.find(
     (entity) => entity.slug === maybePoliticalEntitySlug
   );
+  const payload = await getGlobalPayload();
 
   if (!politicalEntity) {
-    const payload = await getGlobalPayload();
-    const homePage = await payload.findGlobal({
+    const entityPageSettings = await payload.findGlobal({
       slug: "entity-page",
       locale,
     });
-    const entityBlocks = homePage?.entitySelector?.blocks ?? [];
+    const entityBlocks = entityPageSettings?.entitySelector?.blocks ?? [];
+
+    const entityNavMenus =
+      (entityPageSettings?.primaryNavigation?.menus || [])
+        .map((m) => toMenuLink(m?.link ?? m))
+        .filter((x: MenuLink | null): x is MenuLink => Boolean(x)) || [];
+
+    const entitySecondaryNavColumns =
+      (entityPageSettings?.secondaryNavigationList || [])
+        .map((entry) => {
+          const menus = entry?.secondaryNavigation?.menus || [];
+          const links = menus
+            .map((m) => toMenuLink(m?.link ?? m))
+            .filter((x: MenuLink | null): x is MenuLink => Boolean(x));
+          if (!entry?.secondaryNavigation?.titles && links.length === 0) {
+            return null;
+          }
+          return {
+            title: entry?.secondaryNavigation?.titles || null,
+            links,
+          };
+        })
+        .filter((col): col is { title: string | null; links: MenuLink[] } =>
+          Boolean(col)
+        ) || [];
+
+    const navigationForTenant =
+      entityNavMenus.length > 0
+        ? { ...navigation, menus: entityNavMenus }
+        : navigation;
+
+    const footerForTenant =
+      entitySecondaryNavColumns.length > 0
+        ? { ...footer, secondaryNavColumns: entitySecondaryNavColumns }
+        : footer;
 
     return (
       <>
         <Navigation
           title={title}
-          {...navigation}
+          {...navigationForTenant}
           tenantSelectionHref={tenantSelectionHref}
         />
         <Suspense>
           <BlockRenderer blocks={entityBlocks} />
         </Suspense>
-        <Footer title={title} description={description} {...footer} />
+        <Footer title={title} description={description} {...footerForTenant} />
       </>
     );
   }
