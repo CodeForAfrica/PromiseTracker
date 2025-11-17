@@ -88,20 +88,38 @@ export const getPromiseCountsForEntities = async (
     return acc;
   }, {});
 
-  const { docs: promises } = await payload.find({
-    collection: "promises",
-    limit: -1,
-    depth: 1,
-    select: {
-      politicalEntity: true,
-      status: true,
-    },
-    where: {
-      politicalEntity: {
-        in: entityIds,
+  const [{ docs: promises }, { docs: statusDocs }] = await Promise.all([
+    payload.find({
+      collection: "promises",
+      pagination: false,
+      depth: 1,
+      select: {
+        politicalEntity: true,
+        status: true,
+        publishStatus: true,
       },
-    },
-  });
+      where: {
+        politicalEntity: {
+          in: entityIds,
+        },
+      },
+    }),
+    payload.find({
+      collection: "promise-status",
+      pagination: false,
+      depth: 0,
+    }),
+  ]);
+
+  const statusIdByMeedanId = new Map<string, string>();
+  for (const status of statusDocs) {
+    if (!status) continue;
+    const meedanId =
+      typeof status.meedanId === "string" ? status.meedanId.trim() : "";
+    if (meedanId) {
+      statusIdByMeedanId.set(meedanId, status.id);
+    }
+  }
 
   for (const promise of promises as PromiseDoc[]) {
     const relation = promise.politicalEntity;
@@ -119,10 +137,20 @@ export const getPromiseCountsForEntities = async (
       };
 
     const statusValue = promise.status;
-    const statusId =
+    let statusId =
       typeof statusValue === "string"
         ? statusValue
         : statusValue?.id ?? statusValue?.meedanId ?? null;
+
+    if (!statusId) {
+      const publishStatus =
+        typeof promise.publishStatus === "string"
+          ? promise.publishStatus.trim()
+          : "";
+      if (publishStatus) {
+        statusId = statusIdByMeedanId.get(publishStatus) ?? null;
+      }
+    }
 
     if (statusId) {
       summary.statuses[statusId] = (summary.statuses[statusId] ?? 0) + 1;
