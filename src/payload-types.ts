@@ -1716,6 +1716,47 @@ export interface EntityPage {
   entitySelector: {
     blocks: (ActNowBlock | EntitySelectionBlock | EntityHeroBlock | NewsletterBlock | PartnersBlock)[];
   };
+  primaryNavigation?: {
+    titles?: string | null;
+    menus?:
+      | {
+          link: {
+            type?: ('reference' | 'custom') | null;
+            newTab?: boolean | null;
+            reference?: {
+              relationTo: 'pages';
+              value: string | Page;
+            } | null;
+            url?: string | null;
+            label: string;
+          };
+          id?: string | null;
+        }[]
+      | null;
+  };
+  secondaryNavigationList?:
+    | {
+        secondaryNavigation?: {
+          titles?: string | null;
+          menus?:
+            | {
+                link: {
+                  type?: ('reference' | 'custom') | null;
+                  newTab?: boolean | null;
+                  reference?: {
+                    relationTo: 'pages';
+                    value: string | Page;
+                  } | null;
+                  url?: string | null;
+                  label: string;
+                };
+                id?: string | null;
+              }[]
+            | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -1962,6 +2003,49 @@ export interface EntityPageSelect<T extends boolean = true> {
               newsletter?: T | NewsletterBlockSelect<T>;
               partners?: T | PartnersBlockSelect<T>;
             };
+      };
+  primaryNavigation?:
+    | T
+    | {
+        titles?: T;
+        menus?:
+          | T
+          | {
+              link?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    label?: T;
+                  };
+              id?: T;
+            };
+      };
+  secondaryNavigationList?:
+    | T
+    | {
+        secondaryNavigation?:
+          | T
+          | {
+              titles?: T;
+              menus?:
+                | T
+                | {
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          label?: T;
+                        };
+                    id?: T;
+                  };
+            };
+        id?: T;
       };
   updatedAt?: T;
   createdAt?: T;

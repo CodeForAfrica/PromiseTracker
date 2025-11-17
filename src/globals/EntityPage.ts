@@ -3,6 +3,7 @@ import { EntitySelection } from "@/blocks/EntitySelection";
 import { EntityHero } from "@/blocks/Hero/EntityHero";
 import Newsletter from "@/blocks/Newsletter";
 import Partners from "@/blocks/Partners";
+import { NavigationTab } from "@/collections/SiteSettings/tabs/NavigationTab";
 import { GlobalConfig } from "payload";
 
 export const EntityPage: GlobalConfig = {
@@ -30,6 +31,10 @@ export const EntityPage: GlobalConfig = {
           blocks: [ActNow, EntitySelection, EntityHero, Newsletter, Partners],
         },
       ],
+    },
+    {
+      type: "tabs",
+      tabs: [NavigationTab],
     },
   ],
 };
