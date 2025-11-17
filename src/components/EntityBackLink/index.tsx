@@ -19,7 +19,8 @@ type EntityBackLinkProps = {
 };
 
 const EntityBackLink = ({ href, name, image, sx }: EntityBackLinkProps) => {
-  const avatarSrc = image && typeof image !== "string" ? image.url ?? undefined : undefined;
+  const avatarSrc =
+    image && typeof image !== "string" ? (image.url ?? undefined) : undefined;
   const fallbackInitial = name?.charAt(0)?.toUpperCase() ?? "?";
 
   return (
@@ -58,7 +59,12 @@ const EntityBackLink = ({ href, name, image, sx }: EntityBackLinkProps) => {
       <Typography
         variant="body2"
         component="span"
-        sx={{ fontWeight: 600, textTransform: "uppercase" }}
+        sx={(theme) => ({
+          fontWeight: 600,
+          textTransform: "uppercase",
+          fontFamily: theme.typography.fontFamily,
+          fontSize: theme.typography.pxToRem(14),
+        })}
       >
         {name}
       </Typography>

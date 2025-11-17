@@ -11,12 +11,14 @@ interface Props {
   title: string;
   seeAll: CMSLinkType;
   fallbackImage?: Media | null;
+  entitySlug?: string;
 }
 const LatestPromises = ({
   items,
   title,
   seeAll,
   fallbackImage = null,
+  entitySlug,
 }: Props) => {
   if (!items?.length) {
     return null;
@@ -41,30 +43,32 @@ const LatestPromises = ({
       <Grid container spacing={2}>
         {items.map((promise) => {
           const promiseImage =
-            typeof promise.image === "string" ? null : (promise.image as Media | null);
+            typeof promise.image === "string"
+              ? null
+              : (promise.image as Media | null);
           const cardImage = promiseImage ?? fallbackImage ?? null;
           return (
-          <Grid
-            key={promise.id}
-            size={{
-              xs: 12,
-              lg: 4,
-            }}
-          >
-            <PromiseCard
-              image={cardImage ?? undefined}
-              title={promise.title ?? null}
+            <Grid
+              key={promise.id}
+              size={{
+                xs: 12,
+                lg: 4,
+              }}
+            >
+              <PromiseCard
+                image={cardImage ?? undefined}
+                title={promise.title ?? null}
                 status={promise.status as PromiseStatus}
                 description={promise.description ?? null}
-              createdAt={promise.createdAt}
-              href={promise.href ?? undefined}
-            />
-          </Grid>
-        );
+                createdAt={promise.createdAt}
+                href={promise.href ?? undefined}
+              />
+            </Grid>
+          );
         })}
       </Grid>
       {seeAll && (
-        <Link {...seeAll}>
+        <Link {...seeAll} entitySlug={entitySlug}>
           <Box display="flex" justifyContent="center" mt={4}>
             <Button
               variant="contained"

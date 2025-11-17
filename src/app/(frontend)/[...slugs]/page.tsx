@@ -173,21 +173,6 @@ export default async function Page(params: Args) {
   );
 
   if (!politicalEntity) {
-    if (politicalEntities.length === 1) {
-      const [onlyEntity] = politicalEntities;
-      if (onlyEntity) {
-        const fallbackPageSlugs = slugs.length > 0 ? slugs : ["index"];
-        const sanitizedPageSlugs = fallbackPageSlugs.filter(
-          (slug) => slug && slug !== "index"
-        );
-        const segments = [onlyEntity.slug, ...sanitizedPageSlugs].filter(
-          Boolean
-        );
-        const targetPath = segments.length > 0 ? `/${segments.join("/")}` : "/";
-        redirect(targetPath);
-      }
-    }
-
     const payload = await getGlobalPayload();
     const homePage = await payload.findGlobal({
       slug: "entity-page",

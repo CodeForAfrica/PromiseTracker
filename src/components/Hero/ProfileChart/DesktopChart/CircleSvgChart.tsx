@@ -53,14 +53,14 @@ export const CircleSvgChart = ({
         >
           <span style={{ fontSize: 12 }}>{status.label.toLowerCase()}</span>
         </Typography>
-        <Typography
+        {/* <Typography
           variant="caption"
           sx={{
             color: "#909090",
           }}
         >
           {Math.round(percentage)}%
-        </Typography>
+        </Typography> */}
       </Box>
     </Box>
   );

@@ -395,6 +395,7 @@ export interface Promise {
   status?: (string | null) | PromiseStatus;
   politicalEntity?: (string | null) | PoliticalEntity;
   image?: (string | null) | Media;
+  publishStatus?: string | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -1183,6 +1184,7 @@ export interface PromisesSelect<T extends boolean = true> {
   status?: T;
   politicalEntity?: T;
   image?: T;
+  publishStatus?: T;
   meta?:
     | T
     | {

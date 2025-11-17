@@ -14,6 +14,7 @@ type PromiseData = {
   title: string;
   description: string;
   status: string | null;
+  publishStatus: string;
   politicalEntity: string | null;
   image: string | null;
   url: string;
@@ -23,7 +24,8 @@ const buildPromiseData = (
   report: PublishedReport,
   statusId: string | null,
   politicalEntityId: string | null,
-  imageId: string | null
+  imageId: string | null,
+  rawStatus: string
 ): PromiseData => {
   const coerce = (value: string | null | undefined) => value ?? "";
 
@@ -31,6 +33,7 @@ const buildPromiseData = (
     title: coerce(report.title),
     description: coerce(report.description),
     status: statusId,
+    publishStatus: rawStatus,
     politicalEntity: politicalEntityId,
     image: imageId,
     url: coerce(report.url),
@@ -68,6 +71,7 @@ const normaliseExistingDoc = (doc: PromiseDoc): PromiseData => {
     title: coerce(doc.title),
     description: coerce(doc.description),
     status: getRelationId(doc.status),
+    publishStatus: coerce(doc.publishStatus),
     politicalEntity: getRelationId(doc.politicalEntity),
     image: getRelationId(doc.image as unknown),
     url: coerce(doc.url),
@@ -381,7 +385,8 @@ export const syncMeedanReports = async ({
       report,
       resolvedStatusId,
       politicalEntityId,
-      imageId
+      imageId,
+      statusValue
     );
 
     if (!stored) {

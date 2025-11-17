@@ -20,6 +20,10 @@ export const GlobalSiteSettings: GlobalConfig = {
   fields: [
     {
       type: "tabs",
+      label: {
+        en: "Tabs",
+        fr: "onglets",
+      },
       tabs: [GeneralTab, NavigationTab, EngagementTab, SeoTab],
     },
   ],

@@ -1,6 +1,6 @@
 import React from "react";
 
-import type { Page } from "@/payload-types";
+import type { Page, GlobalPage } from "@/payload-types";
 import { Link, SxProps, Theme } from "@mui/material";
 
 export type CMSLinkType = {
@@ -9,8 +9,8 @@ export type CMSLinkType = {
   newTab?: boolean | null;
   entitySlug?: string;
   reference?: {
-    relationTo: "pages";
-    value: Page | string | number;
+    relationTo: "pages" | "global-pages";
+    value: Page | GlobalPage | string | number;
   } | null;
   type?: "custom" | "reference" | null;
   url?: string | null;
@@ -37,7 +37,8 @@ export const CMSLink: React.FC<CMSLinkType> = (props) => {
       reference.value.slug
     ) {
       switch (reference.relationTo) {
-        case "pages": {
+        case "pages":
+        case "global-pages": {
           const pageSlug =
             reference.value.slug === "index" ? "" : reference.value.slug;
           const segments = [entitySlug, pageSlug].filter(Boolean);
