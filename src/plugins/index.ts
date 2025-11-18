@@ -48,7 +48,7 @@ export const plugins: Plugin[] = [
     enabled: s3Enabled,
   }),
   seoPlugin({
-    collections: ["pages", "political-entities", "promises"],
+    collections: ["pages", "political-entities", "promises", "global-pages"],
     uploadsCollection: "media",
     generateTitle: async ({ doc, collectionSlug, req }) => {
       const tenantId = doc.tenant;
@@ -68,7 +68,7 @@ export const plugins: Plugin[] = [
         return `${doc.name} - ${doc.position} | ${tenant?.name}`;
       }
 
-      if (collectionSlug === "pages") {
+      if (collectionSlug === "pages" || collectionSlug === "global-pages") {
         return `${capitalizeFirstLetter(doc.title)} | ${tenant?.name}`;
       }
 

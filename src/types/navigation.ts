@@ -6,7 +6,7 @@ export type MenuLink = {
   type?: "custom" | "reference" | null;
   url?: string | null;
   reference?: {
-    relationTo: "pages";
+    relationTo: "pages" | "global-pages";
     value: Page | string | number;
   } | null;
 };

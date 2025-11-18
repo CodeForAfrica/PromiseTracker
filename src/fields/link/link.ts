@@ -95,7 +95,7 @@ export const link: LinkType = ({
         en: "Document to link to",
         fr: "Document vers lequel créer un lien",
       },
-      relationTo: ["pages"],
+      relationTo: ["pages", "global-pages"],
       required: true,
     },
     {
@@ -148,7 +148,7 @@ export const link: LinkType = ({
 
     if (appearances) {
       appearanceOptionsToUse = appearances.map(
-        (appearance) => appearanceOptions[appearance],
+        (appearance) => appearanceOptions[appearance]
       );
     }
 
