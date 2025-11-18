@@ -242,10 +242,7 @@ export default async function Page(params: Args) {
           Boolean(col)
         ) || [];
 
-    const navigationForTenant =
-      entityNavMenus.length > 0
-        ? { ...navigation, menus: entityNavMenus }
-        : navigation;
+    const navigationForEntity = { ...navigation, menus: entityNavMenus };
 
     const footerForTenant =
       entitySecondaryNavColumns.length > 0
@@ -256,7 +253,7 @@ export default async function Page(params: Args) {
       <>
         <Navigation
           title={title}
-          {...navigationForTenant}
+          {...navigationForEntity}
           tenantSelectionHref={tenantSelectionHref}
         />
         <Suspense>

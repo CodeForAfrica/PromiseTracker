@@ -453,16 +453,52 @@ export interface ActNowBlock {
   link: {
     type?: ('reference' | 'custom') | null;
     newTab?: boolean | null;
-    reference?: {
-      relationTo: 'pages';
-      value: string | Page;
-    } | null;
+    reference?:
+      | ({
+          relationTo: 'pages';
+          value: string | Page;
+        } | null)
+      | ({
+          relationTo: 'global-pages';
+          value: string | GlobalPage;
+        } | null);
     url?: string | null;
     label: string;
   };
   id?: string | null;
   blockName?: string | null;
   blockType: 'act-now';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "global-pages".
+ */
+export interface GlobalPage {
+  id: string;
+  title: string;
+  slug: string;
+  slugLock?: boolean | null;
+  blocks?:
+    | (
+        | ActNowBlock
+        | FAQBlock
+        | NewsletterBlock
+        | PageHeaderBlock
+        | PartnersBlock
+        | PartnerDetailsBlock
+        | TenantSelectorBlock
+      )[]
+    | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (string | null) | Media;
+  };
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -492,83 +528,6 @@ export interface FAQBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'faq';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "HeroBlock".
- */
-export interface HeroBlock {
-  /**
-   * Displayed alongside the political entity name in the hero.
-   */
-  tagline?: string | null;
-  /**
-   * Label displayed beside the total count of synced promises.
-   */
-  promiseLabel?: string | null;
-  /**
-   * Sentence that follows the promise count, for example 'tracked on PromiseTracker'.
-   */
-  trailText?: string | null;
-  updatedAtLabel?: string | null;
-  /**
-   * Optional text that replaces the political entity position shown above the last updated date.
-   */
-  profileTitleOverride?: string | null;
-  statusListTitle?: string | null;
-  /**
-   * Define exactly three groups of promise statuses to display in the charts.
-   */
-  chartGroups: {
-    title: string;
-    statuses: (string | PromiseStatus)[];
-    id?: string | null;
-  }[];
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'hero';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "KeyPromisesBlock".
- */
-export interface KeyPromisesBlock {
-  title: string;
-  actionLabel?: string | null;
-  /**
-   * How many highlighted promises to display (minimum 1).
-   */
-  itemsToShow: number;
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'key-promises';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "LatestPromisesBlock".
- */
-export interface LatestPromisesBlock {
-  title: string;
-  /**
-   * Link to the page where all promises can be viewed. E.g. /promises
-   */
-  seeAllLink: {
-    type?: ('reference' | 'custom') | null;
-    newTab?: boolean | null;
-    reference?: {
-      relationTo: 'pages';
-      value: string | Page;
-    } | null;
-    url?: string | null;
-    label: string;
-    /**
-     * Choose how the link should be rendered.
-     */
-    appearance?: ('default' | 'outline') | null;
-  };
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'latest-promises';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -643,10 +602,15 @@ export interface Partner {
   url: {
     type?: ('reference' | 'custom') | null;
     newTab?: boolean | null;
-    reference?: {
-      relationTo: 'pages';
-      value: string | Page;
-    } | null;
+    reference?:
+      | ({
+          relationTo: 'pages';
+          value: string | Page;
+        } | null)
+      | ({
+          relationTo: 'global-pages';
+          value: string | GlobalPage;
+        } | null);
     url?: string | null;
     label: string;
   };
@@ -665,6 +629,101 @@ export interface PartnerDetailsBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TenantSelectorBlock".
+ */
+export interface TenantSelectorBlock {
+  title: string;
+  subtitle: string;
+  ctaLabel: string;
+  emptyListLabel: string;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'tenant-selection';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HeroBlock".
+ */
+export interface HeroBlock {
+  /**
+   * Displayed alongside the political entity name in the hero.
+   */
+  tagline?: string | null;
+  /**
+   * Label displayed beside the total count of synced promises.
+   */
+  promiseLabel?: string | null;
+  /**
+   * Sentence that follows the promise count, for example 'tracked on PromiseTracker'.
+   */
+  trailText?: string | null;
+  updatedAtLabel?: string | null;
+  /**
+   * Optional text that replaces the political entity position shown above the last updated date.
+   */
+  profileTitleOverride?: string | null;
+  statusListTitle?: string | null;
+  /**
+   * Define exactly three groups of promise statuses to display in the charts.
+   */
+  chartGroups: {
+    title: string;
+    statuses: (string | PromiseStatus)[];
+    id?: string | null;
+  }[];
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'hero';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "KeyPromisesBlock".
+ */
+export interface KeyPromisesBlock {
+  title: string;
+  actionLabel?: string | null;
+  /**
+   * How many highlighted promises to display (minimum 1).
+   */
+  itemsToShow: number;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'key-promises';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LatestPromisesBlock".
+ */
+export interface LatestPromisesBlock {
+  title: string;
+  /**
+   * Link to the page where all promises can be viewed. E.g. /promises
+   */
+  seeAllLink: {
+    type?: ('reference' | 'custom') | null;
+    newTab?: boolean | null;
+    reference?:
+      | ({
+          relationTo: 'pages';
+          value: string | Page;
+        } | null)
+      | ({
+          relationTo: 'global-pages';
+          value: string | GlobalPage;
+        } | null);
+    url?: string | null;
+    label: string;
+    /**
+     * Choose how the link should be rendered.
+     */
+    appearance?: ('default' | 'outline') | null;
+  };
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'latest-promises';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "PromiseListBlock".
  */
 export interface PromiseListBlock {
@@ -676,42 +735,6 @@ export interface PromiseListBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'promise-list';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "global-pages".
- */
-export interface GlobalPage {
-  id: string;
-  title: string;
-  slug: string;
-  slugLock?: boolean | null;
-  blocks?:
-    | (
-        | ActNowBlock
-        | FAQBlock
-        | NewsletterBlock
-        | PageHeaderBlock
-        | PartnersBlock
-        | PartnerDetailsBlock
-        | TenantSelectorBlock
-      )[]
-    | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TenantSelectorBlock".
- */
-export interface TenantSelectorBlock {
-  title: string;
-  subtitle: string;
-  ctaLabel: string;
-  emptyListLabel: string;
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'tenant-selection';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -788,10 +811,15 @@ export interface SiteSetting {
           link: {
             type?: ('reference' | 'custom') | null;
             newTab?: boolean | null;
-            reference?: {
-              relationTo: 'pages';
-              value: string | Page;
-            } | null;
+            reference?:
+              | ({
+                  relationTo: 'pages';
+                  value: string | Page;
+                } | null)
+              | ({
+                  relationTo: 'global-pages';
+                  value: string | GlobalPage;
+                } | null);
             url?: string | null;
             label: string;
           };
@@ -806,10 +834,15 @@ export interface SiteSetting {
           link: {
             type?: ('reference' | 'custom') | null;
             newTab?: boolean | null;
-            reference?: {
-              relationTo: 'pages';
-              value: string | Page;
-            } | null;
+            reference?:
+              | ({
+                  relationTo: 'pages';
+                  value: string | Page;
+                } | null)
+              | ({
+                  relationTo: 'global-pages';
+                  value: string | GlobalPage;
+                } | null);
             url?: string | null;
             label: string;
           };
@@ -826,10 +859,15 @@ export interface SiteSetting {
                 link: {
                   type?: ('reference' | 'custom') | null;
                   newTab?: boolean | null;
-                  reference?: {
-                    relationTo: 'pages';
-                    value: string | Page;
-                  } | null;
+                  reference?:
+                    | ({
+                        relationTo: 'pages';
+                        value: string | Page;
+                      } | null)
+                    | ({
+                        relationTo: 'global-pages';
+                        value: string | GlobalPage;
+                      } | null);
                   url?: string | null;
                   label: string;
                 };
@@ -1405,6 +1443,13 @@ export interface GlobalPagesSelect<T extends boolean = true> {
         'partner-details'?: T | PartnerDetailsBlockSelect<T>;
         'tenant-selection'?: T | TenantSelectorBlockSelect<T>;
       };
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1723,10 +1768,15 @@ export interface EntityPage {
           link: {
             type?: ('reference' | 'custom') | null;
             newTab?: boolean | null;
-            reference?: {
-              relationTo: 'pages';
-              value: string | Page;
-            } | null;
+            reference?:
+              | ({
+                  relationTo: 'pages';
+                  value: string | Page;
+                } | null)
+              | ({
+                  relationTo: 'global-pages';
+                  value: string | GlobalPage;
+                } | null);
             url?: string | null;
             label: string;
           };
@@ -1743,10 +1793,15 @@ export interface EntityPage {
                 link: {
                   type?: ('reference' | 'custom') | null;
                   newTab?: boolean | null;
-                  reference?: {
-                    relationTo: 'pages';
-                    value: string | Page;
-                  } | null;
+                  reference?:
+                    | ({
+                        relationTo: 'pages';
+                        value: string | Page;
+                      } | null)
+                    | ({
+                        relationTo: 'global-pages';
+                        value: string | GlobalPage;
+                      } | null);
                   url?: string | null;
                   label: string;
                 };
@@ -1880,10 +1935,15 @@ export interface GlobalSiteSetting {
           link: {
             type?: ('reference' | 'custom') | null;
             newTab?: boolean | null;
-            reference?: {
-              relationTo: 'pages';
-              value: string | Page;
-            } | null;
+            reference?:
+              | ({
+                  relationTo: 'pages';
+                  value: string | Page;
+                } | null)
+              | ({
+                  relationTo: 'global-pages';
+                  value: string | GlobalPage;
+                } | null);
             url?: string | null;
             label: string;
           };
@@ -1898,10 +1958,15 @@ export interface GlobalSiteSetting {
           link: {
             type?: ('reference' | 'custom') | null;
             newTab?: boolean | null;
-            reference?: {
-              relationTo: 'pages';
-              value: string | Page;
-            } | null;
+            reference?:
+              | ({
+                  relationTo: 'pages';
+                  value: string | Page;
+                } | null)
+              | ({
+                  relationTo: 'global-pages';
+                  value: string | GlobalPage;
+                } | null);
             url?: string | null;
             label: string;
           };
@@ -1918,10 +1983,15 @@ export interface GlobalSiteSetting {
                 link: {
                   type?: ('reference' | 'custom') | null;
                   newTab?: boolean | null;
-                  reference?: {
-                    relationTo: 'pages';
-                    value: string | Page;
-                  } | null;
+                  reference?:
+                    | ({
+                        relationTo: 'pages';
+                        value: string | Page;
+                      } | null)
+                    | ({
+                        relationTo: 'global-pages';
+                        value: string | GlobalPage;
+                      } | null);
                   url?: string | null;
                   label: string;
                 };

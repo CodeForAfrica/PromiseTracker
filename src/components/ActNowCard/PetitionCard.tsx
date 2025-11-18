@@ -1,4 +1,4 @@
-import { Box, Grid, Snackbar } from "@mui/material";
+import { Box, Snackbar } from "@mui/material";
 import Alert from "@mui/material/Alert";
 import React, { useState } from "react";
 
@@ -27,13 +27,14 @@ function PetitionCard({
   },
   ...props
 }: PetitionCardProps) {
+  const [success, setSuccess] = useState(false);
+
   if (!promiseActNow.petition) return null;
   const {
     petition: { petitionTitle, petitionDescription },
   } = promiseActNow;
 
   const { petitionJoin, petitionTitle: petitionStart } = props;
-  const [success, setSuccess] = useState(false);
 
   const handleSnackbarClose = () => {
     setSuccess(false);

@@ -1,5 +1,5 @@
 import { CollectionConfig } from "payload";
-import { ensureUniqueSlug } from "./hooks/ensureUniqueSlug";
+import { ensureUniqueGlobalPageSlug } from "./hooks/ensureUniqueSlug";
 import Partners from "@/blocks/Partners";
 import Newsletter from "@/blocks/Newsletter";
 import { slugField } from "@/fields/slug";
@@ -38,7 +38,7 @@ export const GlobalPages: CollectionConfig = {
           position: "sidebar",
         },
         hooks: {
-          beforeValidate: [ensureUniqueSlug],
+          beforeValidate: [ensureUniqueGlobalPageSlug],
         },
       },
     }),
