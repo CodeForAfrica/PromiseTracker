@@ -5,9 +5,14 @@ import * as Sentry from "@sentry/nextjs";
 
 import { getGlobalPayload } from "@/lib/payload";
 import { downloadFile } from "@/utils/files";
-import type { Promise as PayloadPromise } from "@/payload-types";
+import type {
+  Promise as PayloadPromise,
+  Document as PayloadDocument,
+  AiExtraction as PayloadAiExtraction,
+} from "@/payload-types";
 
 const WEBHOOK_SECRET_ENV_KEY = "WEBHOOK_SECRET_KEY";
+type PayloadClient = Awaited<ReturnType<typeof getGlobalPayload>>;
 
 type MeedanFile = {
   url?: unknown;
@@ -92,6 +97,79 @@ const getRelationId = (value: unknown): string | null => {
   return null;
 };
 
+const createDocumentResolver = (payload: PayloadClient) => {
+  const cache = new Map<string, PayloadDocument | null>();
+
+  return async (
+    documentValue: PayloadAiExtraction["document"]
+  ): Promise<PayloadDocument | null> => {
+    if (!documentValue) {
+      return null;
+    }
+
+    if (typeof documentValue === "string") {
+      if (cache.has(documentValue)) {
+        return cache.get(documentValue) ?? null;
+      }
+
+      try {
+        const documentRecord = await payload.findByID({
+          collection: "documents",
+          id: documentValue,
+          depth: 1,
+        });
+
+        cache.set(documentValue, documentRecord);
+        return documentRecord;
+      } catch (error) {
+        console.warn("meedan-sync:: Failed to resolve document", {
+          documentId: documentValue,
+          error,
+        });
+      }
+
+      cache.set(documentValue, null);
+      return null;
+    }
+
+    return documentValue;
+  };
+};
+
+const resolvePoliticalEntityIdFromExtractions = async (
+  payload: PayloadClient,
+  meedanId: string,
+  resolveDocument: (
+    documentValue: PayloadAiExtraction["document"]
+  ) => Promise<PayloadDocument | null>
+): Promise<string | null> => {
+  const { docs } = await payload.find({
+    collection: "ai-extractions",
+    limit: -1,
+    depth: 2,
+  });
+
+  for (const extractionDoc of docs ?? []) {
+    const documentRecord = await resolveDocument(extractionDoc.document);
+    const politicalEntityId = documentRecord
+      ? getRelationId(documentRecord.politicalEntity)
+      : null;
+
+    if (!politicalEntityId) {
+      continue;
+    }
+
+    for (const extraction of extractionDoc.extractions ?? []) {
+      const checkMediaId = normaliseString(extraction?.checkMediaId ?? null);
+      if (checkMediaId && checkMediaId === meedanId) {
+        return politicalEntityId;
+      }
+    }
+  }
+
+  return null;
+};
+
 export const POST = async (request: NextRequest) => {
   const configuredSecret = process.env[WEBHOOK_SECRET_ENV_KEY];
 
@@ -163,6 +241,23 @@ export const POST = async (request: NextRequest) => {
 
   try {
     const payload = await getGlobalPayload();
+    const resolveDocumentRecord = createDocumentResolver(payload);
+    let cachedExtractionPoliticalEntityId: string | null | undefined;
+
+    const getExtractionPoliticalEntityId = async () => {
+      if (cachedExtractionPoliticalEntityId !== undefined) {
+        return cachedExtractionPoliticalEntityId;
+      }
+
+      cachedExtractionPoliticalEntityId =
+        (await resolvePoliticalEntityIdFromExtractions(
+          payload,
+          meedanId,
+          resolveDocumentRecord
+        )) ?? null;
+
+      return cachedExtractionPoliticalEntityId;
+    };
 
     const { docs } = await payload.find({
       collection: "promises",
@@ -193,6 +288,8 @@ export const POST = async (request: NextRequest) => {
         );
       }
 
+      const extractionPoliticalEntityId =
+        await getExtractionPoliticalEntityId();
       promise = await payload.create({
         collection: "promises",
         data: {
@@ -201,6 +298,7 @@ export const POST = async (request: NextRequest) => {
           url,
           publishStatus: publishState,
           meedanId,
+          politicalEntity: extractionPoliticalEntityId,
         },
       });
 
