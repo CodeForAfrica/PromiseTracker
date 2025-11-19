@@ -99,9 +99,18 @@ export const getPromiseCountsForEntities = async (
         publishStatus: true,
       },
       where: {
-        politicalEntity: {
-          in: entityIds,
-        },
+        and: [
+          {
+            politicalEntity: {
+              in: entityIds,
+            },
+          },
+          {
+            publishStatus: {
+              equals: "published",
+            },
+          },
+        ],
       },
     }),
     payload.find({

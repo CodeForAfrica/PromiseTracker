@@ -4,10 +4,15 @@ import { unlink } from "node:fs/promises";
 import * as Sentry from "@sentry/nextjs";
 
 import { getGlobalPayload } from "@/lib/payload";
-import type { Media, Promise as PromiseDoc } from "@/payload-types";
 import { downloadFile } from "@/utils/files";
+import type {
+  Promise as PayloadPromise,
+  Document as PayloadDocument,
+  AiExtraction as PayloadAiExtraction,
+} from "@/payload-types";
 
 const WEBHOOK_SECRET_ENV_KEY = "WEBHOOK_SECRET_KEY";
+type PayloadClient = Awaited<ReturnType<typeof getGlobalPayload>>;
 
 type MeedanFile = {
   url?: unknown;
@@ -17,15 +22,29 @@ type MeedanField = {
   value?: unknown;
 };
 
+type ReportDesignOptions = {
+  title?: unknown;
+  description?: unknown;
+  text?: unknown;
+  headline?: unknown;
+  published_article_url?: unknown;
+  deadline?: unknown;
+};
+
+type ReportDesignData = {
+  options?: ReportDesignOptions | null;
+  state?: unknown;
+  fields?: MeedanField[];
+};
+
 type MeedanWebhookPayload = {
   data?: {
     id?: unknown;
   };
   object?: {
+    annotation_type?: string | null;
     file?: MeedanFile[];
-    data?: {
-      fields?: MeedanField[];
-    };
+    data?: ReportDesignData | null;
   };
 };
 
@@ -42,6 +61,14 @@ const normaliseString = (value: unknown): string | null => {
   return null;
 };
 
+type WithOptionalId = {
+  id?: unknown;
+};
+
+const hasIdProperty = (value: unknown): value is WithOptionalId => {
+  return typeof value === "object" && value !== null && "id" in value;
+};
+
 const getRelationId = (value: unknown): string | null => {
   if (!value) {
     return null;
@@ -56,14 +83,87 @@ const getRelationId = (value: unknown): string | null => {
     return String(value);
   }
 
-  if (typeof value === "object") {
-    const maybeId = (value as { id?: unknown }).id;
+  if (hasIdProperty(value)) {
+    const maybeId = value.id;
     if (typeof maybeId === "string") {
       const trimmed = maybeId.trim();
       return trimmed.length > 0 ? trimmed : null;
     }
     if (typeof maybeId === "number" && Number.isFinite(maybeId)) {
       return String(maybeId);
+    }
+  }
+
+  return null;
+};
+
+const createDocumentResolver = (payload: PayloadClient) => {
+  const cache = new Map<string, PayloadDocument | null>();
+
+  return async (
+    documentValue: PayloadAiExtraction["document"]
+  ): Promise<PayloadDocument | null> => {
+    if (!documentValue) {
+      return null;
+    }
+
+    if (typeof documentValue === "string") {
+      if (cache.has(documentValue)) {
+        return cache.get(documentValue) ?? null;
+      }
+
+      try {
+        const documentRecord = await payload.findByID({
+          collection: "documents",
+          id: documentValue,
+          depth: 1,
+        });
+
+        cache.set(documentValue, documentRecord);
+        return documentRecord;
+      } catch (error) {
+        console.warn("meedan-sync:: Failed to resolve document", {
+          documentId: documentValue,
+          error,
+        });
+      }
+
+      cache.set(documentValue, null);
+      return null;
+    }
+
+    return documentValue;
+  };
+};
+
+const resolvePoliticalEntityIdFromExtractions = async (
+  payload: PayloadClient,
+  meedanId: string,
+  resolveDocument: (
+    documentValue: PayloadAiExtraction["document"]
+  ) => Promise<PayloadDocument | null>
+): Promise<string | null> => {
+  const { docs } = await payload.find({
+    collection: "ai-extractions",
+    limit: -1,
+    depth: 2,
+  });
+
+  for (const extractionDoc of docs ?? []) {
+    const documentRecord = await resolveDocument(extractionDoc.document);
+    const politicalEntityId = documentRecord
+      ? getRelationId(documentRecord.politicalEntity)
+      : null;
+
+    if (!politicalEntityId) {
+      continue;
+    }
+
+    for (const extraction of extractionDoc.extractions ?? []) {
+      const checkMediaId = normaliseString(extraction?.checkMediaId ?? null);
+      if (checkMediaId && checkMediaId === meedanId) {
+        return politicalEntityId;
+      }
     }
   }
 
@@ -94,7 +194,7 @@ export const POST = async (request: NextRequest) => {
   let parsed: MeedanWebhookPayload;
 
   try {
-    parsed = (await request.json()) as MeedanWebhookPayload;
+    parsed = await request.json();
   } catch (_error) {
     const message = "meedan-sync:: Failed to parse JSON payload";
 
@@ -106,6 +206,10 @@ export const POST = async (request: NextRequest) => {
     `meedan-sync:: Received webhook payload ${JSON.stringify(parsed)}`,
     "info"
   );
+  const annotationType = parsed?.object?.annotation_type?.trim();
+  if (annotationType && annotationType !== "report_design") {
+    return NextResponse.json({ ok: true, skipped: true }, { status: 200 });
+  }
   const meedanId = normaliseString(parsed?.data?.id);
 
   if (!meedanId) {
@@ -121,21 +225,39 @@ export const POST = async (request: NextRequest) => {
     );
   }
 
+  const annotationData = parsed?.object?.data;
+  const options = annotationData?.options;
+  const publishState = normaliseString(annotationData?.state);
+  const title = normaliseString(options?.title);
+  const description =
+    normaliseString(options?.description) ??
+    normaliseString(options?.text ?? null);
+  const url = normaliseString(options?.published_article_url);
+  const headline = normaliseString(options?.headline);
+  const fieldValue = normaliseString(
+    annotationData?.fields?.[0]?.value ?? null
+  );
   const imageUrl = normaliseString(parsed?.object?.file?.[0]?.url ?? null);
-
-  if (!imageUrl) {
-    const message = "meedan-sync:: Missing image URL";
-
-    console.error(message);
-    Sentry.captureMessage(message, "error");
-    return NextResponse.json(
-      { error: "No image URL provided" },
-      { status: 200 }
-    );
-  }
 
   try {
     const payload = await getGlobalPayload();
+    const resolveDocumentRecord = createDocumentResolver(payload);
+    let cachedExtractionPoliticalEntityId: string | null | undefined;
+
+    const getExtractionPoliticalEntityId = async () => {
+      if (cachedExtractionPoliticalEntityId !== undefined) {
+        return cachedExtractionPoliticalEntityId;
+      }
+
+      cachedExtractionPoliticalEntityId =
+        (await resolvePoliticalEntityIdFromExtractions(
+          payload,
+          meedanId,
+          resolveDocumentRecord
+        )) ?? null;
+
+      return cachedExtractionPoliticalEntityId;
+    };
 
     const { docs } = await payload.find({
       collection: "promises",
@@ -147,20 +269,77 @@ export const POST = async (request: NextRequest) => {
       },
     });
 
-    const promise = (docs[0] ?? null) as PromiseDoc | null;
+    let promise: PayloadPromise | null = docs[0] ?? null;
+    let created = false;
+    let updated = false;
+
+    const hasTextPayload = Boolean(title || description || url);
 
     if (!promise) {
-      const message = "meedan-sync:: Promise not found";
+      if (!hasTextPayload) {
+        const message =
+          "meedan-sync:: Promise not found and payload missing content";
+
+        console.error(message);
+        Sentry.captureMessage(message, "error");
+        return NextResponse.json(
+          { error: "Promise not found" },
+          { status: 404 }
+        );
+      }
+
+      const extractionPoliticalEntityId =
+        await getExtractionPoliticalEntityId();
+      promise = await payload.create({
+        collection: "promises",
+        data: {
+          title,
+          description,
+          url,
+          publishStatus: publishState,
+          meedanId,
+          politicalEntity: extractionPoliticalEntityId,
+        },
+      });
+
+      created = true;
+    } else {
+      const updateData: Partial<PayloadPromise> = {};
+      if (title) updateData.title = title;
+      if (description) updateData.description = description;
+      if (url) updateData.url = url;
+      if (publishState) updateData.publishStatus = publishState;
+
+      if (Object.keys(updateData).length > 0) {
+        promise = await payload.update({
+          collection: "promises",
+          id: promise.id,
+          data: updateData,
+        });
+        updated = true;
+      }
+    }
+
+    if (!promise) {
+      const message = "meedan-sync:: Failed to persist promise record";
 
       console.error(message);
       Sentry.captureMessage(message, "error");
-      return NextResponse.json({ error: "Promise not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Failed to persist promise" },
+        { status: 500 }
+      );
+    }
+
+    if (!imageUrl) {
+      return NextResponse.json({ ok: true, created, updated }, { status: 200 });
     }
 
     const fallbackAlt =
-      (
-        parsed?.object?.data?.fields?.[0]?.value as string | undefined
-      )?.trim() ??
+      headline ??
+      title ??
+      description ??
+      fieldValue ??
       promise.title?.trim() ??
       promise.description?.trim() ??
       "Meedan promise image";
@@ -170,7 +349,7 @@ export const POST = async (request: NextRequest) => {
     try {
       filePath = await downloadFile(imageUrl);
 
-      const existingImageId = getRelationId(promise.image as unknown);
+      const existingImageId = getRelationId(promise.image);
       let mediaId = existingImageId;
 
       if (existingImageId) {
@@ -183,22 +362,22 @@ export const POST = async (request: NextRequest) => {
           filePath,
         });
       } else {
-        const media = (await payload.create({
+        const media = await payload.create({
           collection: "media",
           data: {
             alt: fallbackAlt,
           },
           filePath,
-        })) as Media;
+        });
 
-        mediaId = getRelationId(media as unknown);
+        mediaId = getRelationId(media);
       }
 
       if (!mediaId) {
         Sentry.withScope((scope) => {
           scope.setTag("route", "meedan-sync");
           scope.setContext("promise", {
-            id: promise.id,
+            id: promise?.id,
             existingImageId,
             meedanId,
             imageUrl,
@@ -222,7 +401,10 @@ export const POST = async (request: NextRequest) => {
         },
       });
 
-      return NextResponse.json({ ok: true, updated: true }, { status: 200 });
+      return NextResponse.json(
+        { ok: true, created, updated: true },
+        { status: 200 }
+      );
     } finally {
       if (filePath) {
         try {

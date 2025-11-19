@@ -292,9 +292,18 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
   const { docs: promiseDocs } = await payload.find({
     collection: "promises",
     where: {
-      politicalEntity: {
-        equals: entity.id,
-      },
+      and: [
+        {
+          politicalEntity: {
+            equals: entity.id,
+          },
+        },
+        {
+          publishStatus: {
+            equals: "published",
+          },
+        },
+      ],
     },
     limit: -1,
     depth: 1,

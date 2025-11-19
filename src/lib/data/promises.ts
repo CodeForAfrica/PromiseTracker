@@ -21,7 +21,15 @@ export const getPromiseById = async (
       ...(locale ? { locale } : {}),
     });
 
-    return doc as PromiseDocument;
+    const promise = doc as PromiseDocument;
+    const publishStatus =
+      typeof promise.publishStatus === "string"
+        ? promise.publishStatus.trim().toLowerCase()
+        : null;
+    if (publishStatus !== "published") {
+      return null;
+    }
+    return promise;
   } catch (error) {
     payload.logger.warn({
       message: "getPromiseById:: Failed to load promise",
