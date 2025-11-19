@@ -37,7 +37,6 @@ export default function Navigation({
   title,
   entitySlug,
   tenantName,
-  tenantSelectionHref,
   showSearch = true,
   tenantFlag,
   tenantFlagLabel,
@@ -45,7 +44,7 @@ export default function Navigation({
   const theme = useTheme();
   const logoSrc = primaryLogo?.url || null;
   const logoAlt = primaryLogo?.alt || "Logo";
-  const logoHref = tenantSelectionHref ?? (entitySlug ? `/${entitySlug}` : "/");
+  const logoHref = entitySlug ? `/${entitySlug}` : "/";
   const isExternalLogoHref =
     logoHref.startsWith("http://") ||
     logoHref.startsWith("https://") ||

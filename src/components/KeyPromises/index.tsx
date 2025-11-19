@@ -82,9 +82,18 @@ export const KeyPromises = async ({
   const promisesQuery = await payload.find({
     collection: "promises",
     where: {
-      politicalEntity: {
-        equals: entity.id,
-      },
+      and: [
+        {
+          politicalEntity: {
+            equals: entity.id,
+          },
+        },
+        {
+          publishStatus: {
+            equals: "published",
+          },
+        },
+      ],
     },
     limit: resolvedLimit,
     depth: 1,

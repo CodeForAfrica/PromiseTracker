@@ -37,9 +37,18 @@ async function Index(props: PromiseListProps) {
   const { docs } = await payload.find({
     collection: "promises",
     where: {
-      politicalEntity: {
-        equals: entity.id,
-      },
+      and: [
+        {
+          politicalEntity: {
+            equals: entity.id,
+          },
+        },
+        {
+          publishStatus: {
+            equals: "published",
+          },
+        },
+      ],
     },
     depth: 2,
     sort: "-createdAt",

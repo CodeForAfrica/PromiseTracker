@@ -258,6 +258,7 @@ export type PublishedReportsResponse = {
 export interface PublishedReport {
   meedanId: string;
   status: string | null;
+  reportStatus: string | null;
   image: string | null;
   title: string | null;
   description: string | null;
@@ -341,6 +342,7 @@ export const mapPublishedReports = (
     .map((node) => {
       const meedanId = toNullableString(node.id);
       const status = toNullableString(node.status ?? null);
+      const reportStatus = toNullableString(node.report_status ?? null);
       const url = toNullableString(node.full_url ?? null);
       const annotations = node.annotations?.edges ?? [];
 
@@ -394,6 +396,7 @@ export const mapPublishedReports = (
       return {
         meedanId,
         status,
+        reportStatus,
         image,
         title: toNullableString(node.title ?? null),
         description: toNullableString(node.description ?? null),
