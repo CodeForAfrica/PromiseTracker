@@ -40,11 +40,16 @@ export default function Navigation({
   showSearch = true,
   tenantFlag,
   tenantFlagLabel,
+  tenantSelectionHref,
 }: NavigationProps) {
   const theme = useTheme();
   const logoSrc = primaryLogo?.url || null;
   const logoAlt = primaryLogo?.alt || "Logo";
-  const logoHref = entitySlug ? `/${entitySlug}` : "/";
+  const globalHomeHref =
+    tenantSelectionHref ??
+    process.env.NEXT_PUBLIC_APP_URL ??
+    "/";
+  const logoHref = globalHomeHref;
   const isExternalLogoHref =
     logoHref.startsWith("http://") ||
     logoHref.startsWith("https://") ||
