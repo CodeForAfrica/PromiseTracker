@@ -10,56 +10,14 @@ import type {
   Document as PayloadDocument,
   AiExtraction as PayloadAiExtraction,
 } from "@/payload-types";
+import {
+  buildMeedanIdCandidates,
+  normaliseString,
+  type MeedanWebhookPayload,
+} from "./utils";
 
 const WEBHOOK_SECRET_ENV_KEY = "WEBHOOK_SECRET_KEY";
 type PayloadClient = Awaited<ReturnType<typeof getGlobalPayload>>;
-
-type MeedanFile = {
-  url?: unknown;
-};
-
-type MeedanField = {
-  value?: unknown;
-};
-
-type ReportDesignOptions = {
-  title?: unknown;
-  description?: unknown;
-  text?: unknown;
-  headline?: unknown;
-  published_article_url?: unknown;
-  deadline?: unknown;
-};
-
-type ReportDesignData = {
-  options?: ReportDesignOptions | null;
-  state?: unknown;
-  fields?: MeedanField[];
-};
-
-type MeedanWebhookPayload = {
-  data?: {
-    id?: unknown;
-  };
-  object?: {
-    annotation_type?: string | null;
-    file?: MeedanFile[];
-    data?: ReportDesignData | null;
-  };
-};
-
-const normaliseString = (value: unknown): string | null => {
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    return trimmed.length > 0 ? trimmed : null;
-  }
-
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return String(value);
-  }
-
-  return null;
-};
 
 type WithOptionalId = {
   id?: unknown;
@@ -225,6 +183,8 @@ export const POST = async (request: NextRequest) => {
     );
   }
 
+  const meedanIdCandidates = buildMeedanIdCandidates(parsed, meedanId);
+
   const annotationData = parsed?.object?.data;
   const options = annotationData?.options;
   const publishState = normaliseString(annotationData?.state);
@@ -264,7 +224,7 @@ export const POST = async (request: NextRequest) => {
       limit: 1,
       where: {
         meedanId: {
-          equals: meedanId,
+          in: meedanIdCandidates,
         },
       },
     });
@@ -309,6 +269,9 @@ export const POST = async (request: NextRequest) => {
       if (description) updateData.description = description;
       if (url) updateData.url = url;
       if (publishState) updateData.publishStatus = publishState;
+      if ((promise.meedanId ?? "").trim() !== meedanId) {
+        updateData.meedanId = meedanId;
+      }
 
       if (Object.keys(updateData).length > 0) {
         promise = await payload.update({
