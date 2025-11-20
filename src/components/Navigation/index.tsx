@@ -45,10 +45,11 @@ export default function Navigation({
   const theme = useTheme();
   const logoSrc = primaryLogo?.url || null;
   const logoAlt = primaryLogo?.alt || "Logo";
+  const envAppUrl = process.env.NEXT_PUBLIC_APP_URL;
   const globalHomeHref =
-    tenantSelectionHref ??
-    process.env.NEXT_PUBLIC_APP_URL ??
-    "/";
+    envAppUrl && envAppUrl.trim().length > 0
+      ? envAppUrl
+      : (tenantSelectionHref ?? "/");
   const logoHref = globalHomeHref;
   const isExternalLogoHref =
     logoHref.startsWith("http://") ||
