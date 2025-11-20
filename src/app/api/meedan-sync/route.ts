@@ -7,8 +7,6 @@ import { getGlobalPayload } from "@/lib/payload";
 import { downloadFile } from "@/utils/files";
 import type {
   Promise as PayloadPromise,
-  Document as PayloadDocument,
-  AiExtraction as PayloadAiExtraction,
 } from "@/payload-types";
 import {
   buildMeedanIdCandidates,
@@ -17,7 +15,6 @@ import {
 } from "./utils";
 
 const WEBHOOK_SECRET_ENV_KEY = "WEBHOOK_SECRET_KEY";
-type PayloadClient = Awaited<ReturnType<typeof getGlobalPayload>>;
 
 type WithOptionalId = {
   id?: unknown;
@@ -49,79 +46,6 @@ const getRelationId = (value: unknown): string | null => {
     }
     if (typeof maybeId === "number" && Number.isFinite(maybeId)) {
       return String(maybeId);
-    }
-  }
-
-  return null;
-};
-
-const createDocumentResolver = (payload: PayloadClient) => {
-  const cache = new Map<string, PayloadDocument | null>();
-
-  return async (
-    documentValue: PayloadAiExtraction["document"]
-  ): Promise<PayloadDocument | null> => {
-    if (!documentValue) {
-      return null;
-    }
-
-    if (typeof documentValue === "string") {
-      if (cache.has(documentValue)) {
-        return cache.get(documentValue) ?? null;
-      }
-
-      try {
-        const documentRecord = await payload.findByID({
-          collection: "documents",
-          id: documentValue,
-          depth: 1,
-        });
-
-        cache.set(documentValue, documentRecord);
-        return documentRecord;
-      } catch (error) {
-        console.warn("meedan-sync:: Failed to resolve document", {
-          documentId: documentValue,
-          error,
-        });
-      }
-
-      cache.set(documentValue, null);
-      return null;
-    }
-
-    return documentValue;
-  };
-};
-
-const resolvePoliticalEntityIdFromExtractions = async (
-  payload: PayloadClient,
-  meedanId: string,
-  resolveDocument: (
-    documentValue: PayloadAiExtraction["document"]
-  ) => Promise<PayloadDocument | null>
-): Promise<string | null> => {
-  const { docs } = await payload.find({
-    collection: "ai-extractions",
-    limit: -1,
-    depth: 2,
-  });
-
-  for (const extractionDoc of docs ?? []) {
-    const documentRecord = await resolveDocument(extractionDoc.document);
-    const politicalEntityId = documentRecord
-      ? getRelationId(documentRecord.politicalEntity)
-      : null;
-
-    if (!politicalEntityId) {
-      continue;
-    }
-
-    for (const extraction of extractionDoc.extractions ?? []) {
-      const checkMediaId = normaliseString(extraction?.checkMediaId ?? null);
-      if (checkMediaId && checkMediaId === meedanId) {
-        return politicalEntityId;
-      }
     }
   }
 
@@ -201,23 +125,6 @@ export const POST = async (request: NextRequest) => {
 
   try {
     const payload = await getGlobalPayload();
-    const resolveDocumentRecord = createDocumentResolver(payload);
-    let cachedExtractionPoliticalEntityId: string | null | undefined;
-
-    const getExtractionPoliticalEntityId = async () => {
-      if (cachedExtractionPoliticalEntityId !== undefined) {
-        return cachedExtractionPoliticalEntityId;
-      }
-
-      cachedExtractionPoliticalEntityId =
-        (await resolvePoliticalEntityIdFromExtractions(
-          payload,
-          meedanId,
-          resolveDocumentRecord
-        )) ?? null;
-
-      return cachedExtractionPoliticalEntityId;
-    };
 
     const { docs } = await payload.find({
       collection: "promises",
@@ -230,57 +137,36 @@ export const POST = async (request: NextRequest) => {
     });
 
     let promise: PayloadPromise | null = docs[0] ?? null;
-    let created = false;
+    const created = false;
     let updated = false;
 
-    const hasTextPayload = Boolean(title || description || url);
-
     if (!promise) {
-      if (!hasTextPayload) {
-        const message =
-          "meedan-sync:: Promise not found and payload missing content";
+      const message = "meedan-sync:: Promise not found";
 
-        console.error(message);
-        Sentry.captureMessage(message, "error");
-        return NextResponse.json(
-          { error: "Promise not found" },
-          { status: 404 }
-        );
-      }
+      console.error(message);
+      Sentry.captureMessage(message, "error");
+      return NextResponse.json(
+        { error: "Promise not found" },
+        { status: 404 }
+      );
+    }
 
-      const extractionPoliticalEntityId =
-        await getExtractionPoliticalEntityId();
-      promise = await payload.create({
+    const updateData: Partial<PayloadPromise> = {};
+    if (title) updateData.title = title;
+    if (description) updateData.description = description;
+    if (url) updateData.url = url;
+    if (publishState) updateData.publishStatus = publishState;
+    if ((promise.meedanId ?? "").trim() !== meedanId) {
+      updateData.meedanId = meedanId;
+    }
+
+    if (Object.keys(updateData).length > 0) {
+      promise = await payload.update({
         collection: "promises",
-        data: {
-          title,
-          description,
-          url,
-          publishStatus: publishState,
-          meedanId,
-          politicalEntity: extractionPoliticalEntityId,
-        },
+        id: promise.id,
+        data: updateData,
       });
-
-      created = true;
-    } else {
-      const updateData: Partial<PayloadPromise> = {};
-      if (title) updateData.title = title;
-      if (description) updateData.description = description;
-      if (url) updateData.url = url;
-      if (publishState) updateData.publishStatus = publishState;
-      if ((promise.meedanId ?? "").trim() !== meedanId) {
-        updateData.meedanId = meedanId;
-      }
-
-      if (Object.keys(updateData).length > 0) {
-        promise = await payload.update({
-          collection: "promises",
-          id: promise.id,
-          data: updateData,
-        });
-        updated = true;
-      }
+      updated = true;
     }
 
     if (!promise) {
@@ -364,8 +250,9 @@ export const POST = async (request: NextRequest) => {
         },
       });
 
+      updated = true;
       return NextResponse.json(
-        { ok: true, created, updated: true },
+        { ok: true, created, updated },
         { status: 200 }
       );
     } finally {
