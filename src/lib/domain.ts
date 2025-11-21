@@ -19,9 +19,26 @@ const appHost = (() => {
   }
 })();
 
+const appUrlHref = (() => {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!appUrl) return null;
+  try {
+    const parsed = new URL(appUrl);
+    parsed.pathname = "";
+    parsed.search = "";
+    parsed.hash = "";
+    return parsed.toString().replace(/\/$/, "");
+  } catch {
+    return null;
+  }
+})();
+
 export const getDomain = async () => {
   const headers = await getHeaders();
-  const host = headers.get("host");
+  const forwardedHost = headers.get("x-forwarded-host");
+  const hostHeader = headers.get("host");
+  // x-forwarded-host can be a comma-separated list; pick the first value.
+  const host = forwardedHost?.split(",")[0]?.trim() || hostHeader;
 
   let hostname: string | null = null;
   let port = "";
@@ -40,42 +57,24 @@ export const getDomain = async () => {
 
   let baseDomain = host ?? "";
   let subdomain: string | null = null;
+  const appRootLabel = appHost?.hostname?.split(".")[0] ?? null;
 
   if (hostname) {
-    if (appHost) {
-      const { hostname: canonicalHost, port: canonicalPort } = appHost;
+    const segments = normalizedHostname.split(".").filter(Boolean);
+    const tenantCandidate = segments.length > 2 ? segments[0] : null;
+    const looksLikeTenant =
+      tenantCandidate !== null &&
+      tenantCandidate !== "www" &&
+      tenantCandidate !== appRootLabel &&
+      tenantCandidate.length <= 20 &&
+      /^[a-z0-9-]+$/.test(tenantCandidate) &&
+      !tenantCandidate.includes("promisetracker");
 
-      if (normalizedHostname === canonicalHost) {
-        // Exact match with the configured host (e.g. promisetracker-v2.dev.codeforafrica.org) — keep the root domain.
-        baseDomain = `${hostname}${port}`;
-      } else if (normalizedHostname.endsWith(`.${canonicalHost}`)) {
-        // Host looks like `<tenant>.<canonical>` (e.g. ken.promisetracker-v2.dev.codeforafrica.org) — capture the tenant
-        // and force the base domain to the canonical host so generated links stay stable.
-        const suffixLength = canonicalHost.length + 1;
-        const prefix = normalizedHostname.slice(0, -suffixLength);
-        const segments = prefix.split(".").filter(Boolean);
-        subdomain = segments.pop() ?? null;
-        const effectivePort = canonicalPort || port;
-        baseDomain = `${canonicalHost}${effectivePort}`;
-      } else {
-        // Host does not match our configured base (e.g. unexpected.example.com) — fall back to the raw host.
-        baseDomain = `${hostname}${port}`;
-        const segments = normalizedHostname.split(".");
-        if (segments.length > 2) {
-          // Treat the leading label as the tenant when there are 3+ segments.
-          subdomain = segments.shift() ?? null;
-          baseDomain = `${segments.join(".")}${port}`;
-        }
-      }
+    if (looksLikeTenant) {
+      subdomain = tenantCandidate;
+      baseDomain = `${segments.slice(1).join(".")}${port || appHost?.port || ""}`;
     } else {
-      // No configured app host — strip the leading label when the host is a
-      // subdomain (e.g. api.localhost) so we still surface a link back to the root tenant selector.
-      baseDomain = `${hostname}${port}`;
-      const segments = normalizedHostname.split(".");
-      if (segments.length > 2) {
-        subdomain = segments.shift() ?? null;
-        baseDomain = `${segments.join(".")}${port}`;
-      }
+      baseDomain = `${hostname}${port || appHost?.port || ""}`;
     }
   }
 
@@ -90,9 +89,12 @@ export const getDomain = async () => {
     normalizedBaseDomain === "0.0.0.0";
 
   const protocol = isLocalEnvironment ? "http" : "https";
-  const tenantSelectionHref = baseDomain
-    ? `${protocol}://${baseDomain}`
-    : "/";
+  const tenantSelectionHref =
+    baseDomain && !isLocalhost
+      ? `${protocol}://${baseDomain}`
+      : baseDomain
+        ? `${protocol}://${baseDomain}`
+        : appUrlHref ?? "/";
 
   return {
     isLocalhost,
