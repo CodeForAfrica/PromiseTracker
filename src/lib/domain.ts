@@ -54,6 +54,12 @@ export const getDomain = async () => {
 
   const normalizedHostname = hostname?.toLowerCase() ?? "";
   const isLocalhost = normalizedHostname.includes("localhost");
+  const allowPort =
+    isLocalhost ||
+    normalizedHostname.includes("localtest") ||
+    normalizedHostname.startsWith("127.") ||
+    normalizedHostname === "0.0.0.0";
+  const effectivePort = allowPort ? port || appHost?.port || "" : "";
 
   let baseDomain = host ?? "";
   let subdomain: string | null = null;
@@ -72,9 +78,9 @@ export const getDomain = async () => {
 
     if (looksLikeTenant) {
       subdomain = tenantCandidate;
-      baseDomain = `${segments.slice(1).join(".")}${port || appHost?.port || ""}`;
+      baseDomain = `${segments.slice(1).join(".")}${effectivePort}`;
     } else {
-      baseDomain = `${hostname}${port || appHost?.port || ""}`;
+      baseDomain = `${hostname}${effectivePort}`;
     }
   }
 
@@ -99,7 +105,7 @@ export const getDomain = async () => {
   return {
     isLocalhost,
     baseDomain,
-    port,
+    port: effectivePort,
     subdomain,
     hostname,
     tenantSelectionHref,
