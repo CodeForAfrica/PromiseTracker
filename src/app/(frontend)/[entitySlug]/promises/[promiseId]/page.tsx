@@ -309,7 +309,7 @@ export default async function PromiseDetailPage({
 
   const promiseUrl = typeof promise.url === "string" ? promise.url : "";
   const titleText = promise.title?.trim() || "Promise";
-  const promiseUpdateSettings = await getPromiseUpdateEmbed();
+  const promiseUpdateSettings = await getPromiseUpdateEmbed(locale);
   const siteSettings = await getTenantSiteSettings(tenant, locale);
   const rawPromiseUpdateEmbed = promiseUpdateSettings?.embedCode ?? null;
   const promiseUpdateEmbed = rawPromiseUpdateEmbed

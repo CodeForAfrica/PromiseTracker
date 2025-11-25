@@ -1,15 +1,17 @@
 import { getGlobalPayload } from "@/lib/payload";
 import type { PromiseUpdateSettings } from "@/types/promiseUpdates";
 import type { Media } from "@/payload-types";
+import type { PayloadLocale } from "@/utils/locales";
 
 const payload = await getGlobalPayload();
 
 export const getPromiseUpdateEmbed =
-  async (): Promise<PromiseUpdateSettings | null> => {
+  async (locale?: PayloadLocale): Promise<PromiseUpdateSettings | null> => {
     try {
       const doc = await payload.findGlobal({
         slug: "promise-updates",
         depth: 2,
+        ...(locale ? { locale } : {}),
       });
       const { embedCode, updateLabel, defaultImage } = doc;
 

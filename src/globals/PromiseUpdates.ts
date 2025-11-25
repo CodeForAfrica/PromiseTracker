@@ -33,6 +33,7 @@ export const PromiseUpdates: GlobalConfig = {
       name: "embedCode",
       type: "code",
       required: true,
+      localized: true,
       admin: {
         language: "html",
         description: {
@@ -49,6 +50,7 @@ export const PromiseUpdates: GlobalConfig = {
       name: "updateLabel",
       type: "text",
       required: true,
+      localized: true,
       defaultValue: "Update Promise",
       label: {
         en: "Update Promise Label",

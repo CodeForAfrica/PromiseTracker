@@ -105,6 +105,22 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
   );
 
   if (!politicalEntity) {
+    const fallbackPageSlug =
+      pageSlugCandidate ?? maybePoliticalEntitySlug ?? "index";
+    const globalPage = await queryGlobalPageBySlug({
+      slug: fallbackPageSlug,
+      locale: tenantLocale,
+    });
+
+    if (globalPage) {
+      return buildSeoMetadata({
+        defaults: {
+          ...tenantSeo,
+          title: globalPage.title || tenantSeo.title,
+        },
+      });
+    }
+
     return buildSeoMetadata({
       meta: tenantSettings?.meta,
       defaults: tenantSeo,
@@ -212,6 +228,32 @@ export default async function Page(params: Args) {
   const payload = await getGlobalPayload();
 
   if (!politicalEntity) {
+    const fallbackPageSlug =
+      pageSlugCandidate ?? maybePoliticalEntitySlug ?? "index";
+    const globalPage = await queryGlobalPageBySlug({
+      slug: fallbackPageSlug,
+      locale,
+    });
+
+    if (globalPage) {
+      return (
+        <>
+          <Navigation
+            title={title}
+            {...navigation}
+            tenantName={tenant?.name ?? null}
+            tenantSelectionHref={tenantSelectionHref}
+            tenantFlag={tenant?.flag ?? null}
+            tenantFlagLabel={tenant?.name ?? tenant?.country ?? null}
+          />
+          <Suspense>
+            <BlockRenderer blocks={globalPage.blocks} />
+          </Suspense>
+          <Footer title={title} description={description} {...footer} />
+        </>
+      );
+    }
+
     const entityPageSettings = await payload.findGlobal({
       slug: "entity-page",
       locale,
