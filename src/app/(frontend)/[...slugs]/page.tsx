@@ -105,22 +105,6 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
   );
 
   if (!politicalEntity) {
-    const fallbackPageSlug =
-      pageSlugCandidate ?? maybePoliticalEntitySlug ?? "index";
-    const globalPage = await queryGlobalPageBySlug({
-      slug: fallbackPageSlug,
-      locale: tenantLocale,
-    });
-
-    if (globalPage) {
-      return buildSeoMetadata({
-        defaults: {
-          ...tenantSeo,
-          title: globalPage.title || tenantSeo.title,
-        },
-      });
-    }
-
     return buildSeoMetadata({
       meta: tenantSettings?.meta,
       defaults: tenantSeo,
