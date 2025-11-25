@@ -105,6 +105,49 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
   );
 
   if (!politicalEntity) {
+    const hasExplicitPageSlug =
+      Boolean(pageSlugCandidate) || Boolean(maybePoliticalEntitySlug);
+
+    if (!hasExplicitPageSlug) {
+      return buildSeoMetadata({
+        meta: tenantSettings?.meta,
+        defaults: tenantSeo,
+      });
+    }
+
+    const fallbackPageSlug =
+      pageSlugCandidate ?? maybePoliticalEntitySlug ?? "index";
+    const tenantPage = await queryPageBySlug({
+      slug: fallbackPageSlug,
+      tenant,
+      locale: tenantLocale,
+    });
+
+    if (tenantPage) {
+      return buildSeoMetadata({
+        meta: tenantPage.meta,
+        defaults: {
+          ...tenantSeo,
+          title: tenantPage.title || tenantSeo.title,
+        },
+      });
+    }
+
+    const globalPage = await queryGlobalPageBySlug({
+      slug: fallbackPageSlug,
+      locale: tenantLocale,
+    });
+
+    if (globalPage) {
+      return buildSeoMetadata({
+        meta: globalPage.meta,
+        defaults: {
+          ...tenantSeo,
+          title: globalPage.title || tenantSeo.title,
+        },
+      });
+    }
+
     return buildSeoMetadata({
       meta: tenantSettings?.meta,
       defaults: tenantSeo,
@@ -212,8 +255,90 @@ export default async function Page(params: Args) {
   const payload = await getGlobalPayload();
 
   if (!politicalEntity) {
+    const hasExplicitPageSlug =
+      Boolean(pageSlugCandidate) || Boolean(maybePoliticalEntitySlug);
+
+    if (!hasExplicitPageSlug) {
+      const entityPageSettings = await payload.findGlobal({
+        slug: "entity-page",
+        locale,
+      });
+      const entityBlocks = entityPageSettings?.entitySelector?.blocks ?? [];
+
+      const entityNavMenus =
+        (entityPageSettings?.primaryNavigation?.menus || [])
+          .map((m) => toMenuLink(m?.link ?? m))
+          .filter((x: MenuLink | null): x is MenuLink => Boolean(x)) || [];
+
+      const entitySecondaryNavColumns =
+        (entityPageSettings?.secondaryNavigationList || [])
+          .map((entry) => {
+            const menus = entry?.secondaryNavigation?.menus || [];
+            const links = menus
+              .map((m) => toMenuLink(m?.link ?? m))
+              .filter((x: MenuLink | null): x is MenuLink => Boolean(x));
+            if (!entry?.secondaryNavigation?.titles && links.length === 0) {
+              return null;
+            }
+            return {
+              title: entry?.secondaryNavigation?.titles || null,
+              links,
+            };
+          })
+          .filter((col): col is { title: string | null; links: MenuLink[] } =>
+            Boolean(col)
+          ) || [];
+
+      const navigationForEntity = { ...navigation, menus: entityNavMenus };
+
+      const footerForTenant =
+        entitySecondaryNavColumns.length > 0
+          ? { ...footer, secondaryNavColumns: entitySecondaryNavColumns }
+          : footer;
+
+      return (
+        <>
+          <Navigation
+            title={title}
+            {...navigationForEntity}
+            tenantSelectionHref={tenantSelectionHref}
+          />
+          <Suspense>
+            <BlockRenderer blocks={entityBlocks} />
+          </Suspense>
+          <Footer title={title} description={description} {...footerForTenant} />
+        </>
+      );
+    }
+
     const fallbackPageSlug =
       pageSlugCandidate ?? maybePoliticalEntitySlug ?? "index";
+
+    const tenantPage = await queryPageBySlug({
+      slug: fallbackPageSlug,
+      tenant,
+      locale,
+    });
+
+    if (tenantPage) {
+      return (
+        <>
+          <Navigation
+            title={title}
+            {...navigation}
+            tenantName={tenant?.name ?? null}
+            tenantSelectionHref={tenantSelectionHref}
+            tenantFlag={tenant?.flag ?? null}
+            tenantFlagLabel={tenant?.name ?? tenant?.country ?? null}
+          />
+          <Suspense>
+            <BlockRenderer blocks={tenantPage.blocks} />
+          </Suspense>
+          <Footer title={title} description={description} {...footer} />
+        </>
+      );
+    }
+
     const globalPage = await queryGlobalPageBySlug({
       slug: fallbackPageSlug,
       locale,
