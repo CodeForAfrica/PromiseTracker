@@ -3,6 +3,10 @@ import { LatestPromisesBlock } from "@/payload-types";
 
 import { getGlobalPayload } from "@/lib/payload";
 import { getPromiseUpdateEmbed } from "@/lib/data/promiseUpdates";
+import { getTenantBySubDomain } from "@/lib/data/tenants";
+import { getDomain } from "@/lib/domain";
+import { resolveTenantLocale } from "@/utils/locales";
+import { resolveBrowserLocale } from "@/app/(frontend)/layout";
 
 export type LatestPromisesProps = LatestPromisesBlock & {
   entitySlug: string;
@@ -17,6 +21,11 @@ export default async function Index({
     return null;
   }
   const payload = await getGlobalPayload();
+  const { subdomain } = await getDomain();
+  const tenant = await getTenantBySubDomain(subdomain);
+  const locale = tenant
+    ? resolveTenantLocale(tenant)
+    : await resolveBrowserLocale();
 
   const entityQuery = await payload.find({
     collection: "political-entities",
@@ -27,6 +36,7 @@ export default async function Index({
     },
     limit: 1,
     depth: 2,
+    locale,
   });
 
   const entity = entityQuery.docs[0];
@@ -53,6 +63,7 @@ export default async function Index({
     depth: 2,
     limit: 3,
     sort: "-createdAt",
+    locale,
   });
 
   if (!docs || docs.length === 0) {
@@ -67,7 +78,7 @@ export default async function Index({
       };
     }) ?? [];
 
-  const promiseUpdateSettings = await getPromiseUpdateEmbed();
+  const promiseUpdateSettings = await getPromiseUpdateEmbed(locale);
   const fallbackImage = promiseUpdateSettings?.defaultImage ?? null;
 
   return (

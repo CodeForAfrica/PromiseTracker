@@ -167,7 +167,6 @@ export const TenantList = async ({
                       </ListItemAvatar>
                       <ListItemText
                         primary={tenant.name}
-                        secondary={tenant.url.replace(/^https?:\/\//, "")}
                         primaryTypographyProps={{
                           variant: "subtitle1",
                           sx: { fontWeight: 600 },
