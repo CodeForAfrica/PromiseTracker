@@ -45,6 +45,8 @@ const Partners = React.forwardRef<HTMLDivElement, Props>(function Partners(
                 xs: "center",
                 lg: "space-between",
               }}
+              rowSpacing={{ xs: 4, md: 5 }}
+              columnSpacing={{ lg: 4 }}
             >
               {partners.slice(0, 6).map((partner) => (
                 <Grid
@@ -57,9 +59,11 @@ const Partners = React.forwardRef<HTMLDivElement, Props>(function Partners(
                   <CMSLink {...partner.url} label={""} entitySlug={entitySlug}>
                     <Box
                       sx={{
-                        height: { xs: 126.56, lg: 120 },
-                        width: { xs: 273.6, lg: 260 },
+                        width: "100%",
+                        maxWidth: { xs: 260, sm: 320, lg: 280 },
+                        aspectRatio: "3 / 2",
                         position: "relative",
+                        mx: "auto",
                       }}
                       component={"figure"}
                     >
@@ -68,6 +72,8 @@ const Partners = React.forwardRef<HTMLDivElement, Props>(function Partners(
                           src={partner.image?.url}
                           alt={partner.name}
                           fill
+                          style={{ objectFit: "contain" }}
+                          sizes="(min-width: 1200px) 280px, (min-width: 900px) 320px, 260px"
                         />
                       )}
                     </Box>

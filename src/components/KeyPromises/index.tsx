@@ -1,4 +1,8 @@
+import { resolveBrowserLocale } from "@/app/(frontend)/layout";
 import { resolveMedia } from "@/lib/data/media";
+import { getPromiseUpdateEmbed } from "@/lib/data/promiseUpdates";
+import { getTenantBySubDomain } from "@/lib/data/tenants";
+import { getDomain } from "@/lib/domain";
 import { getGlobalPayload } from "@/lib/payload";
 import type {
   KeyPromisesBlock,
@@ -6,8 +10,8 @@ import type {
   Promise as PromiseDocument,
   PromiseStatus,
 } from "@/payload-types";
+import { resolveTenantLocale } from "@/utils/locales";
 import { KeyPromisesClient, type KeyPromiseItem } from "./KeyPromises.Client";
-import { getPromiseUpdateEmbed } from "@/lib/data/promiseUpdates";
 
 const DEFAULT_ITEMS = 5;
 
@@ -49,6 +53,11 @@ export const KeyPromises = async ({
   }
 
   const payload = await getGlobalPayload();
+  const { subdomain } = await getDomain();
+  const tenant = await getTenantBySubDomain(subdomain);
+  const locale = tenant
+    ? resolveTenantLocale(tenant)
+    : await resolveBrowserLocale();
 
   const entityQuery = await payload.find({
     collection: "political-entities",
@@ -59,6 +68,7 @@ export const KeyPromises = async ({
     },
     limit: 1,
     depth: 0,
+    locale,
   });
 
   const entity = entityQuery.docs[0] as PoliticalEntity | undefined;
@@ -71,6 +81,7 @@ export const KeyPromises = async ({
     collection: "promise-status",
     limit: -1,
     depth: 0,
+    locale,
   });
 
   const statusById = new Map<string, PromiseStatus>(
@@ -98,10 +109,11 @@ export const KeyPromises = async ({
     limit: resolvedLimit,
     depth: 1,
     sort: "-updatedAt",
+    locale,
   });
 
   const promiseDocs = promisesQuery.docs as PromiseDocument[];
-  const promiseUpdateSettings = await getPromiseUpdateEmbed();
+  const promiseUpdateSettings = await getPromiseUpdateEmbed(locale);
   const fallbackImage = promiseUpdateSettings?.defaultImage
     ? await resolveMedia(promiseUpdateSettings.defaultImage)
     : null;

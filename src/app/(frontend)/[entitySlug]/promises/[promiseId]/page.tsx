@@ -390,6 +390,8 @@ export default async function PromiseDetailPage({
                   typography: { xs: "h3", lg: "h1" },
                   fontWeight: 600,
                   lineHeight: 1.1,
+                  wordBreak: "break-word",
+                  overflowWrap: "anywhere",
                 }}
               >
                 {titleText}

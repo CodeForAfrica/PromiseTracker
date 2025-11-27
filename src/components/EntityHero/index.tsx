@@ -61,6 +61,8 @@ export const EntityHero = async ({ title, description }: EntityHeroBlock) => {
               sx={{
                 fontWeight: 700,
                 mb: 2,
+                wordBreak: "break-word",
+                overflowWrap: "anywhere",
               }}
             >
               {title}
