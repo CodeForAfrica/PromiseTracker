@@ -21,16 +21,19 @@ const resolveCarouselImages = async (
     return [];
   }
 
-  const matchingItem =
-    carousel.find((entry) => {
-      const tenantRef = entry.carouselItems?.tenant;
-      const itemTenantId =
-        typeof tenantRef === "string" ? tenantRef : tenantRef?.id;
+  const matchingItem = carousel.find((entry) => {
+    const tenantRef = entry.carouselItems?.tenant;
+    const itemTenantId =
+      typeof tenantRef === "string" ? tenantRef : tenantRef?.id;
 
-      return Boolean(itemTenantId && tenantId && itemTenantId === tenantId);
-    }) ?? carousel[0];
+    return Boolean(itemTenantId && tenantId && itemTenantId === tenantId);
+  });
 
-  const images = matchingItem?.carouselItems?.images ?? [];
+  if (!matchingItem) {
+    return [];
+  }
+
+  const images = matchingItem.carouselItems?.images ?? [];
   const resolved = await Promise.all(
     images.map((media) => resolveMedia(media))
   );
