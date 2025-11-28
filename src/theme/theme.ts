@@ -4,11 +4,6 @@ import { createTheme } from "@mui/material/styles";
 import { deepmerge } from "@mui/utils";
 import { tokens } from "./tokens";
 
-const FONT_FAMILY_HEADING = '"Amiri", "serif"';
-const FONT_FAMILY_TEXT_PRIMARY = '"Merriweather", "serif"';
-const FONT_FAMILY_TEXT_SECONDARY = '"Open Sans", "sans-serif"';
-const FONT_FAMILY_TEXT_HIGHTLIGHT = '"Source Sans 3", "sans-serif"';
-
 const primary = { main: "#202020", dark: "#000000" } as const;
 const secondary = { main: "#EBEBEB", light: "#F7F7F7" } as const; // grey
 const text = { primary: primary.main, secondary: "#ffffff" } as const;
@@ -34,36 +29,31 @@ const baseTheme = createTheme({
     mode: "light",
   },
   typography: {
-    fontFamily: FONT_FAMILY_TEXT_SECONDARY,
+    fontFamily: "inter",
     h1: {
-      fontFamily: FONT_FAMILY_HEADING,
       fontStretch: "normal",
       fontStyle: "normal",
       fontWeight: "bold",
       letterSpacing: "0.76px",
     },
     h2: {
-      fontFamily: FONT_FAMILY_HEADING,
       fontStretch: "normal",
       fontStyle: "normal",
       fontWeight: "normal",
       letterSpacing: "0.86px",
     },
     h3: {
-      fontFamily: FONT_FAMILY_HEADING,
       fontStretch: "normal",
       fontStyle: "normal",
       fontWeight: "bold",
     },
     h4: {
-      fontFamily: FONT_FAMILY_TEXT_SECONDARY,
       fontStretch: "normal",
       fontStyle: "normal",
       fontWeight: 600,
       letterSpacing: "0.64px",
     },
     h5: {
-      fontFamily: FONT_FAMILY_TEXT_SECONDARY,
       fontStretch: "normal",
       fontStyle: "normal",
       fontWeight: 600,
@@ -71,7 +61,6 @@ const baseTheme = createTheme({
       textTransform: "uppercase",
     },
     h6: {
-      fontFamily: FONT_FAMILY_TEXT_SECONDARY,
       fontStretch: "normal",
       fontStyle: "normal",
       fontWeight: 700,
@@ -79,40 +68,34 @@ const baseTheme = createTheme({
       textTransform: "uppercase",
     },
     subtitle1: {
-      fontFamily: FONT_FAMILY_TEXT_SECONDARY,
       fontStretch: "normal",
       fontStyle: "normal",
       fontWeight: 600,
       letterSpacing: 0,
     },
     subtitle2: {
-      fontFamily: FONT_FAMILY_TEXT_SECONDARY,
       fontStretch: "normal",
       fontStyle: "regular",
       fontWeight: "bold",
       letterSpacing: 0,
     },
     body1: {
-      fontFamily: FONT_FAMILY_TEXT_PRIMARY,
       fontStretch: "normal",
       fontWeight: "normal",
       letterSpacing: 0,
     },
     body2: {
-      fontFamily: FONT_FAMILY_TEXT_PRIMARY,
       fontStretch: "normal",
       fontStyle: "normal",
       fontWeight: 400,
       letterSpacing: 0,
     },
     caption: {
-      fontFamily: FONT_FAMILY_TEXT_SECONDARY,
       fontStretch: "normal",
       fontStyle: "normal",
       letterSpacing: 0,
     },
     button: {
-      fontFamily: FONT_FAMILY_TEXT_HIGHTLIGHT,
       fontStretch: "normal",
       fontStyle: "normal",
       fontWeight: 600,
@@ -249,7 +232,7 @@ const theme = createTheme(baseTheme, {
         },
       },
     },
-    { clone: false },
+    { clone: false }
   ),
   components: {
     MuiButton: {

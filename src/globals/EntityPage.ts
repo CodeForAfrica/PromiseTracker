@@ -4,13 +4,13 @@ import { EntityHero } from "@/blocks/Hero/EntityHero";
 import Newsletter from "@/blocks/Newsletter";
 import Partners from "@/blocks/Partners";
 import { NavigationTab } from "@/collections/SiteSettings/tabs/NavigationTab";
-import { GlobalConfig } from "payload";
+import type { GlobalConfig } from "payload";
 
 export const EntityPage: GlobalConfig = {
   slug: "entity-page",
   label: {
-    en: "Entity Page",
-    fr: "Page d'entité",
+    en: "Tenant Page",
+    fr: "Page de tenant",
   },
   admin: {
     group: {
