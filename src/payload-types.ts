@@ -1845,6 +1845,13 @@ export interface EntitySelectionBlock {
 export interface EntityHeroBlock {
   title: string;
   description: string;
+  carousel: {
+    carouselItems?: {
+      images?: (string | Media)[] | null;
+      tenant?: (string | null) | Tenant;
+    };
+    id?: string | null;
+  }[];
   id?: string | null;
   blockName?: string | null;
   blockType: 'entity-hero';
@@ -2147,6 +2154,17 @@ export interface EntitySelectionBlockSelect<T extends boolean = true> {
 export interface EntityHeroBlockSelect<T extends boolean = true> {
   title?: T;
   description?: T;
+  carousel?:
+    | T
+    | {
+        carouselItems?:
+          | T
+          | {
+              images?: T;
+              tenant?: T;
+            };
+        id?: T;
+      };
   id?: T;
   blockName?: T;
 }
