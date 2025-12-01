@@ -101,7 +101,8 @@ export const EntityHero = async ({
         >
           <Grid size={{ xs: 12, md: 7 }}>
             <Typography
-              variant="subtitle2"
+              variant="body1"
+              fontWeight="bold"
               sx={{
                 display: "inline-flex",
                 alignItems: "center",
