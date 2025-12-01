@@ -139,6 +139,8 @@ export const Hero: Block = {
           relationTo: "promise-status",
           hasMany: true,
           required: true,
+          maxRows: 2,
+          minRows: 2,
           label: {
             en: "Statuses",
             fr: "Statuts",

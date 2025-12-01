@@ -87,6 +87,25 @@ const FALLBACK_GROUP_DEFINITIONS = [
   },
 ];
 
+const extractSelectedStatusIds = (
+  blockGroups: HeroBlock["chartGroups"] | undefined | null
+): Set<string> => {
+  const statusIds = new Set<string>();
+
+  for (const group of blockGroups ?? []) {
+    for (const statusRef of group.statuses ?? []) {
+      const statusId =
+        typeof statusRef === "string" ? statusRef : statusRef?.id;
+
+      if (statusId) {
+        statusIds.add(statusId);
+      }
+    }
+  }
+
+  return statusIds;
+};
+
 const resolvePromiseStatus = (
   promise: PromiseItem,
   statusById: StatusById
@@ -143,6 +162,7 @@ const buildChartGroups = (
 
   const groups: { title: string; statuses: HeroStatusSummary[] }[] = [];
   const usedIds = new Set<string>();
+  const hasCustomGroups = Boolean(blockGroups?.length);
 
   const addGroup = (title: string, statuses: HeroStatusSummary[]) => {
     if (statuses.length === 0) {
@@ -211,7 +231,9 @@ const buildChartGroups = (
 
   const untouched = summariesList.filter((summary) => !usedIds.has(summary.id));
 
-  if (untouched.length > 0 && groups.length > 0) {
+  const shouldDistributeUntouched = !hasCustomGroups;
+
+  if (shouldDistributeUntouched && untouched.length > 0 && groups.length > 0) {
     const sortedUntouched = untouched
       .slice()
       .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
@@ -284,10 +306,16 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
     locale,
   });
 
+  const selectedStatusIds = extractSelectedStatusIds(block.chartGroups);
+  const filteredStatuses =
+    selectedStatusIds.size > 0
+      ? statusDocs.filter((status) => selectedStatusIds.has(status.id))
+      : statusDocs;
+
   const statusById: StatusById = new Map(
-    statusDocs.map((status) => [status.id, status])
+    filteredStatuses.map((status) => [status.id, status])
   );
-  const statusSummaries = buildStatusSummaries(statusDocs);
+  const statusSummaries = buildStatusSummaries(filteredStatuses);
 
   const { docs: promiseDocs } = await payload.find({
     collection: "promises",
@@ -315,6 +343,10 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
     const status = resolvePromiseStatus(promise, statusById);
 
     if (!status) {
+      continue;
+    }
+
+    if (selectedStatusIds.size > 0 && !selectedStatusIds.has(status.id)) {
       continue;
     }
 
