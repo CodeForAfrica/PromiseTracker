@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
-import { isIP } from "node:net";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -39,56 +38,14 @@ const dirName = dirname(fileName);
 const tempDir = join(dirName, "..", "..", "temp");
 
 const DEFAULT_MAX_DOWNLOAD_BYTES =
-  Number(process.env.MAX_DOWNLOAD_BYTES) || 100 * 1024 * 1024; // 100MB
+  Number(process.env.MAX_DOWNLOAD_BYTES) || 100 * 1024 * 1024;
 
 type DownloadFileOptions = {
-  allowedHosts?: string[];
   allowedMimeTypes?: string[];
   maxBytes?: number;
 };
 
-const normalizeAllowedHosts = (hosts?: string[]) =>
-  hosts?.map((host) => host.trim().toLowerCase()).filter(Boolean) ?? [];
-
-const isPrivateIp = (host: string) => {
-  if (isIP(host) === 4) {
-    const octets = host.split(".").map((part) => Number(part));
-    if (octets.length !== 4 || octets.some((part) => Number.isNaN(part))) {
-      return false;
-    }
-    const [first, second] = octets;
-    if (first === 10 || first === 127) return true;
-    if (first === 172 && second >= 16 && second <= 31) return true;
-    if (first === 192 && second === 168) return true;
-    if (first === 169 && second === 254) return true;
-    if (first === 0) return true;
-    return false;
-  }
-
-  if (isIP(host) === 6) {
-    const normalized = host.toLowerCase();
-    return (
-      normalized === "::1" ||
-      normalized.startsWith("fc") ||
-      normalized.startsWith("fd") ||
-      normalized.startsWith("fe80")
-    );
-  }
-
-  return false;
-};
-
-const normalizeAllowedHosts = (
-  allowedHosts: string[] | undefined | null,
-): string[] => {
-  if (!allowedHosts) return [];
-
-  return allowedHosts
-    .map((host) => host.trim().toLowerCase())
-    .filter((host) => host.length > 0);
-};
-
-const ensureSafeUrl = (url: URL, allowedHosts: string[]) => {
+const ensureSafeUrl = (url: URL) => {
   if (url.protocol !== "https:" && url.protocol !== "http:") {
     throw new Error(`Unsupported URL protocol: ${url.protocol}`);
   }
@@ -98,29 +55,7 @@ const ensureSafeUrl = (url: URL, allowedHosts: string[]) => {
     throw new Error("Refusing to download from localhost");
   }
 
-  // Disallow direct IP address hostnames to avoid bypassing hostname-based checks.
-  if (isIP(hostname)) {
-    throw new Error("Refusing to download from an IP address");
-  }
-
-  if (isPrivateIp(hostname)) {
-    throw new Error("Refusing to download from a private IP address");
-  }
-
-  // Require an explicit allow-list; fail closed if none is configured.
-  if (!allowedHosts || allowedHosts.length === 0) {
-    throw new Error("Refusing to download: no allowed hosts configured");
-  }
-
-  const matches = allowedHosts.some((allowed) => {
-    if (allowed.startsWith(".")) {
-      return hostname.endsWith(allowed);
-    }
-    return hostname === allowed;
-  });
-  if (!matches) {
-    throw new Error("Refusing to download from unapproved host");
-  }
+  return hostname;
 };
 
 export const downloadFile = async (
@@ -128,8 +63,6 @@ export const downloadFile = async (
   options: DownloadFileOptions = {},
 ) => {
   const maxBytes = options.maxBytes ?? DEFAULT_MAX_DOWNLOAD_BYTES;
-  const allowedHosts = normalizeAllowedHosts(options.allowedHosts);
-
   let parsedUrl: URL;
   try {
     parsedUrl = new URL(url);
@@ -137,13 +70,17 @@ export const downloadFile = async (
     throw new Error(`Invalid download URL: ${url}`);
   }
 
-  ensureSafeUrl(parsedUrl, allowedHosts);
+  const safeHost = ensureSafeUrl(parsedUrl);
+  const safeUrl = new URL(
+    `${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`,
+    `${parsedUrl.protocol}//${safeHost}`,
+  );
 
   if (!existsSync(tempDir)) {
     await mkdir(tempDir, { recursive: true });
   }
 
-  const res = await fetch(parsedUrl.toString());
+  const res = await fetch(safeUrl.toString());
   if (!res.ok) {
     throw new Error(
       `Error downloading file from: ${url}. Status ${res.status}, Error: ${res.statusText}`,

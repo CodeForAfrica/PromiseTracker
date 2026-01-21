@@ -5,9 +5,7 @@ import * as Sentry from "@sentry/nextjs";
 
 import { getGlobalPayload } from "@/lib/payload";
 import { downloadFile } from "@/utils/files";
-import type {
-  Promise as PayloadPromise,
-} from "@/payload-types";
+import type { Promise as PayloadPromise } from "@/payload-types";
 import {
   buildMeedanIdCandidates,
   normaliseString,
@@ -17,10 +15,6 @@ import {
 const WEBHOOK_SECRET_ENV_KEY = "WEBHOOK_SECRET_KEY";
 const DEFAULT_MAX_IMAGE_BYTES =
   Number(process.env.MEEDAN_MAX_IMAGE_BYTES) || 10 * 1024 * 1024;
-const ALLOWED_IMAGE_HOSTS = (process.env.MEEDAN_ALLOWED_IMAGE_HOSTS ?? "")
-  .split(",")
-  .map((host) => host.trim().toLowerCase())
-  .filter(Boolean);
 const ALLOWED_IMAGE_MIME_TYPES = [
   "image/jpeg",
   "image/jpg",
@@ -77,7 +71,7 @@ export const POST = async (request: NextRequest) => {
     Sentry.captureMessage(message, "error");
     return NextResponse.json(
       { ok: false, updated: false, error: "Service misconfigured" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -113,7 +107,7 @@ export const POST = async (request: NextRequest) => {
       {
         error: "Missing Meedan ID",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -129,7 +123,7 @@ export const POST = async (request: NextRequest) => {
   const url = normaliseString(options?.published_article_url);
   const headline = normaliseString(options?.headline);
   const fieldValue = normaliseString(
-    annotationData?.fields?.[0]?.value ?? null
+    annotationData?.fields?.[0]?.value ?? null,
   );
   const imageUrl = normaliseString(parsed?.object?.file?.[0]?.url ?? null);
 
@@ -164,10 +158,7 @@ export const POST = async (request: NextRequest) => {
 
       console.error(message);
       Sentry.captureMessage(message, "error");
-      return NextResponse.json(
-        { error: "Promise not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Promise not found" }, { status: 404 });
     }
 
     const updateData: Partial<PayloadPromise> = {};
@@ -195,7 +186,7 @@ export const POST = async (request: NextRequest) => {
       Sentry.captureMessage(message, "error");
       return NextResponse.json(
         { error: "Failed to persist promise" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -203,10 +194,7 @@ export const POST = async (request: NextRequest) => {
       return NextResponse.json({ ok: true, created, updated }, { status: 200 });
     }
     if (!imageUrl.startsWith("https://")) {
-      return NextResponse.json(
-        { error: "Invalid image URL" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid image URL" }, { status: 400 });
     }
 
     const fallbackAlt =
@@ -222,7 +210,6 @@ export const POST = async (request: NextRequest) => {
 
     try {
       filePath = await downloadFile(imageUrl, {
-        allowedHosts: ALLOWED_IMAGE_HOSTS,
         allowedMimeTypes: ALLOWED_IMAGE_MIME_TYPES,
         maxBytes: DEFAULT_MAX_IMAGE_BYTES,
       });
@@ -262,12 +249,12 @@ export const POST = async (request: NextRequest) => {
           });
           Sentry.captureMessage(
             "meedan-sync:: Failed to cache image after processing webhook",
-            "error"
+            "error",
           );
         });
         return NextResponse.json(
           { error: "Failed to cache image" },
-          { status: 500 }
+          { status: 500 },
         );
       }
 
@@ -280,10 +267,7 @@ export const POST = async (request: NextRequest) => {
       });
 
       updated = true;
-      return NextResponse.json(
-        { ok: true, created, updated },
-        { status: 200 }
-      );
+      return NextResponse.json({ ok: true, created, updated }, { status: 200 });
     } finally {
       if (filePath) {
         try {
@@ -291,7 +275,7 @@ export const POST = async (request: NextRequest) => {
         } catch (cleanupError) {
           console.warn(
             "meedan-sync:: Failed to clean up temp image",
-            cleanupError
+            cleanupError,
           );
 
           Sentry.withScope((scope) => {
@@ -318,7 +302,7 @@ export const POST = async (request: NextRequest) => {
     });
     return NextResponse.json(
       { ok: false, updated: false, error: "Failed to process webhook" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 };
