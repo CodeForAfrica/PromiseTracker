@@ -45,19 +45,6 @@ type DownloadFileOptions = {
   maxBytes?: number;
 };
 
-const ensureSafeUrl = (url: URL) => {
-  if (url.protocol !== "https:" && url.protocol !== "http:") {
-    throw new Error(`Unsupported URL protocol: ${url.protocol}`);
-  }
-
-  const hostname = url.hostname.toLowerCase();
-  if (hostname === "localhost" || hostname.endsWith(".localhost")) {
-    throw new Error("Refusing to download from localhost");
-  }
-
-  return hostname;
-};
-
 export const downloadFile = async (
   url: string,
   options: DownloadFileOptions = {},
@@ -70,17 +57,11 @@ export const downloadFile = async (
     throw new Error(`Invalid download URL: ${url}`);
   }
 
-  const safeHost = ensureSafeUrl(parsedUrl);
-  const safeUrl = new URL(
-    `${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`,
-    `${parsedUrl.protocol}//${safeHost}`,
-  );
-
   if (!existsSync(tempDir)) {
     await mkdir(tempDir, { recursive: true });
   }
 
-  const res = await fetch(safeUrl.toString());
+  const res = await fetch(parsedUrl);
   if (!res.ok) {
     throw new Error(
       `Error downloading file from: ${url}. Status ${res.status}, Error: ${res.statusText}`,
