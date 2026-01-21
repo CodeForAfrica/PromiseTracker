@@ -87,20 +87,29 @@ const ensureSafeUrl = (url: URL, allowedHosts: string[]) => {
   if (hostname === "localhost" || hostname.endsWith(".localhost")) {
     throw new Error("Refusing to download from localhost");
   }
+
+  // Disallow direct IP address hostnames to avoid bypassing hostname-based checks.
+  if (isIP(hostname)) {
+    throw new Error("Refusing to download from an IP address");
+  }
+
   if (isPrivateIp(hostname)) {
     throw new Error("Refusing to download from a private IP address");
   }
 
-  if (allowedHosts.length > 0) {
-    const matches = allowedHosts.some((allowed) => {
-      if (allowed.startsWith(".")) {
-        return hostname.endsWith(allowed);
-      }
-      return hostname === allowed;
-    });
-    if (!matches) {
-      throw new Error("Refusing to download from unapproved host");
+  // Require an explicit allow-list; fail closed if none is configured.
+  if (!allowedHosts || allowedHosts.length === 0) {
+    throw new Error("Refusing to download: no allowed hosts configured");
+  }
+
+  const matches = allowedHosts.some((allowed) => {
+    if (allowed.startsWith(".")) {
+      return hostname.endsWith(allowed);
     }
+    return hostname === allowed;
+  });
+  if (!matches) {
+    throw new Error("Refusing to download from unapproved host");
   }
 };
 
@@ -124,7 +133,7 @@ export const downloadFile = async (
     await mkdir(tempDir, { recursive: true });
   }
 
-  const res = await fetch(parsedUrl);
+  const res = await fetch(parsedUrl.toString());
   if (!res.ok) {
     throw new Error(
       `Error downloading file from: ${url}. Status ${res.status}, Error: ${res.statusText}`,
