@@ -78,6 +78,16 @@ const isPrivateIp = (host: string) => {
   return false;
 };
 
+const normalizeAllowedHosts = (
+  allowedHosts: string[] | undefined | null,
+): string[] => {
+  if (!allowedHosts) return [];
+
+  return allowedHosts
+    .map((host) => host.trim().toLowerCase())
+    .filter((host) => host.length > 0);
+};
+
 const ensureSafeUrl = (url: URL, allowedHosts: string[]) => {
   if (url.protocol !== "https:" && url.protocol !== "http:") {
     throw new Error(`Unsupported URL protocol: ${url.protocol}`);
