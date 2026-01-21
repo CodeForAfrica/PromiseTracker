@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
-import { writeFile, mkdir } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
+import { isIP } from "node:net";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -18,6 +19,7 @@ export const mimeToExtension: Record<string, string> = {
   "text/html": ".html",
   "text/csv": ".csv",
   "image/jpeg": ".jpg",
+  "image/jpg": ".jpg",
   "image/png": ".png",
   "image/gif": ".gif",
   "image/webp": ".webp",
@@ -36,22 +38,139 @@ const fileName = fileURLToPath(import.meta.url);
 const dirName = dirname(fileName);
 const tempDir = join(dirName, "..", "..", "temp");
 
-export const downloadFile = async (url: string) => {
+const DEFAULT_MAX_DOWNLOAD_BYTES =
+  Number(process.env.MAX_DOWNLOAD_BYTES) || 100 * 1024 * 1024; // 100MB
+
+type DownloadFileOptions = {
+  allowedHosts?: string[];
+  allowedMimeTypes?: string[];
+  maxBytes?: number;
+};
+
+const normalizeAllowedHosts = (hosts?: string[]) =>
+  hosts?.map((host) => host.trim().toLowerCase()).filter(Boolean) ?? [];
+
+const isPrivateIp = (host: string) => {
+  if (isIP(host) === 4) {
+    const octets = host.split(".").map((part) => Number(part));
+    if (octets.length !== 4 || octets.some((part) => Number.isNaN(part))) {
+      return false;
+    }
+    const [first, second] = octets;
+    if (first === 10 || first === 127) return true;
+    if (first === 172 && second >= 16 && second <= 31) return true;
+    if (first === 192 && second === 168) return true;
+    if (first === 169 && second === 254) return true;
+    if (first === 0) return true;
+    return false;
+  }
+
+  if (isIP(host) === 6) {
+    const normalized = host.toLowerCase();
+    return (
+      normalized === "::1" ||
+      normalized.startsWith("fc") ||
+      normalized.startsWith("fd") ||
+      normalized.startsWith("fe80")
+    );
+  }
+
+  return false;
+};
+
+const ensureSafeUrl = (url: URL, allowedHosts: string[]) => {
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
+    throw new Error(`Unsupported URL protocol: ${url.protocol}`);
+  }
+
+  const hostname = url.hostname.toLowerCase();
+  if (hostname === "localhost" || hostname.endsWith(".localhost")) {
+    throw new Error("Refusing to download from localhost");
+  }
+  if (isPrivateIp(hostname)) {
+    throw new Error("Refusing to download from a private IP address");
+  }
+
+  if (allowedHosts.length > 0) {
+    const matches = allowedHosts.some((allowed) => {
+      if (allowed.startsWith(".")) {
+        return hostname.endsWith(allowed);
+      }
+      return hostname === allowed;
+    });
+    if (!matches) {
+      throw new Error("Refusing to download from unapproved host");
+    }
+  }
+};
+
+export const downloadFile = async (
+  url: string,
+  options: DownloadFileOptions = {},
+) => {
+  const maxBytes = options.maxBytes ?? DEFAULT_MAX_DOWNLOAD_BYTES;
+  const allowedHosts = normalizeAllowedHosts(options.allowedHosts);
+
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(url);
+  } catch (_error) {
+    throw new Error(`Invalid download URL: ${url}`);
+  }
+
+  ensureSafeUrl(parsedUrl, allowedHosts);
+
   if (!existsSync(tempDir)) {
     await mkdir(tempDir, { recursive: true });
   }
 
-  const res = await fetch(url);
+  const res = await fetch(parsedUrl);
   if (!res.ok) {
     throw new Error(
-      `Error downloading file from: ${url}. Status ${res.status}, Error: ${res.statusText}`
+      `Error downloading file from: ${url}. Status ${res.status}, Error: ${res.statusText}`,
+    );
+  }
+
+  const contentLength = Number(res.headers.get("content-length"));
+  if (Number.isFinite(contentLength) && contentLength > maxBytes) {
+    throw new Error(
+      `Download exceeds size limit (${contentLength} > ${maxBytes})`,
     );
   }
 
   const fileName = `file-${randomUUID()}`;
 
-  const buffer = await res.arrayBuffer();
   const contentType = res.headers.get("content-type")?.split(";")[0] || "";
+  if (
+    options.allowedMimeTypes &&
+    options.allowedMimeTypes.length > 0 &&
+    !options.allowedMimeTypes.includes(contentType)
+  ) {
+    throw new Error(`Unsupported content-type: ${contentType || "unknown"}`);
+  }
+
+  if (!res.body) {
+    throw new Error("Missing response body");
+  }
+
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (!value) continue;
+    total += value.length;
+    if (total > maxBytes) {
+      throw new Error(`Download exceeds size limit (${total} > ${maxBytes})`);
+    }
+    chunks.push(value);
+  }
+
+  const buffer = Buffer.concat(
+    chunks.map((chunk) => Buffer.from(chunk)),
+    total,
+  );
   const extension = mimeToExtension[contentType] || "";
   const docFileName = `${fileName}${extension}`;
   const filePath = join(tempDir, docFileName);
