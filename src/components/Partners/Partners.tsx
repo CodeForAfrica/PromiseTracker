@@ -36,7 +36,16 @@ const Partners = React.forwardRef<HTMLDivElement, Props>(function Partners(
         sx={{ py: 8, textAlign: { xs: "center", lg: "left" } }}
         ref={ref}
       >
-        <Typography variant="h4">{title}</Typography>
+        <Typography
+          component="h2"
+          variant="h2"
+          sx={{
+            textAlign: { xs: "center", lg: "left" },
+            textTransform: "capitalize",
+          }}
+        >
+          {title}
+        </Typography>
         <Grid container justifyContent="center">
           <Grid size={{ xs: 12, lg: 10 }}>
             <Grid
