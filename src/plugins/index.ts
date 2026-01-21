@@ -26,7 +26,7 @@ export const plugins: Plugin[] = [
     cleanupAfterTenantDelete: false,
     tenantField: {
       access: {
-        read: () => true,
+        read: ({ req }) => Boolean(req.user),
       },
     },
     debug: !isProd,

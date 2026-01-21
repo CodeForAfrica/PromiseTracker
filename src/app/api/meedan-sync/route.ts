@@ -5,9 +5,7 @@ import * as Sentry from "@sentry/nextjs";
 
 import { getGlobalPayload } from "@/lib/payload";
 import { downloadFile } from "@/utils/files";
-import type {
-  Promise as PayloadPromise,
-} from "@/payload-types";
+import type { Promise as PayloadPromise } from "@/payload-types";
 import {
   buildMeedanIdCandidates,
   normaliseString,
@@ -15,6 +13,16 @@ import {
 } from "./utils";
 
 const WEBHOOK_SECRET_ENV_KEY = "WEBHOOK_SECRET_KEY";
+const DEFAULT_MAX_IMAGE_BYTES =
+  Number(process.env.MEEDAN_MAX_IMAGE_BYTES) || 10 * 1024 * 1024;
+const ALLOWED_IMAGE_MIME_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "image/svg+xml",
+];
 
 type WithOptionalId = {
   id?: unknown;
@@ -63,7 +71,7 @@ export const POST = async (request: NextRequest) => {
     Sentry.captureMessage(message, "error");
     return NextResponse.json(
       { ok: false, updated: false, error: "Service misconfigured" },
-      { status: 200 }
+      { status: 500 },
     );
   }
 
@@ -84,10 +92,6 @@ export const POST = async (request: NextRequest) => {
     Sentry.captureMessage(message, "error");
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
-  Sentry.captureMessage(
-    `meedan-sync:: Received webhook payload ${JSON.stringify(parsed)}`,
-    "info"
-  );
   const annotationType = parsed?.object?.annotation_type?.trim();
   if (annotationType && annotationType !== "report_design") {
     return NextResponse.json({ ok: true, skipped: true }, { status: 200 });
@@ -103,7 +107,7 @@ export const POST = async (request: NextRequest) => {
       {
         error: "Missing Meedan ID",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -119,9 +123,18 @@ export const POST = async (request: NextRequest) => {
   const url = normaliseString(options?.published_article_url);
   const headline = normaliseString(options?.headline);
   const fieldValue = normaliseString(
-    annotationData?.fields?.[0]?.value ?? null
+    annotationData?.fields?.[0]?.value ?? null,
   );
   const imageUrl = normaliseString(parsed?.object?.file?.[0]?.url ?? null);
+
+  Sentry.withScope((scope) => {
+    scope.setTag("route", "meedan-sync");
+    scope.setContext("webhook", {
+      annotationType,
+      meedanId,
+    });
+    Sentry.captureMessage("meedan-sync:: Received webhook", "info");
+  });
 
   try {
     const payload = await getGlobalPayload();
@@ -145,10 +158,7 @@ export const POST = async (request: NextRequest) => {
 
       console.error(message);
       Sentry.captureMessage(message, "error");
-      return NextResponse.json(
-        { error: "Promise not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Promise not found" }, { status: 404 });
     }
 
     const updateData: Partial<PayloadPromise> = {};
@@ -176,12 +186,15 @@ export const POST = async (request: NextRequest) => {
       Sentry.captureMessage(message, "error");
       return NextResponse.json(
         { error: "Failed to persist promise" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     if (!imageUrl) {
       return NextResponse.json({ ok: true, created, updated }, { status: 200 });
+    }
+    if (!imageUrl.startsWith("https://")) {
+      return NextResponse.json({ error: "Invalid image URL" }, { status: 400 });
     }
 
     const fallbackAlt =
@@ -196,7 +209,10 @@ export const POST = async (request: NextRequest) => {
     let filePath: string | null = null;
 
     try {
-      filePath = await downloadFile(imageUrl);
+      filePath = await downloadFile(imageUrl, {
+        allowedMimeTypes: ALLOWED_IMAGE_MIME_TYPES,
+        maxBytes: DEFAULT_MAX_IMAGE_BYTES,
+      });
 
       const existingImageId = getRelationId(promise.image);
       let mediaId = existingImageId;
@@ -233,12 +249,12 @@ export const POST = async (request: NextRequest) => {
           });
           Sentry.captureMessage(
             "meedan-sync:: Failed to cache image after processing webhook",
-            "error"
+            "error",
           );
         });
         return NextResponse.json(
           { error: "Failed to cache image" },
-          { status: 500 }
+          { status: 500 },
         );
       }
 
@@ -251,10 +267,7 @@ export const POST = async (request: NextRequest) => {
       });
 
       updated = true;
-      return NextResponse.json(
-        { ok: true, created, updated },
-        { status: 200 }
-      );
+      return NextResponse.json({ ok: true, created, updated }, { status: 200 });
     } finally {
       if (filePath) {
         try {
@@ -262,7 +275,7 @@ export const POST = async (request: NextRequest) => {
         } catch (cleanupError) {
           console.warn(
             "meedan-sync:: Failed to clean up temp image",
-            cleanupError
+            cleanupError,
           );
 
           Sentry.withScope((scope) => {
@@ -289,7 +302,7 @@ export const POST = async (request: NextRequest) => {
     });
     return NextResponse.json(
       { ok: false, updated: false, error: "Failed to process webhook" },
-      { status: 200 }
+      { status: 500 },
     );
   }
 };

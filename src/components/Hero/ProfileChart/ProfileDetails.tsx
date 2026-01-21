@@ -31,7 +31,7 @@ const buildSummary = (
   name: string,
   totalPromises: number,
   promiseLabel: string,
-  trailText: string
+  trailText: string,
 ) => {
   return {
     intro: `${position} ${name}`.trim(),
@@ -55,7 +55,7 @@ export const ProfileDetails = ({
 }: ProfileDetailsProps) => {
   const summary = useMemo(
     () => buildSummary(position, name, totalPromises, promiseLabel, trailText),
-    [position, name, totalPromises, promiseLabel, trailText]
+    [position, name, totalPromises, promiseLabel, trailText],
   );
 
   return (
@@ -149,7 +149,6 @@ export const ProfileDetails = ({
               }),
             }}
             link={""}
-            children={undefined}
           />
         </Stack>
       </Grid>

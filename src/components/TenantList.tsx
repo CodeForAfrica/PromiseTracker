@@ -42,7 +42,7 @@ const buildTenantUrl = (
   hostname: string | null,
   baseDomain: string | null,
   isLocalhost: boolean,
-  port: string
+  port: string,
 ) => {
   const subdomain = getSubdomain(tenant);
   if (!subdomain) return null;
@@ -76,7 +76,7 @@ export const getTenantLinks = async (): Promise<TenantLink[]> => {
       hostname,
       baseDomain ?? null,
       isLocalhost,
-      port
+      port,
     );
     if (!url) continue;
     entries.push({
@@ -138,16 +138,17 @@ export const TenantList = async ({
                     disableGutters
                     sx={{
                       py: dense ? 0.75 : 1.25,
-                      flexDirection: { xs: "column", sm: "row" },
-                      alignItems: { xs: "flex-start", sm: "center" },
-                      gap: { xs: 1.5, sm: 0 },
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 1.5,
                     }}
                   >
                     <Box
                       sx={{
                         display: "flex",
                         alignItems: "center",
-                        width: "100%",
+                        flex: 1,
+                        minWidth: 0,
                       }}
                     >
                       <ListItemAvatar sx={{ minWidth: dense ? 36 : 46 }}>
@@ -187,8 +188,8 @@ export const TenantList = async ({
                       color="primary"
                       sx={{
                         px: 1,
-                        width: { xs: "100%", sm: "auto" },
-                        alignSelf: { xs: "stretch", sm: "center" },
+                        width: "auto",
+                        alignSelf: "center",
                         justifyContent: "center",
                       }}
                       icon={<OpenInNew fontSize="small" />}

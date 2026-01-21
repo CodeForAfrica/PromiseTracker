@@ -45,12 +45,12 @@ const prefillAirtableForm = (
   embedCode: string,
   promiseTitle?: string,
   promiseUrl?: string,
-  updateDate?: string | Date
+  updateDate?: string | Date,
 ) => {
   const hasAny = Boolean(
     (promiseTitle && promiseTitle.trim()) ||
       (promiseUrl && promiseUrl.trim()) ||
-      (updateDate && String(updateDate).trim())
+      (updateDate && String(updateDate).trim()),
   );
 
   if (!hasAny) {
@@ -84,24 +84,24 @@ const prefillAirtableForm = (
       if (promiseTitle && promiseTitle.trim()) {
         params.push(
           `${encodeURIComponent("prefill_Promise")}=${encodeURIComponent(
-            promiseTitle.trim()
-          )}`
+            promiseTitle.trim(),
+          )}`,
         );
       }
       if (promiseUrl && promiseUrl.trim()) {
         params.push(
           `${encodeURIComponent("prefill_CheckMedia Link")}=${encodeURIComponent(
-            promiseUrl.trim()
-          )}`
+            promiseUrl.trim(),
+          )}`,
         );
         params.push(
-          `${encodeURIComponent("hide_CheckMedia Link")}=${encodeURIComponent("true")}`
+          `${encodeURIComponent("hide_CheckMedia Link")}=${encodeURIComponent("true")}`,
         );
       }
       const formattedDate = formatDate(updateDate);
       if (formattedDate) {
         params.push(
-          `${encodeURIComponent("prefill_Date")}=${encodeURIComponent(formattedDate)}`
+          `${encodeURIComponent("prefill_Date")}=${encodeURIComponent(formattedDate)}`,
         );
       }
       if (!params.length) {
@@ -139,7 +139,7 @@ export async function generateMetadata({
   const politicalEntity = await getPoliticalEntityBySlug(
     tenant,
     entitySlug,
-    tenantLocale
+    tenantLocale,
   );
   if (!politicalEntity) {
     return buildSeoMetadata({
@@ -181,7 +181,7 @@ export async function generateMetadata({
     composeTitleSegments(
       promise.title?.trim() || tenantTitleBase || tenantSeo.title,
       politicalEntity.name,
-      positionRegion
+      positionRegion,
     ) ??
     entitySeo.title ??
     tenantSeo.title;
@@ -209,7 +209,7 @@ const parseYear = (value?: string | null): number | null => {
 
 const computeTimelineInterval = (
   entityPeriod: { from?: string | null; to?: string | null },
-  statusHistory: { date: string }[]
+  statusHistory: { date: string }[],
 ): [number, number] => {
   const start = parseYear(entityPeriod.from);
   const end = parseYear(entityPeriod.to);
@@ -233,7 +233,7 @@ const computeTimelineInterval = (
 };
 
 const buildStatusDocument = (
-  promise: PromiseDocument
+  promise: PromiseDocument,
 ): PromiseStatusDocument | null => {
   const relation = promise.status;
   if (!relation) {
@@ -265,7 +265,7 @@ export default async function PromiseDetailPage({
 
   const { title, description, navigation, footer } = await getTenantNavigation(
     tenant,
-    locale
+    locale,
   );
 
   const entity = await getPoliticalEntityBySlug(tenant, entitySlug, locale);
@@ -317,14 +317,14 @@ export default async function PromiseDetailPage({
         rawPromiseUpdateEmbed,
         titleText,
         promiseUrl,
-        statusDate
+        statusDate,
       )
     : null;
 
   const { actNow } = siteSettings || {};
   const timelineInterval = computeTimelineInterval(
     { from: entity.periodFrom, to: entity.periodTo },
-    timelineStatusHistory
+    timelineStatusHistory,
   );
 
   const promiseImage = await resolveMedia(promise.image ?? null);

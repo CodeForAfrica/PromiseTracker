@@ -23,6 +23,11 @@ import { fr } from "@payloadcms/translations/languages/fr";
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
 
+const payloadSecret = process.env.PAYLOAD_SECRET;
+if (!payloadSecret) {
+  throw new Error("PAYLOAD_SECRET is required");
+}
+
 let nodemailerAdapterArgs: NodemailerAdapterArgs | undefined;
 if (process.env.SMTP_HOST && process.env.SMTP_PASS) {
   const smtpPort = Number(process.env.SMTP_PORT) || 587;
@@ -94,7 +99,7 @@ export default buildConfig({
   },
   plugins,
   sharp,
-  secret: process.env.PAYLOAD_SECRET || "",
+  secret: payloadSecret,
   typescript: {
     outputFile: path.resolve(dirname, "payload-types.ts"),
   },

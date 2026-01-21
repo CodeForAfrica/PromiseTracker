@@ -24,7 +24,7 @@ interface Props {
   link: string;
   title?: string;
   description?: string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   [key: string]: any;
 }
 

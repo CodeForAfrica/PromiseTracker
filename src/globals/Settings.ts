@@ -6,6 +6,10 @@ export const Settings: GlobalConfig = {
     en: "Settings",
     fr: "Paramètres",
   },
+  access: {
+    read: ({ req }) => Boolean(req.user),
+    update: ({ req }) => Boolean(req.user),
+  },
   admin: {
     group: {
       en: "Settings",
