@@ -1853,6 +1853,7 @@ export interface EntitySelectionBlock {
   statusGroups?:
     | {
         title: string;
+        description: string;
         color: string;
         statuses: (string | PromiseStatus)[];
         id?: string | null;
@@ -2164,6 +2165,7 @@ export interface EntitySelectionBlockSelect<T extends boolean = true> {
     | T
     | {
         title?: T;
+        description?: T;
         color?: T;
         statuses?: T;
         id?: T;
