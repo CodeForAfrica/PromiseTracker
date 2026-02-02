@@ -74,6 +74,16 @@ export const EntitySelection: Block = {
             fr: "Titre du groupe",
           },
         },
+        {
+          name: "description",
+          type: "textarea",
+          required: true,
+          localized: true,
+          label: {
+            en: "Group description",
+            fr: "Description du groupe",
+          },
+        },
         colorPickerField({
           name: "color",
           label: {

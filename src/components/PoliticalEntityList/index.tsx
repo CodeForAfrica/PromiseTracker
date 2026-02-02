@@ -20,6 +20,7 @@ import {
 
 type StatusGroupConfig = {
   title?: string | null;
+  description?: string | null;
   color?: string | null;
   statuses?: (string | PromiseStatus)[];
 };
@@ -128,9 +129,9 @@ export const PoliticalEntityList = async ({
         return null;
       }
 
-      const titleText = group?.title?.trim() || statuses[0].label;
-      const groupColorRaw =
-        typeof group?.color === "string" ? group.color.trim() : "";
+      const titleText = group.title;
+      const descriptionText = group.description;
+      const groupColorRaw = group.color;
       const resolvedColor =
         groupColorRaw ||
         statuses[0].colors?.textColor ||
@@ -140,6 +141,7 @@ export const PoliticalEntityList = async ({
       return {
         id: `group-${index}-${statuses[0].id}`,
         title: titleText,
+        description: descriptionText,
         color: resolvedColor,
         statusIds,
       };
@@ -151,6 +153,7 @@ export const PoliticalEntityList = async ({
       statusGroups.push({
         id: `fallback-${status.id}-${index}`,
         title: status.label,
+        description: status.description ?? "",
         color: status.colors?.textColor || status.colors?.color || "#000000",
         statusIds: [status.id],
       });
@@ -169,14 +172,14 @@ export const PoliticalEntityList = async ({
       return entityA.name.localeCompare(entityB.name, undefined, {
         sensitivity: "base",
       });
-    }
+    },
   );
 
   const entitiesWithMedia = await Promise.all(
     sortedPoliticalEntities.map(async (entity) => ({
       entity,
       media: await resolveMedia(entity.image),
-    }))
+    })),
   );
 
   const listItems: PoliticalEntityListClientProps["items"] =
@@ -217,7 +220,7 @@ export const PoliticalEntityList = async ({
       accumulator[label] = (accumulator[label] ?? 0) + 1;
       return accumulator;
     },
-    {}
+    {},
   );
 
   const filterOptions: PoliticalEntityListClientProps["filterOptions"] = [
@@ -228,15 +231,6 @@ export const PoliticalEntityList = async ({
       count,
     })),
   ];
-
-  const statusDefinitions: PoliticalEntityListClientProps["statusDefinitions"] =
-    statusDocs.map((status) => ({
-      id: status.id,
-      label: status.label,
-      description: status.description ?? "",
-      color: status.colors?.color ?? null,
-      textColor: status.colors?.textColor ?? null,
-    }));
 
   return (
     <Container component="section" sx={{ py: { xs: 5, md: 6 } }}>
@@ -249,7 +243,6 @@ export const PoliticalEntityList = async ({
             statusGroups={statusGroups}
             filterOptions={filterOptions}
             items={listItems}
-            statusDefinitions={statusDefinitions}
           />
         </CardContent>
       </Card>

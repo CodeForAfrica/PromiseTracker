@@ -18,12 +18,12 @@ import {
   DesktopInfoStatusPopover,
   MobileInfoStatusPopover,
 } from "@/components/PromiseStatusInfo";
-import type { PromiseStatusListProps } from "@/components/PromiseStatusList";
 
 export type PoliticalEntityListClientProps = {
   statusGroups: {
     id: string;
     title: string;
+    description: string;
     color: string;
     statusIds: string[];
   }[];
@@ -47,7 +47,6 @@ export type PoliticalEntityListClientProps = {
     statusCounts: Record<string, number>;
     filterKey: string;
   }[];
-  statusDefinitions: PromiseStatusListProps["statuses"];
   statusInfoTitle?: string;
 };
 
@@ -55,11 +54,10 @@ export const PoliticalEntityListClient = ({
   statusGroups,
   filterOptions,
   items,
-  statusDefinitions,
   statusInfoTitle = "Promise status definitions",
 }: PoliticalEntityListClientProps) => {
   const [activeFilter, setActiveFilter] = useState(
-    filterOptions[0]?.key ?? "all"
+    filterOptions[0]?.key ?? "all",
   );
 
   const visibleItems = useMemo(() => {
@@ -74,15 +72,27 @@ export const PoliticalEntityListClient = ({
     setActiveFilter(key);
   };
 
-  const hasStatusDefinitions = statusDefinitions.length > 0;
+  const popoverStatuses = useMemo(
+    () =>
+      statusGroups.map((group) => ({
+        id: group.id,
+        label: group.title,
+        description: group.description,
+        color: group.color,
+      })),
+    [statusGroups],
+  );
+
+  const hasStatusDefinitions = popoverStatuses.length > 0;
 
   return (
     <Stack spacing={2.5}>
       <Stack
-        direction={{ xs: "column", md: "row" }}
+        direction="row"
         spacing={{ xs: 2, md: 3 }}
-        alignItems={{ xs: "flex-start", md: "center" }}
+        alignItems="center"
         justifyContent="space-between"
+        sx={{ flexWrap: { xs: "wrap", md: "nowrap" } }}
       >
         <Stack
           direction="row"
@@ -121,20 +131,21 @@ export const PoliticalEntityListClient = ({
             spacing={1}
             alignItems="center"
             sx={{
-              width: { xs: "100%", md: "auto" },
-              justifyContent: { xs: "flex-start", md: "flex-end" },
+              flexShrink: 0,
+              justifyContent: "flex-end",
+              marginLeft: "0 !important",
             }}
           >
             <Box sx={{ display: { xs: "none", md: "flex" } }}>
               <DesktopInfoStatusPopover
                 title={statusInfoTitle}
-                statuses={statusDefinitions}
+                statuses={popoverStatuses}
               />
             </Box>
             <Box sx={{ display: { xs: "flex", md: "none" } }}>
               <MobileInfoStatusPopover
                 title={statusInfoTitle}
-                statuses={statusDefinitions}
+                statuses={popoverStatuses}
               />
             </Box>
           </Stack>
@@ -157,7 +168,7 @@ export const PoliticalEntityListClient = ({
                 const count = group.statusIds.reduce(
                   (total, statusId) =>
                     total + (item.statusCounts[statusId] ?? 0),
-                  0
+                  0,
                 );
 
                 if (count === 0) {
@@ -173,13 +184,13 @@ export const PoliticalEntityListClient = ({
               })
               .filter(
                 (
-                  value
+                  value,
                 ): value is {
                   id: string;
                   title: string;
                   color: string;
                   count: number;
-                } => Boolean(value)
+                } => Boolean(value),
               );
 
             return (
