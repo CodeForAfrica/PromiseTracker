@@ -10,12 +10,16 @@ import { downloadFile } from "@/utils/files";
 import { unlink } from "node:fs/promises";
 import { formatSlug } from "@/fields/slug/formatSlug";
 import type { Media } from "@/payload-types";
+import { getTaskLogger, withTaskTracing } from "./utils";
 
 export const CreatePoliticalEntity: TaskConfig = {
   slug: "createPoliticalEntity",
   label: "Create Political Entity",
-  handler: async ({ req: { payload } }) => {
-    const { logger } = payload;
+  handler: withTaskTracing(
+    "createPoliticalEntity",
+    async ({ req, input }) => {
+      const { payload } = req;
+      const logger = getTaskLogger(req, "createPoliticalEntity", input);
     logger.info(
       "createPoliticalEntity:: Starting fetching political entities from Airtable"
     );
@@ -439,5 +443,6 @@ export const CreatePoliticalEntity: TaskConfig = {
     return {
       output: {},
     };
-  },
+  }
+  ),
 };

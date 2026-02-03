@@ -2,23 +2,32 @@ import { TaskConfig } from "payload";
 import { unlink } from "node:fs/promises";
 import { downloadFile } from "@/utils/files";
 import { Media } from "@/payload-types";
+import { getTaskLogger, withTaskTracing } from "./utils";
 
 export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
   retries: 2,
   slug: "downloadDocuments",
   label: "Download Documents",
-  handler: async ({ req }) => {
+  handler: withTaskTracing("downloadDocuments", async ({ req, input }) => {
     const { payload } = req;
-    const logger = payload.logger;
+    const logger = getTaskLogger(req, "downloadDocuments", input);
     logger.info("downloadDocuments:: Starting Downloading of Documents");
 
     try {
+      const documentIds = input?.documentIds?.filter(Boolean) ?? [];
       const { docs: documents } = await payload.find({
         collection: "documents",
         where: {
           files: {
             exists: false,
           },
+          ...(documentIds.length
+            ? {
+                id: {
+                  in: documentIds,
+                },
+              }
+            : {}),
         },
         select: {
           title: true,
@@ -130,5 +139,5 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
       });
       throw error;
     }
-  },
+  }),
 };

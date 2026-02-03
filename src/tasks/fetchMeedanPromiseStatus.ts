@@ -1,12 +1,13 @@
 import { TaskConfig } from "payload";
 import { fetchVerificationStatuses } from "@/lib/meedan";
+import { getTaskLogger, withTaskTracing } from "./utils";
 
 export const FetchPromiseStatuses: TaskConfig<"fetchPromiseStatuses"> = {
   slug: "fetchPromiseStatuses",
   label: "Fetch Promise Statuses",
-  handler: async ({ req }) => {
+  handler: withTaskTracing("fetchPromiseStatuses", async ({ req, input }) => {
     const { payload } = req;
-    const { logger } = payload;
+    const logger = getTaskLogger(req, "fetchPromiseStatuses", input);
 
     logger.info("fetchPromiseStatuses:: Starting fetch of Meedan statuses");
 
@@ -14,8 +15,11 @@ export const FetchPromiseStatuses: TaskConfig<"fetchPromiseStatuses"> = {
       meedan: { meedanAPIKey, teamId },
     } = await payload.findGlobal({ slug: "settings" });
 
-    if (!meedanAPIKey) {
-      throw new Error("Meedan API key not configured in settings");
+    if (!meedanAPIKey || !teamId) {
+      logger.warn(
+        "fetchPromiseStatuses:: Missing Meedan credentials, skipping sync"
+      );
+      return { output: { created: 0 } };
     }
 
     try {
@@ -78,5 +82,5 @@ export const FetchPromiseStatuses: TaskConfig<"fetchPromiseStatuses"> = {
       });
       throw error;
     }
-  },
+  }),
 };

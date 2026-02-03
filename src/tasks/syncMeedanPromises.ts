@@ -1,13 +1,14 @@
 import { TaskConfig } from "payload";
 import { fetchPublishedReports } from "@/lib/meedan";
 import { syncMeedanReports } from "@/lib/syncMeedanReports";
+import { getTaskLogger, withTaskTracing } from "./utils";
 
 export const SyncMeedanPromises: TaskConfig<"syncMeedanPromises"> = {
   slug: "syncMeedanPromises",
   label: "Sync Meedan Promises",
-  handler: async ({ req }) => {
+  handler: withTaskTracing("syncMeedanPromises", async ({ req, input }) => {
     const { payload } = req;
-    const { logger } = payload;
+    const logger = getTaskLogger(req, "syncMeedanPromises", input);
 
     logger.info("syncMeedanPromises:: Starting Meedan promise sync");
 
@@ -44,5 +45,5 @@ export const SyncMeedanPromises: TaskConfig<"syncMeedanPromises"> = {
     return {
       output: result,
     };
-  },
+  }),
 };

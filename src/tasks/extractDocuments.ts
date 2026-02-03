@@ -5,6 +5,7 @@ import { unlink } from "fs/promises";
 import { join } from "path";
 import { Media } from "@/payload-types";
 import { downloadFile } from "@/utils/files";
+import { getTaskLogger, withTaskTracing } from "./utils";
 
 const tika = new AxApacheTika({
   url: process.env.AX_APACHE_TIKA_URL ?? "http://127.0.0.1:9998/",
@@ -27,19 +28,27 @@ export async function extractTextFromDoc(filePath: string): Promise<string[]> {
 export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
   slug: "extractDocuments",
   label: "Extract Documents",
-  handler: async ({ req }) => {
+  handler: withTaskTracing("extractDocuments", async ({ req, input }) => {
     const { payload } = req;
-    const logger = payload.logger;
+    const logger = getTaskLogger(req, "extractDocuments", input);
 
     logger.info("extractDocuments:: Starting document text extraction");
 
     try {
+      const documentIds = input?.documentIds?.filter(Boolean) ?? [];
       const { docs: documents } = await payload.find({
         collection: "documents",
         where: {
           "extractedText.text": {
             exists: false,
           },
+          ...(documentIds.length
+            ? {
+                id: {
+                  in: documentIds,
+                },
+              }
+            : {}),
         },
         select: {
           files: true,
@@ -80,16 +89,19 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
             let tempFilePath: string | null = null;
 
             if (filePath && existsSync(filePath)) {
-              logger.info(`File exist in: ${filePath}`);
+              logger.info({
+                message: "extractDocuments:: Using local file",
+                id: doc.id,
+                filePath,
+              });
               fileInput = filePath;
             } else if (file.url) {
               const url = `${process.env.NEXT_PUBLIC_APP_URL}${file.url}`;
               logger.info(
-                `File does not exist in ${fileInput}. Downloading from ${url}`
+                `File does not exist locally. Downloading from ${url}`
               );
               try {
                 tempFilePath = await downloadFile(url);
-                console.log(`Tempfilepath: ${tempFilePath}`);
                 fileInput = tempFilePath;
 
                 logger.info({
@@ -224,5 +236,5 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
       });
       throw error;
     }
-  },
+  }),
 };

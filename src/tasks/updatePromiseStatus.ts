@@ -1,6 +1,7 @@
 import { TaskConfig } from "payload";
 import { AiExtraction as AiExtractionDoc, PromiseStatus } from "@/payload-types";
 import { fetchProjectMediaStatuses } from "@/lib/meedan";
+import { getTaskLogger, withTaskTracing } from "./utils";
 
 type ExtractionItem = NonNullable<
   NonNullable<AiExtractionDoc["extractions"]>[number]
@@ -21,9 +22,9 @@ const getStatusId = (value: ExtractionItem["Status"]) => {
 export const UpdatePromiseStatus: TaskConfig<"updatePromiseStatus"> = {
   slug: "updatePromiseStatus",
   label: "Update Promise Status",
-  handler: async ({ req }) => {
+  handler: withTaskTracing("updatePromiseStatus", async ({ req, input }) => {
     const { payload } = req;
-    const { logger } = payload;
+    const logger = getTaskLogger(req, "updatePromiseStatus", input);
 
     logger.info("updatePromiseStatus:: Starting Meedan status sync");
 
@@ -137,5 +138,5 @@ export const UpdatePromiseStatus: TaskConfig<"updatePromiseStatus"> = {
         updated: updatedPromises,
       },
     };
-  },
+  }),
 };

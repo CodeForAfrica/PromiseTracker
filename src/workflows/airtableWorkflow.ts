@@ -1,6 +1,5 @@
 import { WorkflowConfig } from "payload";
 import { randomUUID } from "node:crypto";
-import { isProd } from "@/utils/utils";
 import { defineWorkflow } from "./utils";
 
 export const airtableWorkflow = defineWorkflow({
@@ -14,25 +13,25 @@ export const airtableWorkflow = defineWorkflow({
   ],
   handler: async ({ tasks }) => {
     await tasks.createTenantFromAirtable(randomUUID(), {
-      input: [],
+      input: {},
     });
     await tasks.createPoliticalEntity(randomUUID(), {
-      input: [],
+      input: {},
     });
     await tasks.fetchAirtableDocuments(randomUUID(), {
-      input: [],
+      input: {},
     });
     await tasks.downloadDocuments(randomUUID(), {
-      input: [],
+      input: {},
     });
     await tasks.extractDocuments(randomUUID(), {
-      input: [],
+      input: {},
     });
     await tasks.extractPromises(randomUUID(), {
-      input: [],
+      input: {},
     });
     await tasks.uploadToMeedan(randomUUID(), {
-      input: [],
+      input: {},
     });
   },
 } satisfies WorkflowConfig);

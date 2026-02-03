@@ -4,13 +4,14 @@ import { generateObject } from "ai";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import { convertLexicalToPlaintext } from "@payloadcms/richtext-lexical/plaintext";
+import { getTaskLogger, withTaskTracing } from "./utils";
 
 export const ExtractPromises: TaskConfig<"extractPromises"> = {
   slug: "extractPromises",
   label: "Extract Promises",
-  handler: async ({ req }) => {
+  handler: withTaskTracing("extractPromises", async ({ req, input }) => {
     const { payload } = req;
-    const { logger } = payload;
+    const logger = getTaskLogger(req, "extractPromises", input);
     logger.info("extractPromises:: Starting promise extraction");
 
     try {
@@ -53,12 +54,32 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
     
     `;
 
-      const { docs: allDocs } = await payload.find({
-        collection: "documents",
-        limit: -1,
-      });
+      const documentIds = input?.documentIds?.filter(Boolean) ?? [];
+      const documents = [];
+      const limit = 50;
+      let page = 1;
+      let hasNextPage = true;
 
-      const documents = allDocs.filter((doc) => !doc.fullyProcessed);
+      while (hasNextPage) {
+        const pageResult = await payload.find({
+          collection: "documents",
+          limit,
+          page,
+          where: documentIds.length
+            ? {
+                id: {
+                  in: documentIds,
+                },
+              }
+            : undefined,
+        });
+
+        documents.push(
+          ...pageResult.docs.filter((doc) => !doc.fullyProcessed)
+        );
+        hasNextPage = pageResult.hasNextPage;
+        page += 1;
+      }
 
       if (documents.length === 0) {
         logger.info("extractPromises:: No documents to extract promises from");
@@ -154,7 +175,11 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
 
           const { object } = res;
 
-          logger.info(object);
+          logger.info({
+            message: "extractPromises:: AI response received",
+            documentId: document.id,
+            promises: object.promises.length,
+          });
 
           if (object.promises.length > 0) {
             await payload.create({
@@ -188,7 +213,6 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
             promises: object.promises,
           });
         } catch (error) {
-          console.log("Error::", { error });
           logger.error({
             message: "extractPromises:: Error generating AI Response::",
             error: error instanceof Error ? error.message : String(error),
@@ -210,5 +234,5 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
       });
       throw error;
     }
-  },
+  }),
 };
