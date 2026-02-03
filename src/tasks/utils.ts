@@ -1,6 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
-import type { TaskConfig } from "payload";
-import type { PayloadRequest } from "payload/types";
+import type { TaskConfig, PayloadRequest } from "payload";
 
 export type RunContext = {
   workflowSlug?: string;
