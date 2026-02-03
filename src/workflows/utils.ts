@@ -126,6 +126,10 @@ const withWorkflowErrorCapture = (
   slug: string,
   handler: WorkflowHandlerFn
 ): WorkflowHandlerFn => {
+  if (typeof handler !== "function") {
+    return handler;
+  }
+
   return async (args) => {
     try {
       return await handler(args);
