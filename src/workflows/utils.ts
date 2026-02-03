@@ -3,13 +3,13 @@ import type { WorkflowConfig } from "payload";
 import { randomUUID } from "node:crypto";
 
 type WorkflowHandlerFn = NonNullable<WorkflowConfig["handler"]>;
-type WorkflowHandlerArgs = Parameters<WorkflowHandlerFn>[0];
+type WorkflowHandlerArgs = unknown;
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
 
 const buildSentryExtra = (args: WorkflowHandlerArgs): Record<string, unknown> => {
-  if (!args || typeof args !== "object") {
+  if (!isObject(args)) {
     return {};
   }
 
@@ -66,6 +66,9 @@ const withWorkflowContext = (
   handler: WorkflowHandlerFn
 ): WorkflowHandlerFn => {
   return async (args) => {
+    if (typeof handler !== "function") {
+      return handler as any;
+    }
     const runId = getRunId(args);
     const tasks = getTasks(args);
 
@@ -110,7 +113,11 @@ const withWorkflowContext = (
           workflowRunId: runId,
         },
       },
-      async () => handler({ ...(args as Record<string, unknown>), tasks: tasksWithContext } as WorkflowHandlerArgs)
+      async () =>
+        handler({
+          ...(isObject(args) ? args : {}),
+          tasks: tasksWithContext,
+        } as any)
     );
   };
 };
