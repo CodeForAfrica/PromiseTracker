@@ -5,7 +5,7 @@ import { unlink } from "fs/promises";
 import { join } from "path";
 import { Media } from "@/payload-types";
 import { downloadFile } from "@/utils/files";
-import { getTaskLogger, withTaskTracing } from "./utils";
+import { getTaskLogger, withTaskTracing, type TaskInput } from "./utils";
 
 const tika = new AxApacheTika({
   url: process.env.AX_APACHE_TIKA_URL ?? "http://127.0.0.1:9998/",
@@ -35,7 +35,8 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
     logger.info("extractDocuments:: Starting document text extraction");
 
     try {
-      const documentIds = input?.documentIds?.filter(Boolean) ?? [];
+      const documentIds =
+        (input as TaskInput | undefined)?.documentIds?.filter(Boolean) ?? [];
       const { docs: documents } = await payload.find({
         collection: "documents",
         where: {

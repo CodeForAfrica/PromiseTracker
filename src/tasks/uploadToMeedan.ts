@@ -8,7 +8,7 @@ import {
   PoliticalEntity,
   Tenant,
 } from "@/payload-types";
-import { getTaskLogger, withTaskTracing } from "./utils";
+import { getTaskLogger, withTaskTracing, type TaskInput } from "./utils";
 
 const getExtractionsToUpload = (doc: AiExtractionDoc) => {
   return (
@@ -62,7 +62,7 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
       }
 
       const documentIdFilter = new Set(
-        (input?.documentIds || []).filter(Boolean)
+        ((input as TaskInput | undefined)?.documentIds || []).filter(Boolean)
       );
       const limit = 50;
       let page = 1;

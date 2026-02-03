@@ -4,7 +4,7 @@ import { generateObject } from "ai";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import { convertLexicalToPlaintext } from "@payloadcms/richtext-lexical/plaintext";
-import { getTaskLogger, withTaskTracing } from "./utils";
+import { getTaskLogger, withTaskTracing, type TaskInput } from "./utils";
 
 export const ExtractPromises: TaskConfig<"extractPromises"> = {
   slug: "extractPromises",
@@ -54,7 +54,8 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
     
     `;
 
-      const documentIds = input?.documentIds?.filter(Boolean) ?? [];
+      const documentIds =
+        (input as TaskInput | undefined)?.documentIds?.filter(Boolean) ?? [];
       const documents = [];
       const limit = 50;
       let page = 1;

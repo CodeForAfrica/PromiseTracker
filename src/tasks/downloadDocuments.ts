@@ -2,7 +2,7 @@ import { TaskConfig } from "payload";
 import { unlink } from "node:fs/promises";
 import { downloadFile } from "@/utils/files";
 import { Media } from "@/payload-types";
-import { getTaskLogger, withTaskTracing } from "./utils";
+import { getTaskLogger, withTaskTracing, type TaskInput } from "./utils";
 
 export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
   retries: 2,
@@ -14,7 +14,8 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
     logger.info("downloadDocuments:: Starting Downloading of Documents");
 
     try {
-      const documentIds = input?.documentIds?.filter(Boolean) ?? [];
+      const documentIds =
+        (input as TaskInput | undefined)?.documentIds?.filter(Boolean) ?? [];
       const { docs: documents } = await payload.find({
         collection: "documents",
         where: {
