@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
+import type { TaskConfig } from "payload";
 import type { PayloadRequest } from "payload/types";
 
 export type RunContext = {
@@ -6,19 +7,38 @@ export type RunContext = {
   workflowRunId?: string;
 };
 
-type TaskInput = {
+export type TaskInput = {
   runContext?: RunContext;
   documentIds?: string[];
   [key: string]: unknown;
 };
 
-export type TaskHandlerArgs = {
-  req: PayloadRequest;
-  input?: TaskInput;
+type TaskHandlerFn = NonNullable<TaskConfig["handler"]>;
+type TaskHandlerArgs = Parameters<TaskHandlerFn>[0];
+
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const isTaskInput = (value: unknown): value is TaskInput => isObject(value);
+
+const getReq = (args: TaskHandlerArgs): PayloadRequest | undefined => {
+  if (!isObject(args)) {
+    return undefined;
+  }
+  const req = args.req;
+  return req as PayloadRequest | undefined;
 };
 
-export const getRunContext = (input?: TaskInput): RunContext => {
-  if (!input || typeof input !== "object") {
+const getInput = (args: TaskHandlerArgs): TaskInput | undefined => {
+  if (!isObject(args)) {
+    return undefined;
+  }
+  const input = (args as { input?: unknown }).input;
+  return isTaskInput(input) ? input : undefined;
+};
+
+export const getRunContext = (input?: unknown): RunContext => {
+  if (!isTaskInput(input)) {
     return {};
   }
 
@@ -32,7 +52,7 @@ export const getRunContext = (input?: TaskInput): RunContext => {
 export const getTaskLogger = (
   req: PayloadRequest,
   taskSlug: string,
-  input?: TaskInput
+  input?: unknown
 ) => {
   const baseLogger = req?.payload?.logger;
   const runContext = getRunContext(input);
@@ -41,20 +61,21 @@ export const getTaskLogger = (
     ...runContext,
   };
 
-  if (baseLogger && typeof (baseLogger as any).child === "function") {
-    return (baseLogger as any).child(fields);
+  if (baseLogger && "child" in baseLogger && typeof baseLogger.child === "function") {
+    return baseLogger.child(fields);
   }
 
   return baseLogger;
 };
 
-export const withTaskTracing = <T extends TaskHandlerArgs>(
+export const withTaskTracing = (
   taskSlug: string,
-  handler: (args: T) => Promise<{ output: Record<string, unknown> }>
-) => {
-  return async (args: T) => {
-    const { req, input } = args;
-    const logger = getTaskLogger(req, taskSlug, input);
+  handler: TaskHandlerFn
+): TaskHandlerFn => {
+  return async (args: TaskHandlerArgs) => {
+    const req = getReq(args);
+    const input = getInput(args);
+    const logger = req ? getTaskLogger(req, taskSlug, input) : undefined;
     const runContext = getRunContext(input);
     const startedAt = Date.now();
 

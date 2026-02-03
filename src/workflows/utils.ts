@@ -2,11 +2,11 @@ import * as Sentry from "@sentry/nextjs";
 import type { WorkflowConfig } from "payload";
 import { randomUUID } from "node:crypto";
 
-type WorkflowHandlerFn = Extract<
-  NonNullable<WorkflowConfig["handler"]>,
-  (...args: any[]) => any
->;
+type WorkflowHandlerFn = NonNullable<WorkflowConfig["handler"]>;
 type WorkflowHandlerArgs = Parameters<WorkflowHandlerFn>[0];
+
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
 
 const buildSentryExtra = (args: WorkflowHandlerArgs): Record<string, unknown> => {
   if (!args || typeof args !== "object") {
@@ -43,19 +43,37 @@ const buildSentryExtra = (args: WorkflowHandlerArgs): Record<string, unknown> =>
   return extra;
 };
 
+const getRunId = (args: WorkflowHandlerArgs): string => {
+  if (isObject(args) && isObject(args.run)) {
+    const runId = args.run.id;
+    if (typeof runId === "string" && runId.length > 0) {
+      return runId;
+    }
+  }
+  return randomUUID();
+};
+
+const getTasks = (args: WorkflowHandlerArgs): Record<string, unknown> | undefined => {
+  if (!isObject(args)) {
+    return undefined;
+  }
+  const tasks = args.tasks;
+  return isObject(tasks) ? tasks : undefined;
+};
+
 const withWorkflowContext = (
   slug: string,
   handler: WorkflowHandlerFn
 ): WorkflowHandlerFn => {
   return async (args) => {
-    const runId = (args as any)?.run?.id ?? randomUUID();
-    const tasks = (args as any)?.tasks;
+    const runId = getRunId(args);
+    const tasks = getTasks(args);
 
     const tasksWithContext =
       tasks && typeof tasks === "object"
         ? new Proxy(tasks, {
             get(target, prop) {
-              const original = (target as any)[prop];
+              const original = target[prop as keyof typeof target];
               if (typeof original !== "function") {
                 return original;
               }
@@ -68,10 +86,13 @@ const withWorkflowContext = (
                   workflowSlug: slug,
                   workflowRunId: runId,
                 };
-                return original(id, {
+                return (original as (id: string, options?: { input?: unknown }) => unknown)(
+                  id,
+                  {
                   ...options,
                   input: { ...input, runContext },
-                });
+                  }
+                );
               };
             },
           })
@@ -89,7 +110,7 @@ const withWorkflowContext = (
           workflowRunId: runId,
         },
       },
-      async () => handler({ ...(args as any), tasks: tasksWithContext })
+      async () => handler({ ...(args as Record<string, unknown>), tasks: tasksWithContext } as WorkflowHandlerArgs)
     );
   };
 };
