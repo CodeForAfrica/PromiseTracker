@@ -68,6 +68,10 @@ export const withTaskTracing = (
   taskSlug: string,
   handler: NonNullable<TaskConfig["handler"]>
 ): NonNullable<TaskConfig["handler"]> => {
+  if (typeof handler !== "function") {
+    return handler;
+  }
+
   return async (args) => {
     const req = getReq(args);
     const input = getInput(args);
