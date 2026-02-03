@@ -13,15 +13,12 @@ export type TaskInput = {
   [key: string]: unknown;
 };
 
-type TaskHandlerFn = NonNullable<TaskConfig["handler"]>;
-type TaskHandlerArgs = Parameters<TaskHandlerFn>[0];
-
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
 
 const isTaskInput = (value: unknown): value is TaskInput => isObject(value);
 
-const getReq = (args: TaskHandlerArgs): PayloadRequest | undefined => {
+const getReq = (args: unknown): PayloadRequest | undefined => {
   if (!isObject(args)) {
     return undefined;
   }
@@ -29,7 +26,7 @@ const getReq = (args: TaskHandlerArgs): PayloadRequest | undefined => {
   return req as PayloadRequest | undefined;
 };
 
-const getInput = (args: TaskHandlerArgs): TaskInput | undefined => {
+const getInput = (args: unknown): TaskInput | undefined => {
   if (!isObject(args)) {
     return undefined;
   }
@@ -70,9 +67,9 @@ export const getTaskLogger = (
 
 export const withTaskTracing = (
   taskSlug: string,
-  handler: TaskHandlerFn
-): TaskHandlerFn => {
-  return async (args: TaskHandlerArgs) => {
+  handler: NonNullable<TaskConfig["handler"]>
+): NonNullable<TaskConfig["handler"]> => {
+  return async (args) => {
     const req = getReq(args);
     const input = getInput(args);
     const logger = req ? getTaskLogger(req, taskSlug, input) : undefined;
