@@ -1,14 +1,15 @@
 import * as Sentry from "@sentry/nextjs";
 import type { WorkflowConfig } from "payload";
+import { randomUUID } from "node:crypto";
 
-type WorkflowHandlerFn = Extract<
-  NonNullable<WorkflowConfig["handler"]>,
-  (...args: any[]) => any
->;
-type WorkflowHandlerArgs = Parameters<WorkflowHandlerFn>[0];
+type WorkflowHandlerFn = NonNullable<WorkflowConfig["handler"]>;
+type WorkflowHandlerArgs = unknown;
+
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
 
 const buildSentryExtra = (args: WorkflowHandlerArgs): Record<string, unknown> => {
-  if (!args || typeof args !== "object") {
+  if (!isObject(args)) {
     return {};
   }
 
@@ -42,10 +43,93 @@ const buildSentryExtra = (args: WorkflowHandlerArgs): Record<string, unknown> =>
   return extra;
 };
 
+const getRunId = (args: WorkflowHandlerArgs): string => {
+  if (isObject(args) && isObject(args.run)) {
+    const runId = args.run.id;
+    if (typeof runId === "string" && runId.length > 0) {
+      return runId;
+    }
+  }
+  return randomUUID();
+};
+
+const getTasks = (args: WorkflowHandlerArgs): Record<string, unknown> | undefined => {
+  if (!isObject(args)) {
+    return undefined;
+  }
+  const tasks = args.tasks;
+  return isObject(tasks) ? tasks : undefined;
+};
+
+const withWorkflowContext = (
+  slug: string,
+  handler: WorkflowHandlerFn
+): WorkflowHandlerFn => {
+  return async (args) => {
+    if (typeof handler !== "function") {
+      return handler as any;
+    }
+    const runId = getRunId(args);
+    const tasks = getTasks(args);
+
+    const tasksWithContext =
+      tasks && typeof tasks === "object"
+        ? new Proxy(tasks, {
+            get(target, prop) {
+              const original = target[prop as keyof typeof target];
+              if (typeof original !== "function") {
+                return original;
+              }
+              return (id: string, options: { input?: unknown } = {}) => {
+                const input =
+                  options?.input && typeof options.input === "object"
+                    ? options.input
+                    : {};
+                const runContext = {
+                  workflowSlug: slug,
+                  workflowRunId: runId,
+                };
+                return (original as (id: string, options?: { input?: unknown }) => unknown)(
+                  id,
+                  {
+                  ...options,
+                  input: { ...input, runContext },
+                  }
+                );
+              };
+            },
+          })
+        : tasks;
+
+    Sentry.setTag("workflow", slug);
+    Sentry.setTag("workflowRunId", runId);
+
+    return Sentry.startSpan(
+      {
+        op: "payload.workflow",
+        name: slug,
+        attributes: {
+          workflow: slug,
+          workflowRunId: runId,
+        },
+      },
+      async () =>
+        handler({
+          ...(isObject(args) ? args : {}),
+          tasks: tasksWithContext,
+        } as any)
+    );
+  };
+};
+
 const withWorkflowErrorCapture = (
   slug: string,
   handler: WorkflowHandlerFn
 ): WorkflowHandlerFn => {
+  if (typeof handler !== "function") {
+    return handler;
+  }
+
   return async (args) => {
     try {
       return await handler(args);
@@ -68,7 +152,7 @@ export const defineWorkflow = (config: WorkflowConfig): WorkflowConfig => {
 
   const wrappedHandler = withWorkflowErrorCapture(
     config.slug,
-    config.handler as WorkflowHandlerFn
+    withWorkflowContext(config.slug, config.handler as WorkflowHandlerFn)
   );
 
   return {
