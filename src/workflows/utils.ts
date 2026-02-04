@@ -53,13 +53,26 @@ const getRunId = (args: WorkflowHandlerArgs): string => {
   return randomUUID();
 };
 
-const getTasks = (args: WorkflowHandlerArgs): Record<string, unknown> | undefined => {
+const getTasks = (
+  args: WorkflowHandlerArgs
+): Record<string, unknown> | undefined => {
   if (!isObject(args)) {
     return undefined;
   }
   const tasks = args.tasks;
   return isObject(tasks) ? tasks : undefined;
 };
+
+const getWorkflowLogContext = (
+  slug: string,
+  runId: string,
+  args: WorkflowHandlerArgs
+) => ({
+  log_source: "payload.workflow",
+  workflow: slug,
+  workflowRunId: runId,
+  ...buildSentryExtra(args),
+});
 
 const withWorkflowContext = (
   slug: string,
@@ -71,6 +84,7 @@ const withWorkflowContext = (
     }
     const runId = getRunId(args);
     const tasks = getTasks(args);
+    const logContext = getWorkflowLogContext(slug, runId, args);
 
     const tasksWithContext =
       tasks && typeof tasks === "object"
@@ -89,20 +103,19 @@ const withWorkflowContext = (
                   workflowSlug: slug,
                   workflowRunId: runId,
                 };
-                return (original as (id: string, options?: { input?: unknown }) => unknown)(
+                return (
+                  original as (id: string, options?: { input?: unknown }) => unknown
+                )(
                   id,
                   {
-                  ...options,
-                  input: { ...input, runContext },
+                    ...options,
+                    input: { ...input, runContext },
                   }
                 );
               };
             },
           })
         : tasks;
-
-    Sentry.setTag("workflow", slug);
-    Sentry.setTag("workflowRunId", runId);
 
     return Sentry.startSpan(
       {
@@ -113,11 +126,18 @@ const withWorkflowContext = (
           workflowRunId: runId,
         },
       },
-      async () =>
-        handler({
+      async () => {
+        Sentry.logger.info("workflow.start", logContext);
+
+        const result = await handler({
           ...(isObject(args) ? args : {}),
           tasks: tasksWithContext,
-        } as any)
+        } as any);
+
+        Sentry.logger.info("workflow.complete", logContext);
+
+        return result;
+      }
     );
   };
 };
@@ -134,11 +154,19 @@ const withWorkflowErrorCapture = (
     try {
       return await handler(args);
     } catch (error) {
+      const runId = getRunId(args);
+      const logContext = getWorkflowLogContext(slug, runId, args);
+
+      Sentry.logger.error("workflow.error", {
+        ...logContext,
+        error: error instanceof Error ? error.message : String(error ?? ""),
+      });
       Sentry.captureException(error, {
         tags: {
           workflow: slug,
+          workflowRunId: runId,
         },
-        extra: buildSentryExtra(args),
+        extra: logContext,
       });
       throw error;
     }

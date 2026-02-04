@@ -15,79 +15,131 @@ export type TaskInput = {
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
 
-const isTaskInput = (value: unknown): value is TaskInput => isObject(value);
-
-const getReq = (args: unknown): PayloadRequest | undefined => {
-  if (!isObject(args)) {
-    return undefined;
-  }
-  const req = args.req;
-  return req as PayloadRequest | undefined;
-};
-
 const getInput = (args: unknown): TaskInput | undefined => {
   if (!isObject(args)) {
     return undefined;
   }
   const input = (args as { input?: unknown }).input;
-  return isTaskInput(input) ? input : undefined;
+  return isObject(input) ? (input as TaskInput) : undefined;
 };
 
 export const getRunContext = (input?: unknown): RunContext => {
-  if (!isTaskInput(input)) {
+  if (!isObject(input)) {
     return {};
   }
 
-  const runContext = input.runContext ?? {};
+  const runContext = (input as TaskInput).runContext ?? {};
   return {
     workflowSlug: runContext.workflowSlug,
     workflowRunId: runContext.workflowRunId,
   };
 };
 
+const parseLogArgs = (
+  args: unknown[],
+  fallbackMessage: string,
+): { message: string; extra: Record<string, unknown> } => {
+  let message = fallbackMessage;
+  let extra: Record<string, unknown> = {};
+
+  if (args.length === 0) {
+    return { message, extra };
+  }
+
+  const first = args[0];
+
+  if (typeof first === "string") {
+    message = first;
+    if (isObject(args[1])) {
+      extra = args[1] as Record<string, unknown>;
+    }
+  } else if (first instanceof Error) {
+    message = first.message || fallbackMessage;
+    extra = {
+      error: {
+        name: first.name,
+        message: first.message,
+        stack: first.stack,
+      },
+    };
+  } else if (isObject(first)) {
+    extra = first as Record<string, unknown>;
+    if (typeof extra.message === "string" && extra.message.trim()) {
+      message = extra.message;
+    } else if (typeof extra.msg === "string" && extra.msg.trim()) {
+      message = extra.msg;
+    }
+  }
+
+  return { message, extra };
+};
+
+const createTaskLogger = (
+  payloadLogger: PayloadRequest["payload"]["logger"],
+  taskSlug: string,
+  runContext: RunContext,
+) => {
+  const context = {
+    log_source: "payload.task",
+    task: taskSlug,
+    workflow: runContext.workflowSlug,
+    workflowRunId: runContext.workflowRunId,
+  };
+
+  const log =
+    (level: "info" | "warn" | "error" | "debug") =>
+    (...args: unknown[]) => {
+      (payloadLogger[level] as (...logArgs: unknown[]) => void)(...args);
+      const { message, extra } = parseLogArgs(args, `${taskSlug}.${level}`);
+      Sentry.logger[level](message, {
+        ...context,
+        ...extra,
+      });
+      Sentry.captureMessage(message, {
+        level: level as Sentry.SeverityLevel,
+        ...context,
+        ...extra,
+      });
+    };
+
+  return {
+    info: log("info"),
+    warn: log("warn"),
+    error: log("error"),
+    debug: log("debug"),
+  };
+};
+
 export const getTaskLogger = (
   req: PayloadRequest,
   taskSlug: string,
-  input?: unknown
+  input?: unknown,
 ) => {
-  const baseLogger = req?.payload?.logger;
   const runContext = getRunContext(input);
-  const fields = {
-    task: taskSlug,
-    ...runContext,
-  };
+  const payloadLogger =
+    typeof req.payload.logger.child === "function"
+      ? req.payload.logger.child({ task: taskSlug, ...runContext })
+      : req.payload.logger;
 
-  if (baseLogger && "child" in baseLogger && typeof baseLogger.child === "function") {
-    return baseLogger.child(fields);
-  }
-
-  return baseLogger;
+  return createTaskLogger(payloadLogger, taskSlug, runContext);
 };
 
 export const withTaskTracing = (
   taskSlug: string,
-  handler: NonNullable<TaskConfig["handler"]>
+  handler: NonNullable<TaskConfig["handler"]>,
 ): NonNullable<TaskConfig["handler"]> => {
   if (typeof handler !== "function") {
     return handler;
   }
 
   return async (args) => {
-    const req = getReq(args);
+    const req = (args as { req: PayloadRequest }).req;
     const input = getInput(args);
-    const logger = req ? getTaskLogger(req, taskSlug, input) : undefined;
+    const logger = getTaskLogger(req, taskSlug, input);
     const runContext = getRunContext(input);
     const startedAt = Date.now();
 
-    if (runContext.workflowSlug) {
-      Sentry.setTag("workflow", runContext.workflowSlug);
-    }
-    if (runContext.workflowRunId) {
-      Sentry.setTag("workflowRunId", runContext.workflowRunId);
-    }
-    Sentry.setTag("task", taskSlug);
-
-    logger?.info?.({
+    logger.info({
       message: "task.start",
       task: taskSlug,
     });
@@ -105,20 +157,31 @@ export const withTaskTracing = (
         },
         async () => {
           const result = await handler(args);
-          logger?.info?.({
+          logger.info({
             message: "task.complete",
             task: taskSlug,
             durationMs: Date.now() - startedAt,
           });
           return result;
-        }
+        },
       );
     } catch (error) {
-      logger?.error?.({
+      logger.error({
         message: "task.error",
         task: taskSlug,
         durationMs: Date.now() - startedAt,
         error: error instanceof Error ? error.message : String(error ?? ""),
+      });
+      Sentry.captureException(error, {
+        tags: {
+          task: taskSlug,
+          workflow: runContext.workflowSlug,
+          workflowRunId: runContext.workflowRunId,
+        },
+        extra: {
+          input,
+          runContext,
+        },
       });
       throw error;
     }
