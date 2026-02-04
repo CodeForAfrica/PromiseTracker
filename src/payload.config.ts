@@ -84,6 +84,12 @@ export default buildConfig({
       return defaultJobsCollection;
     },
     addParentToTaskLog: true,
+    autoRun: [
+      {
+        cron: process.env.PAYLOAD_JOBS_CRON_SCHEDULE || "* * * * *",
+        queue: process.env.PAYLOAD_JOBS_QUEUE || "everyMinute",
+      },
+    ],
     tasks,
     workflows,
   },
