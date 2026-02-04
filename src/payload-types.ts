@@ -139,6 +139,7 @@ export interface Config {
       fetchPromiseStatuses: TaskFetchPromiseStatuses;
       updatePromiseStatus: TaskUpdatePromiseStatus;
       syncMeedanPromises: TaskSyncMeedanPromises;
+      cleanupFailedJobs: TaskCleanupFailedJobs;
       inline: {
         input: unknown;
         output: unknown;
@@ -997,7 +998,8 @@ export interface PayloadJob {
           | 'createPoliticalEntity'
           | 'fetchPromiseStatuses'
           | 'updatePromiseStatus'
-          | 'syncMeedanPromises';
+          | 'syncMeedanPromises'
+          | 'cleanupFailedJobs';
         taskID: string;
         input?:
           | {
@@ -1041,6 +1043,7 @@ export interface PayloadJob {
                 | 'fetchPromiseStatuses'
                 | 'updatePromiseStatus'
                 | 'syncMeedanPromises'
+                | 'cleanupFailedJobs'
               )
             | null;
           taskID?: string | null;
@@ -1062,6 +1065,7 @@ export interface PayloadJob {
         | 'fetchPromiseStatuses'
         | 'updatePromiseStatus'
         | 'syncMeedanPromises'
+        | 'cleanupFailedJobs'
       )
     | null;
   queue?: string | null;
@@ -2433,6 +2437,14 @@ export interface TaskUpdatePromiseStatus {
  * via the `definition` "TaskSyncMeedanPromises".
  */
 export interface TaskSyncMeedanPromises {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskCleanupFailedJobs".
+ */
+export interface TaskCleanupFailedJobs {
   input?: unknown;
   output?: unknown;
 }

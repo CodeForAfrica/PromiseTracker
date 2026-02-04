@@ -75,9 +75,7 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
             : undefined,
         });
 
-        documents.push(
-          ...pageResult.docs.filter((doc) => !doc.fullyProcessed)
-        );
+        documents.push(...pageResult.docs.filter((doc) => !doc.fullyProcessed));
         hasNextPage = pageResult.hasNextPage;
         page += 1;
       }
@@ -153,7 +151,7 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
               title: z
                 .string()
                 .describe(
-                  "Inferred title from the document content, or the provided document title as fallback"
+                  "Inferred title from the document content, or the provided document title as fallback",
                 ),
               promises: z.array(
                 z.object({
@@ -166,9 +164,9 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
                   source: z
                     .array(z.string())
                     .describe(
-                      "Array of direct quotations from the text that support this promise"
+                      "Array of direct quotations from the text that support this promise",
                     ),
-                })
+                }),
               ),
             }),
             maxRetries: 5,

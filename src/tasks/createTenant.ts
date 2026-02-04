@@ -17,7 +17,7 @@ export const CreateTenantFromAirtable: TaskConfig<"createTenantFromAirtable"> =
         const { payload } = req;
         const logger = getTaskLogger(req, "createTenantFromAirtable", input);
         logger.info(
-          "createTenantFromAirtable:: Starting fetching countries from Airtable"
+          "createTenantFromAirtable:: Starting fetching countries from Airtable",
         );
 
         const {
@@ -28,7 +28,7 @@ export const CreateTenantFromAirtable: TaskConfig<"createTenantFromAirtable"> =
 
         if (!airtableAPIKey || !airtableBaseID) {
           logger.error(
-            "createTenantFromAirtable:: Airtable API Key and Base ID not configured"
+            "createTenantFromAirtable:: Airtable API Key and Base ID not configured",
           );
           throw new Error("Airtable API key or Base ID not found in settings");
         }
@@ -56,7 +56,7 @@ export const CreateTenantFromAirtable: TaskConfig<"createTenantFromAirtable"> =
               const tenant = docs[0];
               if (!tenant) {
                 logger.info(
-                  `createTenantFromAirtable:: Tenant ${country.name} does not exist. Creating one....`
+                  `createTenantFromAirtable:: Tenant ${country.name} does not exist. Creating one....`,
                 );
                 await payload.create({
                   collection: "tenants",
@@ -81,6 +81,6 @@ export const CreateTenantFromAirtable: TaskConfig<"createTenantFromAirtable"> =
         return {
           output: {},
         };
-      }
+      },
     ),
   };

@@ -25,7 +25,7 @@ const getExtractionsToUpload = (doc: AiExtractionDoc) => {
 
 const checkAndMarkDocumentComplete = async (
   doc: Document,
-  payload: BasePayload
+  payload: BasePayload,
 ): Promise<void> => {
   if (doc.airtableID) {
     const {
@@ -44,6 +44,7 @@ const checkAndMarkDocumentComplete = async (
 export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
   slug: "uploadToMeedan",
   label: "Upload To Meedan",
+  retries: 0,
   handler: withTaskTracing("uploadToMeedan", async ({ req, input }) => {
     const { payload } = req;
     const logger = getTaskLogger(req, "uploadToMeedan", input);
@@ -62,7 +63,7 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
       }
 
       const documentIdFilter = new Set(
-        ((input as TaskInput | undefined)?.documentIds || []).filter(Boolean)
+        ((input as TaskInput | undefined)?.documentIds || []).filter(Boolean),
       );
       const limit = 50;
       let page = 1;
@@ -87,14 +88,14 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
           }
 
           logger.info(
-            `uploadToMeedan:: Processing AI extraction: ${doc.id} - ${doc.title}`
+            `uploadToMeedan:: Processing AI extraction: ${doc.id} - ${doc.title}`,
           );
 
           const extractionsToUpload = getExtractionsToUpload(doc);
 
           if (extractionsToUpload.length === 0) {
             logger.info(
-              `uploadToMeedan:: Document ${doc.id} has no unprocessed AI extractions, skipping`
+              `uploadToMeedan:: Document ${doc.id} has no unprocessed AI extractions, skipping`,
             );
             continue;
           }
@@ -104,7 +105,7 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
 
           for (const extraction of extractionsToUpload) {
             logger.info(
-              `uploadToMeedan:: Uploading extraction ${extraction.uniqueId} from document ${doc.id} to CheckMedia`
+              `uploadToMeedan:: Uploading extraction ${extraction.uniqueId} from document ${doc.id} to CheckMedia`,
             );
             const tags = [
               entity.name,
@@ -116,7 +117,8 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
               `${entity.periodFrom}-${entity.periodTo}`,
             ].filter(Boolean) as string[];
 
-            const quote = `${extraction.summary} \n\n${extraction.source}`.trim();
+            const quote =
+              `${extraction.summary} \n\n${extraction.source}`.trim();
 
             const downloadedFile = document.files as Media[];
 
@@ -155,10 +157,12 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
                   where: { meedanId: { equals: returnedStatus } },
                   limit: 1,
                 });
-                statusRelationId = statusRes.docs?.[0]?.id as string | undefined;
+                statusRelationId = statusRes.docs?.[0]?.id as
+                  | string
+                  | undefined;
               } catch (e) {
                 logger.warn(
-                  `uploadToMeedan:: Could not resolve status ${returnedStatus} to a promise-status doc. Error :${e}`
+                  `uploadToMeedan:: Could not resolve status ${returnedStatus} to a promise-status doc. Error :${e}`,
                 );
               }
             }
@@ -184,7 +188,7 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
             });
 
             logger.info(
-              `uploadToMeedan:: Updated extraction ${extraction.uniqueId} in document ${doc.id} with CheckMedia data`
+              `uploadToMeedan:: Updated extraction ${extraction.uniqueId} in document ${doc.id} with CheckMedia data`,
             );
           }
 
