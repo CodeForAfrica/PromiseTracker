@@ -1,5 +1,8 @@
 import { TaskConfig } from "payload";
-import { AiExtraction as AiExtractionDoc, PromiseStatus } from "@/payload-types";
+import {
+  AiExtraction as AiExtractionDoc,
+  PromiseStatus,
+} from "@/payload-types";
 import { fetchProjectMediaStatuses } from "@/lib/meedan";
 import { getTaskLogger, withTaskTracing } from "./utils";
 
@@ -45,12 +48,12 @@ export const UpdatePromiseStatus: TaskConfig<"updatePromiseStatus"> = {
       remoteStatusesList.map(({ checkMediaId, status }) => [
         checkMediaId,
         status,
-      ])
+      ]),
     );
 
     if (remoteStatuses.size === 0) {
       logger.info(
-        "updatePromiseStatus:: No remote statuses returned, nothing to update"
+        "updatePromiseStatus:: No remote statuses returned, nothing to update",
       );
       return {
         output: { updated: 0 },
@@ -97,7 +100,7 @@ export const UpdatePromiseStatus: TaskConfig<"updatePromiseStatus"> = {
         const statusDocId = statusIdByMeedan.get(remoteStatus);
         if (!statusDocId) {
           logger.warn(
-            `updatePromiseStatus:: No local status mapping for Meedan status ${remoteStatus}`
+            `updatePromiseStatus:: No local status mapping for Meedan status ${remoteStatus}`,
           );
           return extraction;
         }
@@ -124,13 +127,13 @@ export const UpdatePromiseStatus: TaskConfig<"updatePromiseStatus"> = {
         });
         updatedPromises += 1;
         logger.info(
-          `updatePromiseStatus:: Updated AI extraction ${extractionDoc.id} with latest statuses`
+          `updatePromiseStatus:: Updated AI extraction ${extractionDoc.id} with latest statuses`,
         );
       }
     }
 
     logger.info(
-      `updatePromiseStatus:: Completed syncing statuses. Updated ${updatedPromises} AI extractions.`
+      `updatePromiseStatus:: Completed syncing statuses. Updated ${updatedPromises} AI extractions.`,
     );
 
     return {

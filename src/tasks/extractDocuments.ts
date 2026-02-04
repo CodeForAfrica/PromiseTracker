@@ -99,7 +99,7 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
             } else if (file.url) {
               const url = `${process.env.NEXT_PUBLIC_APP_URL}${file.url}`;
               logger.info(
-                `File does not exist locally. Downloading from ${url}`
+                `File does not exist locally. Downloading from ${url}`,
               );
               try {
                 tempFilePath = await downloadFile(url);

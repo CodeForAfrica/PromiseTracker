@@ -15,13 +15,11 @@ import { getTaskLogger, withTaskTracing } from "./utils";
 export const CreatePoliticalEntity: TaskConfig = {
   slug: "createPoliticalEntity",
   label: "Create Political Entity",
-  handler: withTaskTracing(
-    "createPoliticalEntity",
-    async ({ req, input }) => {
-      const { payload } = req;
-      const logger = getTaskLogger(req, "createPoliticalEntity", input);
+  handler: withTaskTracing("createPoliticalEntity", async ({ req, input }) => {
+    const { payload } = req;
+    const logger = getTaskLogger(req, "createPoliticalEntity", input);
     logger.info(
-      "createPoliticalEntity:: Starting fetching political entities from Airtable"
+      "createPoliticalEntity:: Starting fetching political entities from Airtable",
     );
 
     const {
@@ -32,7 +30,7 @@ export const CreatePoliticalEntity: TaskConfig = {
 
     if (!airtableAPIKey || !airtableBaseID) {
       logger.error(
-        "createPoliticalEntity:: Airtable API Key and Base ID not configured"
+        "createPoliticalEntity:: Airtable API Key and Base ID not configured",
       );
       throw new Error("Airtable API key or Base ID not found in settings");
     }
@@ -54,11 +52,11 @@ export const CreatePoliticalEntity: TaskConfig = {
       });
 
       const countriesById = new Map(
-        countries.map((country) => [country.id, country])
+        countries.map((country) => [country.id, country]),
       );
 
       const countryCodeByLabel = new Map(
-        allCountries.map((entry) => [entry.label["en"], entry.value])
+        allCountries.map((entry) => [entry.label["en"], entry.value]),
       );
 
       const { docs: existingEntities } = await payload.find({
@@ -70,11 +68,11 @@ export const CreatePoliticalEntity: TaskConfig = {
       const existingByAirtable = new Map(
         existingEntities
           .filter((entity) => entity.airtableID)
-          .map((entity) => [entity.airtableID as string, entity])
+          .map((entity) => [entity.airtableID as string, entity]),
       );
 
       const existingByName = new Map(
-        existingEntities.map((entity) => [entity.name.toLowerCase(), entity])
+        existingEntities.map((entity) => [entity.name.toLowerCase(), entity]),
       );
 
       const collectDocIds = new Set<string>();
@@ -93,7 +91,7 @@ export const CreatePoliticalEntity: TaskConfig = {
           })
         : [];
       const airtableDocumentsById = new Map(
-        airtableDocuments.map((doc) => [doc.id, doc])
+        airtableDocuments.map((doc) => [doc.id, doc]),
       );
 
       const existingDocuments = collectDocIds.size
@@ -112,7 +110,7 @@ export const CreatePoliticalEntity: TaskConfig = {
       const existingDocsById = new Map(
         existingDocuments.docs
           .filter((doc) => doc.airtableID)
-          .map((doc) => [doc.airtableID as string, doc])
+          .map((doc) => [doc.airtableID as string, doc]),
       );
       const processedDocIds = new Set<string>();
 
@@ -149,7 +147,7 @@ export const CreatePoliticalEntity: TaskConfig = {
         const docUrlsChanged =
           newDocURLs.length !== existingDocURLs.length ||
           newDocURLs.some(
-            (entry, index) => entry.url !== existingDocURLs[index]
+            (entry, index) => entry.url !== existingDocURLs[index],
           );
 
         const newUrl = normalize(airtableDoc.uRL);
@@ -185,7 +183,7 @@ export const CreatePoliticalEntity: TaskConfig = {
       const mediaExternalUrlCache = new Map<string, string>();
 
       const getMediaExternalUrl = async (
-        imageRef: string | Media | null | undefined
+        imageRef: string | Media | null | undefined,
       ): Promise<string> => {
         if (!imageRef) {
           return "";
@@ -231,7 +229,7 @@ export const CreatePoliticalEntity: TaskConfig = {
         limit: -1,
       });
       const tenantLookup = new Map(
-        tenantsForLookup.map((tenant) => [tenant.country, tenant])
+        tenantsForLookup.map((tenant) => [tenant.country, tenant]),
       );
 
       const toIsoDate = (timestamp?: number | null): string => {
@@ -390,7 +388,7 @@ export const CreatePoliticalEntity: TaskConfig = {
           }
 
           const existingExternalUrl = await getMediaExternalUrl(
-            existingEntity.image
+            existingEntity.image,
           );
 
           if (existingExternalUrl !== imageUrl) {
@@ -443,6 +441,5 @@ export const CreatePoliticalEntity: TaskConfig = {
     return {
       output: {},
     };
-  }
-  ),
+  }),
 };

@@ -18,7 +18,7 @@ export const SyncMeedanPromises: TaskConfig<"syncMeedanPromises"> = {
 
     if (!meedanAPIKey || !teamId) {
       logger.warn(
-        "syncMeedanPromises:: Missing Meedan credentials, skipping sync"
+        "syncMeedanPromises:: Missing Meedan credentials, skipping sync",
       );
       return { output: { created: 0, updated: 0, total: 0 } };
     }

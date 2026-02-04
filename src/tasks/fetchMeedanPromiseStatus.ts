@@ -17,7 +17,7 @@ export const FetchPromiseStatuses: TaskConfig<"fetchPromiseStatuses"> = {
 
     if (!meedanAPIKey || !teamId) {
       logger.warn(
-        "fetchPromiseStatuses:: Missing Meedan credentials, skipping sync"
+        "fetchPromiseStatuses:: Missing Meedan credentials, skipping sync",
       );
       return { output: { created: 0 } };
     }
@@ -63,13 +63,13 @@ export const FetchPromiseStatuses: TaskConfig<"fetchPromiseStatuses"> = {
 
           created += 1;
           logger.info(
-            `fetchPromiseStatuses:: Created new status ${status.id} (${status.label})`
+            `fetchPromiseStatuses:: Created new status ${status.id} (${status.label})`,
           );
         }
       }
 
       logger.info(
-        `fetchPromiseStatuses:: Completed. Created ${created} new statuses.`
+        `fetchPromiseStatuses:: Completed. Created ${created} new statuses.`,
       );
 
       return {
