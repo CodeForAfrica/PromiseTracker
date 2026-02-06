@@ -149,7 +149,7 @@ export const syncMeedanReports = async ({
 
   const { docs: aiExtractionDocsRaw } = await payload.find({
     collection: "ai-extractions",
-    limit: -1,
+    limit: 0,
     depth: 2,
   });
 

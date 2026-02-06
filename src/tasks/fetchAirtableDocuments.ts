@@ -68,7 +68,7 @@ export const FetchAirtableDocuments: TaskConfig<"fetchAirtableDocuments"> = {
 
         const { docs: entities } = await payload.find({
           collection: "political-entities",
-          limit: -1,
+          limit: 0,
           depth: 2,
         });
 

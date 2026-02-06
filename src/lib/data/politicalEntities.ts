@@ -14,7 +14,7 @@ export const getPoliticalEntitiesByTenant = async (
 ): Promise<PoliticalEntity[]> => {
   const { docs } = await payload.find({
     collection: "political-entities",
-    limit: -1,
+    limit: 0,
     depth: 2,
     sort: "name",
     ...(locale ? { locale } : {}),
@@ -138,18 +138,16 @@ export const getPromiseCountsForEntities = async (
       continue;
     }
 
-    const summary =
-      counts[entityId] ??
-      {
-        total: 0,
-        statuses: {},
-      };
+    const summary = counts[entityId] ?? {
+      total: 0,
+      statuses: {},
+    };
 
     const statusValue = promise.status;
     let statusId =
       typeof statusValue === "string"
         ? statusValue
-        : statusValue?.id ?? statusValue?.meedanId ?? null;
+        : (statusValue?.id ?? statusValue?.meedanId ?? null);
 
     if (!statusId) {
       const publishStatus =

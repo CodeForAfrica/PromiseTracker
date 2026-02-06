@@ -88,7 +88,7 @@ export const PoliticalEntityList = async ({
     getPromiseCountsForEntities(politicalEntities.map((entity) => entity.id)),
     payload.find({
       collection: "promise-status",
-      limit: -1,
+      limit: 0,
       depth: 0,
       locale,
     }),

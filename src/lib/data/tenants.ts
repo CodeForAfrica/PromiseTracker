@@ -15,7 +15,7 @@ export const getAllTenants = async (): Promise<
 > => {
   const { docs } = await payload.find({
     collection: "tenants",
-    limit: -1,
+    limit: 0,
     sort: "name",
   });
 

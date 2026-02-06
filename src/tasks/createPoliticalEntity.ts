@@ -61,7 +61,7 @@ export const CreatePoliticalEntity: TaskConfig = {
 
       const { docs: existingEntities } = await payload.find({
         collection: "political-entities",
-        limit: -1,
+        limit: 0,
         depth: 1,
       });
 
@@ -102,7 +102,7 @@ export const CreatePoliticalEntity: TaskConfig = {
                 in: Array.from(collectDocIds),
               },
             },
-            limit: -1,
+            limit: 0,
             depth: 1,
           })
         : { docs: [] };
@@ -226,7 +226,7 @@ export const CreatePoliticalEntity: TaskConfig = {
 
       const { docs: tenantsForLookup } = await payload.find({
         collection: "tenants",
-        limit: -1,
+        limit: 0,
       });
       const tenantLookup = new Map(
         tenantsForLookup.map((tenant) => [tenant.country, tenant]),
