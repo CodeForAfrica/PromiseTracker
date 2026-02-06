@@ -62,7 +62,7 @@ export const UpdatePromiseStatus: TaskConfig<"updatePromiseStatus"> = {
 
     const { docs: statusDocs } = await payload.find({
       collection: "promise-status",
-      limit: -1,
+      limit: 0,
       depth: 0,
     });
 
@@ -73,7 +73,7 @@ export const UpdatePromiseStatus: TaskConfig<"updatePromiseStatus"> = {
 
     const { docs: aiExtractions } = await payload.find({
       collection: "ai-extractions",
-      limit: -1,
+      limit: 0,
       depth: 0,
     });
 

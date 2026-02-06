@@ -301,7 +301,7 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
 
   const { docs: statusDocs } = await payload.find({
     collection: "promise-status",
-    limit: -1,
+    limit: 0,
     depth: 0,
     locale,
   });
@@ -333,7 +333,7 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
         },
       ],
     },
-    limit: -1,
+    limit: 0,
     depth: 1,
   });
 

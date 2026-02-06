@@ -79,7 +79,7 @@ export const KeyPromises = async ({
 
   const statusQuery = await payload.find({
     collection: "promise-status",
-    limit: -1,
+    limit: 0,
     depth: 0,
     locale,
   });
