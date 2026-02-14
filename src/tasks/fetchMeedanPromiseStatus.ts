@@ -29,48 +29,71 @@ export const FetchPromiseStatuses: TaskConfig<"fetchPromiseStatuses"> = {
       });
 
       let created = 0;
+      let failed = 0;
       for (const status of statuses) {
-        const existing = await payload.find({
-          collection: "promise-status",
-          where: { meedanId: { equals: status.id } },
-          limit: 1,
-        });
-
-        if (existing.totalDocs === 0) {
-          const createdStatus = await payload.create({
+        try {
+          const existing = await payload.find({
             collection: "promise-status",
-            locale: "en",
-            data: {
-              meedanId: status.id,
-              label: status.label,
-              description: status.description,
-              colors: status.color ? { color: status.color } : {},
-            },
+            where: { meedanId: { equals: status.id } },
+            limit: 1,
           });
 
-          const frenchLocale = status.locales?.fr;
-          if (frenchLocale) {
-            await payload.update({
+          if (existing.totalDocs === 0) {
+            const createdStatus = await payload.create({
               collection: "promise-status",
-              id: createdStatus.id,
-              locale: "fr",
+              locale: "en",
               data: {
-                label: frenchLocale.label || status.label,
-                description: frenchLocale.description || status.description,
+                meedanId: status.id,
+                label: status.label,
+                description: status.description,
+                colors: status.color ? { color: status.color } : {},
               },
             });
-          }
 
-          created += 1;
-          logger.info(
-            `fetchPromiseStatuses:: Created new status ${status.id} (${status.label})`,
-          );
+            const frenchLocale = status.locales?.fr;
+            if (frenchLocale) {
+              await payload.update({
+                collection: "promise-status",
+                id: createdStatus.id,
+                locale: "fr",
+                data: {
+                  label: frenchLocale.label || status.label,
+                  description: frenchLocale.description || status.description,
+                },
+              });
+            }
+
+            created += 1;
+            logger.info({
+              message: "fetchPromiseStatuses:: Created new status",
+              meedanStatusId: status.id,
+              label: status.label,
+              createdStatusId: createdStatus.id,
+            });
+          }
+        } catch (statusError) {
+          failed += 1;
+          logger.error({
+            message: "fetchPromiseStatuses:: Failed processing status",
+            meedanStatusId: status.id,
+            label: status.label,
+            description: status.description,
+            color: status.color,
+            hasFrenchLocale: Boolean(status.locales?.fr),
+            error:
+              statusError instanceof Error
+                ? statusError.message
+                : String(statusError),
+          });
         }
       }
 
-      logger.info(
-        `fetchPromiseStatuses:: Completed. Created ${created} new statuses.`,
-      );
+      logger.info({
+        message: "fetchPromiseStatuses:: Completed status sync",
+        created,
+        failed,
+        total: statuses.length,
+      });
 
       return {
         output: { created },
@@ -78,6 +101,7 @@ export const FetchPromiseStatuses: TaskConfig<"fetchPromiseStatuses"> = {
     } catch (error) {
       logger.error({
         message: "fetchPromiseStatuses:: Failed to fetch/save statuses",
+        teamId,
         error: error instanceof Error ? error.message : String(error),
       });
       throw error;

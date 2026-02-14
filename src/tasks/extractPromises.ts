@@ -88,61 +88,71 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
       logger.info(`extractPromises:: Extracting ${documents.length} documents`);
 
       const processedDocs = [];
+      let failedDocs = 0;
 
       for (const document of documents) {
-        const { extractedText } = document;
+        try {
+          const { extractedText } = document;
 
-        const { docs: existingExtractions } = await payload.find({
-          collection: "ai-extractions",
-          where: {
-            document: {
-              equals: document.id,
+          const { docs: existingExtractions } = await payload.find({
+            collection: "ai-extractions",
+            where: {
+              document: {
+                equals: document.id,
+              },
             },
-          },
-          limit: 1,
-        });
-
-        const existingExtraction = existingExtractions[0];
-
-        if (existingExtraction) {
-          logger.info({
-            message:
-              "extractPromises:: Skipping document with existing AI extraction",
-            documentId: document.id,
-            extractionId: existingExtraction.id,
+            limit: 1,
           });
 
-          if (!document.fullyProcessed) {
-            await payload.update({
-              collection: "documents",
-              id: document.id,
-              data: {
-                fullyProcessed: true,
-              },
+          const existingExtraction = existingExtractions[0];
+
+          if (existingExtraction) {
+            logger.info({
+              message:
+                "extractPromises:: Skipping document with existing AI extraction",
+              documentId: document.id,
+              documentTitle: document.title,
+              documentAirtableID: document.airtableID,
+              extractionId: existingExtraction.id,
+              extractionTitle: existingExtraction.title,
             });
-          }
 
-          continue;
-        }
-
-        const plainTextSegments =
-          extractedText?.reduce<string[]>((acc, textEntry) => {
-            if (!textEntry?.text) {
-              return acc;
+            if (!document.fullyProcessed) {
+              await payload.update({
+                collection: "documents",
+                id: document.id,
+                data: {
+                  fullyProcessed: true,
+                },
+              });
             }
 
-            acc.push(convertLexicalToPlaintext({ data: textEntry.text }));
-            return acc;
-          }, []) ?? [];
+            continue;
+          }
 
-        const plainText = plainTextSegments.join("\n");
+          const plainTextSegments =
+            extractedText?.reduce<string[]>((acc, textEntry) => {
+              if (!textEntry?.text) {
+                return acc;
+              }
 
-        if (!plainText || plainText?.length === 0) {
-          logger.error("extractPromises:: No text to process");
-          continue;
-        }
+              acc.push(convertLexicalToPlaintext({ data: textEntry.text }));
+              return acc;
+            }, []) ?? [];
 
-        try {
+          const plainText = plainTextSegments.join("\n");
+
+          if (!plainText || plainText?.length === 0) {
+            logger.error({
+              message: "extractPromises:: No text to process",
+              documentId: document.id,
+              documentTitle: document.title,
+              documentAirtableID: document.airtableID,
+              extractedTextSegments: plainTextSegments.length,
+            });
+            continue;
+          }
+
           const res = await generateObject({
             model,
             system: systemPrompt,
@@ -177,6 +187,8 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
           logger.info({
             message: "extractPromises:: AI response received",
             documentId: document.id,
+            documentTitle: document.title,
+            documentAirtableID: document.airtableID,
             promises: object.promises.length,
           });
 
@@ -211,16 +223,26 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
             title: object.title,
             promises: object.promises,
           });
-        } catch (error) {
+        } catch (documentError) {
+          failedDocs += 1;
           logger.error({
-            message: "extractPromises:: Error generating AI Response::",
-            error: error instanceof Error ? error.message : String(error),
+            message: "extractPromises:: Failed processing document",
+            documentId: document.id,
+            documentTitle: document.title,
+            documentAirtableID: document.airtableID,
+            fullyProcessed: document.fullyProcessed,
+            error:
+              documentError instanceof Error
+                ? documentError.message
+                : String(documentError),
           });
         }
       }
 
       logger.info({
         message: `extractPromises:: Extracted ${processedDocs.length} documents`,
+        failed: failedDocs,
+        total: documents.length,
       });
 
       return {
@@ -228,7 +250,9 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
       };
     } catch (error) {
       logger.error({
-        message: "Error:",
+        message: "extractPromises:: Error in promise extraction task",
+        requestedDocumentIds:
+          (input as TaskInput | undefined)?.documentIds?.filter(Boolean) ?? [],
         error: error instanceof Error ? error.message : String(error),
       });
       throw error;

@@ -38,7 +38,7 @@ const dirName = dirname(fileName);
 const tempDir = join(dirName, "..", "..", "temp");
 
 const DEFAULT_MAX_DOWNLOAD_BYTES =
-  Number(process.env.MAX_DOWNLOAD_BYTES) || 100 * 1024 * 1024;
+  Number(process.env.MAX_DOWNLOAD_BYTES) || 1024 * 1024 * 1024;
 
 type DownloadFileOptions = {
   allowedMimeTypes?: string[];

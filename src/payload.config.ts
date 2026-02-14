@@ -22,6 +22,7 @@ import { fr } from "@payloadcms/translations/languages/fr";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
+const ONE_GIB_IN_BYTES = 1024 * 1024 * 1024;
 
 const payloadSecret = process.env.PAYLOAD_SECRET;
 if (!payloadSecret) {
@@ -57,6 +58,13 @@ export default buildConfig({
     },
   },
   collections,
+  upload: {
+    limits: {
+      fileSize: ONE_GIB_IN_BYTES,
+    },
+    debug: !isProd,
+    uploadTimeout: 300 * 1000,
+  },
   db: mongooseAdapter({
     url: process.env.DATABASE_URI || "",
   }),

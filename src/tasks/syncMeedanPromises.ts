@@ -23,27 +23,37 @@ export const SyncMeedanPromises: TaskConfig<"syncMeedanPromises"> = {
       return { output: { created: 0, updated: 0, total: 0 } };
     }
 
-    const reports = await fetchPublishedReports({
-      apiKey: meedanAPIKey,
-      teamId,
-    });
+    try {
+      const reports = await fetchPublishedReports({
+        apiKey: meedanAPIKey,
+        teamId,
+      });
 
-    if (reports.length === 0) {
-      logger.info("syncMeedanPromises:: No published promises returned");
-      return { output: { created: 0, updated: 0, total: 0 } };
+      if (reports.length === 0) {
+        logger.info("syncMeedanPromises:: No published promises returned");
+        return { output: { created: 0, updated: 0, total: 0 } };
+      }
+
+      const result = await syncMeedanReports({
+        reports,
+      });
+
+      logger.info({
+        message: "syncMeedanPromises:: Completed",
+        reportCount: reports.length,
+        result,
+      });
+
+      return {
+        output: result,
+      };
+    } catch (error) {
+      logger.error({
+        message: "syncMeedanPromises:: Failed syncing published reports",
+        teamId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
     }
-
-    const result = await syncMeedanReports({
-      reports,
-    });
-
-    logger.info({
-      message: "syncMeedanPromises:: Completed",
-      result,
-    });
-
-    return {
-      output: result,
-    };
   }),
 };

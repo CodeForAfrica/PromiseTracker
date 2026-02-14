@@ -39,12 +39,27 @@ export const CreateTenantFromAirtable: TaskConfig<"createTenantFromAirtable"> =
             airtableID: airtableBaseID,
           });
 
-          for (const country of tenantCountries) {
-            const c = allCountries.find((t) => {
-              return t.label["en"] === country.country;
-            });
+          let createdTenants = 0;
+          let failedTenants = 0;
 
-            if (c) {
+          for (const country of tenantCountries) {
+            try {
+              const c = allCountries.find((t) => {
+                return t.label["en"] === country.country;
+              });
+
+              if (!c) {
+                logger.warn({
+                  message:
+                    "createTenantFromAirtable:: Skipping country with no local mapping",
+                  airtableCountryId: country.id,
+                  airtableCountryName: country.name,
+                  airtableCountryLabel: country.country,
+                  airtableLanguage: country.language,
+                });
+                continue;
+              }
+
               const { docs } = await payload.find({
                 collection: "tenants",
                 where: {
@@ -67,13 +82,36 @@ export const CreateTenantFromAirtable: TaskConfig<"createTenantFromAirtable"> =
                     airtableID: country.id,
                   },
                 });
+                createdTenants += 1;
               }
+            } catch (countryError) {
+              failedTenants += 1;
+              logger.error({
+                message:
+                  "createTenantFromAirtable:: Failed processing Airtable country",
+                airtableCountryId: country.id,
+                airtableCountryName: country.name,
+                airtableCountryLabel: country.country,
+                airtableLanguage: country.language,
+                error:
+                  countryError instanceof Error
+                    ? countryError.message
+                    : String(countryError ?? ""),
+              });
             }
           }
+
+          logger.info({
+            message: "createTenantFromAirtable:: Country sync completed",
+            totalCountries: tenantCountries.length,
+            createdTenants,
+            failedTenants,
+          });
         } catch (error) {
           logger.error({
             message:
-              "createTenantFromAirtable:: Error Fetching Document from AIrtable",
+              "createTenantFromAirtable:: Error fetching countries from Airtable",
+            airtableBaseID,
             error: error instanceof Error ? error.message : String(error ?? ""),
           });
         }

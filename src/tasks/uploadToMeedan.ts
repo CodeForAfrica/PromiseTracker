@@ -68,6 +68,10 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
       const limit = 50;
       let page = 1;
       let hasNextPage = true;
+      let uploadedExtractions = 0;
+      let failedExtractions = 0;
+      let processedExtractionDocs = 0;
+      let failedExtractionDocs = 0;
 
       while (hasNextPage) {
         const { docs: allExtractions, hasNextPage: nextPage } =
@@ -80,124 +84,295 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
 
         for (const doc of allExtractions) {
           const document = doc.document as Document;
+          const documentId = document?.id ? String(document.id) : undefined;
+
           if (
             documentIdFilter.size > 0 &&
-            !documentIdFilter.has(String(document?.id))
+            (!documentId || !documentIdFilter.has(documentId))
           ) {
             continue;
           }
 
-          logger.info(
-            `uploadToMeedan:: Processing AI extraction: ${doc.id} - ${doc.title}`,
-          );
-
-          const extractionsToUpload = getExtractionsToUpload(doc);
-
-          if (extractionsToUpload.length === 0) {
-            logger.info(
-              `uploadToMeedan:: Document ${doc.id} has no unprocessed AI extractions, skipping`,
-            );
+          if (!document) {
+            failedExtractionDocs += 1;
+            logger.error({
+              message: "uploadToMeedan:: AI extraction is missing document",
+              extractionDocId: doc.id,
+              extractionDocTitle: doc.title,
+            });
             continue;
           }
 
-          const entity = document.politicalEntity as PoliticalEntity;
-          const tenant = entity.tenant as Tenant;
-
-          for (const extraction of extractionsToUpload) {
-            logger.info(
-              `uploadToMeedan:: Uploading extraction ${extraction.uniqueId} from document ${doc.id} to CheckMedia`,
-            );
-            const tags = [
-              entity.name,
-              entity.region,
-              tenant.country,
-              tenant.name,
-              document.type?.toUpperCase(),
-              extraction.category,
-              `${entity.periodFrom}-${entity.periodTo}`,
-            ].filter(Boolean) as string[];
-
-            const quote =
-              `${extraction.summary} \n\n${extraction.source}`.trim();
-
-            const downloadedFile = document.files as Media[];
-
-            const response = await createFactCheckClaim({
-              apiKey: meedanAPIKey,
-              teamId,
-              quote: quote,
-              tags,
-              claimDescription: extraction.summary,
-              factCheck: {
-                title: extraction.summary,
-                url: document.url || downloadedFile[0].url || "",
-                language: document.language || "",
-                publish_report: false,
-              },
-            });
-
-            const checkMediaId =
-              response.data.createProjectMedia.project_media.id;
-            const checkMediaURL =
-              response.data.createProjectMedia.project_media.full_url;
-            const returnedStatus =
-              response.data.createProjectMedia.project_media.status;
-
+          try {
             logger.info({
-              message: `uploadToMeedan:: Successfully uploaded extraction ${extraction.uniqueId} to CheckMedia`,
-              checkMediaId,
-              checkMediaURL,
+              message: "uploadToMeedan:: Processing AI extraction document",
+              extractionDocId: doc.id,
+              extractionDocTitle: doc.title,
+              documentId,
+              documentTitle: document?.title,
+              documentAirtableID: document?.airtableID,
             });
 
-            let statusRelationId: string | undefined;
-            if (returnedStatus) {
+            const extractionsToUpload = getExtractionsToUpload(doc);
+
+            if (extractionsToUpload.length === 0) {
+              logger.info({
+                message:
+                  "uploadToMeedan:: AI extraction has no unprocessed entries",
+                extractionDocId: doc.id,
+                extractionDocTitle: doc.title,
+                documentId,
+                documentTitle: document?.title,
+                documentAirtableID: document?.airtableID,
+              });
+              continue;
+            }
+
+            const entity = document.politicalEntity as
+              | PoliticalEntity
+              | string
+              | null
+              | undefined;
+            if (!entity || typeof entity === "string") {
+              failedExtractionDocs += 1;
+              logger.error({
+                message:
+                  "uploadToMeedan:: Document has no populated political entity",
+                extractionDocId: doc.id,
+                extractionDocTitle: doc.title,
+                documentId,
+                documentTitle: document.title,
+                documentAirtableID: document.airtableID,
+                politicalEntity: entity,
+              });
+              continue;
+            }
+
+            const tenant = entity.tenant as Tenant | string | null | undefined;
+            if (!tenant || typeof tenant === "string") {
+              failedExtractionDocs += 1;
+              logger.error({
+                message: "uploadToMeedan:: Political entity has no tenant",
+                extractionDocId: doc.id,
+                extractionDocTitle: doc.title,
+                documentId,
+                documentTitle: document.title,
+                documentAirtableID: document.airtableID,
+                politicalEntityId: entity.id,
+                politicalEntityName: entity.name,
+                politicalEntityAirtableID: entity.airtableID,
+                tenant,
+              });
+              continue;
+            }
+            let docFailedExtractions = 0;
+            let docUploadedExtractions = 0;
+
+            for (const extraction of extractionsToUpload) {
               try {
-                const statusRes = await payload.find({
-                  collection: "promise-status",
-                  where: { meedanId: { equals: returnedStatus } },
-                  limit: 1,
+                logger.info({
+                  message: "uploadToMeedan:: Uploading extraction to CheckMedia",
+                  extractionDocId: doc.id,
+                  extractionDocTitle: doc.title,
+                  extractionUniqueId: extraction.uniqueId,
+                  extractionCategory: extraction.category,
+                  documentId,
+                  documentTitle: document?.title,
+                  documentAirtableID: document?.airtableID,
                 });
-                statusRelationId = statusRes.docs?.[0]?.id as
-                  | string
-                  | undefined;
-              } catch (e) {
-                logger.warn(
-                  `uploadToMeedan:: Could not resolve status ${returnedStatus} to a promise-status doc. Error :${e}`,
-                );
+                const tags = [
+                  entity.name,
+                  entity.region,
+                  tenant.country,
+                  tenant.name,
+                  document.type?.toUpperCase(),
+                  extraction.category,
+                  `${entity.periodFrom}-${entity.periodTo}`,
+                ].filter(Boolean) as string[];
+
+                const quote =
+                  `${extraction.summary} \n\n${extraction.source}`.trim();
+
+                const downloadedFile = document.files as Media[];
+                const sourceUrl =
+                  document.url || downloadedFile?.[0]?.url || "";
+
+                const response = await createFactCheckClaim({
+                  apiKey: meedanAPIKey,
+                  teamId,
+                  quote: quote,
+                  tags,
+                  claimDescription: extraction.summary,
+                  factCheck: {
+                    title: extraction.summary,
+                    url: sourceUrl,
+                    language: document.language || "",
+                    publish_report: false,
+                  },
+                });
+
+                const checkMediaId =
+                  response.data.createProjectMedia.project_media.id;
+                const checkMediaURL =
+                  response.data.createProjectMedia.project_media.full_url;
+                const returnedStatus =
+                  response.data.createProjectMedia.project_media.status;
+
+                logger.info({
+                  message: "uploadToMeedan:: Extraction upload succeeded",
+                  extractionDocId: doc.id,
+                  extractionUniqueId: extraction.uniqueId,
+                  extractionCategory: extraction.category,
+                  checkMediaId,
+                  checkMediaURL,
+                  returnedStatus,
+                });
+
+                let statusRelationId: string | undefined;
+                if (returnedStatus) {
+                  try {
+                    const statusRes = await payload.find({
+                      collection: "promise-status",
+                      where: { meedanId: { equals: returnedStatus } },
+                      limit: 1,
+                    });
+                    statusRelationId = statusRes.docs?.[0]?.id as
+                      | string
+                      | undefined;
+                  } catch (statusResolveError) {
+                    logger.warn({
+                      message:
+                        "uploadToMeedan:: Could not resolve returned status to promise-status",
+                      extractionDocId: doc.id,
+                      extractionUniqueId: extraction.uniqueId,
+                      returnedStatus,
+                      documentId,
+                      documentTitle: document?.title,
+                      documentAirtableID: document?.airtableID,
+                      error:
+                        statusResolveError instanceof Error
+                          ? statusResolveError.message
+                          : String(statusResolveError),
+                    });
+                  }
+                }
+
+                const updatedExtractions = doc.extractions?.map((ext) => {
+                  if (ext.uniqueId === extraction.uniqueId) {
+                    return {
+                      ...ext,
+                      checkMediaId,
+                      checkMediaURL,
+                      ...(statusRelationId ? { Status: statusRelationId } : {}),
+                    };
+                  }
+                  return ext;
+                });
+
+                await payload.update({
+                  collection: "ai-extractions",
+                  id: doc.id,
+                  data: {
+                    extractions: updatedExtractions,
+                  },
+                });
+
+                uploadedExtractions += 1;
+                docUploadedExtractions += 1;
+                logger.info({
+                  message:
+                    "uploadToMeedan:: Updated AI extraction with CheckMedia data",
+                  extractionDocId: doc.id,
+                  extractionUniqueId: extraction.uniqueId,
+                  checkMediaId,
+                  checkMediaURL,
+                });
+              } catch (extractionError) {
+                failedExtractions += 1;
+                docFailedExtractions += 1;
+                logger.error({
+                  message: "uploadToMeedan:: Failed uploading extraction",
+                  extractionDocId: doc.id,
+                  extractionDocTitle: doc.title,
+                  extractionUniqueId: extraction.uniqueId,
+                  extractionCategory: extraction.category,
+                  extractionSummary: extraction.summary,
+                  documentId,
+                  documentTitle: document?.title,
+                  documentAirtableID: document?.airtableID,
+                  politicalEntityName: entity?.name,
+                  politicalEntityAirtableID: entity?.airtableID,
+                  tenantName: tenant?.name,
+                  tenantCountry: tenant?.country,
+                  error:
+                    extractionError instanceof Error
+                      ? extractionError.message
+                      : String(extractionError),
+                });
               }
             }
 
-            const updatedExtractions = doc.extractions?.map((ext) => {
-              if (ext.uniqueId === extraction.uniqueId) {
-                return {
-                  ...ext,
-                  checkMediaId,
-                  checkMediaURL,
-                  ...(statusRelationId ? { Status: statusRelationId } : {}),
-                };
-              }
-              return ext;
-            });
+            if (docFailedExtractions > 0) {
+              logger.warn({
+                message:
+                  "uploadToMeedan:: Skipping Airtable processed mark because some extractions failed",
+                extractionDocId: doc.id,
+                extractionDocTitle: doc.title,
+                documentId,
+                documentTitle: document?.title,
+                documentAirtableID: document?.airtableID,
+                uploadedExtractions: docUploadedExtractions,
+                failedExtractions: docFailedExtractions,
+                totalExtractionsToUpload: extractionsToUpload.length,
+              });
+              continue;
+            }
 
-            await payload.update({
-              collection: "ai-extractions",
-              id: doc.id,
-              data: {
-                extractions: updatedExtractions,
-              },
-            });
+            try {
+              await checkAndMarkDocumentComplete(document, payload);
+            } catch (markCompleteError) {
+              logger.error({
+                message:
+                  "uploadToMeedan:: Failed marking Airtable document as processed",
+                extractionDocId: doc.id,
+                extractionDocTitle: doc.title,
+                documentId,
+                documentTitle: document?.title,
+                documentAirtableID: document?.airtableID,
+                error:
+                  markCompleteError instanceof Error
+                    ? markCompleteError.message
+                    : String(markCompleteError),
+              });
+            }
 
-            logger.info(
-              `uploadToMeedan:: Updated extraction ${extraction.uniqueId} in document ${doc.id} with CheckMedia data`,
-            );
+            processedExtractionDocs += 1;
+          } catch (docError) {
+            failedExtractionDocs += 1;
+            logger.error({
+              message: "uploadToMeedan:: Failed processing extraction document",
+              extractionDocId: doc.id,
+              extractionDocTitle: doc.title,
+              documentId,
+              documentTitle: document?.title,
+              documentAirtableID: document?.airtableID,
+              error:
+                docError instanceof Error ? docError.message : String(docError),
+            });
           }
-
-          await checkAndMarkDocumentComplete(document, payload);
         }
 
         hasNextPage = nextPage;
         page += 1;
       }
+
+      logger.info({
+        message: "uploadToMeedan:: Upload task completed",
+        processedExtractionDocs,
+        failedExtractionDocs,
+        uploadedExtractions,
+        failedExtractions,
+      });
 
       return {
         output: {},
@@ -205,6 +380,8 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
     } catch (error) {
       logger.error({
         message: "uploadToMeedan::  Uploading to Meedan failed:",
+        requestedDocumentIds:
+          (input as TaskInput | undefined)?.documentIds?.filter(Boolean) ?? [],
         error: error instanceof Error ? error.message : String(error),
       });
       throw error;
