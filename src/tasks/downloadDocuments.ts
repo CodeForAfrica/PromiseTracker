@@ -31,10 +31,12 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
             : {}),
         },
         select: {
+          airtableID: true,
           title: true,
           url: true,
           docURLs: true,
         },
+        limit: 0,
       });
 
       if (documents.length === 0) {
@@ -43,7 +45,7 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
       }
 
       logger.info(
-        `downloadDocuments:: Downloading ${documents.length}. Documents:\n ${documents.map((t) => `${t.title}\n`)}`
+        `downloadDocuments:: Downloading ${documents.length}. Documents:\n ${documents.map((t) => `${t.title}\n`)}`,
       );
 
       const processedDocs = [];
@@ -52,6 +54,8 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
         try {
           logger.info({
             message: "downloadDocuments:: Processing document",
+            id: doc.id,
+            airtableID: doc.airtableID,
             title: doc.title,
           });
           const { url, docURLs } = doc;
@@ -64,6 +68,8 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
           if (urlsToFetch.length === 0) {
             logger.warn({
               message: "downloadDocuments:: Document has no URL",
+              id: doc.id,
+              airtableID: doc.airtableID,
               title: doc.title,
             });
             continue;
@@ -85,6 +91,8 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
             } catch (downloadError) {
               logger.warn({
                 message: "downloadDocuments:: Failed to download URL",
+                id: doc.id,
+                airtableID: doc.airtableID,
                 title: doc.title,
                 url: fileUrl,
                 error:
@@ -99,7 +107,10 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
             logger.warn({
               message:
                 "downloadDocuments:: No files were downloaded for document",
+              id: doc.id,
+              airtableID: doc.airtableID,
               title: doc.title,
+              attemptedURLs: urlsToFetch,
             });
             continue;
           }
@@ -114,6 +125,8 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
 
           logger.info({
             message: "downloadDocuments:: Document processed successfully",
+            id: doc.id,
+            airtableID: doc.airtableID,
             title: doc.title,
           });
           processedDocs.push({ id: doc.id });
@@ -121,6 +134,10 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
           logger.error({
             message: "downloadDocuments:: Error processing document",
             id: doc.id,
+            airtableID: doc.airtableID,
+            title: doc.title,
+            url: doc.url,
+            docURLs: doc.docURLs?.map((entry) => entry.url),
             error:
               docError instanceof Error ? docError.message : String(docError),
           });
@@ -128,7 +145,7 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
       }
 
       logger.info(
-        `downloadDocuments:: Successfully processed ${processedDocs.length} of ${documents.length} documents`
+        `downloadDocuments:: Successfully processed ${processedDocs.length} of ${documents.length} documents`,
       );
       return {
         output: {},
@@ -136,6 +153,8 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
     } catch (error) {
       logger.error({
         message: "downloadDocuments:: Error in document download task",
+        requestedDocumentIds:
+          (input as TaskInput | undefined)?.documentIds?.filter(Boolean) ?? [],
         error: error instanceof Error ? error.message : String(error),
       });
       throw error;

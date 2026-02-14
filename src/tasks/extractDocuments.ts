@@ -52,9 +52,12 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
             : {}),
         },
         select: {
+          title: true,
+          airtableID: true,
           files: true,
         },
         depth: 3,
+        limit: 0,
       });
       if (documents.length === 0) {
         logger.info("extractDocuments:: No documents to extract");
@@ -74,6 +77,8 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
             logger.warn({
               message: "extractDocuments:: Document has no file attachment",
               id: doc.id,
+              airtableID: doc.airtableID,
+              title: doc.title,
             });
             continue;
           }
@@ -93,6 +98,9 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
               logger.info({
                 message: "extractDocuments:: Using local file",
                 id: doc.id,
+                airtableID: doc.airtableID,
+                title: doc.title,
+                fileId: file.id,
                 filePath,
               });
               fileInput = filePath;
@@ -109,13 +117,19 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
                   message:
                     "extractDocuments:: Downloaded file from remote storage",
                   id: doc.id,
+                  airtableID: doc.airtableID,
+                  title: doc.title,
                   fileId: file.id,
+                  fileUrl: file.url,
                 });
               } catch (downloadError) {
                 logger.error({
                   message: "extractDocuments:: Error downloading remote file",
                   id: doc.id,
+                  airtableID: doc.airtableID,
+                  title: doc.title,
                   fileId: file.id,
+                  fileUrl: file.url,
                   error:
                     downloadError instanceof Error
                       ? downloadError.message
@@ -128,6 +142,8 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
                 message:
                   "extractDocuments:: File unavailable locally and has no URL",
                 id: doc.id,
+                airtableID: doc.airtableID,
+                title: doc.title,
                 fileId: file.id,
               });
               continue;
@@ -140,6 +156,9 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
                 logger.warn({
                   message: "extractDocuments:: No text extracted from document",
                   id: doc.id,
+                  airtableID: doc.airtableID,
+                  title: doc.title,
+                  fileId: file.id,
                 });
                 continue;
               }
@@ -147,6 +166,9 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
               logger.info({
                 message: "extractDocuments:: Successfully extracted text",
                 id: doc.id,
+                airtableID: doc.airtableID,
+                title: doc.title,
+                fileId: file.id,
                 textLength: extractedText.join("\n").length,
               });
 
@@ -173,6 +195,8 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
                   logger.warn({
                     message: "extractDocuments:: Failed to delete temp file",
                     id: doc.id,
+                    airtableID: doc.airtableID,
+                    title: doc.title,
                     fileId: file.id,
                     error:
                       cleanupError instanceof Error
@@ -189,6 +213,8 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
               message:
                 "extractDocuments:: Skipping document update - no readable text",
               id: doc.id,
+              airtableID: doc.airtableID,
+              title: doc.title,
             });
             continue;
           }
@@ -210,11 +236,16 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
           logger.info({
             message: "extractDocuments:: Updated document with extracted text",
             id: doc.id,
+            airtableID: doc.airtableID,
+            title: doc.title,
           });
         } catch (docError) {
           logger.error({
             message: "extractDocuments:: Error processing individual document",
             id: doc.id,
+            airtableID: doc.airtableID,
+            title: doc.title,
+            fileCount: doc.files?.length ?? 0,
             error:
               docError instanceof Error ? docError.message : String(docError),
           });
@@ -233,6 +264,8 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
     } catch (error) {
       logger.error({
         message: "extractDocuments:: Error in document extraction task",
+        requestedDocumentIds:
+          (input as TaskInput | undefined)?.documentIds?.filter(Boolean) ?? [],
         error: error instanceof Error ? error.message : String(error),
       });
       throw error;
