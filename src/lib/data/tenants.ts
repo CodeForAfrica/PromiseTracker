@@ -15,6 +15,11 @@ export const getAllTenants = async (): Promise<
 > => {
   const { docs } = await payload.find({
     collection: "tenants",
+    where: {
+      publish: {
+        equals: true,
+      },
+    },
     limit: 0,
     sort: "name",
   });

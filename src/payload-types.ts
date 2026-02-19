@@ -341,6 +341,7 @@ export interface Tenant {
     | 'ESH'
     | 'ZMB'
     | 'ZWE';
+  publish?: boolean | null;
   airtableID?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -1634,6 +1635,7 @@ export interface TenantsSelect<T extends boolean = true> {
   name?: T;
   locale?: T;
   country?: T;
+  publish?: T;
   airtableID?: T;
   updatedAt?: T;
   createdAt?: T;

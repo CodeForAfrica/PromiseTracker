@@ -1,6 +1,6 @@
-import { BasePayload, TaskConfig } from "payload";
+import { TaskConfig } from "payload";
 import { createFactCheckClaim } from "@/lib/meedan";
-import { markDocumentAsProcessed } from "@/lib/airtable";
+import { markDocumentAsProcessed, updateDocumentStatus } from "@/lib/airtable";
 import {
   AiExtraction as AiExtractionDoc,
   Document,
@@ -23,22 +23,25 @@ const getExtractionsToUpload = (doc: AiExtractionDoc) => {
   );
 };
 
+const hasPendingExtractions = (doc: AiExtractionDoc): boolean =>
+  (doc.extractions ?? []).some((extraction) => !extraction?.checkMediaId);
+
+const hasUploadedExtractions = (doc: AiExtractionDoc): boolean =>
+  (doc.extractions ?? []).some((extraction) => Boolean(extraction?.checkMediaId));
+
 const checkAndMarkDocumentComplete = async (
   doc: Document,
-  payload: BasePayload,
+  airtableAPIKey?: string | null,
 ): Promise<void> => {
-  if (doc.airtableID) {
-    const {
-      airtable: { airtableAPIKey },
-    } = await payload.findGlobal({
-      slug: "settings",
-    });
-
-    await markDocumentAsProcessed({
-      airtableAPIKey,
-      airtableID: doc.airtableID,
-    });
+  if (!doc.airtableID || !airtableAPIKey) {
+    return;
   }
+
+  await markDocumentAsProcessed({
+    airtableAPIKey,
+    airtableID: doc.airtableID,
+    status: "Uploaded to Meedan",
+  });
 };
 
 export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
@@ -54,6 +57,7 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
     try {
       const {
         meedan: { meedanAPIKey, teamId },
+        airtable: { airtableAPIKey },
       } = await payload.findGlobal({
         slug: "settings",
       });
@@ -61,6 +65,91 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
       if (!meedanAPIKey || !teamId) {
         throw new Error("Meedan API key or team ID not configured in settings");
       }
+
+      const setDocumentStatus = async (
+        airtableID: string | null | undefined,
+        status: string,
+      ) => {
+        if (!airtableID || !airtableAPIKey) {
+          return;
+        }
+
+        try {
+          await updateDocumentStatus({
+            airtableAPIKey,
+            airtableID,
+            status,
+          });
+        } catch (statusError) {
+          logger.warn({
+            message: "uploadToMeedan:: Failed to update Airtable status",
+            airtableID,
+            status,
+            error:
+              statusError instanceof Error
+                ? statusError.message
+                : String(statusError),
+          });
+        }
+      };
+
+      const setDocumentFailedStatus = async (
+        airtableID: string | null | undefined,
+        reason: string,
+      ) => {
+        await setDocumentStatus(airtableID, `Failed: ${reason}`);
+      };
+
+      const canMarkDocumentAsProcessed = async (
+        documentId: string,
+      ): Promise<boolean> => {
+        const { docs: extractionDocs } = await payload.find({
+          collection: "ai-extractions",
+          where: {
+            document: {
+              equals: documentId,
+            },
+          },
+          limit: 0,
+          select: {
+            extractions: true,
+          },
+        });
+
+        if (extractionDocs.length === 0) {
+          return false;
+        }
+
+        let hasAnyUploadedPromise = false;
+
+        for (const extractionDoc of extractionDocs as AiExtractionDoc[]) {
+          if (hasPendingExtractions(extractionDoc)) {
+            return false;
+          }
+
+          if (hasUploadedExtractions(extractionDoc)) {
+            hasAnyUploadedPromise = true;
+          }
+        }
+
+        return hasAnyUploadedPromise;
+      };
+
+      const markDocumentAsProcessedWhenReady = async (
+        document: Document,
+      ): Promise<boolean> => {
+        if (!document.id || !document.airtableID || !airtableAPIKey) {
+          return false;
+        }
+
+        const canMark = await canMarkDocumentAsProcessed(String(document.id));
+        if (!canMark) {
+          return false;
+        }
+
+        await checkAndMarkDocumentComplete(document, airtableAPIKey);
+        return true;
+      };
 
       const documentIdFilter = new Set(
         ((input as TaskInput | undefined)?.documentIds || []).filter(Boolean),
@@ -116,6 +205,9 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
             const extractionsToUpload = getExtractionsToUpload(doc);
 
             if (extractionsToUpload.length === 0) {
+              const markedAsProcessed =
+                await markDocumentAsProcessedWhenReady(document);
+
               logger.info({
                 message:
                   "uploadToMeedan:: AI extraction has no unprocessed entries",
@@ -124,10 +216,12 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
                 documentId,
                 documentTitle: document?.title,
                 documentAirtableID: document?.airtableID,
+                markedAsProcessed,
               });
               continue;
             }
 
+            await setDocumentStatus(document.airtableID, "Uploading to Meedan");
             const entity = document.politicalEntity as
               | PoliticalEntity
               | string
@@ -135,6 +229,10 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
               | undefined;
             if (!entity || typeof entity === "string") {
               failedExtractionDocs += 1;
+              await setDocumentFailedStatus(
+                document.airtableID,
+                "Missing populated political entity for upload",
+              );
               logger.error({
                 message:
                   "uploadToMeedan:: Document has no populated political entity",
@@ -151,6 +249,10 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
             const tenant = entity.tenant as Tenant | string | null | undefined;
             if (!tenant || typeof tenant === "string") {
               failedExtractionDocs += 1;
+              await setDocumentFailedStatus(
+                document.airtableID,
+                "Political entity tenant missing for upload",
+              );
               logger.error({
                 message: "uploadToMeedan:: Political entity has no tenant",
                 extractionDocId: doc.id,
@@ -313,6 +415,10 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
             }
 
             if (docFailedExtractions > 0) {
+              await setDocumentFailedStatus(
+                document.airtableID,
+                `${docFailedExtractions} extraction(s) failed during upload`,
+              );
               logger.warn({
                 message:
                   "uploadToMeedan:: Skipping Airtable processed mark because some extractions failed",
@@ -329,8 +435,29 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
             }
 
             try {
-              await checkAndMarkDocumentComplete(document, payload);
+              const markedAsProcessed =
+                await markDocumentAsProcessedWhenReady(document);
+
+              if (!markedAsProcessed) {
+                logger.info({
+                  message:
+                    "uploadToMeedan:: Skipping processed mark; pending uploads remain for this document",
+                  extractionDocId: doc.id,
+                  extractionDocTitle: doc.title,
+                  documentId,
+                  documentTitle: document?.title,
+                  documentAirtableID: document?.airtableID,
+                });
+              }
             } catch (markCompleteError) {
+              const markCompleteErrorMessage =
+                markCompleteError instanceof Error
+                  ? markCompleteError.message
+                  : String(markCompleteError);
+              await setDocumentFailedStatus(
+                document.airtableID,
+                `Failed marking document processed: ${markCompleteErrorMessage}`,
+              );
               logger.error({
                 message:
                   "uploadToMeedan:: Failed marking Airtable document as processed",
@@ -339,16 +466,16 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
                 documentId,
                 documentTitle: document?.title,
                 documentAirtableID: document?.airtableID,
-                error:
-                  markCompleteError instanceof Error
-                    ? markCompleteError.message
-                    : String(markCompleteError),
+                error: markCompleteErrorMessage,
               });
             }
 
             processedExtractionDocs += 1;
           } catch (docError) {
             failedExtractionDocs += 1;
+            const errorMessage =
+              docError instanceof Error ? docError.message : String(docError);
+            await setDocumentFailedStatus(document?.airtableID, errorMessage);
             logger.error({
               message: "uploadToMeedan:: Failed processing extraction document",
               extractionDocId: doc.id,
@@ -356,8 +483,7 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
               documentId,
               documentTitle: document?.title,
               documentAirtableID: document?.airtableID,
-              error:
-                docError instanceof Error ? docError.message : String(docError),
+              error: errorMessage,
             });
           }
         }

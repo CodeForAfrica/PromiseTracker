@@ -3,6 +3,7 @@ import { TaskConfig } from "payload";
 import { existsSync, readFileSync } from "fs";
 import { unlink } from "fs/promises";
 import { join } from "path";
+import { updateDocumentStatus } from "@/lib/airtable";
 import { Media } from "@/payload-types";
 import { downloadFile } from "@/utils/files";
 import { getTaskLogger, withTaskTracing, type TaskInput } from "./utils";
@@ -35,6 +36,46 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
     logger.info("extractDocuments:: Starting document text extraction");
 
     try {
+      const {
+        airtable: { airtableAPIKey },
+      } = await payload.findGlobal({
+        slug: "settings",
+      });
+
+      const setDocumentStatus = async (
+        airtableID: string | null | undefined,
+        status: string,
+      ) => {
+        if (!airtableID || !airtableAPIKey) {
+          return;
+        }
+
+        try {
+          await updateDocumentStatus({
+            airtableAPIKey,
+            airtableID,
+            status,
+          });
+        } catch (statusError) {
+          logger.warn({
+            message: "extractDocuments:: Failed to update Airtable status",
+            airtableID,
+            status,
+            error:
+              statusError instanceof Error
+                ? statusError.message
+                : String(statusError),
+          });
+        }
+      };
+
+      const setDocumentFailedStatus = async (
+        airtableID: string | null | undefined,
+        reason: string,
+      ) => {
+        await setDocumentStatus(airtableID, `Failed: ${reason}`);
+      };
+
       const documentIds =
         (input as TaskInput | undefined)?.documentIds?.filter(Boolean) ?? [];
       const { docs: documents } = await payload.find({
@@ -73,7 +114,12 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
 
       for (const doc of documents) {
         try {
+          await setDocumentStatus(doc.airtableID, "Extracting");
           if (!doc.files?.length) {
+            await setDocumentFailedStatus(
+              doc.airtableID,
+              "No downloaded file attachment found for text extraction",
+            );
             logger.warn({
               message: "extractDocuments:: Document has no file attachment",
               id: doc.id,
@@ -209,6 +255,10 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
           }
 
           if (!hasExtractedText) {
+            await setDocumentFailedStatus(
+              doc.airtableID,
+              "No readable text extracted from document",
+            );
             logger.warn({
               message:
                 "extractDocuments:: Skipping document update - no readable text",
@@ -239,15 +289,18 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
             airtableID: doc.airtableID,
             title: doc.title,
           });
+          await setDocumentStatus(doc.airtableID, "Extracted");
         } catch (docError) {
+          const errorMessage =
+            docError instanceof Error ? docError.message : String(docError);
+          await setDocumentFailedStatus(doc.airtableID, errorMessage);
           logger.error({
             message: "extractDocuments:: Error processing individual document",
             id: doc.id,
             airtableID: doc.airtableID,
             title: doc.title,
             fileCount: doc.files?.length ?? 0,
-            error:
-              docError instanceof Error ? docError.message : String(docError),
+            error: errorMessage,
           });
         }
       }

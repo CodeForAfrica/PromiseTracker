@@ -4,6 +4,7 @@ import {
   getAirtableCountries,
   getAirtablePoliticalEntities,
   getDocumentsByIds,
+  updatePoliticalEntityStatus,
 } from "@/lib/airtable";
 import { TaskConfig } from "payload";
 import { downloadFile } from "@/utils/files";
@@ -150,7 +151,7 @@ export const CreatePoliticalEntity: TaskConfig = {
             (entry, index) => entry.url !== existingDocURLs[index],
           );
 
-        const newUrl = normalize(airtableDoc.uRL);
+        const newUrl = normalize(airtableDoc.docSourceUrl);
         const existingUrl = normalize(existingDoc.url);
 
         if (!docUrlsChanged && (!newUrl || newUrl === existingUrl)) {
@@ -240,6 +241,38 @@ export const CreatePoliticalEntity: TaskConfig = {
       };
 
       const countryCache = new Map<string, any>();
+      const normalizeStatusMessage = (value: string) => {
+        const trimmed = value.trim();
+        const MAX_LENGTH = 500;
+        if (trimmed.length <= MAX_LENGTH) {
+          return trimmed;
+        }
+        return `${trimmed.slice(0, MAX_LENGTH - 3)}...`;
+      };
+
+      const setEntityStatus = async (
+        airtableEntityId: string,
+        status: string | null,
+      ) => {
+        try {
+          await updatePoliticalEntityStatus({
+            airtableAPIKey,
+            airtableID: airtableEntityId,
+            status: status ? normalizeStatusMessage(status) : null,
+          });
+        } catch (statusError) {
+          logger.warn({
+            message:
+              "createPoliticalEntity:: Failed updating Airtable entity status",
+            airtableEntityId,
+            status,
+            error:
+              statusError instanceof Error
+                ? statusError.message
+                : String(statusError ?? ""),
+          });
+        }
+      };
 
       const getTenantForEntity = (entityCountryId?: string) => {
         if (!entityCountryId) {
@@ -273,7 +306,21 @@ export const CreatePoliticalEntity: TaskConfig = {
       let failedDocumentLinks = 0;
 
       for (const entity of entities) {
-        if (!entity || !entity.name) {
+        if (!entity) {
+          continue;
+        }
+
+        if (!entity.politicalEntityName) {
+          failedCount += 1;
+          await setEntityStatus(
+            entity.id,
+            "Missing required field: Political Entity Name",
+          );
+          logger.warn({
+            message:
+              "createPoliticalEntity:: Skipping entity without a political entity name",
+            airtableEntityId: entity.id,
+          });
           continue;
         }
 
@@ -285,31 +332,38 @@ export const CreatePoliticalEntity: TaskConfig = {
           const tenantForEntity = getTenantForEntity(entityCountryId);
 
           if (!tenantForEntity) {
+            failedCount += 1;
+            await setEntityStatus(
+              entity.id,
+              "Missing tenant mapping for country. Ensure Country is set and mapped to a tenant.",
+            );
             logger.warn({
               message:
                 "createPoliticalEntity:: Tenant not found for entity country",
               airtableEntityId: entity.id,
-              airtableEntityName: entity.name,
+              airtableEntityName: entity.politicalEntityName,
               airtableCountryId: entityCountryId,
               airtableCountryLabel: countryRecord?.country,
-              airtableCountryName: countryRecord?.name,
+              airtableCountryName: countryRecord?.countryName,
             });
             continue;
           }
 
           const imageUrl = entity.image?.[0];
           if (!imageUrl) {
+            failedCount += 1;
+            await setEntityStatus(entity.id, "Missing required field: Image");
             logger.warn({
               message: "createPoliticalEntity:: Skipping entity without image",
               airtableEntityId: entity.id,
-              airtableEntityName: entity.name,
+              airtableEntityName: entity.politicalEntityName,
             });
             continue;
           }
 
           let existingEntity =
             existingByAirtable.get(entity.id) ||
-            existingByName.get(entity.name.toLowerCase());
+            existingByName.get(entity.politicalEntityName.toLowerCase());
 
           const periodFrom = toIsoDate(entity.periodFrom);
           const periodTo = toIsoDate(entity.periodTo);
@@ -317,11 +371,16 @@ export const CreatePoliticalEntity: TaskConfig = {
             entity.title?.trim() || (existingEntity?.position ?? "Unknown");
 
           if (!periodFrom || !periodTo) {
+            failedCount += 1;
+            await setEntityStatus(
+              entity.id,
+              "Missing required fields: Period From and/or Period To",
+            );
             logger.warn({
               message:
                 "createPoliticalEntity:: Skipping entity without valid term dates",
               airtableEntityId: entity.id,
-              airtableEntityName: entity.name,
+              airtableEntityName: entity.politicalEntityName,
               periodFrom: entity.periodFrom,
               periodTo: entity.periodTo,
             });
@@ -333,7 +392,7 @@ export const CreatePoliticalEntity: TaskConfig = {
             const mediaUpload = await payload.create({
               collection: "media",
               data: {
-                alt: entity.name || "",
+                alt: entity.politicalEntityName || "",
                 externalUrl: imageUrl,
               },
               filePath,
@@ -346,14 +405,14 @@ export const CreatePoliticalEntity: TaskConfig = {
               collection: "political-entities",
               data: {
                 tenant: tenantForEntity.id,
-                name: entity.name,
+                name: entity.politicalEntityName,
                 periodFrom,
                 periodTo,
                 position,
                 image: mediaId,
                 region: entity.region,
                 airtableID: entity.id,
-                slug: formatSlug(entity.name),
+                slug: formatSlug(entity.politicalEntityName),
               },
             });
 
@@ -364,11 +423,11 @@ export const CreatePoliticalEntity: TaskConfig = {
           } else {
             const updateData: Record<string, unknown> = {};
 
-            if (existingEntity.name !== entity.name) {
+            if (existingEntity.name !== entity.politicalEntityName) {
               existingByName.delete(existingEntity.name.toLowerCase());
-              updateData.name = entity.name;
+              updateData.name = entity.politicalEntityName;
               if (existingEntity.slugLock !== true) {
-                updateData.slug = formatSlug(entity.name);
+                updateData.slug = formatSlug(entity.politicalEntityName);
               }
             }
 
@@ -411,7 +470,7 @@ export const CreatePoliticalEntity: TaskConfig = {
               const mediaUpload = await payload.create({
                 collection: "media",
                 data: {
-                  alt: entity.name || "",
+                  alt: entity.politicalEntityName || "",
                   externalUrl: imageUrl,
                 },
                 filePath,
@@ -448,10 +507,10 @@ export const CreatePoliticalEntity: TaskConfig = {
                 message:
                   "createPoliticalEntity:: Failed syncing linked document URLs",
                 airtableEntityId: entity.id,
-                airtableEntityName: entity.name,
+                airtableEntityName: entity.politicalEntityName,
                 airtableDocumentId: docId,
-                airtableDocumentTitle: airtableDoc?.name,
-                airtableDocumentUrl: airtableDoc?.uRL,
+                airtableDocumentTitle: airtableDoc?.documentName,
+                airtableDocumentUrl: airtableDoc?.docSourceUrl,
                 airtableDocumentFileCount: airtableDoc?.documents?.length ?? 0,
                 error:
                   documentError instanceof Error
@@ -460,21 +519,28 @@ export const CreatePoliticalEntity: TaskConfig = {
               });
             }
           }
+
+          await setEntityStatus(entity.id, "Created");
         } catch (entityError) {
           failedCount += 1;
+          const errorMessage =
+            entityError instanceof Error
+              ? entityError.message
+              : String(entityError ?? "");
+          await setEntityStatus(
+            entity.id,
+            `Failed syncing entity: ${errorMessage}`,
+          );
           logger.error({
             message: "createPoliticalEntity:: Failed processing entity",
             airtableEntityId: entity.id,
-            airtableEntityName: entity.name,
+            airtableEntityName: entity.politicalEntityName,
             airtableEntityTitle: entity.title,
             airtableEntityRegion: entity.region,
             airtableEntityCountryIds: entity.country,
             airtableEntityDocumentIds: entity.documents,
             airtableEntityImageUrl: entity.image?.[0],
-            error:
-              entityError instanceof Error
-                ? entityError.message
-                : String(entityError ?? ""),
+            error: errorMessage,
           });
         }
       }
