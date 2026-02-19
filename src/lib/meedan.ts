@@ -1,6 +1,7 @@
 const BASE_URL = "https://check-api.checkmedia.org/api/graphql";
 const DEFAULT_CHANNEL_ID = "1";
 const DEFAULT_PAGE_SIZE = 100;
+const MAX_RESPONSE_BODY_PREVIEW_LENGTH = 2000;
 const PUBLISHED_REPORTS_QUERY = `
   query PublishedReports($query: String!) {
     search(query: $query) {
@@ -38,6 +39,90 @@ const PUBLISHED_REPORTS_QUERY = `
     }
   }
 `;
+
+const toErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
+
+const previewResponseBody = (rawBody: string): string => {
+  const normalized = rawBody.replace(/\s+/g, " ").trim();
+
+  if (!normalized) {
+    return "(empty)";
+  }
+
+  if (normalized.length <= MAX_RESPONSE_BODY_PREVIEW_LENGTH) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, MAX_RESPONSE_BODY_PREVIEW_LENGTH)}... (truncated)`;
+};
+
+const getTraceHeaders = (response: Response): string => {
+  const traceHeaderKeys = [
+    "x-request-id",
+    "x-amzn-requestid",
+    "cf-ray",
+    "x-cloud-trace-context",
+  ] as const;
+
+  const headers = traceHeaderKeys
+    .map((key) => [key, response.headers.get(key)] as const)
+    .filter(([, value]) => Boolean(value))
+    .map(([key, value]) => `${key}=${value}`);
+
+  return headers.length > 0 ? headers.join(", ") : "none";
+};
+
+const throwHttpErrorWithBody = async ({
+  response,
+  operation,
+}: {
+  response: Response;
+  operation: string;
+}): Promise<never> => {
+  let bodyPreview = "(unavailable)";
+
+  try {
+    const responseBody = await response.text();
+    bodyPreview = previewResponseBody(responseBody);
+  } catch (readError) {
+    bodyPreview = `(failed to read response body: ${toErrorMessage(readError)})`;
+  }
+
+  const traceHeaders = getTraceHeaders(response);
+  throw new Error(
+    `[CheckMedia:${operation}] HTTP ${response.status} ${response.statusText}; traceHeaders=${traceHeaders}; responseBody=${bodyPreview}`,
+  );
+};
+
+const formatGraphQLErrorDetails = (
+  errors: Array<{
+    message?: string;
+    path?: string[];
+    locations?: Array<{ line?: number; column?: number }>;
+  }>,
+): string => {
+  const details = errors.map((error, index) => {
+    const message = error?.message ?? "Unknown GraphQL error";
+    const path = Array.isArray(error?.path) ? error.path.join(".") : "";
+    const location = Array.isArray(error?.locations)
+      ? error.locations
+          .map((entry) => `${entry?.line ?? "?"}:${entry?.column ?? "?"}`)
+          .join(",")
+      : "";
+
+    return [
+      `#${index + 1}`,
+      message,
+      path ? `path=${path}` : "",
+      location ? `location=${location}` : "",
+    ]
+      .filter(Boolean)
+      .join(" | ");
+  });
+
+  return details.join(" ; ");
+};
 
 const createMutationQuery = () => {
   return `
@@ -137,7 +222,10 @@ export const fetchVerificationStatuses = async ({
   });
 
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+    await throwHttpErrorWithBody({
+      response,
+      operation: "fetchVerificationStatuses",
+    });
   }
 
   const json = (await response.json()) as VerificationStatusesResponse;
@@ -319,7 +407,7 @@ const extractAnnotationValue = (value: unknown, depth = 0): string | null => {
       if (key in (value as Record<string, unknown>)) {
         const extracted = extractAnnotationValue(
           (value as Record<string, unknown>)[key],
-          depth + 1
+          depth + 1,
         );
         if (extracted) {
           return extracted;
@@ -332,7 +420,7 @@ const extractAnnotationValue = (value: unknown, depth = 0): string | null => {
 };
 
 export const mapPublishedReports = (
-  payload: PublishedReportsResponse
+  payload: PublishedReportsResponse,
 ): PublishedReport[] => {
   const edges = payload?.data?.search?.medias?.edges?.filter(Boolean) ?? [];
 
@@ -359,8 +447,7 @@ export const mapPublishedReports = (
               continue;
             }
 
-            const fileUrls =
-              nodeData?.first_response?.file_data?.file_urls;
+            const fileUrls = nodeData?.first_response?.file_data?.file_urls;
 
             if (Array.isArray(fileUrls)) {
               for (const value of fileUrls) {
@@ -386,7 +473,7 @@ export const mapPublishedReports = (
 
       const image = findAnnotationValue(
         "what_is_the_image_related_to_the_promise",
-        "image"
+        "image",
       );
 
       if (!meedanId) {
@@ -431,7 +518,10 @@ export const fetchPublishedReports = async ({
   });
 
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+    await throwHttpErrorWithBody({
+      response,
+      operation: "fetchPublishedReports",
+    });
   }
 
   const json = (await response.json()) as PublishedReportsResponse;
@@ -469,14 +559,17 @@ export const postRequest = async ({
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      await throwHttpErrorWithBody({
+        response,
+        operation: "postRequest.createProjectMedia",
+      });
     }
 
     const result: CreateProjectMediaResponse = await response.json();
 
     if (result.errors && result.errors.length > 0) {
       throw new Error(
-        `GraphQL errors: ${result.errors.map((e) => e.message).join(", ")}`
+        `[CheckMedia:postRequest.createProjectMedia] GraphQL errors: ${formatGraphQLErrorDetails(result.errors)}`,
       );
     }
 
@@ -591,16 +684,18 @@ export const fetchProjectMediaStatuses = async ({
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      await throwHttpErrorWithBody({
+        response,
+        operation: "fetchProjectMediaStatuses",
+      });
     }
 
     const payload = (await response.json()) as ProjectMediaSearchResponse;
 
     if (payload.errors && payload.errors.length > 0) {
-      const message = payload.errors
-        .map((error) => error?.message ?? "Unknown error")
-        .join("; ");
-      throw new Error(`GraphQL errors: ${message}`);
+      throw new Error(
+        `[CheckMedia:fetchProjectMediaStatuses] GraphQL errors: ${formatGraphQLErrorDetails(payload.errors)}`,
+      );
     }
 
     const search = payload?.data?.search;
