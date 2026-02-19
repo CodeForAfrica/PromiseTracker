@@ -23,6 +23,98 @@ const getExtractionsToUpload = (doc: AiExtractionDoc) => {
   );
 };
 
+const looksLikeHostname = (value: string): boolean =>
+  /^[a-z0-9.-]+\.[a-z]{2,}(?:[/:?#]|$)/i.test(value);
+
+const getAppBaseUrl = (): string | null => {
+  const raw = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    return new URL(raw).toString();
+  } catch {
+    return null;
+  }
+};
+
+const toAbsoluteHttpUrl = (
+  candidate?: string | null,
+  baseUrl?: string | null,
+): string | null => {
+  const value = candidate?.trim();
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return parsed.toString();
+    }
+    return null;
+  } catch {
+    // Continue to fallback parsers below.
+  }
+
+  if (value.startsWith("//")) {
+    try {
+      return new URL(`https:${value}`).toString();
+    } catch {
+      return null;
+    }
+  }
+
+  if (looksLikeHostname(value)) {
+    try {
+      return new URL(`https://${value}`).toString();
+    } catch {
+      return null;
+    }
+  }
+
+  if (baseUrl) {
+    try {
+      return new URL(value, baseUrl).toString();
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+};
+
+const resolveCheckMediaSourceUrl = ({
+  documentSourceUrl,
+  downloadedFileUrl,
+}: {
+  documentSourceUrl?: string | null;
+  downloadedFileUrl?: string | null;
+}): { url: string; source: "docSourceUrl" | "downloadedFile" } => {
+  const appBaseUrl = getAppBaseUrl();
+
+  const normalizedDocumentSourceUrl = toAbsoluteHttpUrl(
+    documentSourceUrl,
+    appBaseUrl,
+  );
+  if (normalizedDocumentSourceUrl) {
+    return { url: normalizedDocumentSourceUrl, source: "docSourceUrl" };
+  }
+
+  const normalizedDownloadedFileUrl = toAbsoluteHttpUrl(
+    downloadedFileUrl,
+    appBaseUrl,
+  );
+  if (normalizedDownloadedFileUrl) {
+    return { url: normalizedDownloadedFileUrl, source: "downloadedFile" };
+  }
+
+  throw new Error(
+    `No valid URL for CheckMedia upload. documentSourceUrl="${documentSourceUrl ?? ""}", downloadedFileUrl="${downloadedFileUrl ?? ""}", NEXT_PUBLIC_APP_URL="${process.env.NEXT_PUBLIC_APP_URL ?? ""}"`,
+  );
+};
+
 const hasPendingExtractions = (doc: AiExtractionDoc): boolean =>
   (doc.extractions ?? []).some((extraction) => !extraction?.checkMediaId);
 
@@ -296,8 +388,10 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
                   `${extraction.summary} \n\n${extraction.source}`.trim();
 
                 const downloadedFile = document.files as Media[];
-                const sourceUrl =
-                  document.url || downloadedFile?.[0]?.url || "";
+                const sourceUrlResolution = resolveCheckMediaSourceUrl({
+                  documentSourceUrl: document.url,
+                  downloadedFileUrl: downloadedFile?.[0]?.url,
+                });
 
                 const response = await createFactCheckClaim({
                   apiKey: meedanAPIKey,
@@ -307,7 +401,7 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
                   claimDescription: extraction.summary,
                   factCheck: {
                     title: extraction.summary,
-                    url: sourceUrl,
+                    url: sourceUrlResolution.url,
                     language: document.language || "",
                     publish_report: false,
                   },
@@ -328,6 +422,8 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
                   checkMediaId,
                   checkMediaURL,
                   returnedStatus,
+                  sourceUrl: sourceUrlResolution.url,
+                  sourceUrlSource: sourceUrlResolution.source,
                 });
 
                 let statusRelationId: string | undefined;
