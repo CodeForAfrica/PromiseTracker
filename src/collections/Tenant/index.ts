@@ -11,7 +11,7 @@ export const Tenants: CollectionConfig = {
   },
   admin: {
     useAsTitle: "name",
-    defaultColumns: ["name", "locale"],
+    defaultColumns: ["name", "locale", "publish"],
     group: {
       en: "Settings",
       fr: "Paramètres",
@@ -71,6 +71,19 @@ export const Tenants: CollectionConfig = {
       label: {
         en: "Country",
         fr: "Pays",
+      },
+    },
+    {
+      name: "publish",
+      type: "checkbox",
+      label: {
+        en: "Publish",
+        fr: "Publier",
+      },
+      defaultValue: false,
+      admin: {
+        position: "sidebar",
+        readOnly: true,
       },
     },
     airtableID(),

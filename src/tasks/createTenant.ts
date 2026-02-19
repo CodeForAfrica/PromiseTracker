@@ -40,6 +40,7 @@ export const CreateTenantFromAirtable: TaskConfig<"createTenantFromAirtable"> =
           });
 
           let createdTenants = 0;
+          let updatedTenants = 0;
           let failedTenants = 0;
 
           for (const country of tenantCountries) {
@@ -79,10 +80,34 @@ export const CreateTenantFromAirtable: TaskConfig<"createTenantFromAirtable"> =
                     name: country.name!,
                     locale: LANGUAGE_MAP[country.language!],
                     country: c.value as COUNTRY,
+                    publish: Boolean(country.publishThisCountry),
                     airtableID: country.id,
                   },
                 });
                 createdTenants += 1;
+              } else {
+                const shouldPublish = Boolean(country.publishThisCountry);
+
+                if (Boolean(tenant.publish) !== shouldPublish) {
+                  await payload.update({
+                    collection: "tenants",
+                    id: tenant.id,
+                    data: {
+                      publish: shouldPublish,
+                    },
+                  });
+
+                  logger.info({
+                    message:
+                      "createTenantFromAirtable:: Updated tenant publish status",
+                    tenantId: tenant.id,
+                    tenantName: tenant.name,
+                    tenantCountry: tenant.country,
+                    publish: shouldPublish,
+                    airtableCountryId: country.id,
+                  });
+                  updatedTenants += 1;
+                }
               }
             } catch (countryError) {
               failedTenants += 1;
@@ -105,6 +130,7 @@ export const CreateTenantFromAirtable: TaskConfig<"createTenantFromAirtable"> =
             message: "createTenantFromAirtable:: Country sync completed",
             totalCountries: tenantCountries.length,
             createdTenants,
+            updatedTenants,
             failedTenants,
           });
         } catch (error) {
