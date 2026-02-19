@@ -243,11 +243,50 @@ export const CreatePoliticalEntity: TaskConfig = {
       const countryCache = new Map<string, any>();
       const normalizeStatusMessage = (value: string) => {
         const trimmed = value.trim();
-        const MAX_LENGTH = 500;
+        const MAX_LENGTH = 160;
         if (trimmed.length <= MAX_LENGTH) {
           return trimmed;
         }
         return `${trimmed.slice(0, MAX_LENGTH - 3)}...`;
+      };
+
+      const simplifyEntityStatusError = (message: string): string => {
+        const normalized = message.replace(/\s+/g, " ").trim();
+
+        if (!normalized) {
+          return "Failed to sync entity";
+        }
+
+        const directPatterns: Array<[RegExp, string]> = [
+          [/missing tenant mapping for country/i, "Missing required field: Country"],
+          [/missing required field:\s*country/i, "Missing required field: Country"],
+          [/missing required field:\s*political entity name/i, "Missing required field: Political Entity Name"],
+          [/missing required field:\s*image/i, "Missing required field: Image"],
+          [/missing required fields?:\s*period from/i, "Missing required fields: Period From and Period To"],
+          [/url is invalid|invalid image url/i, "Invalid image URL"],
+          [/validation/i, "Validation failed while saving entity"],
+          [/unauthorized|forbidden|http\s*401|http\s*403/i, "Sync failed: Unauthorized"],
+          [/timeout|timed out|network|fetch failed|econn|enotfound/i, "Sync failed: Network error"],
+          [/failed syncing entity:/i, "Failed to sync entity"],
+        ];
+
+        for (const [pattern, simplified] of directPatterns) {
+          if (pattern.test(normalized)) {
+            return simplified;
+          }
+        }
+
+        if (
+          normalized.startsWith("Missing required field:") ||
+          normalized.startsWith("Missing required fields:")
+        ) {
+          return normalized
+            .replace("and/or", "and")
+            .replace(/\s+/g, " ")
+            .trim();
+        }
+
+        return "Failed to sync entity";
       };
 
       const setEntityStatus = async (
@@ -335,7 +374,7 @@ export const CreatePoliticalEntity: TaskConfig = {
             failedCount += 1;
             await setEntityStatus(
               entity.id,
-              "Missing tenant mapping for country. Ensure Country is set and mapped to a tenant.",
+              "Missing required field: Country",
             );
             logger.warn({
               message:
@@ -374,7 +413,7 @@ export const CreatePoliticalEntity: TaskConfig = {
             failedCount += 1;
             await setEntityStatus(
               entity.id,
-              "Missing required fields: Period From and/or Period To",
+              "Missing required fields: Period From and Period To",
             );
             logger.warn({
               message:
@@ -527,10 +566,7 @@ export const CreatePoliticalEntity: TaskConfig = {
             entityError instanceof Error
               ? entityError.message
               : String(entityError ?? "");
-          await setEntityStatus(
-            entity.id,
-            `Failed syncing entity: ${errorMessage}`,
-          );
+          await setEntityStatus(entity.id, simplifyEntityStatusError(errorMessage));
           logger.error({
             message: "createPoliticalEntity:: Failed processing entity",
             airtableEntityId: entity.id,
