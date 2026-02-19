@@ -54,7 +54,7 @@ export const CreateTenantFromAirtable: TaskConfig<"createTenantFromAirtable"> =
                   message:
                     "createTenantFromAirtable:: Skipping country with no local mapping",
                   airtableCountryId: country.id,
-                  airtableCountryName: country.name,
+                  airtableCountryName: country.countryName,
                   airtableCountryLabel: country.country,
                   airtableLanguage: country.language,
                 });
@@ -72,12 +72,12 @@ export const CreateTenantFromAirtable: TaskConfig<"createTenantFromAirtable"> =
               const tenant = docs[0];
               if (!tenant) {
                 logger.info(
-                  `createTenantFromAirtable:: Tenant ${country.name} does not exist. Creating one....`,
+                  `createTenantFromAirtable:: Tenant ${country.countryName} does not exist. Creating one....`,
                 );
                 await payload.create({
                   collection: "tenants",
                   data: {
-                    name: country.name!,
+                    name: country.countryName!,
                     locale: LANGUAGE_MAP[country.language!],
                     country: c.value as COUNTRY,
                     publish: Boolean(country.publishThisCountry),
@@ -115,7 +115,7 @@ export const CreateTenantFromAirtable: TaskConfig<"createTenantFromAirtable"> =
                 message:
                   "createTenantFromAirtable:: Failed processing Airtable country",
                 airtableCountryId: country.id,
-                airtableCountryName: country.name,
+                airtableCountryName: country.countryName,
                 airtableCountryLabel: country.country,
                 airtableLanguage: country.language,
                 error:

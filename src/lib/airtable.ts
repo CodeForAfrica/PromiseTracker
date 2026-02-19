@@ -61,6 +61,22 @@ export const getAirtablePoliticalEntities = async ({
   return entities;
 };
 
+export const updatePoliticalEntityStatus = async ({
+  airtableAPIKey,
+  airtableID,
+  status,
+}: {
+  airtableAPIKey: string;
+  airtableID: string;
+  status: string | null;
+}) => {
+  const db = new AirtableTs({ apiKey: airtableAPIKey });
+  await db.update(PoliticalEntitiestable, {
+    id: airtableID,
+    status,
+  });
+};
+
 export const getDocumentsByIds = async ({
   airtableAPIKey,
   ids,

@@ -4,7 +4,7 @@ import type { Item, Table } from "airtable-ts";
 
 export interface Countrie extends Item {
   id: string;
-  name: string | null; // Original field: "Name"
+  countryName: string | null; // Original field: "Country Name"
   country: string | null; // Original field: "Country"
   language: string | null; // Original field: "Language"
   duplicateError: boolean; // Original field: "⚠️ DUPLICATE ERROR"
@@ -19,7 +19,7 @@ export const countriesTable: Table<Countrie> = {
   baseId: "appIuU48pYIXtqDQg",
   tableId: "tbl1UynrhPUg2TUwM",
   mappings: {
-    name: "fld9B0heQiLDAoybE", // Original field: "Name"
+    countryName: "fld9B0heQiLDAoybE", // Original field: "Country Name"
     country: "fld2hAt2UYxtu6D3S", // Original field: "Country"
     language: "fldE7W8AuDTFJfLKA", // Original field: "Language"
     duplicateError: "fldktFZgJ2oxqcnYX", // Original field: "⚠️ DUPLICATE ERROR"
@@ -29,7 +29,7 @@ export const countriesTable: Table<Countrie> = {
     duplicateCheck: "fldhRnIx7TOSPeGPR", // Original field: "Duplicate Check"
   },
   schema: {
-    name: "string | null",
+    countryName: "string | null",
     country: "string | null",
     language: "string | null",
     duplicateError: "boolean",
@@ -107,6 +107,8 @@ export interface Document extends Item {
   processed: boolean; // Original field: "Processed"
   status: string | null; // Original field: "Status"
   statusDate: number | null; // Original field: "Status date"
+  emailOfCfaStaff: string | null; // Original field: "Email of CFA staff"
+  dateDocumentWasAddedToAirtable: number | null; // Original field: "Date document was added to Airtable"
   selectCountry: string[]; // Original field: "Select Country"
   nameFromCountries: string | null; // Original field: "Name (from Countries)"
   countryFromCountries: string | null; // Original field: "Country (from Countries)"
@@ -153,6 +155,8 @@ export const documentsTable: Table<Document> = {
     processed: "fld0F473Wlvj5V28m", // Original field: "Processed"
     status: "fldGo9feO6HiBQ1Zj", // Original field: "Status"
     statusDate: "fldbnGiaEJFL3yALB", // Original field: "Status date"
+    emailOfCfaStaff: "fldMUdX4juO3I6Asl", // Original field: "Email of CFA staff"
+    dateDocumentWasAddedToAirtable: "fldq9USQwJcNROuG8", // Original field: "Date document was added to Airtable"
     selectCountry: "fldwcjBq1FRS8JgdA", // Original field: "Select Country"
     nameFromCountries: "fldxx7Lw0ijjkSEvf", // Original field: "Name (from Countries)"
     countryFromCountries: "fldwEnkdd3PVyP1ov", // Original field: "Country (from Countries)"
@@ -194,6 +198,8 @@ export const documentsTable: Table<Document> = {
     processed: "boolean",
     status: "string | null",
     statusDate: "number | null",
+    emailOfCfaStaff: "string | null",
+    dateDocumentWasAddedToAirtable: "number | null",
     selectCountry: "string[]",
     nameFromCountries: "string | null",
     countryFromCountries: "string | null",
