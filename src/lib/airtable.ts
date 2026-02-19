@@ -6,6 +6,20 @@ import {
 } from "@/types/airtableSchema";
 import { formula } from "airtable-ts-formula";
 
+const MILLISECONDS_IN_SECOND = 1000;
+const MAX_AIRTABLE_STATUS_LENGTH = 500;
+
+const getAirtableStatusTimestamp = (): number =>
+  Math.floor(Date.now() / MILLISECONDS_IN_SECOND);
+
+const normalizeAirtableStatus = (status: string): string => {
+  const trimmed = status.trim();
+  if (trimmed.length <= MAX_AIRTABLE_STATUS_LENGTH) {
+    return trimmed;
+  }
+  return `${trimmed.slice(0, MAX_AIRTABLE_STATUS_LENGTH - 3)}...`;
+};
+
 export const getUnprocessedDocuments = async ({
   airtableAPIKey,
 }: {
@@ -28,14 +42,37 @@ export const getUnprocessedDocuments = async ({
 export const markDocumentAsProcessed = async ({
   airtableAPIKey,
   airtableID,
+  status = "Processed",
 }: {
   airtableAPIKey: string;
   airtableID: string;
+  status?: string;
+}) => {
+  await updateDocumentStatus({
+    airtableAPIKey,
+    airtableID,
+    status,
+    processed: true,
+  });
+};
+
+export const updateDocumentStatus = async ({
+  airtableAPIKey,
+  airtableID,
+  status,
+  processed,
+}: {
+  airtableAPIKey: string;
+  airtableID: string;
+  status: string;
+  processed?: boolean;
 }) => {
   const db = new AirtableTs({ apiKey: airtableAPIKey });
   await db.update(documentListTable, {
     id: airtableID,
-    processed: true,
+    status: normalizeAirtableStatus(status),
+    statusDate: getAirtableStatusTimestamp(),
+    ...(typeof processed === "boolean" ? { processed } : {}),
   });
 };
 

@@ -4,6 +4,7 @@ import { generateObject } from "ai";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import { convertLexicalToPlaintext } from "@payloadcms/richtext-lexical/plaintext";
+import { updateDocumentStatus } from "@/lib/airtable";
 import { getTaskLogger, withTaskTracing, type TaskInput } from "./utils";
 
 export const ExtractPromises: TaskConfig<"extractPromises"> = {
@@ -17,9 +18,44 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
     try {
       const {
         ai: { model: defaultModel, apiKey },
+        airtable: { airtableAPIKey },
       } = await payload.findGlobal({
         slug: "settings",
       });
+
+      const setDocumentStatus = async (
+        airtableID: string | null | undefined,
+        status: string,
+      ) => {
+        if (!airtableID || !airtableAPIKey) {
+          return;
+        }
+
+        try {
+          await updateDocumentStatus({
+            airtableAPIKey,
+            airtableID,
+            status,
+          });
+        } catch (statusError) {
+          logger.warn({
+            message: "extractPromises:: Failed to update Airtable status",
+            airtableID,
+            status,
+            error:
+              statusError instanceof Error
+                ? statusError.message
+                : String(statusError),
+          });
+        }
+      };
+
+      const setDocumentFailedStatus = async (
+        airtableID: string | null | undefined,
+        reason: string,
+      ) => {
+        await setDocumentStatus(airtableID, `Failed: ${reason}`);
+      };
 
       const google = createGoogleGenerativeAI({
         apiKey: apiKey,
@@ -92,6 +128,7 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
 
       for (const document of documents) {
         try {
+          await setDocumentStatus(document.airtableID, "Analysing by AI");
           const { extractedText } = document;
 
           const { docs: existingExtractions } = await payload.find({
@@ -127,6 +164,7 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
               });
             }
 
+            await setDocumentStatus(document.airtableID, "Analysed by AI");
             continue;
           }
 
@@ -143,6 +181,10 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
           const plainText = plainTextSegments.join("\n");
 
           if (!plainText || plainText?.length === 0) {
+            await setDocumentFailedStatus(
+              document.airtableID,
+              "No extracted text available for AI analysis",
+            );
             logger.error({
               message: "extractPromises:: No text to process",
               documentId: document.id,
@@ -216,6 +258,13 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
                 fullyProcessed: true,
               },
             });
+
+            await setDocumentStatus(document.airtableID, "Analysed by AI");
+          } else {
+            await setDocumentStatus(
+              document.airtableID,
+              "Analysed by AI (No promises found)",
+            );
           }
 
           processedDocs.push({
@@ -225,16 +274,18 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
           });
         } catch (documentError) {
           failedDocs += 1;
+          const errorMessage =
+            documentError instanceof Error
+              ? documentError.message
+              : String(documentError);
+          await setDocumentFailedStatus(document.airtableID, errorMessage);
           logger.error({
             message: "extractPromises:: Failed processing document",
             documentId: document.id,
             documentTitle: document.title,
             documentAirtableID: document.airtableID,
             fullyProcessed: document.fullyProcessed,
-            error:
-              documentError instanceof Error
-                ? documentError.message
-                : String(documentError),
+            error: errorMessage,
           });
         }
       }
