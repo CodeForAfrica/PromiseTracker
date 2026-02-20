@@ -2,6 +2,11 @@ import { TaskConfig } from "payload";
 import { createHash } from "node:crypto";
 import { unlink } from "node:fs/promises";
 import { updateDocumentStatus } from "@/lib/airtable";
+import {
+  addMediaSourceLookup,
+  getMediaIdFromLookup,
+  normalizeMediaSourceUrl,
+} from "@/lib/mediaUrl";
 import { downloadFile } from "@/utils/files";
 import { getTaskLogger, withTaskTracing, type TaskInput } from "./utils";
 
@@ -30,40 +35,32 @@ type DuplicateSource = {
   extractedText?: unknown;
 };
 
-const normalizeSourceUrl = (value?: string | null): string => {
-  const trimmed = (value ?? "").trim();
-
-  if (!trimmed) {
-    return "";
-  }
-
-  try {
-    const parsed = new URL(trimmed);
-    parsed.hash = "";
-    return parsed.toString();
-  } catch {
-    return trimmed;
-  }
+type ExistingMediaForLookup = {
+  id: string;
+  url?: string | null;
+  externalUrl?: string | null;
 };
 
-const getDocumentSourceUrls = (doc: Pick<DownloadableDocument, "url" | "docURLs">): string[] => {
+const getDocumentSourceUrls = (
+  doc: Pick<DownloadableDocument, "url" | "docURLs">,
+): string[] => {
   const preferredUrls =
     doc.docURLs
-      ?.map((entry) => normalizeSourceUrl(entry?.url))
+      ?.map((entry) => normalizeMediaSourceUrl(entry?.url))
       .filter((candidate): candidate is string => Boolean(candidate)) ?? [];
 
   if (preferredUrls.length > 0) {
     return Array.from(new Set(preferredUrls));
   }
 
-  const fallbackUrl = normalizeSourceUrl(doc.url);
+  const fallbackUrl = normalizeMediaSourceUrl(doc.url);
   return fallbackUrl ? [fallbackUrl] : [];
 };
 
 const createSourceSignature = (urls: string[]): string | null => {
-  const normalized = Array.from(new Set(urls.map(normalizeSourceUrl))).filter(
-    Boolean,
-  );
+  const normalized = Array.from(
+    new Set(urls.map((value) => normalizeMediaSourceUrl(value))),
+  ).filter(Boolean);
 
   if (normalized.length === 0) {
     return null;
@@ -251,12 +248,50 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
         }
       }
 
+      const mediaSourceLookup = new Map<string, string>();
+
+      if (sourceUrlsInScope.length > 0) {
+        const { docs: existingMediaDocs } = await payload.find({
+          collection: "media",
+          where: {
+            or: [
+              {
+                url: {
+                  in: sourceUrlsInScope,
+                },
+              },
+              {
+                externalUrl: {
+                  in: sourceUrlsInScope,
+                },
+              },
+            ],
+          },
+          select: {
+            url: true,
+            externalUrl: true,
+          },
+          depth: 0,
+          limit: 0,
+        });
+
+        for (const mediaDoc of existingMediaDocs as ExistingMediaForLookup[]) {
+          addMediaSourceLookup(
+            mediaSourceLookup,
+            mediaDoc.id,
+            mediaDoc.url,
+            mediaDoc.externalUrl,
+          );
+        }
+      }
+
       logger.info(
         `downloadDocuments:: Downloading ${documents.length}. Documents:\n ${documents.map((t) => `${t.title}\n`)}`,
       );
 
       const processedDocs = [];
       let dedupedDocs = 0;
+      let reusedFromMediaCount = 0;
 
       for (const doc of documents) {
         try {
@@ -320,19 +355,70 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
             continue;
           }
 
-          const fileIds: string[] = [];
-          for (const fileUrl of urlsToFetch) {
+          const reusableFileIds = Array.from(
+            new Set(
+              urlsToFetch
+                .map((sourceUrl) =>
+                  getMediaIdFromLookup(mediaSourceLookup, sourceUrl),
+                )
+                .filter((value): value is string => Boolean(value)),
+            ),
+          );
+
+          const missingUrls = urlsToFetch.filter(
+            (sourceUrl) => !getMediaIdFromLookup(mediaSourceLookup, sourceUrl),
+          );
+
+          if (missingUrls.length === 0 && reusableFileIds.length > 0) {
+            await payload.update({
+              collection: "documents",
+              id: doc.id,
+              data: {
+                files: reusableFileIds,
+              },
+            });
+
+            reusedFromMediaCount += 1;
+            await setDocumentStatus(doc.airtableID, "Downloaded");
+            logger.info({
+              message:
+                "downloadDocuments:: Reused existing media records for all source URLs",
+              id: doc.id,
+              airtableID: doc.airtableID,
+              title: doc.title,
+              reusedFileCount: reusableFileIds.length,
+            });
+            processedDocs.push({ id: doc.id });
+            continue;
+          }
+
+          const fileIds = [...reusableFileIds];
+
+          for (const fileUrl of missingUrls) {
+            let filePath: string | null = null;
+
             try {
-              const filePath = await downloadFile(fileUrl);
+              filePath = await downloadFile(fileUrl);
               const mediaUpload = await payload.create({
                 collection: "media",
                 data: {
                   alt: doc.title,
+                  externalUrl: fileUrl,
                 },
                 filePath,
               });
-              fileIds.push(mediaUpload.id);
-              await unlink(filePath);
+
+              const mediaId = (mediaUpload as any)?.id ?? mediaUpload;
+              if (mediaId) {
+                fileIds.push(mediaId);
+                addMediaSourceLookup(
+                  mediaSourceLookup,
+                  mediaId,
+                  fileUrl,
+                  (mediaUpload as any)?.url,
+                  (mediaUpload as any)?.externalUrl,
+                );
+              }
             } catch (downloadError) {
               logger.warn({
                 message: "downloadDocuments:: Failed to download URL",
@@ -345,10 +431,32 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
                     ? downloadError.message
                     : String(downloadError),
               });
+            } finally {
+              if (filePath) {
+                try {
+                  await unlink(filePath);
+                } catch (cleanupError) {
+                  logger.warn({
+                    message:
+                      "downloadDocuments:: Failed to cleanup downloaded temp file",
+                    id: doc.id,
+                    airtableID: doc.airtableID,
+                    title: doc.title,
+                    url: fileUrl,
+                    filePath,
+                    error:
+                      cleanupError instanceof Error
+                        ? cleanupError.message
+                        : String(cleanupError),
+                  });
+                }
+              }
             }
           }
 
-          if (fileIds.length === 0) {
+          const uniqueFileIds = Array.from(new Set(fileIds));
+
+          if (uniqueFileIds.length === 0) {
             await setDocumentFailedStatus(
               doc.airtableID,
               "Failed to download from all document source URLs",
@@ -368,20 +476,20 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
             collection: "documents",
             id: doc.id,
             data: {
-              files: fileIds,
+              files: uniqueFileIds,
             },
           });
 
           if (
             sourceSignature &&
-            fileIds.length > 0 &&
+            uniqueFileIds.length > 0 &&
             !dedupeSourcesBySignature.has(sourceSignature)
           ) {
             dedupeSourcesBySignature.set(sourceSignature, {
               documentId: doc.id,
               airtableID: doc.airtableID,
               title: doc.title,
-              fileIds,
+              fileIds: uniqueFileIds,
             });
           }
 
@@ -410,7 +518,7 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
       }
 
       logger.info(
-        `downloadDocuments:: Successfully processed ${processedDocs.length} of ${documents.length} documents (${dedupedDocs} reused from duplicates)`,
+        `downloadDocuments:: Successfully processed ${processedDocs.length} of ${documents.length} documents (${dedupedDocs} reused from duplicates, ${reusedFromMediaCount} reused from media URL lookup)`,
       );
       return {
         output: {},

@@ -11,6 +11,11 @@ import { downloadFile } from "@/utils/files";
 import { unlink } from "node:fs/promises";
 import { formatSlug } from "@/fields/slug/formatSlug";
 import type { Media } from "@/payload-types";
+import {
+  addMediaSourceLookup,
+  getMediaIdFromLookup,
+  normalizeMediaSourceUrl,
+} from "@/lib/mediaUrl";
 import { getTaskLogger, withTaskTracing } from "./utils";
 
 export const CreatePoliticalEntity: TaskConfig = {
@@ -183,6 +188,59 @@ export const CreatePoliticalEntity: TaskConfig = {
 
       const mediaExternalUrlCache = new Map<string, string>();
 
+      const mediaSourceLookup = new Map<string, string>();
+
+      const cacheMediaSourceLookup = (
+        mediaId: string,
+        ...candidates: Array<string | null | undefined>
+      ) => {
+        addMediaSourceLookup(mediaSourceLookup, mediaId, ...candidates);
+      };
+
+      const normalizedEntityImageUrls = Array.from(
+        new Set(
+          entities
+            .map((entity) => normalizeMediaSourceUrl(entity.image?.[0]))
+            .filter(Boolean),
+        ),
+      );
+
+      if (normalizedEntityImageUrls.length > 0) {
+        const { docs: existingMediaDocs } = await payload.find({
+          collection: "media",
+          where: {
+            or: [
+              {
+                url: {
+                  in: normalizedEntityImageUrls,
+                },
+              },
+              {
+                externalUrl: {
+                  in: normalizedEntityImageUrls,
+                },
+              },
+            ],
+          },
+          select: {
+            url: true,
+            externalUrl: true,
+          },
+          depth: 0,
+          limit: 0,
+        });
+
+        for (const media of existingMediaDocs as Array<
+          Pick<Media, "id" | "url" | "externalUrl">
+        >) {
+          cacheMediaSourceLookup(media.id, media.url, media.externalUrl);
+        }
+      }
+
+      const getExistingMediaIdForUrl = (url: string): string | null => {
+        return getMediaIdFromLookup(mediaSourceLookup, url);
+      };
+
       const getMediaExternalUrl = async (
         imageRef: string | Media | null | undefined,
       ): Promise<string> => {
@@ -200,7 +258,14 @@ export const CreatePoliticalEntity: TaskConfig = {
               collection: "media",
               id: imageRef,
             });
-            const url = normalize((media as any)?.externalUrl);
+            const externalOrMediaUrl =
+              (media as any)?.externalUrl || (media as any)?.url;
+            const url = normalize(externalOrMediaUrl);
+            cacheMediaSourceLookup(
+              imageRef,
+              (media as any)?.url,
+              (media as any)?.externalUrl,
+            );
             mediaExternalUrlCache.set(imageRef, url);
             return url;
           } catch (error) {
@@ -216,10 +281,17 @@ export const CreatePoliticalEntity: TaskConfig = {
         }
 
         const mediaId = (imageRef as any)?.id;
-        const url = normalize((imageRef as any)?.externalUrl);
+        const url = normalize(
+          (imageRef as any)?.externalUrl || (imageRef as any)?.url,
+        );
 
         if (mediaId) {
           mediaExternalUrlCache.set(mediaId, url);
+          cacheMediaSourceLookup(
+            mediaId,
+            (imageRef as any)?.url,
+            (imageRef as any)?.externalUrl,
+          );
         }
 
         return url;
@@ -427,18 +499,32 @@ export const CreatePoliticalEntity: TaskConfig = {
           }
 
           if (!existingEntity) {
-            const filePath = await downloadFile(imageUrl);
-            const mediaUpload = await payload.create({
-              collection: "media",
-              data: {
-                alt: entity.politicalEntityName || "",
-                externalUrl: imageUrl,
-              },
-              filePath,
-            });
-            await unlink(filePath);
+            let mediaId = getExistingMediaIdForUrl(imageUrl);
 
-            const mediaId = (mediaUpload as any)?.id ?? mediaUpload;
+            if (!mediaId) {
+              const filePath = await downloadFile(imageUrl);
+              const mediaUpload = await payload.create({
+                collection: "media",
+                data: {
+                  alt: entity.politicalEntityName || "",
+                  externalUrl: imageUrl,
+                },
+                filePath,
+              });
+              await unlink(filePath);
+
+              mediaId = (mediaUpload as any)?.id ?? mediaUpload;
+              if (!mediaId) {
+                throw new Error("Failed to resolve media ID for political entity image");
+              }
+
+              cacheMediaSourceLookup(
+                mediaId,
+                imageUrl,
+                (mediaUpload as any)?.url,
+                (mediaUpload as any)?.externalUrl,
+              );
+            }
 
             const createdEntity = await payload.create({
               collection: "political-entities",
@@ -505,17 +591,43 @@ export const CreatePoliticalEntity: TaskConfig = {
             );
 
             if (existingExternalUrl !== imageUrl) {
-              const filePath = await downloadFile(imageUrl);
-              const mediaUpload = await payload.create({
-                collection: "media",
-                data: {
-                  alt: entity.politicalEntityName || "",
-                  externalUrl: imageUrl,
-                },
-                filePath,
-              });
-              await unlink(filePath);
-              updateData.image = (mediaUpload as any)?.id ?? mediaUpload;
+              const reusableMediaId = getExistingMediaIdForUrl(imageUrl);
+              const currentImageId =
+                typeof existingEntity.image === "string"
+                  ? existingEntity.image
+                  : existingEntity.image?.id;
+
+              if (reusableMediaId) {
+                if (reusableMediaId !== currentImageId) {
+                  updateData.image = reusableMediaId;
+                }
+              } else {
+                const filePath = await downloadFile(imageUrl);
+                const mediaUpload = await payload.create({
+                  collection: "media",
+                  data: {
+                    alt: entity.politicalEntityName || "",
+                    externalUrl: imageUrl,
+                  },
+                  filePath,
+                });
+                await unlink(filePath);
+
+                const uploadedMediaId = (mediaUpload as any)?.id ?? mediaUpload;
+                if (!uploadedMediaId) {
+                  throw new Error(
+                    "Failed to resolve updated media ID for political entity image",
+                  );
+                }
+
+                updateData.image = uploadedMediaId;
+                cacheMediaSourceLookup(
+                  uploadedMediaId,
+                  imageUrl,
+                  (mediaUpload as any)?.url,
+                  (mediaUpload as any)?.externalUrl,
+                );
+              }
             }
 
             if (Object.keys(updateData).length > 0) {
