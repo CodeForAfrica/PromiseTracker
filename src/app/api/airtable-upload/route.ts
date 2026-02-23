@@ -122,6 +122,7 @@ const parseMultipartUpload = async (
     let fileSize = 0;
     let tempFilePath: string | null = null;
     let fileWritePromise: Promise<void> | null = null;
+    let activeWriteStream: ReturnType<typeof createWriteStream> | null = null;
     let fileSizeLimitedByBusboy = false;
 
     const settleReject = (error: unknown) => {
@@ -129,6 +130,11 @@ const parseMultipartUpload = async (
         return;
       }
       settled = true;
+
+      if (activeWriteStream && !activeWriteStream.destroyed) {
+        activeWriteStream.destroy();
+      }
+
       nodeStream.destroy();
       reject(toUploadRouteError(error));
     };
@@ -159,6 +165,34 @@ const parseMultipartUpload = async (
         }
 
         kind = parsedKind;
+
+        if (fileSeen) {
+          const metadataValidation = validateUploadMetadata(
+            {
+              fileName: originalFilename,
+              mimeType,
+            },
+            kind,
+          );
+          if (!metadataValidation.ok) {
+            settleReject(
+              new UploadRouteError(
+                metadataValidation.status,
+                metadataValidation.message,
+              ),
+            );
+            return;
+          }
+
+          const sizeValidation = validateUploadSize(fileSize, kind);
+          if (!sizeValidation.ok) {
+            settleReject(
+              new UploadRouteError(sizeValidation.status, sizeValidation.message),
+            );
+            return;
+          }
+        }
+
         return;
       }
 
@@ -185,26 +219,36 @@ const parseMultipartUpload = async (
         return;
       }
 
-      if (!kind) {
-        fileStream.resume();
-        settleReject(
-          new UploadRouteError(
-            400,
-            'Missing "kind" field before "file" in multipart payload.',
-          ),
-        );
-        return;
-      }
-
       fileSeen = true;
       originalFilename = info.filename?.trim() || "upload";
       mimeType = (info.mimeType ?? "").trim().toLowerCase();
+
+      if (kind) {
+        const metadataValidation = validateUploadMetadata(
+          {
+            fileName: originalFilename,
+            mimeType,
+          },
+          kind,
+        );
+        if (!metadataValidation.ok) {
+          fileStream.resume();
+          settleReject(
+            new UploadRouteError(
+              metadataValidation.status,
+              metadataValidation.message,
+            ),
+          );
+          return;
+        }
+      }
 
       const safeName = sanitizeUploadFileName(originalFilename);
       tempFilePath = join(tmpdir(), `${randomUUID()}-${safeName}`);
       onTempFilePathCreated(tempFilePath);
 
       const writeStream = createWriteStream(tempFilePath, { flags: "w" });
+      activeWriteStream = writeStream;
 
       fileStream.on("limit", () => {
         fileSizeLimitedByBusboy = true;
@@ -245,8 +289,16 @@ const parseMultipartUpload = async (
         settleReject(error);
       });
 
+      writeStream.on("close", () => {
+        if (activeWriteStream === writeStream) {
+          activeWriteStream = null;
+        }
+      });
+
       fileStream.pipe(writeStream);
-      fileWritePromise = finished(writeStream).then(() => undefined);
+      const writeFinishedPromise = finished(writeStream);
+      writeFinishedPromise.catch(() => undefined);
+      fileWritePromise = writeFinishedPromise.then(() => undefined);
     });
 
     busboy.on("filesLimit", () => {
