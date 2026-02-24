@@ -116,7 +116,9 @@ const parseMultipartUpload = async (
 
     let settled = false;
     let kind: UploadKind | null = null;
+    let kindFieldSeen = false;
     let alt: string | null = null;
+    let altFieldSeen = false;
     let fileSeen = false;
     let originalFilename = "upload";
     let mimeType = "";
@@ -154,6 +156,14 @@ const parseMultipartUpload = async (
       }
 
       if (fieldName === "kind") {
+        if (kindFieldSeen) {
+          settleReject(
+            new UploadRouteError(400, 'Duplicate "kind" field is not allowed.'),
+          );
+          return;
+        }
+        kindFieldSeen = true;
+
         const parsedKind = parseUploadKind(value);
         if (!parsedKind) {
           settleReject(
@@ -198,6 +208,14 @@ const parseMultipartUpload = async (
       }
 
       if (fieldName === "alt") {
+        if (altFieldSeen) {
+          settleReject(
+            new UploadRouteError(400, 'Duplicate "alt" field is not allowed.'),
+          );
+          return;
+        }
+        altFieldSeen = true;
+
         const trimmed = value.trim();
         alt = trimmed.length > 0 ? trimmed : null;
       }
@@ -254,8 +272,20 @@ const parseMultipartUpload = async (
 
       const writeStream = createWriteStream(tempFilePath, { flags: "w" });
       activeWriteStream = writeStream;
+      let fileStreamStopped = false;
+      const stopFileStream = () => {
+        if (fileStreamStopped) {
+          return;
+        }
+
+        fileStreamStopped = true;
+        fileStream.unpipe(writeStream);
+        fileStream.pause();
+        fileStream.destroy();
+      };
 
       fileStream.on("limit", () => {
+        stopFileStream();
         writeStream.destroy();
         settleReject(
           new UploadRouteError(
@@ -279,6 +309,7 @@ const parseMultipartUpload = async (
 
         const sizeValidation = validateUploadSize(fileSize, sizeValidationKind);
         if (!sizeValidation.ok) {
+          stopFileStream();
           writeStream.destroy();
           settleReject(
             new UploadRouteError(sizeValidation.status, sizeValidation.message),
@@ -287,6 +318,7 @@ const parseMultipartUpload = async (
       });
 
       fileStream.on("error", (error) => {
+        stopFileStream();
         writeStream.destroy();
         settleReject(error);
       });
