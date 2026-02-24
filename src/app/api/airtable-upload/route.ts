@@ -12,6 +12,7 @@ import { getGlobalPayload } from "@/lib/payload";
 import {
   getCorsHeaders,
   getUploadMaxBytes,
+  inferUploadKindFromMetadata,
   isAuthorizedUploadRequest,
   parseUploadKind,
   resolveAbsoluteMediaUrl,
@@ -123,7 +124,7 @@ const parseMultipartUpload = async (
     let tempFilePath: string | null = null;
     let fileWritePromise: Promise<void> | null = null;
     let activeWriteStream: ReturnType<typeof createWriteStream> | null = null;
-    let fileSizeLimitedByBusboy = false;
+    let inferredKind: UploadKind | null = null;
 
     const settleReject = (error: unknown) => {
       if (settled) {
@@ -222,6 +223,10 @@ const parseMultipartUpload = async (
       fileSeen = true;
       originalFilename = info.filename?.trim() || "upload";
       mimeType = (info.mimeType ?? "").trim().toLowerCase();
+      inferredKind = inferUploadKindFromMetadata({
+        fileName: originalFilename,
+        mimeType,
+      });
 
       if (kind) {
         const metadataValidation = validateUploadMetadata(
@@ -251,7 +256,6 @@ const parseMultipartUpload = async (
       activeWriteStream = writeStream;
 
       fileStream.on("limit", () => {
-        fileSizeLimitedByBusboy = true;
         writeStream.destroy();
         settleReject(
           new UploadRouteError(
@@ -267,11 +271,13 @@ const parseMultipartUpload = async (
       fileStream.on("data", (chunk: Buffer) => {
         fileSize += chunk.length;
 
-        if (!kind) {
+        // Accept either part ordering and still enforce streaming size checks.
+        const sizeValidationKind = kind ?? inferredKind;
+        if (!sizeValidationKind) {
           return;
         }
 
-        const sizeValidation = validateUploadSize(fileSize, kind);
+        const sizeValidation = validateUploadSize(fileSize, sizeValidationKind);
         if (!sizeValidation.ok) {
           writeStream.destroy();
           settleReject(
@@ -297,8 +303,8 @@ const parseMultipartUpload = async (
 
       fileStream.pipe(writeStream);
       const writeFinishedPromise = finished(writeStream);
-      writeFinishedPromise.catch(() => undefined);
       fileWritePromise = writeFinishedPromise.then(() => undefined);
+      fileWritePromise.catch(() => undefined);
     });
 
     busboy.on("filesLimit", () => {
@@ -333,10 +339,6 @@ const parseMultipartUpload = async (
         }
 
         await fileWritePromise;
-
-        if (fileSizeLimitedByBusboy) {
-          return;
-        }
 
         const metadataValidation = validateUploadMetadata(
           {

@@ -60,9 +60,9 @@ type UploadPolicy = {
 
 type UploadValidation =
   | { ok: true }
-  | { ok: false; status: 413 | 415; message: string };
+  | { ok: false; status: 400 | 413 | 415; message: string };
 
-type UploadMetadataValidationInput = {
+export type UploadMetadataValidationInput = {
   fileName: string;
   mimeType?: string | null;
 };
@@ -184,7 +184,7 @@ const getUploadPolicy = (kind: UploadKind): UploadPolicy => {
 export const getUploadMaxBytes = (kind: UploadKind): number =>
   getUploadPolicy(kind).maxBytes;
 
-const validateUploadType = (
+export const validateUploadMetadata = (
   metadata: UploadMetadataValidationInput,
   kind: UploadKind,
 ): UploadValidation => {
@@ -206,6 +206,19 @@ const validateUploadType = (
   return { ok: true };
 };
 
+export const inferUploadKindFromMetadata = (
+  metadata: UploadMetadataValidationInput,
+): UploadKind | null => {
+  const isDocument = validateUploadMetadata(metadata, "document").ok;
+  const isEntityImage = validateUploadMetadata(metadata, "entityImage").ok;
+
+  if (isDocument === isEntityImage) {
+    return null;
+  }
+
+  return isDocument ? "document" : "entityImage";
+};
+
 export const validateUploadSize = (
   fileSize: number,
   kind: UploadKind,
@@ -213,7 +226,7 @@ export const validateUploadSize = (
   if (!fileSize || fileSize <= 0) {
     return {
       ok: false,
-      status: 415,
+      status: 400,
       message: "Uploaded file is empty.",
     };
   }
@@ -229,13 +242,6 @@ export const validateUploadSize = (
   }
 
   return { ok: true };
-};
-
-export const validateUploadMetadata = (
-  metadata: UploadMetadataValidationInput,
-  kind: UploadKind,
-): UploadValidation => {
-  return validateUploadType(metadata, kind);
 };
 
 export const getCorsHeaders = (requestOrigin: string | null): HeadersInit => {
@@ -288,24 +294,6 @@ export const parseUploadKind = (value: unknown): UploadKind | null => {
   }
 
   return null;
-};
-
-export const validateFileForUpload = (
-  file: File,
-  kind: UploadKind,
-): UploadValidation => {
-  const sizeValidation = validateUploadSize(file.size, kind);
-  if (!sizeValidation.ok) {
-    return sizeValidation;
-  }
-
-  return validateUploadMetadata(
-    {
-      fileName: file.name,
-      mimeType: file.type,
-    },
-    kind,
-  );
 };
 
 export const resolveAbsoluteMediaUrl = (
