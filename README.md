@@ -4,7 +4,7 @@
 
 1. CheckDesk API Key and Team ID
 2. Airtable API Key and Base ID
-3. Google Gemini API Key.
+3. At least one AI provider credential (Google, OpenAI, Anthropic, Grok, Mistral, DeepSeek, Cerebras, Groq, Together AI, Cohere, Fireworks, DeepInfra, Perplexity, or Ollama).
 4. Docker
 
 ## Running the App.

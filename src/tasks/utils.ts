@@ -9,6 +9,7 @@ export type RunContext = {
 export type TaskInput = {
   runContext?: RunContext;
   documentIds?: string[];
+  forceReextract?: boolean;
   [key: string]: unknown;
 };
 
