@@ -1898,8 +1898,74 @@ export interface Setting {
     airtableBaseID: string;
   };
   ai: {
-    model: 'gemini-2.5-pro' | 'gemini-2.5-flash-lite';
-    apiKey: string;
+    modelPreset:
+      | 'google:gemini-2.5-pro'
+      | 'google:gemini-2.5-flash'
+      | 'google:gemini-2.5-flash-lite'
+      | 'xai:grok-4'
+      | 'xai:grok-3-mini'
+      | 'openai:gpt-5'
+      | 'openai:gpt-5-mini'
+      | 'openai:gpt-5-nano'
+      | 'anthropic:claude-sonnet-4-6'
+      | 'anthropic:claude-opus-4-1'
+      | 'anthropic:claude-3-5-haiku-latest'
+      | 'mistral:mistral-large-latest'
+      | 'mistral:mistral-medium-latest'
+      | 'mistral:mistral-small-latest'
+      | 'deepseek:deepseek-chat'
+      | 'deepseek:deepseek-reasoner'
+      | 'cerebras:llama3.3-70b'
+      | 'cerebras:llama3.1-8b'
+      | 'groq:llama-3.3-70b-versatile'
+      | 'groq:llama-3.1-8b-instant'
+      | 'togetherai:meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo'
+      | 'togetherai:Qwen/Qwen2.5-Coder-32B-Instruct'
+      | 'cohere:command-r-plus'
+      | 'cohere:command-r'
+      | 'fireworks:accounts/fireworks/models/llama-v3-8b-instruct'
+      | 'fireworks:accounts/fireworks/models/llama-v3p1-70b-instruct'
+      | 'deepinfra:meta-llama/Meta-Llama-3.1-70B-Instruct'
+      | 'deepinfra:Qwen/Qwen2.5-72B-Instruct'
+      | 'perplexity:sonar-pro'
+      | 'perplexity:sonar'
+      | 'ollama:llama3.1:8b'
+      | 'ollama:llama3.1:70b'
+      | 'ollama:mistral:7b';
+    /**
+     * Optional override in "provider:model" format. Example: "openai:gpt-5".
+     */
+    customModelId?: string | null;
+    providerCredentials?:
+      | {
+          provider:
+            | 'google'
+            | 'xai'
+            | 'openai'
+            | 'anthropic'
+            | 'mistral'
+            | 'deepseek'
+            | 'cerebras'
+            | 'groq'
+            | 'togetherai'
+            | 'cohere'
+            | 'fireworks'
+            | 'deepinfra'
+            | 'perplexity'
+            | 'ollama';
+          /**
+           * Optional if configured in environment variables.
+           */
+          apiKey?: string | null;
+          /**
+           * Optional Ollama base URL (e.g. http://localhost:11434).
+           */
+          baseURL?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    model?: ('gemini-2.5-pro' | 'gemini-2.5-flash-lite') | null;
+    apiKey?: string | null;
   };
   meedan: {
     meedanAPIKey: string;
@@ -2214,6 +2280,16 @@ export interface SettingsSelect<T extends boolean = true> {
   ai?:
     | T
     | {
+        modelPreset?: T;
+        customModelId?: T;
+        providerCredentials?:
+          | T
+          | {
+              provider?: T;
+              apiKey?: T;
+              baseURL?: T;
+              id?: T;
+            };
         model?: T;
         apiKey?: T;
       };
