@@ -279,6 +279,7 @@ const parseMultipartUpload = async (
 
         const sizeValidation = validateUploadSize(fileSize, sizeValidationKind);
         if (!sizeValidation.ok) {
+          fileStream.destroy();
           writeStream.destroy();
           settleReject(
             new UploadRouteError(sizeValidation.status, sizeValidation.message),
