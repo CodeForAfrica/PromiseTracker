@@ -300,11 +300,42 @@ export const resolveAbsoluteMediaUrl = (
   relativeOrAbsoluteUrl: string,
   requestOrigin: string,
 ): string => {
-  const configuredOrigin = (process.env.NEXT_PUBLIC_APP_URL ?? "").trim();
-  const baseOrigin = configuredOrigin || requestOrigin;
+  const configuredOriginRaw = (process.env.NEXT_PUBLIC_APP_URL ?? "").trim();
+  let configuredOrigin: URL | null = null;
+
+  if (configuredOriginRaw) {
+    try {
+      configuredOrigin = new URL(configuredOriginRaw);
+    } catch {
+      configuredOrigin = null;
+    }
+  }
+
+  const baseOrigin = configuredOrigin?.origin ?? requestOrigin;
 
   try {
-    return new URL(relativeOrAbsoluteUrl, baseOrigin).toString();
+    const resolvedUrl = new URL(relativeOrAbsoluteUrl, baseOrigin);
+    if (!configuredOrigin) {
+      return resolvedUrl.toString();
+    }
+
+    const hostname = resolvedUrl.hostname.toLowerCase();
+    const shouldRebaseToConfiguredOrigin =
+      resolvedUrl.origin === requestOrigin ||
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname === "0.0.0.0" ||
+      hostname === "::1";
+
+    if (shouldRebaseToConfiguredOrigin) {
+      resolvedUrl.protocol = configuredOrigin.protocol;
+      resolvedUrl.hostname = configuredOrigin.hostname;
+      resolvedUrl.port = configuredOrigin.port;
+      resolvedUrl.username = configuredOrigin.username;
+      resolvedUrl.password = configuredOrigin.password;
+    }
+
+    return resolvedUrl.toString();
   } catch {
     return relativeOrAbsoluteUrl;
   }
