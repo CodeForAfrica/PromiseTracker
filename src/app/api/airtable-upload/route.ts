@@ -84,6 +84,81 @@ const toErrorDetails = (error: unknown): Record<string, unknown> => {
   };
 };
 
+const asRecord = (value: unknown): Record<string, unknown> | null => {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  return value as Record<string, unknown>;
+};
+
+const toStringOrNull = (value: unknown): string | null =>
+  typeof value === "string" && value.trim().length > 0 ? value : null;
+
+const toNumberOrNull = (value: unknown): number | null =>
+  typeof value === "number" && Number.isFinite(value) ? value : null;
+
+const summarizePayloadDoc = (value: unknown): Record<string, unknown> => {
+  const record = asRecord(value);
+  if (!record) {
+    return {
+      type: typeof value,
+      isNull: value === null,
+    };
+  }
+
+  return {
+    keys: Object.keys(record),
+    id: toStringOrNull(record.id),
+    url: toStringOrNull(record.url),
+    externalUrl: toStringOrNull(record.externalUrl),
+    filename: toStringOrNull(record.filename),
+    mimeType: toStringOrNull(record.mimeType),
+    filesize: toNumberOrNull(record.filesize),
+    createdAt: toStringOrNull(record.createdAt),
+    updatedAt: toStringOrNull(record.updatedAt),
+  };
+};
+
+const getSafeOrigin = (value: string): string | null => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  try {
+    return new URL(trimmed).origin;
+  } catch {
+    return null;
+  }
+};
+
+const getHostname = (value: string): string | null => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  try {
+    return new URL(trimmed).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+};
+
+const isLocalLikeHostname = (hostname: string | null): boolean => {
+  if (!hostname) {
+    return false;
+  }
+
+  return (
+    hostname === "localhost" ||
+    hostname === "0.0.0.0" ||
+    hostname === "127.0.0.1" ||
+    hostname === "[::1]"
+  );
+};
+
 const jsonResponse = <T extends Record<string, unknown>>(
   request: NextRequest,
   status: number,
@@ -512,6 +587,17 @@ export const POST = async (request: NextRequest) => {
     event: "request.received",
   });
 
+  logEvent({
+    level: "info",
+    event: "config.snapshot",
+    details: {
+      nextPublicAppUrl: process.env.NEXT_PUBLIC_APP_URL ?? null,
+      airtableUploadPublicUrl: process.env.AIRTABLE_UPLOAD_PUBLIC_URL ?? null,
+      requestNextUrlOrigin: request.nextUrl.origin,
+      requestHeaderOrigin: requestOrigin,
+    },
+  });
+
   if (!isAuthorizedUploadRequest(request.headers.get("authorization"))) {
     logEvent({
       level: "warn",
@@ -561,6 +647,17 @@ export const POST = async (request: NextRequest) => {
         parsedUploadLogContext.uploadKind = parsedUpload.kind;
         parsedUploadLogContext.uploadMimeType = parsedUpload.mimeType;
         parsedUploadLogContext.uploadSizeBytes = parsedUpload.filesize;
+        logEvent({
+          level: "info",
+          event: "upload.parsed",
+          details: {
+            uploadKind: parsedUpload.kind,
+            uploadMimeType: parsedUpload.mimeType,
+            uploadSizeBytes: parsedUpload.filesize,
+            originalFilename: parsedUpload.originalFilename,
+            hasAlt: Boolean(parsedUpload.alt?.trim()),
+          },
+        });
 
         const payload = await getGlobalPayload();
         const alt =
@@ -590,6 +687,13 @@ export const POST = async (request: NextRequest) => {
               depth: 0,
             }),
         );
+        logEvent({
+          level: "info",
+          event: "payload.create.media.result",
+          details: {
+            createdMedia: summarizePayloadDoc(createdMedia),
+          },
+        });
 
         const mediaDoc = await Sentry.startSpan(
           {
@@ -608,6 +712,13 @@ export const POST = async (request: NextRequest) => {
               depth: 0,
             }),
         );
+        logEvent({
+          level: "info",
+          event: "payload.findByID.media.result",
+          details: {
+            mediaDoc: summarizePayloadDoc(mediaDoc),
+          },
+        });
 
         if (!mediaDoc?.url) {
           logEvent({
@@ -634,9 +745,47 @@ export const POST = async (request: NextRequest) => {
           mediaDoc.url,
           request.nextUrl.origin,
         );
+        const rawMediaUrlHostname = getHostname(mediaDoc.url ?? "");
+        const absoluteUrlHostname = getHostname(absoluteUrl);
+        const configuredNextPublicOrigin = getSafeOrigin(
+          process.env.NEXT_PUBLIC_APP_URL ?? "",
+        );
+        const configuredUploadPublicOrigin = getSafeOrigin(
+          process.env.AIRTABLE_UPLOAD_PUBLIC_URL ?? "",
+        );
+        logEvent({
+          level: "info",
+          event: "media.url.resolved",
+          details: {
+            rawMediaUrl: mediaDoc.url,
+            rawMediaUrlHostname,
+            resolvedUrl: absoluteUrl,
+            resolvedUrlHostname: absoluteUrlHostname,
+            requestNextUrlOrigin: request.nextUrl.origin,
+            requestHeaderOrigin: requestOrigin,
+            configuredNextPublicOrigin,
+            configuredUploadPublicOrigin,
+          },
+        });
+
+        if (isLocalLikeHostname(absoluteUrlHostname)) {
+          logEvent({
+            level: "warn",
+            event: "media.url.resolvedToLocalhost",
+            details: {
+              resolvedUrl: absoluteUrl,
+              resolvedUrlHostname: absoluteUrlHostname,
+              rawMediaUrl: mediaDoc.url,
+              requestNextUrlOrigin: request.nextUrl.origin,
+              requestHeaderOrigin: requestOrigin,
+              configuredNextPublicOrigin,
+              configuredUploadPublicOrigin,
+            },
+          });
+        }
 
         if ((mediaDoc.externalUrl ?? "").trim() !== absoluteUrl) {
-          await Sentry.startSpan(
+          const updatedMedia = await Sentry.startSpan(
             {
               op: "payload.update",
               name: "update media externalUrl",
@@ -656,6 +805,25 @@ export const POST = async (request: NextRequest) => {
                 depth: 0,
               }),
           );
+          logEvent({
+            level: "info",
+            event: "payload.update.media.externalUrl.result",
+            details: {
+              updatedMedia: summarizePayloadDoc(updatedMedia),
+              previousExternalUrl: mediaDoc.externalUrl ?? null,
+              nextExternalUrl: absoluteUrl,
+            },
+          });
+        } else {
+          logEvent({
+            level: "info",
+            event: "payload.update.media.externalUrl.skipped",
+            details: {
+              reason: "externalUrl already matches resolved URL",
+              externalUrl: mediaDoc.externalUrl ?? null,
+              resolvedUrl: absoluteUrl,
+            },
+          });
         }
 
         const responseBody: UploadSuccessResponse = {

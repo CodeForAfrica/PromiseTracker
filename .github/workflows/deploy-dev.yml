@@ -2,7 +2,9 @@ name: Promise Tracker | Deploy | Dev
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - ft/airtable-debug-logs
 
 concurrency:
   group: "${{ github.workflow }} @ ${{ github.ref }}"
