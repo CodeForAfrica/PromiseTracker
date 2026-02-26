@@ -22,9 +22,10 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
-    NEXT_PUBLIC_APP_URL=http://localhost:3000
+    NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
 
 RUN --mount=type=secret,id=database_uri,env=DATABASE_URI \
     --mount=type=secret,id=payload_secret,env=PAYLOAD_SECRET \
