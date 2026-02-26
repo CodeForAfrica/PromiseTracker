@@ -80,6 +80,16 @@ const normalizeOriginString = (value: string): string =>
 const escapeRegex = (value: string): string =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+const LOOPBACK_HOSTNAMES = new Set([
+  "localhost",
+  "127.0.0.1",
+  "0.0.0.0",
+  "[::1]",
+]);
+
+const isLoopbackHostname = (hostname: string): boolean =>
+  LOOPBACK_HOSTNAMES.has(hostname.toLowerCase());
+
 const wildcardToRegex = (pattern: string): RegExp => {
   const escaped = escapeRegex(pattern).replace(/\\\*/g, ".*");
   return new RegExp(`^${escaped}$`, "i");
@@ -311,28 +321,35 @@ export const resolveAbsoluteMediaUrl = (
     }
   }
 
-  const baseOrigin = configuredOrigin?.origin ?? requestOrigin;
+  const shouldUseConfiguredOrigin = process.env.NODE_ENV === "production";
+  const targetOrigin =
+    shouldUseConfiguredOrigin && configuredOrigin
+      ? configuredOrigin.origin
+      : requestOrigin;
+  let targetOriginUrl: URL | null = null;
+  try {
+    targetOriginUrl = new URL(targetOrigin);
+  } catch {
+    targetOriginUrl = null;
+  }
 
   try {
-    const resolvedUrl = new URL(relativeOrAbsoluteUrl, baseOrigin);
-    if (!configuredOrigin) {
+    const resolvedUrl = new URL(relativeOrAbsoluteUrl, targetOrigin);
+    if (!targetOriginUrl) {
       return resolvedUrl.toString();
     }
 
     const hostname = resolvedUrl.hostname.toLowerCase();
-    const shouldRebaseToConfiguredOrigin =
+    const shouldRebaseToTargetOrigin =
+      // Relative URLs inherit request/base origin, while absolute URLs keep their
+      // own origin. Rebase request-origin and loopback URLs to the selected target.
       resolvedUrl.origin === requestOrigin ||
-      hostname === "localhost" ||
-      hostname === "127.0.0.1" ||
-      hostname === "0.0.0.0" ||
-      hostname === "::1";
+      isLoopbackHostname(hostname);
 
-    if (shouldRebaseToConfiguredOrigin) {
-      resolvedUrl.protocol = configuredOrigin.protocol;
-      resolvedUrl.hostname = configuredOrigin.hostname;
-      resolvedUrl.port = configuredOrigin.port;
-      resolvedUrl.username = configuredOrigin.username;
-      resolvedUrl.password = configuredOrigin.password;
+    if (shouldRebaseToTargetOrigin) {
+      resolvedUrl.protocol = targetOriginUrl.protocol;
+      resolvedUrl.hostname = targetOriginUrl.hostname;
+      resolvedUrl.port = targetOriginUrl.port;
     }
 
     return resolvedUrl.toString();
