@@ -317,15 +317,16 @@ export const resolveAbsoluteMediaUrl = (
     try {
       configuredOrigin = new URL(configuredOriginRaw);
     } catch {
+      console.warn(
+        `[airtable-upload] Invalid NEXT_PUBLIC_APP_URL: "${configuredOriginRaw}". Falling back to request origin.`,
+      );
       configuredOrigin = null;
     }
   }
 
-  const shouldUseConfiguredOrigin = process.env.NODE_ENV === "production";
-  const targetOrigin =
-    shouldUseConfiguredOrigin && configuredOrigin
-      ? configuredOrigin.origin
-      : requestOrigin;
+  // Use configured public origin whenever available so behavior is explicit
+  // and testable across local/dev/staging/prod environments.
+  const targetOrigin = configuredOrigin?.origin ?? requestOrigin;
   let targetOriginUrl: URL | null = null;
   try {
     targetOriginUrl = new URL(targetOrigin);
