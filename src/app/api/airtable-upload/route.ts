@@ -7,6 +7,7 @@ import { join } from "node:path";
 import { Readable } from "node:stream";
 import { finished } from "node:stream/promises";
 import { NextRequest, NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 
 import { getGlobalPayload } from "@/lib/payload";
 import {
@@ -23,6 +24,7 @@ import {
 } from "./utils";
 
 export const runtime = "nodejs";
+const ROUTE_TAG = "airtable-upload";
 
 type UploadSuccessResponse = {
   ok: true;
@@ -51,14 +53,56 @@ class UploadRouteError extends Error {
   }
 }
 
+type RouteLogLevel = "info" | "warn" | "error";
+
+const getTraceId = (request: NextRequest): string => {
+  const headerTraceId =
+    request.headers.get("x-request-id")?.trim() ||
+    request.headers.get("cf-ray")?.trim() ||
+    request.headers.get("x-cloud-trace-context")?.split("/")[0]?.trim() ||
+    request.headers.get("sentry-trace")?.split("-")[0]?.trim() ||
+    null;
+
+  if (headerTraceId) {
+    return headerTraceId;
+  }
+
+  return randomUUID();
+};
+
+const toErrorDetails = (error: unknown): Record<string, unknown> => {
+  if (error instanceof Error) {
+    return {
+      errorName: error.name,
+      errorMessage: error.message,
+      errorStack: error.stack,
+    };
+  }
+
+  return {
+    errorMessage: String(error),
+  };
+};
+
 const jsonResponse = <T extends Record<string, unknown>>(
   request: NextRequest,
   status: number,
   body: T,
+  traceId?: string,
 ) => {
+  const baseHeaders = getCorsHeaders(request.headers.get("origin")) as Record<
+    string,
+    string
+  >;
+
   return NextResponse.json(body, {
     status,
-    headers: getCorsHeaders(request.headers.get("origin")),
+    headers: traceId
+      ? {
+          ...baseHeaders,
+          "x-trace-id": traceId,
+        }
+      : baseHeaders,
   });
 };
 
@@ -420,86 +464,279 @@ export const OPTIONS = async (request: NextRequest) => {
 };
 
 export const POST = async (request: NextRequest) => {
-  if (!isAuthorizedUploadRequest(request.headers.get("authorization"))) {
-    return jsonResponse(request, 401, {
-      ok: false,
-      error: "Unauthorized",
-    });
-  }
-
+  const startedAt = Date.now();
+  const traceId = getTraceId(request);
+  const method = request.method;
+  const path = request.nextUrl.pathname;
+  const requestOrigin = request.headers.get("origin");
+  const userAgent = request.headers.get("user-agent")?.trim() ?? null;
   let tempFilePath: string | null = null;
+  const parsedUploadLogContext: {
+    uploadKind: UploadKind | null;
+    uploadMimeType: string | null;
+    uploadSizeBytes: number | null;
+  } = {
+    uploadKind: null,
+    uploadMimeType: null,
+    uploadSizeBytes: null,
+  };
 
-  try {
-    const parsedUpload = await parseMultipartUpload(request, (path) => {
-      tempFilePath = path;
-    });
-
-    const payload = await getGlobalPayload();
-    const alt =
-      parsedUpload.alt && parsedUpload.alt.trim().length > 0
-        ? parsedUpload.alt.trim()
-        : parsedUpload.originalFilename || `${parsedUpload.kind} upload`;
-
-    const createdMedia = await payload.create({
-      collection: "media",
-      data: {
-        alt,
-      },
-      filePath: parsedUpload.tempFilePath,
-      depth: 0,
-    });
-
-    const mediaDoc = await payload.findByID({
-      collection: "media",
-      id: createdMedia.id,
-      depth: 0,
-    });
-
-    if (!mediaDoc?.url) {
-      return jsonResponse(request, 500, {
-        ok: false,
-        error: "Upload succeeded but media URL is unavailable.",
-      });
-    }
-
-    const absoluteUrl = resolveAbsoluteMediaUrl(
-      mediaDoc.url,
-      request.nextUrl.origin,
-    );
-
-    if ((mediaDoc.externalUrl ?? "").trim() !== absoluteUrl) {
-      await payload.update({
-        collection: "media",
-        id: mediaDoc.id,
-        data: {
-          externalUrl: absoluteUrl,
-        },
-        depth: 0,
-      });
-    }
-
-    const responseBody: UploadSuccessResponse = {
-      ok: true,
-      url: absoluteUrl,
-      filename: mediaDoc.filename ?? parsedUpload.originalFilename,
-      mimeType:
-        mediaDoc.mimeType ?? parsedUpload.mimeType ?? "application/octet-stream",
-      filesize: mediaDoc.filesize ?? parsedUpload.filesize,
-      mediaId: mediaDoc.id,
+  const logEvent = ({
+    level,
+    event,
+    details = {},
+    error,
+  }: {
+    level: RouteLogLevel;
+    event: string;
+    details?: Record<string, unknown>;
+    error?: unknown;
+  }) => {
+    const payload = {
+      route: ROUTE_TAG,
+      traceId,
+      method,
+      path,
+      origin: requestOrigin,
+      userAgent,
+      durationMs: Date.now() - startedAt,
+      ...details,
+      ...(error ? toErrorDetails(error) : {}),
     };
 
-    return jsonResponse(request, 200, responseBody);
+    Sentry.logger[level](`airtable-upload.${event}`, payload);
+  };
+
+  logEvent({
+    level: "info",
+    event: "request.received",
+  });
+
+  if (!isAuthorizedUploadRequest(request.headers.get("authorization"))) {
+    logEvent({
+      level: "warn",
+      event: "auth.unauthorized",
+      details: {
+        status: 401,
+      },
+    });
+    return jsonResponse(
+      request,
+      401,
+      {
+        ok: false,
+        error: "Unauthorized",
+      },
+      traceId,
+    );
+  }
+
+  try {
+    return await Sentry.startSpan(
+      {
+        op: "http.server",
+        name: "POST /api/airtable-upload",
+        attributes: {
+          route: ROUTE_TAG,
+          method,
+          path,
+          traceId,
+        },
+      },
+      async () => {
+        const parsedUpload = await Sentry.startSpan(
+          {
+            op: "route.parse_multipart",
+            name: "parse multipart upload",
+            attributes: {
+              route: ROUTE_TAG,
+              traceId,
+            },
+          },
+          () =>
+            parseMultipartUpload(request, (path) => {
+              tempFilePath = path;
+            }),
+        );
+        parsedUploadLogContext.uploadKind = parsedUpload.kind;
+        parsedUploadLogContext.uploadMimeType = parsedUpload.mimeType;
+        parsedUploadLogContext.uploadSizeBytes = parsedUpload.filesize;
+
+        const payload = await getGlobalPayload();
+        const alt =
+          parsedUpload.alt && parsedUpload.alt.trim().length > 0
+            ? parsedUpload.alt.trim()
+            : parsedUpload.originalFilename || `${parsedUpload.kind} upload`;
+
+        const createdMedia = await Sentry.startSpan(
+          {
+            op: "payload.create",
+            name: "create media upload record",
+            attributes: {
+              route: ROUTE_TAG,
+              traceId,
+              uploadKind: parsedUpload.kind,
+              uploadMimeType: parsedUpload.mimeType,
+              uploadSizeBytes: parsedUpload.filesize,
+            },
+          },
+          () =>
+            payload.create({
+              collection: "media",
+              data: {
+                alt,
+              },
+              filePath: parsedUpload.tempFilePath,
+              depth: 0,
+            }),
+        );
+
+        const mediaDoc = await Sentry.startSpan(
+          {
+            op: "payload.findByID",
+            name: "load uploaded media record",
+            attributes: {
+              route: ROUTE_TAG,
+              traceId,
+              mediaId: createdMedia.id,
+            },
+          },
+          () =>
+            payload.findByID({
+              collection: "media",
+              id: createdMedia.id,
+              depth: 0,
+            }),
+        );
+
+        if (!mediaDoc?.url) {
+          logEvent({
+            level: "error",
+            event: "upload.mediaUrlMissing",
+            details: {
+              status: 500,
+              mediaId: mediaDoc?.id ?? createdMedia.id,
+            },
+          });
+          Sentry.captureMessage("airtable-upload.media-url-missing", "error");
+          return jsonResponse(
+            request,
+            500,
+            {
+              ok: false,
+              error: "Upload succeeded but media URL is unavailable.",
+            },
+            traceId,
+          );
+        }
+
+        const absoluteUrl = resolveAbsoluteMediaUrl(
+          mediaDoc.url,
+          request.nextUrl.origin,
+        );
+
+        if ((mediaDoc.externalUrl ?? "").trim() !== absoluteUrl) {
+          await Sentry.startSpan(
+            {
+              op: "payload.update",
+              name: "update media externalUrl",
+              attributes: {
+                route: ROUTE_TAG,
+                traceId,
+                mediaId: mediaDoc.id,
+              },
+            },
+            () =>
+              payload.update({
+                collection: "media",
+                id: mediaDoc.id,
+                data: {
+                  externalUrl: absoluteUrl,
+                },
+                depth: 0,
+              }),
+          );
+        }
+
+        const responseBody: UploadSuccessResponse = {
+          ok: true,
+          url: absoluteUrl,
+          filename: mediaDoc.filename ?? parsedUpload.originalFilename,
+          mimeType:
+            mediaDoc.mimeType ?? parsedUpload.mimeType ?? "application/octet-stream",
+          filesize: mediaDoc.filesize ?? parsedUpload.filesize,
+          mediaId: mediaDoc.id,
+        };
+
+        logEvent({
+          level: "info",
+          event: "upload.completed",
+          details: {
+            status: 200,
+            mediaId: responseBody.mediaId,
+            uploadKind: parsedUpload.kind,
+            uploadMimeType: responseBody.mimeType,
+            uploadSizeBytes: responseBody.filesize,
+          },
+        });
+
+        return jsonResponse(request, 200, responseBody, traceId);
+      },
+    );
   } catch (error) {
     const routeError = toUploadRouteError(error);
-    return jsonResponse(request, routeError.status, {
-      ok: false,
-      error: routeError.message,
+
+    logEvent({
+      level: routeError.status >= 500 ? "error" : "warn",
+      event: "upload.failed",
+      details: {
+        status: routeError.status,
+        uploadKind: parsedUploadLogContext.uploadKind,
+        uploadMimeType: parsedUploadLogContext.uploadMimeType,
+        uploadSizeBytes: parsedUploadLogContext.uploadSizeBytes,
+      },
+      error,
     });
+
+    if (routeError.status >= 500) {
+      Sentry.withScope((scope) => {
+        scope.setTag("route", ROUTE_TAG);
+        scope.setTag("traceId", traceId);
+        scope.setContext("airtableUpload", {
+          status: routeError.status,
+          method,
+          path,
+          origin: requestOrigin,
+          uploadKind: parsedUploadLogContext.uploadKind,
+          uploadMimeType: parsedUploadLogContext.uploadMimeType,
+          uploadSizeBytes: parsedUploadLogContext.uploadSizeBytes,
+        });
+        Sentry.captureException(error);
+      });
+    }
+
+    return jsonResponse(
+      request,
+      routeError.status,
+      {
+        ok: false,
+        error: routeError.message,
+      },
+      traceId,
+    );
   } finally {
     if (tempFilePath) {
       try {
         await unlink(tempFilePath);
       } catch (_cleanupError) {
+        logEvent({
+          level: "warn",
+          event: "cleanup.tempFileDeleteFailed",
+          details: {
+            tempFilePath,
+          },
+          error: _cleanupError,
+        });
         // Ignore cleanup failures for temporary upload files.
       }
     }
