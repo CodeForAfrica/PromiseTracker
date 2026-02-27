@@ -229,7 +229,10 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
           const sourceUrls = getDocumentSourceUrls(existingDoc);
           const sourceSignature = createSourceSignature(sourceUrls);
 
-          if (!sourceSignature || dedupeSourcesBySignature.has(sourceSignature)) {
+          if (
+            !sourceSignature ||
+            dedupeSourcesBySignature.has(sourceSignature)
+          ) {
             continue;
           }
 
@@ -302,7 +305,9 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
             title: doc.title,
           });
           await setDocumentStatus(doc.airtableID, "Downloading");
-          const urlsToFetch = getDocumentSourceUrls(doc as DownloadableDocument);
+          const urlsToFetch = getDocumentSourceUrls(
+            doc as DownloadableDocument,
+          );
           const sourceSignature = createSourceSignature(urlsToFetch);
 
           if (urlsToFetch.length === 0) {

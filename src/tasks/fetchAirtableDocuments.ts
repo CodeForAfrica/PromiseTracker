@@ -148,27 +148,58 @@ export const FetchAirtableDocuments: TaskConfig<"fetchAirtableDocuments"> = {
         limit: 0,
         depth: 2,
       });
+      const entityByAirtableID = new Map(
+        entities
+          .filter((entity) => entity.airtableID)
+          .map((entity) => [entity.airtableID as string, entity]),
+      );
+
+      const failedDocs: Array<{
+        docID: string;
+        docName: string | null;
+        politicalEntityAirtableID: string | null;
+        reason: unknown;
+      }> = [];
+
+      const docsReadyToCreate: Array<{
+        doc: AirtableDocumentCandidate;
+        entity: (typeof entities)[number];
+      }> = [];
+      for (const doc of docsToCreate) {
+        const politicalEntityAirtableID = doc.politicalEntity?.[0] ?? null;
+        if (!politicalEntityAirtableID) {
+          const reason = "Missing required field: Political Entity";
+          failedDocs.push({
+            docID: doc.id,
+            docName: getAirtableDocumentName(doc),
+            politicalEntityAirtableID: null,
+            reason,
+          });
+          await setDocumentStatus(doc.id, `Failed: ${reason}`);
+          continue;
+        }
+
+        const entity = entityByAirtableID.get(politicalEntityAirtableID);
+        if (!entity) {
+          const reason = `No political entity found for Airtable ID ${politicalEntityAirtableID}`;
+          failedDocs.push({
+            docID: doc.id,
+            docName: getAirtableDocumentName(doc),
+            politicalEntityAirtableID,
+            reason,
+          });
+          await setDocumentStatus(doc.id, `Failed: ${reason}`);
+          continue;
+        }
+
+        docsReadyToCreate.push({
+          doc,
+          entity,
+        });
+      }
 
       const creationResults = await Promise.allSettled(
-        docsToCreate.map(async (doc) => {
-          const politicalEntityAirtableID = doc.politicalEntity?.[0];
-
-          if (!politicalEntityAirtableID) {
-            throw new Error(
-              "Missing political entity Airtable ID for document",
-            );
-          }
-
-          const entity = entities.find(
-            (t) => t.airtableID === politicalEntityAirtableID,
-          );
-
-          if (!entity) {
-            throw new Error(
-              `No political entity found for Airtable ID ${politicalEntityAirtableID}`,
-            );
-          }
-
+        docsReadyToCreate.map(async ({ doc, entity }) => {
           const title = getAirtableDocumentName(doc);
           const sourceUrl = getAirtableDocumentSourceUrl(doc);
           const docURLs = (doc.documents ?? [])
@@ -192,16 +223,10 @@ export const FetchAirtableDocuments: TaskConfig<"fetchAirtableDocuments"> = {
         }),
       );
 
-      const failedDocs: Array<{
-        docID: string;
-        docName: string | null;
-        politicalEntityAirtableID: string | null;
-        reason: unknown;
-      }> = [];
       let createdDocsCount = 0;
 
       for (const [index, result] of creationResults.entries()) {
-        const doc = docsToCreate[index];
+        const { doc } = docsReadyToCreate[index];
 
         if (result.status === "fulfilled") {
           createdDocsCount += 1;
@@ -239,9 +264,13 @@ export const FetchAirtableDocuments: TaskConfig<"fetchAirtableDocuments"> = {
         });
 
         const failedDocIDs = failedDocs.map((failedDoc) => failedDoc.docID);
-        throw new Error(
-          `fetchAirtableDocuments:: Failed to create documents: ${failedDocIDs.join(", ")}`,
-        );
+        logger.warn({
+          message:
+            "fetchAirtableDocuments:: Completed with partial failures",
+          createdDocsCount,
+          failedDocsCount: failedDocs.length,
+          failedDocIDs,
+        });
       }
 
       logger.info(
@@ -251,10 +280,12 @@ export const FetchAirtableDocuments: TaskConfig<"fetchAirtableDocuments"> = {
         output: {},
       };
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error ?? "");
       logger.error({
         message:
           "fetchAirtableDocuments:: Error fetching documents from Airtable",
-        error: error instanceof Error ? error.message : String(error),
+        error: errorMessage,
       });
       throw error;
     }
