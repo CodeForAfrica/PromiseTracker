@@ -315,13 +315,27 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
         output: {},
       };
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error ?? "");
       logger.error({
         message: "extractDocuments:: Error in document extraction task",
         requestedDocumentIds:
           (input as TaskInput | undefined)?.documentIds?.filter(Boolean) ?? [],
-        error: error instanceof Error ? error.message : String(error),
+        error: errorMessage,
       });
-      throw error;
+
+      logger.warn({
+        message:
+          "extractDocuments:: Continuing workflow despite task-level failure",
+        recoverable: true,
+      });
+
+      return {
+        output: {
+          recoverableError: true,
+          error: errorMessage,
+        },
+      };
     }
   }),
 };

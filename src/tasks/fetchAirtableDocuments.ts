@@ -239,9 +239,13 @@ export const FetchAirtableDocuments: TaskConfig<"fetchAirtableDocuments"> = {
         });
 
         const failedDocIDs = failedDocs.map((failedDoc) => failedDoc.docID);
-        throw new Error(
-          `fetchAirtableDocuments:: Failed to create documents: ${failedDocIDs.join(", ")}`,
-        );
+        logger.warn({
+          message:
+            "fetchAirtableDocuments:: Completed with partial failures",
+          createdDocsCount,
+          failedDocsCount: failedDocs.length,
+          failedDocIDs,
+        });
       }
 
       logger.info(
@@ -251,12 +255,26 @@ export const FetchAirtableDocuments: TaskConfig<"fetchAirtableDocuments"> = {
         output: {},
       };
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error ?? "");
       logger.error({
         message:
           "fetchAirtableDocuments:: Error fetching documents from Airtable",
-        error: error instanceof Error ? error.message : String(error),
+        error: errorMessage,
       });
-      throw error;
+
+      logger.warn({
+        message:
+          "fetchAirtableDocuments:: Continuing workflow despite task-level failure",
+        recoverable: true,
+      });
+
+      return {
+        output: {
+          recoverableError: true,
+          error: errorMessage,
+        },
+      };
     }
   }),
 };

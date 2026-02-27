@@ -30,15 +30,16 @@ export const UpdatePromiseStatus: TaskConfig<"updatePromiseStatus"> = {
     const logger = getTaskLogger(req, "updatePromiseStatus", input);
 
     logger.info("updatePromiseStatus:: Starting Meedan status sync");
+
+    const {
+      meedan: { meedanAPIKey, teamId },
+    } = await payload.findGlobal({ slug: "settings" });
+
+    if (!meedanAPIKey || !teamId) {
+      throw new Error("Meedan API key or team ID not configured in settings");
+    }
+
     try {
-      const {
-        meedan: { meedanAPIKey, teamId },
-      } = await payload.findGlobal({ slug: "settings" });
-
-      if (!meedanAPIKey || !teamId) {
-        throw new Error("Meedan API key or team ID not configured in settings");
-      }
-
       const remoteStatusesList = await fetchProjectMediaStatuses({
         apiKey: meedanAPIKey,
         teamId,
@@ -169,13 +170,27 @@ export const UpdatePromiseStatus: TaskConfig<"updatePromiseStatus"> = {
         },
       };
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error ?? "");
       logger.error({
         message: "updatePromiseStatus:: Failed to sync statuses",
         requestedDocumentIds:
           (input as TaskInput | undefined)?.documentIds?.filter(Boolean) ?? [],
-        error: error instanceof Error ? error.message : String(error),
+        error: errorMessage,
       });
-      throw error;
+      logger.warn({
+        message:
+          "updatePromiseStatus:: Continuing workflow despite task-level failure",
+        recoverable: true,
+      });
+
+      return {
+        output: {
+          updated: 0,
+          recoverableError: true,
+          error: errorMessage,
+        },
+      };
     }
   }),
 };

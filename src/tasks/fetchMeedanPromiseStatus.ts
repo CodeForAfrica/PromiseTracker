@@ -99,12 +99,25 @@ export const FetchPromiseStatuses: TaskConfig<"fetchPromiseStatuses"> = {
         output: { created },
       };
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error ?? "");
       logger.error({
         message: "fetchPromiseStatuses:: Failed to fetch/save statuses",
         teamId,
-        error: error instanceof Error ? error.message : String(error),
+        error: errorMessage,
       });
-      throw error;
+      logger.warn({
+        message:
+          "fetchPromiseStatuses:: Continuing workflow despite task-level failure",
+        recoverable: true,
+      });
+      return {
+        output: {
+          created: 0,
+          recoverableError: true,
+          error: errorMessage,
+        },
+      };
     }
   }),
 };
