@@ -300,13 +300,11 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
         output: {},
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error ?? "");
       logger.error({
         message: "extractPromises:: Error in promise extraction task",
         requestedDocumentIds:
           (input as TaskInput | undefined)?.documentIds?.filter(Boolean) ?? [],
-        error: errorMessage,
+        error: error instanceof Error ? error.message : String(error ?? ""),
       });
       throw error;
     }

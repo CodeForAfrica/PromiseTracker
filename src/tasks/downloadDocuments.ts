@@ -229,7 +229,10 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
           const sourceUrls = getDocumentSourceUrls(existingDoc);
           const sourceSignature = createSourceSignature(sourceUrls);
 
-          if (!sourceSignature || dedupeSourcesBySignature.has(sourceSignature)) {
+          if (
+            !sourceSignature ||
+            dedupeSourcesBySignature.has(sourceSignature)
+          ) {
             continue;
           }
 
@@ -302,7 +305,9 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
             title: doc.title,
           });
           await setDocumentStatus(doc.airtableID, "Downloading");
-          const urlsToFetch = getDocumentSourceUrls(doc as DownloadableDocument);
+          const urlsToFetch = getDocumentSourceUrls(
+            doc as DownloadableDocument,
+          );
           const sourceSignature = createSourceSignature(urlsToFetch);
 
           if (urlsToFetch.length === 0) {
@@ -524,13 +529,11 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
         output: {},
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error ?? "");
       logger.error({
         message: "downloadDocuments:: Error in document download task",
         requestedDocumentIds:
           (input as TaskInput | undefined)?.documentIds?.filter(Boolean) ?? [],
-        error: errorMessage,
+        error: error instanceof Error ? error.message : String(error ?? ""),
       });
       throw error;
     }

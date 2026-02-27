@@ -145,7 +145,8 @@ export const UpdatePromiseStatus: TaskConfig<"updatePromiseStatus"> = {
         } catch (extractionDocError) {
           failedExtractions += 1;
           logger.error({
-            message: "updatePromiseStatus:: Failed processing AI extraction doc",
+            message:
+              "updatePromiseStatus:: Failed processing AI extraction doc",
             extractionDocId: extractionDoc.id,
             extractionDocTitle: extractionDoc.title,
             extractionCount: extractionDoc.extractions?.length ?? 0,
@@ -170,13 +171,11 @@ export const UpdatePromiseStatus: TaskConfig<"updatePromiseStatus"> = {
         },
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error ?? "");
       logger.error({
         message: "updatePromiseStatus:: Failed to sync statuses",
         requestedDocumentIds:
           (input as TaskInput | undefined)?.documentIds?.filter(Boolean) ?? [],
-        error: errorMessage,
+        error: error instanceof Error ? error.message : String(error ?? ""),
       });
       throw error;
     }
