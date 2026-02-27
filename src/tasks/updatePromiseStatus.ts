@@ -175,7 +175,7 @@ export const UpdatePromiseStatus: TaskConfig<"updatePromiseStatus"> = {
         message: "updatePromiseStatus:: Failed to sync statuses",
         requestedDocumentIds:
           (input as TaskInput | undefined)?.documentIds?.filter(Boolean) ?? [],
-        error: error instanceof Error ? error.message : String(error ?? ""),
+        error: error instanceof Error ? error.message : String(error),
       });
       throw error;
     }

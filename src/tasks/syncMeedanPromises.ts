@@ -51,7 +51,7 @@ export const SyncMeedanPromises: TaskConfig<"syncMeedanPromises"> = {
       logger.error({
         message: "syncMeedanPromises:: Failed syncing published reports",
         teamId,
-        error: error instanceof Error ? error.message : String(error ?? ""),
+        error: error instanceof Error ? error.message : String(error),
       });
       throw error;
     }

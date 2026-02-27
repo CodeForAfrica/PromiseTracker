@@ -533,7 +533,7 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
         message: "downloadDocuments:: Error in document download task",
         requestedDocumentIds:
           (input as TaskInput | undefined)?.documentIds?.filter(Boolean) ?? [],
-        error: error instanceof Error ? error.message : String(error ?? ""),
+        error: error instanceof Error ? error.message : String(error),
       });
       throw error;
     }

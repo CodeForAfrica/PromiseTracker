@@ -102,7 +102,7 @@ export const FetchPromiseStatuses: TaskConfig<"fetchPromiseStatuses"> = {
       logger.error({
         message: "fetchPromiseStatuses:: Failed to fetch/save statuses",
         teamId,
-        error: error instanceof Error ? error.message : String(error ?? ""),
+        error: error instanceof Error ? error.message : String(error),
       });
       throw error;
     }
