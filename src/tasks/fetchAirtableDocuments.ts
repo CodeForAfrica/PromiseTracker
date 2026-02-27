@@ -161,7 +161,10 @@ export const FetchAirtableDocuments: TaskConfig<"fetchAirtableDocuments"> = {
         reason: unknown;
       }> = [];
 
-      const docsReadyToCreate: AirtableDocumentCandidate[] = [];
+      const docsReadyToCreate: Array<{
+        doc: AirtableDocumentCandidate;
+        entity: (typeof entities)[number];
+      }> = [];
       for (const doc of docsToCreate) {
         const politicalEntityAirtableID = doc.politicalEntity?.[0] ?? null;
         if (!politicalEntityAirtableID) {
@@ -189,20 +192,14 @@ export const FetchAirtableDocuments: TaskConfig<"fetchAirtableDocuments"> = {
           continue;
         }
 
-        docsReadyToCreate.push(doc);
+        docsReadyToCreate.push({
+          doc,
+          entity,
+        });
       }
 
       const creationResults = await Promise.allSettled(
-        docsReadyToCreate.map(async (doc) => {
-          const politicalEntityAirtableID = doc.politicalEntity?.[0];
-          const entity = politicalEntityAirtableID
-            ? entityByAirtableID.get(politicalEntityAirtableID)
-            : null;
-
-          if (!entity) {
-            return null;
-          }
-
+        docsReadyToCreate.map(async ({ doc, entity }) => {
           const title = getAirtableDocumentName(doc);
           const sourceUrl = getAirtableDocumentSourceUrl(doc);
           const docURLs = (doc.documents ?? [])
@@ -229,21 +226,9 @@ export const FetchAirtableDocuments: TaskConfig<"fetchAirtableDocuments"> = {
       let createdDocsCount = 0;
 
       for (const [index, result] of creationResults.entries()) {
-        const doc = docsReadyToCreate[index];
+        const { doc } = docsReadyToCreate[index];
 
         if (result.status === "fulfilled") {
-          if (!result.value) {
-            const errorMessage = "Missing related political entity";
-            failedDocs.push({
-              docID: doc.id,
-              docName: getAirtableDocumentName(doc),
-              politicalEntityAirtableID: doc.politicalEntity?.[0] ?? null,
-              reason: errorMessage,
-            });
-            await setDocumentStatus(doc.id, `Failed: ${errorMessage}`);
-            continue;
-          }
-
           createdDocsCount += 1;
           await setDocumentStatus(doc.id, "Fetched");
           continue;
