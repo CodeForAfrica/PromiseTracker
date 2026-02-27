@@ -178,19 +178,7 @@ export const UpdatePromiseStatus: TaskConfig<"updatePromiseStatus"> = {
           (input as TaskInput | undefined)?.documentIds?.filter(Boolean) ?? [],
         error: errorMessage,
       });
-      logger.warn({
-        message:
-          "updatePromiseStatus:: Continuing workflow despite task-level failure",
-        recoverable: true,
-      });
-
-      return {
-        output: {
-          updated: 0,
-          recoverableError: true,
-          error: errorMessage,
-        },
-      };
+      throw error;
     }
   }),
 };

@@ -55,20 +55,7 @@ export const SyncMeedanPromises: TaskConfig<"syncMeedanPromises"> = {
         teamId,
         error: errorMessage,
       });
-      logger.warn({
-        message:
-          "syncMeedanPromises:: Continuing workflow despite task-level failure",
-        recoverable: true,
-      });
-      return {
-        output: {
-          created: 0,
-          updated: 0,
-          total: 0,
-          recoverableError: true,
-          error: errorMessage,
-        },
-      };
+      throw error;
     }
   }),
 };

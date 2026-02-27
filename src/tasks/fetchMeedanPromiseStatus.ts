@@ -106,18 +106,7 @@ export const FetchPromiseStatuses: TaskConfig<"fetchPromiseStatuses"> = {
         teamId,
         error: errorMessage,
       });
-      logger.warn({
-        message:
-          "fetchPromiseStatuses:: Continuing workflow despite task-level failure",
-        recoverable: true,
-      });
-      return {
-        output: {
-          created: 0,
-          recoverableError: true,
-          error: errorMessage,
-        },
-      };
+      throw error;
     }
   }),
 };

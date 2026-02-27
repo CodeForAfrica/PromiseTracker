@@ -148,25 +148,59 @@ export const FetchAirtableDocuments: TaskConfig<"fetchAirtableDocuments"> = {
         limit: 0,
         depth: 2,
       });
+      const entityByAirtableID = new Map(
+        entities
+          .filter((entity) => entity.airtableID)
+          .map((entity) => [entity.airtableID as string, entity]),
+      );
+
+      const failedDocs: Array<{
+        docID: string;
+        docName: string | null;
+        politicalEntityAirtableID: string | null;
+        reason: unknown;
+      }> = [];
+
+      const docsReadyToCreate: AirtableDocumentCandidate[] = [];
+      for (const doc of docsToCreate) {
+        const politicalEntityAirtableID = doc.politicalEntity?.[0] ?? null;
+        if (!politicalEntityAirtableID) {
+          const reason = "Missing required field: Political Entity";
+          failedDocs.push({
+            docID: doc.id,
+            docName: getAirtableDocumentName(doc),
+            politicalEntityAirtableID: null,
+            reason,
+          });
+          await setDocumentStatus(doc.id, `Failed: ${reason}`);
+          continue;
+        }
+
+        const entity = entityByAirtableID.get(politicalEntityAirtableID);
+        if (!entity) {
+          const reason = `No political entity found for Airtable ID ${politicalEntityAirtableID}`;
+          failedDocs.push({
+            docID: doc.id,
+            docName: getAirtableDocumentName(doc),
+            politicalEntityAirtableID,
+            reason,
+          });
+          await setDocumentStatus(doc.id, `Failed: ${reason}`);
+          continue;
+        }
+
+        docsReadyToCreate.push(doc);
+      }
 
       const creationResults = await Promise.allSettled(
-        docsToCreate.map(async (doc) => {
+        docsReadyToCreate.map(async (doc) => {
           const politicalEntityAirtableID = doc.politicalEntity?.[0];
-
-          if (!politicalEntityAirtableID) {
-            throw new Error(
-              "Missing political entity Airtable ID for document",
-            );
-          }
-
-          const entity = entities.find(
-            (t) => t.airtableID === politicalEntityAirtableID,
-          );
+          const entity = politicalEntityAirtableID
+            ? entityByAirtableID.get(politicalEntityAirtableID)
+            : null;
 
           if (!entity) {
-            throw new Error(
-              `No political entity found for Airtable ID ${politicalEntityAirtableID}`,
-            );
+            return null;
           }
 
           const title = getAirtableDocumentName(doc);
@@ -192,18 +226,24 @@ export const FetchAirtableDocuments: TaskConfig<"fetchAirtableDocuments"> = {
         }),
       );
 
-      const failedDocs: Array<{
-        docID: string;
-        docName: string | null;
-        politicalEntityAirtableID: string | null;
-        reason: unknown;
-      }> = [];
       let createdDocsCount = 0;
 
       for (const [index, result] of creationResults.entries()) {
-        const doc = docsToCreate[index];
+        const doc = docsReadyToCreate[index];
 
         if (result.status === "fulfilled") {
+          if (!result.value) {
+            const errorMessage = "Missing related political entity";
+            failedDocs.push({
+              docID: doc.id,
+              docName: getAirtableDocumentName(doc),
+              politicalEntityAirtableID: doc.politicalEntity?.[0] ?? null,
+              reason: errorMessage,
+            });
+            await setDocumentStatus(doc.id, `Failed: ${errorMessage}`);
+            continue;
+          }
+
           createdDocsCount += 1;
           await setDocumentStatus(doc.id, "Fetched");
           continue;
@@ -262,19 +302,7 @@ export const FetchAirtableDocuments: TaskConfig<"fetchAirtableDocuments"> = {
           "fetchAirtableDocuments:: Error fetching documents from Airtable",
         error: errorMessage,
       });
-
-      logger.warn({
-        message:
-          "fetchAirtableDocuments:: Continuing workflow despite task-level failure",
-        recoverable: true,
-      });
-
-      return {
-        output: {
-          recoverableError: true,
-          error: errorMessage,
-        },
-      };
+      throw error;
     }
   }),
 };

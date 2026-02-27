@@ -532,19 +532,7 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
           (input as TaskInput | undefined)?.documentIds?.filter(Boolean) ?? [],
         error: errorMessage,
       });
-
-      logger.warn({
-        message:
-          "downloadDocuments:: Continuing workflow despite task-level failure",
-        recoverable: true,
-      });
-
-      return {
-        output: {
-          recoverableError: true,
-          error: errorMessage,
-        },
-      };
+      throw error;
     }
   }),
 };

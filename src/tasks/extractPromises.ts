@@ -308,19 +308,7 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
           (input as TaskInput | undefined)?.documentIds?.filter(Boolean) ?? [],
         error: errorMessage,
       });
-
-      logger.warn({
-        message:
-          "extractPromises:: Continuing workflow despite task-level failure",
-        recoverable: true,
-      });
-
-      return {
-        output: {
-          recoverableError: true,
-          error: errorMessage,
-        },
-      };
+      throw error;
     }
   }),
 };
