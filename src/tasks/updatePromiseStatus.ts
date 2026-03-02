@@ -30,15 +30,16 @@ export const UpdatePromiseStatus: TaskConfig<"updatePromiseStatus"> = {
     const logger = getTaskLogger(req, "updatePromiseStatus", input);
 
     logger.info("updatePromiseStatus:: Starting Meedan status sync");
+
+    const {
+      meedan: { meedanAPIKey, teamId },
+    } = await payload.findGlobal({ slug: "settings" });
+
+    if (!meedanAPIKey || !teamId) {
+      throw new Error("Meedan API key or team ID not configured in settings");
+    }
+
     try {
-      const {
-        meedan: { meedanAPIKey, teamId },
-      } = await payload.findGlobal({ slug: "settings" });
-
-      if (!meedanAPIKey || !teamId) {
-        throw new Error("Meedan API key or team ID not configured in settings");
-      }
-
       const remoteStatusesList = await fetchProjectMediaStatuses({
         apiKey: meedanAPIKey,
         teamId,
@@ -144,7 +145,8 @@ export const UpdatePromiseStatus: TaskConfig<"updatePromiseStatus"> = {
         } catch (extractionDocError) {
           failedExtractions += 1;
           logger.error({
-            message: "updatePromiseStatus:: Failed processing AI extraction doc",
+            message:
+              "updatePromiseStatus:: Failed processing AI extraction doc",
             extractionDocId: extractionDoc.id,
             extractionDocTitle: extractionDoc.title,
             extractionCount: extractionDoc.extractions?.length ?? 0,

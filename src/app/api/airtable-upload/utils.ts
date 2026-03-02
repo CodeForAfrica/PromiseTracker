@@ -60,7 +60,12 @@ type UploadPolicy = {
 
 type UploadValidation =
   | { ok: true }
-  | { ok: false; status: 413 | 415; message: string };
+  | { ok: false; status: 400 | 413 | 415; message: string };
+
+export type UploadMetadataValidationInput = {
+  fileName: string;
+  mimeType?: string | null;
+};
 
 const parseOrigins = (): string[] => {
   return (process.env.AIRTABLE_UPLOAD_ALLOWED_ORIGINS ?? "")
@@ -74,6 +79,16 @@ const normalizeOriginString = (value: string): string =>
 
 const escapeRegex = (value: string): string =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const LOOPBACK_HOSTNAMES = new Set([
+  "localhost",
+  "127.0.0.1",
+  "0.0.0.0",
+  "[::1]",
+]);
+
+const isLoopbackHostname = (hostname: string): boolean =>
+  LOOPBACK_HOSTNAMES.has(hostname.toLowerCase());
 
 const wildcardToRegex = (pattern: string): RegExp => {
   const escaped = escapeRegex(pattern).replace(/\\\*/g, ".*");
@@ -176,6 +191,69 @@ const getUploadPolicy = (kind: UploadKind): UploadPolicy => {
   };
 };
 
+export const getUploadMaxBytes = (kind: UploadKind): number =>
+  getUploadPolicy(kind).maxBytes;
+
+export const validateUploadMetadata = (
+  metadata: UploadMetadataValidationInput,
+  kind: UploadKind,
+): UploadValidation => {
+  const policy = getUploadPolicy(kind);
+  const mimeType = (metadata.mimeType ?? "").trim().toLowerCase();
+  const extension = getExtension(metadata.fileName);
+  const mimeAllowed = mimeType ? policy.allowedMimeTypes.has(mimeType) : false;
+  const extensionAllowed =
+    extension.length > 0 ? policy.allowedExtensions.has(extension) : false;
+
+  if (!mimeAllowed && !extensionAllowed) {
+    return {
+      ok: false,
+      status: 415,
+      message: `Unsupported file type: ${mimeType || extension || "unknown"}.`,
+    };
+  }
+
+  return { ok: true };
+};
+
+export const inferUploadKindFromMetadata = (
+  metadata: UploadMetadataValidationInput,
+): UploadKind | null => {
+  const isDocument = validateUploadMetadata(metadata, "document").ok;
+  const isEntityImage = validateUploadMetadata(metadata, "entityImage").ok;
+
+  if (isDocument === isEntityImage) {
+    return null;
+  }
+
+  return isDocument ? "document" : "entityImage";
+};
+
+export const validateUploadSize = (
+  fileSize: number,
+  kind: UploadKind,
+): UploadValidation => {
+  if (!fileSize || fileSize <= 0) {
+    return {
+      ok: false,
+      status: 400,
+      message: "Uploaded file is empty.",
+    };
+  }
+
+  const maxBytes = getUploadPolicy(kind).maxBytes;
+  if (fileSize > maxBytes) {
+    return {
+      ok: false,
+      status: 413,
+      message:
+        `File size ${formatBytesToMb(fileSize)} exceeds the limit of ${formatBytesToMb(maxBytes)} for ${kind === "entityImage" ? "image" : "document"} uploads.`,
+    };
+  }
+
+  return { ok: true };
+};
+
 export const getCorsHeaders = (requestOrigin: string | null): HeadersInit => {
   const allowedOrigins = parseOrigins();
 
@@ -228,55 +306,54 @@ export const parseUploadKind = (value: unknown): UploadKind | null => {
   return null;
 };
 
-export const validateFileForUpload = (
-  file: File,
-  kind: UploadKind,
-): UploadValidation => {
-  if (!file.size || file.size <= 0) {
-    return {
-      ok: false,
-      status: 415,
-      message: "Uploaded file is empty.",
-    };
-  }
-
-  const policy = getUploadPolicy(kind);
-
-  if (file.size > policy.maxBytes) {
-    return {
-      ok: false,
-      status: 413,
-      message:
-        `File size ${formatBytesToMb(file.size)} exceeds the limit of ${formatBytesToMb(policy.maxBytes)} for ${kind === "entityImage" ? "image" : "document"} uploads.`,
-    };
-  }
-
-  const mimeType = (file.type ?? "").toLowerCase();
-  const extension = getExtension(file.name);
-  const mimeAllowed = mimeType ? policy.allowedMimeTypes.has(mimeType) : false;
-  const extensionAllowed =
-    extension.length > 0 ? policy.allowedExtensions.has(extension) : false;
-
-  if (!mimeAllowed && !extensionAllowed) {
-    return {
-      ok: false,
-      status: 415,
-      message: `Unsupported file type: ${mimeType || extension || "unknown"}.`,
-    };
-  }
-
-  return { ok: true };
-};
-
 export const resolveAbsoluteMediaUrl = (
   relativeOrAbsoluteUrl: string,
   requestOrigin: string,
 ): string => {
-  const configuredOrigin = (process.env.NEXT_PUBLIC_APP_URL ?? "").trim();
-  const baseOrigin = configuredOrigin || requestOrigin;
+  const configuredOriginRaw = (process.env.NEXT_PUBLIC_APP_URL ?? "").trim();
+  let configuredOrigin: URL | null = null;
+
+  if (configuredOriginRaw) {
+    try {
+      configuredOrigin = new URL(configuredOriginRaw);
+    } catch {
+      console.warn(
+        `[airtable-upload] Invalid NEXT_PUBLIC_APP_URL: "${configuredOriginRaw}". Falling back to request origin.`,
+      );
+      configuredOrigin = null;
+    }
+  }
+
+  // Use configured public origin whenever available so behavior is explicit
+  // and testable across local/dev/staging/prod environments.
+  const targetOrigin = configuredOrigin?.origin ?? requestOrigin;
+  let targetOriginUrl: URL | null = null;
+  try {
+    targetOriginUrl = new URL(targetOrigin);
+  } catch {
+    targetOriginUrl = null;
+  }
 
   try {
-    return new URL(relativeOrAbsoluteUrl, baseOrigin).toString();
+    const resolvedUrl = new URL(relativeOrAbsoluteUrl, targetOrigin);
+    if (!targetOriginUrl) {
+      return resolvedUrl.toString();
+    }
+
+    const hostname = resolvedUrl.hostname.toLowerCase();
+    const shouldRebaseToTargetOrigin =
+      // Relative URLs inherit request/base origin, while absolute URLs keep their
+      // own origin. Rebase request-origin and loopback URLs to the selected target.
+      resolvedUrl.origin === requestOrigin ||
+      isLoopbackHostname(hostname);
+
+    if (shouldRebaseToTargetOrigin) {
+      resolvedUrl.protocol = targetOriginUrl.protocol;
+      resolvedUrl.hostname = targetOriginUrl.hostname;
+      resolvedUrl.port = targetOriginUrl.port;
+    }
+
+    return resolvedUrl.toString();
   } catch {
     return relativeOrAbsoluteUrl;
   }
