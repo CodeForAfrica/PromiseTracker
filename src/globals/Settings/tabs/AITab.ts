@@ -193,12 +193,6 @@ const validateProviderCredentialApiKey = async (
     return `Invalid API key for "${getProviderDisplayName(providerId)}".`;
   }
 
-  if (status === "skipped") {
-    return `Could not verify API key for "${getProviderDisplayName(
-      providerId,
-    )}". Check network/base URL and try again.`;
-  }
-
   return true;
 };
 
@@ -376,7 +370,7 @@ const validateModelPreset = (
   }
 
   if (!isProviderModelId(value)) {
-    return 'Use format "provider:model", for example "openai:gpt-5".';
+    return 'Use format "provider:model", for example "openai:gpt-4o".';
   }
 
   const selectedProvider = getSelectedProvider(aiValue);

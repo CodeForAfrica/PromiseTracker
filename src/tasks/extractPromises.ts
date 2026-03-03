@@ -504,6 +504,10 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
       let failedDocs = 0;
 
       for (const document of documents) {
+        let createdExtractionId: string | number | undefined;
+        let shouldRollbackCreatedExtraction = false;
+        let existingExtractionsForDocument: { id: string | number }[] = [];
+
         try {
           await setDocumentStatus(document.airtableID, "Analysing by AI");
           const { extractedText } = document;
@@ -517,6 +521,9 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
             },
             limit: 0,
           });
+          existingExtractionsForDocument = existingExtractions.map(
+            (extraction) => ({ id: extraction.id }),
+          );
 
           if (existingExtractions.length > 0 && !shouldForceReextract) {
             logger.info({
@@ -643,32 +650,44 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
             }
 
             let deletedCount = 0;
-            let failedDeletes = 0;
+            const MAX_DELETE_ATTEMPTS = 3;
+            const pendingDeletionIds = new Set(
+              existingExtractions.map((extraction) => extraction.id),
+            );
 
-            for (const extraction of existingExtractions) {
-              try {
-                await payload.delete({
-                  collection: "ai-extractions",
-                  id: extraction.id,
-                });
-                deletedCount += 1;
-              } catch (deletionError) {
-                failedDeletes += 1;
-                logger.warn({
-                  message:
-                    "extractPromises:: Failed deleting one previous extraction after successful force re-extract",
-                  documentId: document.id,
-                  documentTitle: document.title,
-                  documentAirtableID: document.airtableID,
-                  extractionId: extraction.id,
-                  error:
-                    deletionError instanceof Error
-                      ? deletionError.message
-                      : String(deletionError),
-                });
+            for (let attempt = 1; attempt <= MAX_DELETE_ATTEMPTS; attempt += 1) {
+              if (pendingDeletionIds.size === 0) {
+                break;
+              }
+
+              for (const extractionId of [...pendingDeletionIds]) {
+                try {
+                  await payload.delete({
+                    collection: "ai-extractions",
+                    id: extractionId,
+                  });
+                  pendingDeletionIds.delete(extractionId);
+                  deletedCount += 1;
+                } catch (deletionError) {
+                  logger.warn({
+                    message:
+                      "extractPromises:: Failed deleting one previous extraction after successful force re-extract",
+                    documentId: document.id,
+                    documentTitle: document.title,
+                    documentAirtableID: document.airtableID,
+                    extractionId,
+                    attempt,
+                    maxAttempts: MAX_DELETE_ATTEMPTS,
+                    error:
+                      deletionError instanceof Error
+                        ? deletionError.message
+                        : String(deletionError),
+                  });
+                }
               }
             }
 
+            const failedDeletes = pendingDeletionIds.size;
             logger.info({
               message:
                 "extractPromises:: Completed deferred cleanup of previous extractions for force re-extract",
@@ -678,10 +697,16 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
               deletedCount,
               failedDeletes,
             });
+
+            if (failedDeletes > 0) {
+              throw new Error(
+                `Force re-extract cleanup incomplete: ${failedDeletes} previous extraction(s) could not be deleted.`,
+              );
+            }
           };
 
           if (finalPromises.length > 0) {
-            await payload.create({
+            const createdExtraction = await payload.create({
               collection: "ai-extractions",
               data: {
                 title: normalized.title || document.title,
@@ -694,6 +719,11 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
                 })),
               },
             });
+            createdExtractionId = createdExtraction.id;
+            shouldRollbackCreatedExtraction =
+              shouldForceReextract && existingExtractions.length > 0;
+
+            await finalizeForceReextract();
 
             await payload.update({
               collection: "documents",
@@ -702,8 +732,6 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
                 fullyProcessed: true,
               },
             });
-
-            await finalizeForceReextract();
 
             await setDocumentStatus(
               document.airtableID,
@@ -712,6 +740,8 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
                 : "Analysed by AI",
             );
           } else {
+            await finalizeForceReextract();
+
             await payload.update({
               collection: "documents",
               id: document.id,
@@ -719,7 +749,6 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
                 fullyProcessed: true,
               },
             });
-            await finalizeForceReextract();
 
             await setDocumentStatus(
               document.airtableID,
@@ -735,6 +764,40 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
             promises: finalPromises,
           });
         } catch (documentError) {
+          if (
+            shouldRollbackCreatedExtraction &&
+            createdExtractionId !== undefined &&
+            existingExtractionsForDocument.length > 0
+          ) {
+            try {
+              await payload.delete({
+                collection: "ai-extractions",
+                id: createdExtractionId,
+              });
+              logger.warn({
+                message:
+                  "extractPromises:: Rolled back newly created extraction after force re-extract cleanup failure",
+                documentId: document.id,
+                documentTitle: document.title,
+                documentAirtableID: document.airtableID,
+                createdExtractionId,
+              });
+            } catch (rollbackError) {
+              logger.error({
+                message:
+                  "extractPromises:: Failed to rollback newly created extraction after force re-extract cleanup failure",
+                documentId: document.id,
+                documentTitle: document.title,
+                documentAirtableID: document.airtableID,
+                createdExtractionId,
+                error:
+                  rollbackError instanceof Error
+                    ? rollbackError.message
+                    : String(rollbackError),
+              });
+            }
+          }
+
           failedDocs += 1;
           const errorMessage =
             documentError instanceof Error
