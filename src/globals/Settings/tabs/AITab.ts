@@ -10,6 +10,7 @@ import {
   type AIProviderId,
 } from "@/lib/ai/providerCatalog";
 import { validateProviderApiKey } from "@/lib/ai/providerCredentialValidation";
+import { trimToUndefined } from "@/lib/ai/stringUtils";
 import type { Tab } from "payload";
 
 type AIProviderCredentialRow = {
@@ -75,15 +76,6 @@ const mergeAISettingsContext = ({
     model: sibling.model ?? nestedAiData.model ?? rootData.model,
     apiKey: sibling.apiKey ?? nestedAiData.apiKey ?? rootData.apiKey,
   };
-};
-
-const trimToUndefined = (value: unknown): string | undefined => {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : undefined;
 };
 
 const normalizeProviderId = (value: unknown): AIProviderId | undefined => {
@@ -507,6 +499,10 @@ export const AITab: Tab = {
                   admin: {
                     description:
                       "Optional if configured in environment variables. Saved keys are validated when possible.",
+                    components: {
+                      Field:
+                        "@/globals/Settings/tabs/MaskedApiKeyField#MaskedApiKeyField",
+                    },
                   },
                   validate: validateProviderCredentialApiKey,
                 },

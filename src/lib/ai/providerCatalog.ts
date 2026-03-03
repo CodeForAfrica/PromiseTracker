@@ -2,6 +2,7 @@ import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { GENERATED_PROVIDER_MODEL_IDS } from "./providerModelIds.generated";
+import { trimToUndefined } from "./stringUtils";
 
 const require = createRequire(import.meta.url);
 
@@ -65,15 +66,6 @@ export type AISettingsLike = {
 };
 
 export const MODEL_ID_PATTERN = /^[a-z0-9-]+:\S+$/i;
-
-const trimToUndefined = (value: unknown): string | undefined => {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : undefined;
-};
 
 const supportsExtractionCapabilities = ({
   supportsStructuredOutput,

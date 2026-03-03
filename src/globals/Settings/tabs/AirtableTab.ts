@@ -25,6 +25,12 @@ export const AirtableTab: Tab = {
               },
               type: "text",
               required: true,
+              admin: {
+                components: {
+                  Field:
+                    "@/globals/Settings/tabs/MaskedApiKeyField#MaskedApiKeyField",
+                },
+              },
             },
             {
               name: "airtableBaseID",

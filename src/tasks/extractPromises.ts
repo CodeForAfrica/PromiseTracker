@@ -245,6 +245,7 @@ const extractPromisesFromChunks = async ({
   documentAirtableID: string | null | undefined;
 }) => {
   const candidates: PromiseCandidate[] = [];
+  let recoverableChunkFailures = 0;
   const output = Output.array({
     element: passOnePromiseSchema,
     name: "campaign_promises",
@@ -288,11 +289,22 @@ const extractPromisesFromChunks = async ({
         APICallError.isInstance(error) ||
         NoObjectGeneratedError.isInstance(error)
       ) {
+        recoverableChunkFailures += 1;
         continue;
       }
 
       throw error;
     }
+  }
+
+  if (
+    chunks.length > 0 &&
+    candidates.length === 0 &&
+    recoverableChunkFailures === chunks.length
+  ) {
+    throw new Error(
+      `All ${chunks.length} chunk extraction attempts failed (provider error or invalid model response).`,
+    );
   }
 
   return candidates;
@@ -532,20 +544,13 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
           }
 
           if (existingExtractions.length > 0 && shouldForceReextract) {
-            for (const extraction of existingExtractions) {
-              await payload.delete({
-                collection: "ai-extractions",
-                id: extraction.id,
-              });
-            }
-
             logger.info({
               message:
-                "extractPromises:: Deleted existing extractions before force re-extract",
+                "extractPromises:: Existing extractions found for force re-extract; deletion is deferred until new extraction succeeds",
               documentId: document.id,
               documentTitle: document.title,
               documentAirtableID: document.airtableID,
-              deleted: existingExtractions.length,
+              pendingDeletionCount: existingExtractions.length,
             });
           }
 
@@ -595,8 +600,10 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
             mergedCandidates.length > MAX_NORMALIZATION_CANDIDATES
               ? mergedCandidates.slice(0, MAX_NORMALIZATION_CANDIDATES)
               : mergedCandidates;
+          const candidateListWasTruncated =
+            mergedCandidates.length > MAX_NORMALIZATION_CANDIDATES;
 
-          if (mergedCandidates.length > MAX_NORMALIZATION_CANDIDATES) {
+          if (candidateListWasTruncated) {
             logger.warn({
               message:
                 "extractPromises:: Candidate list truncated before normalization",
@@ -627,7 +634,51 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
             candidates: extractedCandidates.length,
             normalizedCandidates: mergedCandidates.length,
             finalPromises: finalPromises.length,
+            candidateListWasTruncated,
           });
+
+          const finalizeForceReextract = async () => {
+            if (!shouldForceReextract || existingExtractions.length === 0) {
+              return;
+            }
+
+            let deletedCount = 0;
+            let failedDeletes = 0;
+
+            for (const extraction of existingExtractions) {
+              try {
+                await payload.delete({
+                  collection: "ai-extractions",
+                  id: extraction.id,
+                });
+                deletedCount += 1;
+              } catch (deletionError) {
+                failedDeletes += 1;
+                logger.warn({
+                  message:
+                    "extractPromises:: Failed deleting one previous extraction after successful force re-extract",
+                  documentId: document.id,
+                  documentTitle: document.title,
+                  documentAirtableID: document.airtableID,
+                  extractionId: extraction.id,
+                  error:
+                    deletionError instanceof Error
+                      ? deletionError.message
+                      : String(deletionError),
+                });
+              }
+            }
+
+            logger.info({
+              message:
+                "extractPromises:: Completed deferred cleanup of previous extractions for force re-extract",
+              documentId: document.id,
+              documentTitle: document.title,
+              documentAirtableID: document.airtableID,
+              deletedCount,
+              failedDeletes,
+            });
+          };
 
           if (finalPromises.length > 0) {
             await payload.create({
@@ -652,7 +703,14 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
               },
             });
 
-            await setDocumentStatus(document.airtableID, "Analysed by AI");
+            await finalizeForceReextract();
+
+            await setDocumentStatus(
+              document.airtableID,
+              candidateListWasTruncated
+                ? "Analysed by AI (Candidate limit reached)"
+                : "Analysed by AI",
+            );
           } else {
             await payload.update({
               collection: "documents",
@@ -661,9 +719,13 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
                 fullyProcessed: true,
               },
             });
+            await finalizeForceReextract();
+
             await setDocumentStatus(
               document.airtableID,
-              "Analysed by AI (No promises found)",
+              candidateListWasTruncated
+                ? "Analysed by AI (No promises found; candidate limit reached)"
+                : "Analysed by AI (No promises found)",
             );
           }
 

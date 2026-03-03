@@ -12,7 +12,7 @@ import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { createPerplexity } from "@ai-sdk/perplexity";
 import { createTogetherAI } from "@ai-sdk/togetherai";
 import { createXai } from "@ai-sdk/xai";
-import { createProviderRegistry, type LanguageModel } from "ai";
+import { type LanguageModel } from "ai";
 import {
   AI_PROVIDER_CATALOG,
   DEFAULT_MODEL_PRESET,
@@ -24,6 +24,7 @@ import {
   type AIProviderId,
   type ProviderModelId,
 } from "./providerCatalog";
+import { trimToUndefined } from "./stringUtils";
 
 export type AIProviderCredentialInput = {
   provider?: string | null;
@@ -49,15 +50,6 @@ export type ResolvedLanguageModel = {
   model: LanguageModel;
   modelId: ProviderModelId;
   providerId: AIProviderId;
-};
-
-const trimToUndefined = (value: unknown): string | undefined => {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : undefined;
 };
 
 const normalizeLegacyModelId = (legacyModel: string): ProviderModelId => {
@@ -176,137 +168,92 @@ export const resolveProviderCredentials = (
 
 const normalizeOllamaBaseURL = (baseURL?: string) => {
   const defaultBaseURL = "http://127.0.0.1:11434/v1";
-  if (!baseURL) {
+  const trimmedBaseURL = trimToUndefined(baseURL);
+
+  if (!trimmedBaseURL) {
     return defaultBaseURL;
   }
 
-  const sanitized = baseURL.replace(/\/+$/, "");
-  return sanitized.endsWith("/v1") ? sanitized : `${sanitized}/v1`;
+  try {
+    const parsed = new URL(trimmedBaseURL);
+    const sanitizedPath = parsed.pathname.replace(/\/+$/, "");
+
+    if (!sanitizedPath || sanitizedPath === "/") {
+      parsed.pathname = "/v1";
+      return parsed.toString().replace(/\/+$/, "");
+    }
+
+    if (sanitizedPath === "/v1") {
+      parsed.pathname = "/v1";
+      return parsed.toString().replace(/\/+$/, "");
+    }
+
+    const v1SegmentIndex = sanitizedPath.indexOf("/v1/");
+    if (v1SegmentIndex >= 0) {
+      parsed.pathname = sanitizedPath.slice(0, v1SegmentIndex + 3);
+      return parsed.toString().replace(/\/+$/, "");
+    }
+
+    parsed.pathname = sanitizedPath;
+    return parsed.toString().replace(/\/+$/, "");
+  } catch {
+    return trimmedBaseURL.replace(/\/+$/, "") || defaultBaseURL;
+  }
 };
 
-export const buildLanguageModelRegistry = (ai: AISettingsInput) => {
-  const getCredentials = (providerId: AIProviderId) => {
-    const credentials = resolveProviderCredentials(ai, providerId);
-    return {
-      apiKey: trimToUndefined(credentials.apiKey),
-      baseURL: trimToUndefined(credentials.baseURL),
-    };
+const resolveProviderLanguageModel = ({
+  ai,
+  providerId,
+  providerModelId,
+}: {
+  ai: AISettingsInput;
+  providerId: AIProviderId;
+  providerModelId: string;
+}): LanguageModel => {
+  const credentials = resolveProviderCredentials(ai, providerId);
+  const apiKey = trimToUndefined(credentials.apiKey);
+  const baseURL = trimToUndefined(credentials.baseURL);
+  const clientOptions = {
+    ...(apiKey ? { apiKey } : {}),
+    ...(baseURL ? { baseURL } : {}),
   };
 
-  const googleCredentials = getCredentials("google");
-  const xaiCredentials = getCredentials("xai");
-  const openaiCredentials = getCredentials("openai");
-  const anthropicCredentials = getCredentials("anthropic");
-  const mistralCredentials = getCredentials("mistral");
-  const deepseekCredentials = getCredentials("deepseek");
-  const cerebrasCredentials = getCredentials("cerebras");
-  const groqCredentials = getCredentials("groq");
-  const togetherCredentials = getCredentials("togetherai");
-  const cohereCredentials = getCredentials("cohere");
-  const fireworksCredentials = getCredentials("fireworks");
-  const deepinfraCredentials = getCredentials("deepinfra");
-  const perplexityCredentials = getCredentials("perplexity");
-  const ollamaCredentials = getCredentials("ollama");
-
-  const providers = {
-    google: createGoogleGenerativeAI({
-      ...(googleCredentials.apiKey ? { apiKey: googleCredentials.apiKey } : {}),
-      ...(googleCredentials.baseURL
-        ? { baseURL: googleCredentials.baseURL }
-        : {}),
-    }),
-    xai: createXai({
-      ...(xaiCredentials.apiKey ? { apiKey: xaiCredentials.apiKey } : {}),
-      ...(xaiCredentials.baseURL ? { baseURL: xaiCredentials.baseURL } : {}),
-    }),
-    openai: createOpenAI({
-      ...(openaiCredentials.apiKey ? { apiKey: openaiCredentials.apiKey } : {}),
-      ...(openaiCredentials.baseURL
-        ? { baseURL: openaiCredentials.baseURL }
-        : {}),
-    }),
-    anthropic: createAnthropic({
-      ...(anthropicCredentials.apiKey
-        ? { apiKey: anthropicCredentials.apiKey }
-        : {}),
-      ...(anthropicCredentials.baseURL
-        ? { baseURL: anthropicCredentials.baseURL }
-        : {}),
-    }),
-    mistral: createMistral({
-      ...(mistralCredentials.apiKey
-        ? { apiKey: mistralCredentials.apiKey }
-        : {}),
-      ...(mistralCredentials.baseURL
-        ? { baseURL: mistralCredentials.baseURL }
-        : {}),
-    }),
-    deepseek: createDeepSeek({
-      ...(deepseekCredentials.apiKey
-        ? { apiKey: deepseekCredentials.apiKey }
-        : {}),
-      ...(deepseekCredentials.baseURL
-        ? { baseURL: deepseekCredentials.baseURL }
-        : {}),
-    }),
-    cerebras: createCerebras({
-      ...(cerebrasCredentials.apiKey
-        ? { apiKey: cerebrasCredentials.apiKey }
-        : {}),
-      ...(cerebrasCredentials.baseURL
-        ? { baseURL: cerebrasCredentials.baseURL }
-        : {}),
-    }),
-    groq: createGroq({
-      ...(groqCredentials.apiKey ? { apiKey: groqCredentials.apiKey } : {}),
-      ...(groqCredentials.baseURL ? { baseURL: groqCredentials.baseURL } : {}),
-    }),
-    togetherai: createTogetherAI({
-      ...(togetherCredentials.apiKey
-        ? { apiKey: togetherCredentials.apiKey }
-        : {}),
-      ...(togetherCredentials.baseURL
-        ? { baseURL: togetherCredentials.baseURL }
-        : {}),
-    }),
-    cohere: createCohere({
-      ...(cohereCredentials.apiKey ? { apiKey: cohereCredentials.apiKey } : {}),
-      ...(cohereCredentials.baseURL
-        ? { baseURL: cohereCredentials.baseURL }
-        : {}),
-    }),
-    fireworks: createFireworks({
-      ...(fireworksCredentials.apiKey
-        ? { apiKey: fireworksCredentials.apiKey }
-        : {}),
-      ...(fireworksCredentials.baseURL
-        ? { baseURL: fireworksCredentials.baseURL }
-        : {}),
-    }),
-    deepinfra: createDeepInfra({
-      ...(deepinfraCredentials.apiKey
-        ? { apiKey: deepinfraCredentials.apiKey }
-        : {}),
-      ...(deepinfraCredentials.baseURL
-        ? { baseURL: deepinfraCredentials.baseURL }
-        : {}),
-    }),
-    perplexity: createPerplexity({
-      ...(perplexityCredentials.apiKey
-        ? { apiKey: perplexityCredentials.apiKey }
-        : {}),
-      ...(perplexityCredentials.baseURL
-        ? { baseURL: perplexityCredentials.baseURL }
-        : {}),
-    }),
-    ollama: createOpenAICompatible({
-      name: "ollama",
-      baseURL: normalizeOllamaBaseURL(ollamaCredentials.baseURL),
-      ...(ollamaCredentials.apiKey ? { apiKey: ollamaCredentials.apiKey } : {}),
-    }),
-  };
-
-  return createProviderRegistry(providers);
+  switch (providerId) {
+    case "google":
+      return createGoogleGenerativeAI(clientOptions)(providerModelId);
+    case "xai":
+      return createXai(clientOptions)(providerModelId);
+    case "openai":
+      return createOpenAI(clientOptions)(providerModelId);
+    case "anthropic":
+      return createAnthropic(clientOptions)(providerModelId);
+    case "mistral":
+      return createMistral(clientOptions)(providerModelId);
+    case "deepseek":
+      return createDeepSeek(clientOptions)(providerModelId);
+    case "cerebras":
+      return createCerebras(clientOptions)(providerModelId);
+    case "groq":
+      return createGroq(clientOptions)(providerModelId);
+    case "togetherai":
+      return createTogetherAI(clientOptions)(providerModelId);
+    case "cohere":
+      return createCohere(clientOptions)(providerModelId);
+    case "fireworks":
+      return createFireworks(clientOptions)(providerModelId);
+    case "deepinfra":
+      return createDeepInfra(clientOptions)(providerModelId);
+    case "perplexity":
+      return createPerplexity(clientOptions)(providerModelId);
+    case "ollama":
+      return createOpenAICompatible({
+        name: "ollama",
+        baseURL: normalizeOllamaBaseURL(baseURL),
+        ...(apiKey ? { apiKey } : {}),
+      })(providerModelId);
+    default:
+      throw new Error(`Unsupported AI provider "${providerId}".`);
+  }
 };
 
 export const resolveConfiguredLanguageModel = (
@@ -316,7 +263,7 @@ export const resolveConfiguredLanguageModel = (
   },
 ): ResolvedLanguageModel => {
   const modelId = resolveConfiguredModelId(ai);
-  const { providerId } = splitProviderModelId(modelId);
+  const { providerId, modelId: providerModelId } = splitProviderModelId(modelId);
 
   if (!AI_PROVIDER_CATALOG.some((provider) => provider.id === providerId)) {
     throw new Error(`Unsupported provider "${providerId}".`);
@@ -334,11 +281,14 @@ export const resolveConfiguredLanguageModel = (
     );
   }
 
-  const registry = buildLanguageModelRegistry(ai);
-
   return {
-    model: registry.languageModel(modelId),
+    model: resolveProviderLanguageModel({
+      ai,
+      providerId,
+      providerModelId,
+    }),
     modelId,
     providerId,
   };
 };
+

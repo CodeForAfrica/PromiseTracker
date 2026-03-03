@@ -25,6 +25,12 @@ export const MeedanTab: Tab = {
                 en: "Meedan API Key",
                 fr: "Clé API Meedan",
               },
+              admin: {
+                components: {
+                  Field:
+                    "@/globals/Settings/tabs/MaskedApiKeyField#MaskedApiKeyField",
+                },
+              },
             },
             {
               name: "teamId",

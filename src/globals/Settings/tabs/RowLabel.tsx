@@ -7,6 +7,7 @@ type AISetting = NonNullable<Setting["ai"]["providerCredentials"]>[number];
 
 export const AIProviderRowLabel: React.FC<RowLabelProps> = () => {
   const data = useRowLabel<AISetting>();
+  const providerLabel = data?.data?.provider || "New provider";
 
   return (
     <div>
@@ -15,7 +16,7 @@ export const AIProviderRowLabel: React.FC<RowLabelProps> = () => {
           textTransform: "capitalize",
         }}
       >
-        {data.data.provider}
+        {providerLabel}
       </span>
     </div>
   );

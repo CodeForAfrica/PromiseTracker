@@ -1,4 +1,5 @@
 import type { AIProviderId } from "./providerCatalog";
+import { trimToUndefined } from "./stringUtils";
 
 export type ApiKeyValidationStatus = "valid" | "invalid" | "skipped";
 
@@ -30,15 +31,6 @@ const OPENAI_COMPATIBLE_BASE_URLS: Partial<Record<AIProviderId, string>> = {
   fireworks: "https://api.fireworks.ai/inference/v1",
   deepinfra: "https://api.deepinfra.com/v1/openai",
   perplexity: "https://api.perplexity.ai",
-};
-
-const trimToUndefined = (value: unknown): string | undefined => {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : undefined;
 };
 
 const normalizeBaseURL = (baseURL?: string) => {
@@ -119,13 +111,13 @@ const validateOpenAICompatibleKey = async ({
 const validateGoogleApiKey = async (
   apiKey: string,
 ): Promise<ApiKeyValidationStatus> => {
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(
-    apiKey,
-  )}`;
+  const endpoint = "https://generativelanguage.googleapis.com/v1beta/models";
 
   return requestValidation({
     url: endpoint,
-    headers: {},
+    headers: {
+      "x-goog-api-key": apiKey,
+    },
     invalidStatusCodes: [400, 401, 403],
   });
 };

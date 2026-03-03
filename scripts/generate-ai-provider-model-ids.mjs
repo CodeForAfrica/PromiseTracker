@@ -112,6 +112,7 @@ const formatArray = (items) => {
 const lines = [
   "// Generated from installed AI SDK provider type unions.",
   "// Regenerate by running: node scripts/generate-ai-provider-model-ids.mjs",
+  "// Note: IDs reflect SDK-declared model names and may not always be deployed or enabled in provider accounts.",
   "",
   "export const GENERATED_PROVIDER_MODEL_IDS = {",
 ];
