@@ -479,6 +479,9 @@ export const AITab: Tab = {
           admin: {
             description:
               "Add credentials first. Only configured providers can be selected for extraction models.",
+            components: {
+              RowLabel: "@/globals/Settings/tabs/RowLabel#AIProviderRowLabel",
+            },
           },
           fields: [
             {
@@ -545,23 +548,21 @@ export const AITab: Tab = {
                   data: unknown;
                 };
 
-                return filterConfiguredProviderOptions(
-                  AI_PROVIDER_OPTIONS,
-                  { data, siblingData },
-                ) as typeof args.options;
+                return filterConfiguredProviderOptions(AI_PROVIDER_OPTIONS, {
+                  data,
+                  siblingData,
+                }) as typeof args.options;
               },
               validate: validateModelProvider,
               hooks: {
                 beforeValidate: [
                   ((args: unknown) =>
-                    inferModelProviderValue(
-                      {
-                        value: (args as { value?: unknown }).value,
-                        data: (args as { data?: unknown }).data,
-                        siblingData: (args as { siblingData?: unknown })
-                          .siblingData,
-                      },
-                    )) as never,
+                    inferModelProviderValue({
+                      value: (args as { value?: unknown }).value,
+                      data: (args as { data?: unknown }).data,
+                      siblingData: (args as { siblingData?: unknown })
+                        .siblingData,
+                    })) as never,
                 ],
               },
               admin: {
@@ -583,10 +584,10 @@ export const AITab: Tab = {
                   data: unknown;
                 };
 
-                return filterConfiguredModelOptions(
-                  MODEL_PRESET_OPTIONS,
-                  { data, siblingData },
-                ) as typeof args.options;
+                return filterConfiguredModelOptions(MODEL_PRESET_OPTIONS, {
+                  data,
+                  siblingData,
+                }) as typeof args.options;
               },
               validate: validateModelPreset,
               admin: {

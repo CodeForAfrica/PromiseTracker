@@ -33,6 +33,7 @@ import { SlugComponent as SlugComponent_92cc057d0a2abb4f6cf0307edf59f986 } from 
 import { LinkGroupRowLabel as LinkGroupRowLabel_0e293e8a29b93ac2dfde38afc0359696 } from '@/components/payload/RowLabel'
 import { WatchTenantCollection as WatchTenantCollection_1d0591e3cf4f332c83a86da13a0de59a } from '@payloadcms/plugin-multi-tenant/client'
 import { ColorPickerFieldComponent as ColorPickerFieldComponent_95f860801d0381344387ae1d8e2f4d24 } from '@innovixx/payload-color-picker-field/components'
+import { AIProviderRowLabel as AIProviderRowLabel_5a1b7be26cbec3efc44149c3bf55f6e7 } from '@/globals/Settings/tabs/RowLabel'
 import { GlobalViewRedirect as GlobalViewRedirect_d6d5f193a167989e2ee7d14202901e62 } from '@payloadcms/plugin-multi-tenant/rsc'
 import { TenantSelector as TenantSelector_d6d5f193a167989e2ee7d14202901e62 } from '@payloadcms/plugin-multi-tenant/rsc'
 import { TenantSelectionProvider as TenantSelectionProvider_d6d5f193a167989e2ee7d14202901e62 } from '@payloadcms/plugin-multi-tenant/rsc'
@@ -76,6 +77,7 @@ export const importMap = {
   "@/components/payload/RowLabel#LinkGroupRowLabel": LinkGroupRowLabel_0e293e8a29b93ac2dfde38afc0359696,
   "@payloadcms/plugin-multi-tenant/client#WatchTenantCollection": WatchTenantCollection_1d0591e3cf4f332c83a86da13a0de59a,
   "@innovixx/payload-color-picker-field/components#ColorPickerFieldComponent": ColorPickerFieldComponent_95f860801d0381344387ae1d8e2f4d24,
+  "@/globals/Settings/tabs/RowLabel#AIProviderRowLabel": AIProviderRowLabel_5a1b7be26cbec3efc44149c3bf55f6e7,
   "@payloadcms/plugin-multi-tenant/rsc#GlobalViewRedirect": GlobalViewRedirect_d6d5f193a167989e2ee7d14202901e62,
   "@payloadcms/plugin-multi-tenant/rsc#TenantSelector": TenantSelector_d6d5f193a167989e2ee7d14202901e62,
   "@payloadcms/plugin-multi-tenant/rsc#TenantSelectionProvider": TenantSelectionProvider_d6d5f193a167989e2ee7d14202901e62,
