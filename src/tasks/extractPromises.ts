@@ -340,7 +340,7 @@ const normalizeCandidatesWithTools = async ({
     },
   });
 
-  await generateText({
+  const normalizationRun = await generateText({
     model,
     system: buildNormalizationSystemPrompt(),
     prompt: buildNormalizationPrompt({ documentTitle, candidates }),
@@ -352,6 +352,16 @@ const normalizeCandidatesWithTools = async ({
     stopWhen: [hasToolCall("finalizeExtraction"), stepCountIs(MAX_TOOL_STEPS)],
     maxRetries: 3,
   });
+
+  const finalized = normalizationRun.steps.some((step) =>
+    step.toolCalls.some((toolCall) => toolCall.toolName === "finalizeExtraction"),
+  );
+
+  if (!finalized) {
+    throw new Error(
+      `Normalization did not finalize before the ${MAX_TOOL_STEPS}-step limit.`,
+    );
+  }
 
   return {
     title: normalizedTitle || documentTitle,
@@ -384,7 +394,9 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
 
       const aiSettings = (settings.ai ?? {}) as AISettingsInput;
       const { model, modelId, providerId } =
-        resolveConfiguredLanguageModel(aiSettings);
+        resolveConfiguredLanguageModel(aiSettings, {
+          requireExtractionCapabilities: true,
+        });
 
       logger.info({
         message: "extractPromises:: Resolved AI model",

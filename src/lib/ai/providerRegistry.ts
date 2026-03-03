@@ -17,7 +17,9 @@ import {
   AI_PROVIDER_CATALOG,
   DEFAULT_MODEL_PRESET,
   getProviderCatalogItem,
+  isProviderConfigured,
   isProviderModelId,
+  isProviderModelSupportedForExtraction,
   splitProviderModelId,
   type AIProviderId,
   type ProviderModelId,
@@ -30,6 +32,7 @@ export type AIProviderCredentialInput = {
 };
 
 export type AISettingsInput = {
+  modelProvider?: string | null;
   modelPreset?: string | null;
   customModelId?: string | null;
   model?: string | null; // Legacy Google model field.
@@ -149,10 +152,19 @@ export const resolveProviderCredentials = (
     (provider.id === "google" ? trimToUndefined(ai.apiKey) : undefined);
   const baseURL = providerCredentials?.baseURL ?? envBaseURL;
 
-  if (options?.strict && provider.requiresApiKey && !apiKey) {
-    const keyName = provider.envApiKey ?? "an API key";
+  if (options?.strict && !isProviderConfigured(ai, provider.id)) {
+    const keyName = provider.envApiKey;
+    const baseURLName = provider.envBaseURL;
+    const instructions = provider.requiresApiKey
+      ? keyName
+        ? `set ${keyName}`
+        : "set an API key"
+      : baseURLName
+        ? `set ${keyName ?? "an API key"} or ${baseURLName}`
+        : "set provider credentials";
+
     throw new Error(
-      `Missing API key for provider "${provider.label}". Configure it in Settings or set ${keyName}.`,
+      `Missing credentials for provider "${provider.label}". Configure it in Settings or ${instructions}.`,
     );
   }
 
@@ -294,11 +306,14 @@ export const buildLanguageModelRegistry = (ai: AISettingsInput) => {
     }),
   };
 
-  return createProviderRegistry(providers as never);
+  return createProviderRegistry(providers);
 };
 
 export const resolveConfiguredLanguageModel = (
   ai: AISettingsInput,
+  options?: {
+    requireExtractionCapabilities?: boolean;
+  },
 ): ResolvedLanguageModel => {
   const modelId = resolveConfiguredModelId(ai);
   const { providerId } = splitProviderModelId(modelId);
@@ -308,6 +323,16 @@ export const resolveConfiguredLanguageModel = (
   }
 
   resolveProviderCredentials(ai, providerId, { strict: true });
+
+  if (
+    options?.requireExtractionCapabilities &&
+    !isProviderModelSupportedForExtraction(modelId)
+  ) {
+    const provider = getProviderCatalogItem(providerId);
+    throw new Error(
+      `Model "${modelId}" from provider "${provider?.label ?? providerId}" is not configured for structured output + tool calling extraction.`,
+    );
+  }
 
   const registry = buildLanguageModelRegistry(ai);
 
