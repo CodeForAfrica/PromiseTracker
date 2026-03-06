@@ -10,9 +10,6 @@ export const runTask = async (
   try {
     await fn();
   } catch (error) {
-    // captureException is used here rather than Sentry.logger.error to avoid
-    // duplicate Sentry issues (logger may auto-capture depending on SDK config),
-    // and to preserve the full stack trace which logger.error would discard.
     Sentry.captureException(error, {
       tags: { workflow, task: name },
     });
@@ -25,7 +22,9 @@ type WorkflowHandlerArgs = unknown;
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
 
-const buildSentryExtra = (args: WorkflowHandlerArgs): Record<string, unknown> => {
+const buildSentryExtra = (
+  args: WorkflowHandlerArgs,
+): Record<string, unknown> => {
   if (!isObject(args)) {
     return {};
   }
@@ -71,7 +70,7 @@ const getRunId = (args: WorkflowHandlerArgs): string => {
 };
 
 const getTasks = (
-  args: WorkflowHandlerArgs
+  args: WorkflowHandlerArgs,
 ): Record<string, unknown> | undefined => {
   if (!isObject(args)) {
     return undefined;
@@ -83,7 +82,7 @@ const getTasks = (
 const getWorkflowLogContext = (
   slug: string,
   runId: string,
-  args: WorkflowHandlerArgs
+  args: WorkflowHandlerArgs,
 ) => ({
   log_source: "payload.workflow",
   workflow: slug,
@@ -93,7 +92,7 @@ const getWorkflowLogContext = (
 
 const withWorkflowContext = (
   slug: string,
-  handler: WorkflowHandlerFn
+  handler: WorkflowHandlerFn,
 ): WorkflowHandlerFn => {
   return async (args) => {
     if (typeof handler !== "function") {
@@ -121,14 +120,14 @@ const withWorkflowContext = (
                   workflowRunId: runId,
                 };
                 return (
-                  original as (id: string, options?: { input?: unknown }) => unknown
-                )(
-                  id,
-                  {
-                    ...options,
-                    input: { ...input, runContext },
-                  }
-                );
+                  original as (
+                    id: string,
+                    options?: { input?: unknown },
+                  ) => unknown
+                )(id, {
+                  ...options,
+                  input: { ...input, runContext },
+                });
               };
             },
           })
@@ -154,7 +153,7 @@ const withWorkflowContext = (
         Sentry.logger.info("workflow.complete", logContext);
 
         return result;
-      }
+      },
     );
   };
 };
@@ -165,7 +164,7 @@ const withWorkflowContext = (
 // those rare cases.
 const withWorkflowErrorCapture = (
   slug: string,
-  handler: WorkflowHandlerFn
+  handler: WorkflowHandlerFn,
 ): WorkflowHandlerFn => {
   if (typeof handler !== "function") {
     return handler;
@@ -201,7 +200,7 @@ export const defineWorkflow = (config: WorkflowConfig): WorkflowConfig => {
 
   const wrappedHandler = withWorkflowErrorCapture(
     config.slug,
-    withWorkflowContext(config.slug, config.handler as WorkflowHandlerFn)
+    withWorkflowContext(config.slug, config.handler as WorkflowHandlerFn),
   );
 
   return {
