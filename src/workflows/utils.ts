@@ -178,10 +178,6 @@ const withWorkflowErrorCapture = (
       const runId = getRunId(args);
       const logContext = getWorkflowLogContext(slug, runId, args);
 
-      Sentry.logger.error("workflow.error", {
-        ...logContext,
-        error: error instanceof Error ? error.message : String(error ?? ""),
-      });
       Sentry.captureException(error, {
         tags: {
           workflow: slug,
