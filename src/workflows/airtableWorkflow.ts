@@ -15,37 +15,30 @@ export const airtableWorkflow = defineWorkflow({
     await runTask(
       () => tasks.createTenantFromAirtable(randomUUID(), { input: {} }),
       "createTenantFromAirtable",
-      "airtableWorkflow",
     );
     await runTask(
       () => tasks.createPoliticalEntity(randomUUID(), { input: {} }),
       "createPoliticalEntity",
-      "airtableWorkflow",
     );
     await runTask(
       () => tasks.fetchAirtableDocuments(randomUUID(), { input: {} }),
       "fetchAirtableDocuments",
-      "airtableWorkflow",
     );
     await runTask(
       () => tasks.downloadDocuments(randomUUID(), { input: {} }),
       "downloadDocuments",
-      "airtableWorkflow",
     );
     await runTask(
       () => tasks.extractDocuments(randomUUID(), { input: {} }),
       "extractDocuments",
-      "airtableWorkflow",
     );
     await runTask(
       () => tasks.extractPromises(randomUUID(), { input: {} }),
       "extractPromises",
-      "airtableWorkflow",
     );
     await runTask(
       () => tasks.uploadToMeedan(randomUUID(), { input: {} }),
       "uploadToMeedan",
-      "airtableWorkflow",
     );
   },
 } satisfies WorkflowConfig);

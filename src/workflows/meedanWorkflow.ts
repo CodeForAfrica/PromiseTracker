@@ -15,17 +15,14 @@ export const meedanWorkflow = defineWorkflow({
     await runTask(
       () => tasks.fetchPromiseStatuses(randomUUID(), { input: {} }),
       "fetchPromiseStatuses",
-      "meedanWorkflow",
     );
     await runTask(
       () => tasks.updatePromiseStatus(randomUUID(), { input: {} }),
       "updatePromiseStatus",
-      "meedanWorkflow",
     );
     await runTask(
       () => tasks.syncMeedanPromises(randomUUID(), { input: {} }),
       "syncMeedanPromises",
-      "meedanWorkflow",
     );
   },
 } satisfies WorkflowConfig);

@@ -5,14 +5,15 @@ import { randomUUID } from "node:crypto";
 export const runTask = async (
   fn: () => Promise<unknown>,
   name: string,
-  workflow: string,
-) => {
+): Promise<boolean> => {
   try {
     await fn();
+    return true;
   } catch (error) {
     Sentry.captureException(error, {
-      tags: { workflow, task: name },
+      tags: { task: name },
     });
+    return false;
   }
 };
 
