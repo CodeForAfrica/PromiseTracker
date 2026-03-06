@@ -2,6 +2,25 @@ import * as Sentry from "@sentry/nextjs";
 import type { WorkflowConfig } from "payload";
 import { randomUUID } from "node:crypto";
 
+export const runTask = async (
+  fn: () => Promise<unknown>,
+  name: string,
+  workflow: string,
+) => {
+  try {
+    await fn();
+  } catch (error) {
+    Sentry.logger.error(`[${workflow}] Task "${name}" failed, continuing`, {
+      task: name,
+      workflow,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    Sentry.captureException(error, {
+      tags: { workflow, task: name },
+    });
+  }
+};
+
 type WorkflowHandlerFn = NonNullable<WorkflowConfig["handler"]>;
 type WorkflowHandlerArgs = unknown;
 

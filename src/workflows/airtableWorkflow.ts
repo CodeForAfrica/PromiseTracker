@@ -1,6 +1,6 @@
 import { WorkflowConfig } from "payload";
 import { randomUUID } from "node:crypto";
-import { defineWorkflow } from "./utils";
+import { defineWorkflow, runTask } from "./utils";
 
 export const airtableWorkflow = defineWorkflow({
   slug: "airtableWorkflow",
@@ -12,26 +12,40 @@ export const airtableWorkflow = defineWorkflow({
     },
   ],
   handler: async ({ tasks }) => {
-    await tasks.createTenantFromAirtable(randomUUID(), {
-      input: {},
-    });
-    await tasks.createPoliticalEntity(randomUUID(), {
-      input: {},
-    });
-    await tasks.fetchAirtableDocuments(randomUUID(), {
-      input: {},
-    });
-    await tasks.downloadDocuments(randomUUID(), {
-      input: {},
-    });
-    await tasks.extractDocuments(randomUUID(), {
-      input: {},
-    });
-    await tasks.extractPromises(randomUUID(), {
-      input: {},
-    });
-    await tasks.uploadToMeedan(randomUUID(), {
-      input: {},
-    });
+    await runTask(
+      () => tasks.createTenantFromAirtable(randomUUID(), { input: {} }),
+      "createTenantFromAirtable",
+      "airtableWorkflow",
+    );
+    await runTask(
+      () => tasks.createPoliticalEntity(randomUUID(), { input: {} }),
+      "createPoliticalEntity",
+      "airtableWorkflow",
+    );
+    await runTask(
+      () => tasks.fetchAirtableDocuments(randomUUID(), { input: {} }),
+      "fetchAirtableDocuments",
+      "airtableWorkflow",
+    );
+    await runTask(
+      () => tasks.downloadDocuments(randomUUID(), { input: {} }),
+      "downloadDocuments",
+      "airtableWorkflow",
+    );
+    await runTask(
+      () => tasks.extractDocuments(randomUUID(), { input: {} }),
+      "extractDocuments",
+      "airtableWorkflow",
+    );
+    await runTask(
+      () => tasks.extractPromises(randomUUID(), { input: {} }),
+      "extractPromises",
+      "airtableWorkflow",
+    );
+    await runTask(
+      () => tasks.uploadToMeedan(randomUUID(), { input: {} }),
+      "uploadToMeedan",
+      "airtableWorkflow",
+    );
   },
 } satisfies WorkflowConfig);
