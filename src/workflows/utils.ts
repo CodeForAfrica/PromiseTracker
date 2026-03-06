@@ -10,11 +10,9 @@ export const runTask = async (
   try {
     await fn();
   } catch (error) {
-    Sentry.logger.error(`[${workflow}] Task "${name}" failed, continuing`, {
-      task: name,
-      workflow,
-      error: error instanceof Error ? error.message : String(error),
-    });
+    // captureException is used here rather than Sentry.logger.error to avoid
+    // duplicate Sentry issues (logger may auto-capture depending on SDK config),
+    // and to preserve the full stack trace which logger.error would discard.
     Sentry.captureException(error, {
       tags: { workflow, task: name },
     });
