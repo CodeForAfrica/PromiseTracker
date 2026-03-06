@@ -161,6 +161,10 @@ const withWorkflowContext = (
   };
 };
 
+// Note: task-level errors are already caught and reported by runTask, so this
+// wrapper will only fire for errors thrown by the handler setup code itself
+// (e.g. a bug outside of any runTask call). It is kept as a safety net for
+// those rare cases.
 const withWorkflowErrorCapture = (
   slug: string,
   handler: WorkflowHandlerFn
