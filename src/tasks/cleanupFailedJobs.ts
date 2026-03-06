@@ -19,7 +19,7 @@ export const CleanupFailedJobs: TaskConfig<"cleanupFailedJobs"> = {
   retries: 1,
   schedule: [
     {
-      cron: "0 0 * * *",
+      cron: "0 * * * *",
       queue: getCleanupQueue(),
     },
   ],

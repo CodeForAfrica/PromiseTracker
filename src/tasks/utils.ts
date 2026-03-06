@@ -96,11 +96,6 @@ const createTaskLogger = (
         ...context,
         ...extra,
       });
-      Sentry.captureMessage(message, {
-        level: level as Sentry.SeverityLevel,
-        ...context,
-        ...extra,
-      });
     };
 
   return {

@@ -1,6 +1,6 @@
 import { WorkflowConfig } from "payload";
 import { randomUUID } from "node:crypto";
-import { defineWorkflow } from "./utils";
+import { defineWorkflow, runTask } from "./utils";
 
 export const meedanWorkflow = defineWorkflow({
   slug: "meedanWorkflow",
@@ -12,14 +12,17 @@ export const meedanWorkflow = defineWorkflow({
     },
   ],
   handler: async ({ tasks }) => {
-    await tasks.fetchPromiseStatuses(randomUUID(), {
-      input: {},
-    });
-    await tasks.updatePromiseStatus(randomUUID(), {
-      input: {},
-    });
-    await tasks.syncMeedanPromises(randomUUID(), {
-      input: {},
-    });
+    await runTask(
+      () => tasks.fetchPromiseStatuses(randomUUID(), { input: {} }),
+      "fetchPromiseStatuses",
+    );
+    await runTask(
+      () => tasks.updatePromiseStatus(randomUUID(), { input: {} }),
+      "updatePromiseStatus",
+    );
+    await runTask(
+      () => tasks.syncMeedanPromises(randomUUID(), { input: {} }),
+      "syncMeedanPromises",
+    );
   },
 } satisfies WorkflowConfig);

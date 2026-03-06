@@ -2,13 +2,30 @@ import * as Sentry from "@sentry/nextjs";
 import type { WorkflowConfig } from "payload";
 import { randomUUID } from "node:crypto";
 
+export const runTask = async (
+  fn: () => Promise<unknown>,
+  name: string,
+): Promise<boolean> => {
+  try {
+    await fn();
+    return true;
+  } catch (error) {
+    Sentry.captureException(error, {
+      tags: { task: name },
+    });
+    return false;
+  }
+};
+
 type WorkflowHandlerFn = NonNullable<WorkflowConfig["handler"]>;
 type WorkflowHandlerArgs = unknown;
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
 
-const buildSentryExtra = (args: WorkflowHandlerArgs): Record<string, unknown> => {
+const buildSentryExtra = (
+  args: WorkflowHandlerArgs,
+): Record<string, unknown> => {
   if (!isObject(args)) {
     return {};
   }
@@ -54,7 +71,7 @@ const getRunId = (args: WorkflowHandlerArgs): string => {
 };
 
 const getTasks = (
-  args: WorkflowHandlerArgs
+  args: WorkflowHandlerArgs,
 ): Record<string, unknown> | undefined => {
   if (!isObject(args)) {
     return undefined;
@@ -66,7 +83,7 @@ const getTasks = (
 const getWorkflowLogContext = (
   slug: string,
   runId: string,
-  args: WorkflowHandlerArgs
+  args: WorkflowHandlerArgs,
 ) => ({
   log_source: "payload.workflow",
   workflow: slug,
@@ -76,7 +93,7 @@ const getWorkflowLogContext = (
 
 const withWorkflowContext = (
   slug: string,
-  handler: WorkflowHandlerFn
+  handler: WorkflowHandlerFn,
 ): WorkflowHandlerFn => {
   return async (args) => {
     if (typeof handler !== "function") {
@@ -104,14 +121,14 @@ const withWorkflowContext = (
                   workflowRunId: runId,
                 };
                 return (
-                  original as (id: string, options?: { input?: unknown }) => unknown
-                )(
-                  id,
-                  {
-                    ...options,
-                    input: { ...input, runContext },
-                  }
-                );
+                  original as (
+                    id: string,
+                    options?: { input?: unknown },
+                  ) => unknown
+                )(id, {
+                  ...options,
+                  input: { ...input, runContext },
+                });
               };
             },
           })
@@ -137,14 +154,18 @@ const withWorkflowContext = (
         Sentry.logger.info("workflow.complete", logContext);
 
         return result;
-      }
+      },
     );
   };
 };
 
+// Note: task-level errors are already caught and reported by runTask, so this
+// wrapper will only fire for errors thrown by the handler setup code itself
+// (e.g. a bug outside of any runTask call). It is kept as a safety net for
+// those rare cases.
 const withWorkflowErrorCapture = (
   slug: string,
-  handler: WorkflowHandlerFn
+  handler: WorkflowHandlerFn,
 ): WorkflowHandlerFn => {
   if (typeof handler !== "function") {
     return handler;
@@ -157,10 +178,6 @@ const withWorkflowErrorCapture = (
       const runId = getRunId(args);
       const logContext = getWorkflowLogContext(slug, runId, args);
 
-      Sentry.logger.error("workflow.error", {
-        ...logContext,
-        error: error instanceof Error ? error.message : String(error ?? ""),
-      });
       Sentry.captureException(error, {
         tags: {
           workflow: slug,
@@ -180,7 +197,7 @@ export const defineWorkflow = (config: WorkflowConfig): WorkflowConfig => {
 
   const wrappedHandler = withWorkflowErrorCapture(
     config.slug,
-    withWorkflowContext(config.slug, config.handler as WorkflowHandlerFn)
+    withWorkflowContext(config.slug, config.handler as WorkflowHandlerFn),
   );
 
   return {
