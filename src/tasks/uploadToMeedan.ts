@@ -339,8 +339,19 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
             const extractionsToUpload = getExtractionsToUpload(doc);
 
             if (extractionsToUpload.length === 0) {
-              const markedAsProcessed =
-                await markDocumentAsProcessedWhenReady(document);
+              const totalExtractions = doc.extractions?.length ?? 0;
+              const alreadyFailedCount = (doc.extractions ?? []).filter(
+                (e) => e.uploadError,
+              ).length;
+              const alreadyFailedStatus =
+                alreadyFailedCount > 0
+                  ? `Uploaded to Meedan (${alreadyFailedCount} out of ${totalExtractions} failed)`
+                  : undefined;
+
+              const markedAsProcessed = await markDocumentAsProcessedWhenReady(
+                document,
+                alreadyFailedStatus,
+              );
 
               logger.info({
                 message:
@@ -539,8 +550,14 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
                     ? extractionError.message
                     : String(extractionError);
 
-                // Persist the error on the extraction so it is never retried.
-                const updatedExtractions = doc.extractions?.map((ext) => {
+                // Re-fetch before writing so we don't clobber checkMediaId or
+                // uploadError values written by earlier iterations in this loop.
+                const freshDoc = await payload.findByID({
+                  collection: "ai-extractions",
+                  id: doc.id,
+                  select: { extractions: true },
+                });
+                const updatedExtractions = freshDoc.extractions?.map((ext) => {
                   if (ext.uniqueId === extraction.uniqueId) {
                     return { ...ext, uploadError: uploadErrorMessage };
                   }
