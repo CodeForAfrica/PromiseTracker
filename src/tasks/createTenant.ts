@@ -3,7 +3,7 @@ import { getAirtableCountries } from "@/lib/airtable";
 import { LANGUAGE_MAP } from "@/utils/locales";
 import { TaskConfig } from "payload";
 import { Tenant } from "@/payload-types";
-import { getTaskLogger, withTaskTracing } from "./utils";
+import { createOnFail, getTaskLogger, withTaskTracing } from "./utils";
 
 type COUNTRY = NonNullable<Tenant["country"]>;
 
@@ -11,6 +11,7 @@ export const CreateTenantFromAirtable: TaskConfig<"createTenantFromAirtable"> =
   {
     slug: "createTenantFromAirtable",
     label: "Create Tenant From Airtable",
+    onFail: createOnFail("createTenantFromAirtable"),
     handler: withTaskTracing(
       "createTenantFromAirtable",
       async ({ req, input }) => {

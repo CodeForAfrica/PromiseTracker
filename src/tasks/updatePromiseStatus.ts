@@ -4,7 +4,7 @@ import {
   PromiseStatus,
 } from "@/payload-types";
 import { fetchProjectMediaStatuses } from "@/lib/meedan";
-import { getTaskLogger, withTaskTracing, type TaskInput } from "./utils";
+import { createOnFail, getTaskLogger, withTaskTracing, type TaskInput } from "./utils";
 
 type ExtractionItem = NonNullable<
   NonNullable<AiExtractionDoc["extractions"]>[number]
@@ -25,6 +25,7 @@ const getStatusId = (value: ExtractionItem["Status"]) => {
 export const UpdatePromiseStatus: TaskConfig<"updatePromiseStatus"> = {
   slug: "updatePromiseStatus",
   label: "Update Promise Status",
+  onFail: createOnFail("updatePromiseStatus"),
   handler: withTaskTracing("updatePromiseStatus", async ({ req, input }) => {
     const { payload } = req;
     const logger = getTaskLogger(req, "updatePromiseStatus", input);

@@ -16,11 +16,12 @@ import {
   getMediaIdFromLookup,
   normalizeMediaSourceUrl,
 } from "@/lib/mediaUrl";
-import { getTaskLogger, withTaskTracing } from "./utils";
+import { createOnFail, getTaskLogger, withTaskTracing } from "./utils";
 
 export const CreatePoliticalEntity: TaskConfig = {
   slug: "createPoliticalEntity",
   label: "Create Political Entity",
+  onFail: createOnFail("createPoliticalEntity"),
   handler: withTaskTracing("createPoliticalEntity", async ({ req, input }) => {
     const { payload } = req;
     const logger = getTaskLogger(req, "createPoliticalEntity", input);
@@ -330,15 +331,33 @@ export const CreatePoliticalEntity: TaskConfig = {
         }
 
         const directPatterns: Array<[RegExp, string]> = [
-          [/missing tenant mapping for country/i, "Missing required field: Country"],
-          [/missing required field:\s*country/i, "Missing required field: Country"],
-          [/missing required field:\s*political entity name/i, "Missing required field: Political Entity Name"],
+          [
+            /missing tenant mapping for country/i,
+            "Missing required field: Country",
+          ],
+          [
+            /missing required field:\s*country/i,
+            "Missing required field: Country",
+          ],
+          [
+            /missing required field:\s*political entity name/i,
+            "Missing required field: Political Entity Name",
+          ],
           [/missing required field:\s*image/i, "Missing required field: Image"],
-          [/missing required fields?:\s*period from/i, "Missing required fields: Period From and Period To"],
+          [
+            /missing required fields?:\s*period from/i,
+            "Missing required fields: Period From and Period To",
+          ],
           [/url is invalid|invalid image url/i, "Invalid image URL"],
           [/validation/i, "Validation failed while saving entity"],
-          [/unauthorized|forbidden|http\s*401|http\s*403/i, "Sync failed: Unauthorized"],
-          [/timeout|timed out|network|fetch failed|econn|enotfound/i, "Sync failed: Network error"],
+          [
+            /unauthorized|forbidden|http\s*401|http\s*403/i,
+            "Sync failed: Unauthorized",
+          ],
+          [
+            /timeout|timed out|network|fetch failed|econn|enotfound/i,
+            "Sync failed: Network error",
+          ],
           [/failed syncing entity:/i, "Failed to sync entity"],
         ];
 
@@ -444,10 +463,7 @@ export const CreatePoliticalEntity: TaskConfig = {
 
           if (!tenantForEntity) {
             failedCount += 1;
-            await setEntityStatus(
-              entity.id,
-              "Missing required field: Country",
-            );
+            await setEntityStatus(entity.id, "Missing required field: Country");
             logger.warn({
               message:
                 "createPoliticalEntity:: Tenant not found for entity country",
@@ -516,7 +532,9 @@ export const CreatePoliticalEntity: TaskConfig = {
 
               mediaId = (mediaUpload as any)?.id ?? mediaUpload;
               if (!mediaId) {
-                throw new Error("Failed to resolve media ID for political entity image");
+                throw new Error(
+                  "Failed to resolve media ID for political entity image",
+                );
               }
 
               cacheMediaSourceLookup(
@@ -684,7 +702,10 @@ export const CreatePoliticalEntity: TaskConfig = {
             entityError instanceof Error
               ? entityError.message
               : String(entityError ?? "");
-          await setEntityStatus(entity.id, simplifyEntityStatusError(errorMessage));
+          await setEntityStatus(
+            entity.id,
+            simplifyEntityStatusError(errorMessage),
+          );
           logger.warn({
             message: `createPoliticalEntity:: Unexpected error processing entity "${entity.politicalEntityName ?? entity.id}" — skipping`,
             airtableEntityId: entity.id,

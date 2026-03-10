@@ -8,7 +8,7 @@ import {
   resolveConfiguredLanguageModel,
   type AISettingsInput,
 } from "@/lib/ai/providerRegistry";
-import { getTaskLogger, withTaskTracing, type TaskInput } from "./utils";
+import { createOnFail, getTaskLogger, withTaskTracing, type TaskInput } from "./utils";
 
 type TaskLogger = ReturnType<typeof getTaskLogger>;
 
@@ -391,6 +391,7 @@ export const __extractPromisesTestUtils = {
 export const ExtractPromises: TaskConfig<"extractPromises"> = {
   slug: "extractPromises",
   label: "Extract Promises",
+  onFail: createOnFail("extractPromises"),
   handler: withTaskTracing("extractPromises", async ({ req, input }) => {
     const { payload } = req;
     const logger = getTaskLogger(req, "extractPromises", input);

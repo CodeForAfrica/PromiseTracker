@@ -1,10 +1,11 @@
 import { TaskConfig } from "payload";
 import { fetchVerificationStatuses } from "@/lib/meedan";
-import { getTaskLogger, withTaskTracing } from "./utils";
+import { createOnFail, getTaskLogger, withTaskTracing } from "./utils";
 
 export const FetchPromiseStatuses: TaskConfig<"fetchPromiseStatuses"> = {
   slug: "fetchPromiseStatuses",
   label: "Fetch Promise Statuses",
+  onFail: createOnFail("fetchPromiseStatuses"),
   handler: withTaskTracing("fetchPromiseStatuses", async ({ req, input }) => {
     const { payload } = req;
     const logger = getTaskLogger(req, "fetchPromiseStatuses", input);

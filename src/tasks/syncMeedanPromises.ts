@@ -1,11 +1,12 @@
 import { TaskConfig } from "payload";
 import { fetchPublishedReports } from "@/lib/meedan";
 import { syncMeedanReports } from "@/lib/syncMeedanReports";
-import { getTaskLogger, withTaskTracing } from "./utils";
+import { createOnFail, getTaskLogger, withTaskTracing } from "./utils";
 
 export const SyncMeedanPromises: TaskConfig<"syncMeedanPromises"> = {
   slug: "syncMeedanPromises",
   label: "Sync Meedan Promises",
+  onFail: createOnFail("syncMeedanPromises"),
   handler: withTaskTracing("syncMeedanPromises", async ({ req, input }) => {
     const { payload } = req;
     const logger = getTaskLogger(req, "syncMeedanPromises", input);

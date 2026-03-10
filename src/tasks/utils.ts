@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
-import type { TaskConfig, PayloadRequest } from "payload";
+import type { TaskConfig, PayloadRequest, Job } from "payload";
 
 export type RunContext = {
   workflowSlug?: string;
@@ -119,6 +119,30 @@ export const getTaskLogger = (
 
   return createTaskLogger(payloadLogger, taskSlug, runContext);
 };
+
+export const createOnFail: (
+  taskSlug: string,
+) => NonNullable<TaskConfig["onFail"]> =
+  (taskSlug) =>
+  async ({ job, taskStatus }: { job: Job; taskStatus: unknown }) => {
+    const error =
+      taskStatus && typeof taskStatus === "object" && "error" in taskStatus
+        ? (taskStatus as { error: unknown }).error
+        : undefined;
+
+    Sentry.captureMessage(`${taskSlug}: task failed`, {
+      level: "error",
+      tags: {
+        task: taskSlug,
+      },
+      extra: {
+        jobId: job.id,
+        taskStatus,
+        error,
+        input: (job as { input?: unknown }).input,
+      },
+    });
+  };
 
 export const withTaskTracing = (
   taskSlug: string,

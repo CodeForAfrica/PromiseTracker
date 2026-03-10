@@ -1,7 +1,7 @@
 import { TaskConfig } from "payload";
 import { getUnprocessedDocuments, updateDocumentStatus } from "@/lib/airtable";
 import { LANGUAGE_MAP } from "@/utils/locales";
-import { getTaskLogger, withTaskTracing } from "./utils";
+import { createOnFail, getTaskLogger, withTaskTracing } from "./utils";
 
 type AirtableDocumentCandidate = {
   id: string;
@@ -25,6 +25,7 @@ export const FetchAirtableDocuments: TaskConfig<"fetchAirtableDocuments"> = {
   retries: 2,
   slug: "fetchAirtableDocuments",
   label: "Fetch Airtable Documents",
+  onFail: createOnFail("fetchAirtableDocuments"),
   handler: withTaskTracing("fetchAirtableDocuments", async ({ req, input }) => {
     const { payload } = req;
     const logger = getTaskLogger(req, "fetchAirtableDocuments", input);

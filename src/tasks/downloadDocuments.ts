@@ -8,7 +8,7 @@ import {
   normalizeMediaSourceUrl,
 } from "@/lib/mediaUrl";
 import { downloadFile } from "@/utils/files";
-import { getTaskLogger, withTaskTracing, type TaskInput } from "./utils";
+import { createOnFail, getTaskLogger, withTaskTracing, type TaskInput } from "./utils";
 
 type DocURL = {
   url?: string | null;
@@ -102,6 +102,7 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
   retries: 2,
   slug: "downloadDocuments",
   label: "Download Documents",
+  onFail: createOnFail("downloadDocuments"),
   handler: withTaskTracing("downloadDocuments", async ({ req, input }) => {
     const { payload } = req;
     const logger = getTaskLogger(req, "downloadDocuments", input);

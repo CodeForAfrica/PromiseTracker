@@ -6,7 +6,7 @@ import { join } from "path";
 import { updateDocumentStatus } from "@/lib/airtable";
 import { Media } from "@/payload-types";
 import { downloadFile } from "@/utils/files";
-import { getTaskLogger, withTaskTracing, type TaskInput } from "./utils";
+import { createOnFail, getTaskLogger, withTaskTracing, type TaskInput } from "./utils";
 
 const tika = new AxApacheTika({
   url: process.env.AX_APACHE_TIKA_URL ?? "http://127.0.0.1:9998/",
@@ -29,6 +29,7 @@ export async function extractTextFromDoc(filePath: string): Promise<string[]> {
 export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
   slug: "extractDocuments",
   label: "Extract Documents",
+  onFail: createOnFail("extractDocuments"),
   handler: withTaskTracing("extractDocuments", async ({ req, input }) => {
     const { payload } = req;
     const logger = getTaskLogger(req, "extractDocuments", input);

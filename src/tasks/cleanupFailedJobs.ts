@@ -1,5 +1,5 @@
 import { TaskConfig, type Where } from "payload";
-import { getTaskLogger, withTaskTracing } from "./utils";
+import { createOnFail, getTaskLogger, withTaskTracing } from "./utils";
 
 const DEFAULT_RETENTION_HOURS = 24;
 
@@ -13,6 +13,7 @@ export const CleanupFailedJobs: TaskConfig<"cleanupFailedJobs"> = {
   slug: "cleanupFailedJobs",
   label: "Cleanup Failed Jobs",
   retries: 1,
+  onFail: createOnFail("cleanupFailedJobs"),
   schedule: [
     {
       cron: "0 * * * *",
