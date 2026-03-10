@@ -1,7 +1,7 @@
 import { TaskConfig, type Where } from "payload";
 import { getTaskLogger, withTaskTracing } from "./utils";
 
-const DEFAULT_RETENTION_HOURS = 1;
+const DEFAULT_RETENTION_HOURS = 24;
 
 const getRetentionMs = () => {
   const raw = Number(process.env.PAYLOAD_JOBS_FAILED_RETENTION_HOURS);
