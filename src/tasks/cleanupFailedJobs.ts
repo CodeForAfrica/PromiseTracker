@@ -25,39 +25,74 @@ export const CleanupFailedJobs: TaskConfig<"cleanupFailedJobs"> = {
 
     const retentionMs = getRetentionMs();
     const cutoffDate = new Date(Date.now() - retentionMs);
+    const now = new Date().toISOString();
 
-    const where: Where = {
+    // Failed jobs that have been around longer than the retention window
+    const failedWhere: Where = {
       and: [
         { hasError: { equals: true } },
         { completedAt: { less_than: cutoffDate.toISOString() } },
       ],
     };
 
-    const { totalDocs } = await payload.count({
-      collection: "payload-jobs",
-      where,
-    });
+    // Orphaned pending jobs: never attempted, not scheduled for the future, older
+    // than the retention window. These accumulate when jobs are queued into a queue
+    // that has no worker (e.g. the "default" queue).
+    const orphanedWhere: Where = {
+      and: [
+        { processing: { equals: false } },
+        { hasError: { equals: false } },
+        { totalTried: { equals: 0 } },
+        { createdAt: { less_than: cutoffDate.toISOString() } },
+        {
+          or: [
+            { waitUntil: { exists: false } },
+            { waitUntil: { less_than: now } },
+          ],
+        },
+      ],
+    };
 
-    if (!totalDocs) {
+    const [{ totalDocs: failedCount }, { totalDocs: orphanedCount }] =
+      await Promise.all([
+        payload.count({ collection: "payload-jobs", where: failedWhere }),
+        payload.count({ collection: "payload-jobs", where: orphanedWhere }),
+      ]);
+
+    const retentionHours = retentionMs / (60 * 60 * 1000);
+
+    if (!failedCount && !orphanedCount) {
       logger.info({
-        msg: "cleanupFailedJobs:: No failed jobs to delete",
-        retentionHours: retentionMs / (60 * 60 * 1000),
+        msg: "cleanupFailedJobs:: No jobs to delete",
+        retentionHours,
       });
-      return { output: { deleted: 0 } };
+      return { output: { deletedFailed: 0, deletedOrphaned: 0 } };
     }
 
-    await payload.delete({
-      collection: "payload-jobs",
-      where,
-      overrideAccess: true,
-    });
+    await Promise.all([
+      failedCount &&
+        payload.delete({
+          collection: "payload-jobs",
+          where: failedWhere,
+          overrideAccess: true,
+        }),
+      orphanedCount &&
+        payload.delete({
+          collection: "payload-jobs",
+          where: orphanedWhere,
+          overrideAccess: true,
+        }),
+    ]);
 
     logger.info({
-      msg: "cleanupFailedJobs:: Deleted failed jobs",
-      retentionHours: retentionMs / (60 * 60 * 1000),
-      deleted: totalDocs,
+      msg: "cleanupFailedJobs:: Deleted jobs",
+      retentionHours,
+      deletedFailed: failedCount,
+      deletedOrphaned: orphanedCount,
     });
 
-    return { output: { deleted: totalDocs } };
+    return {
+      output: { deletedFailed: failedCount, deletedOrphaned: orphanedCount },
+    };
   }),
 };
