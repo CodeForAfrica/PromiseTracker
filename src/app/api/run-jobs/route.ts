@@ -1,5 +1,5 @@
 /**
- * POST /api/run-jobs
+ * GET /api/run-jobs
  *
  * Manually triggers the Payload job queue runner. This is useful when:
  *
@@ -17,7 +17,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGlobalPayload } from "@/lib/payload";
 
-export const POST = async (request: NextRequest) => {
+export const GET = async (request: NextRequest) => {
   const payload = await getGlobalPayload();
 
   const { user } = await payload.auth({ headers: request.headers });

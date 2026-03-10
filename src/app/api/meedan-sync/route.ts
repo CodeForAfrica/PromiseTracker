@@ -88,6 +88,34 @@ const hasIdProperty = (value: unknown): value is WithOptionalId => {
   return typeof value === "object" && value !== null && "id" in value;
 };
 
+const isWriteConflict = (error: unknown): boolean => {
+  if (!(error instanceof Error)) return false;
+  if ("code" in error && (error as { code: unknown }).code === 112) return true;
+  return error.message.includes("Write conflict");
+};
+
+const withWriteConflictRetry = async <T>(
+  fn: () => Promise<T>,
+  maxAttempts = 3,
+  baseDelayMs = 100,
+): Promise<T> => {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (!isWriteConflict(error) || attempt === maxAttempts) {
+        throw error;
+      }
+      lastError = error;
+      await new Promise((resolve) =>
+        setTimeout(resolve, baseDelayMs * attempt),
+      );
+    }
+  }
+  throw lastError;
+};
+
 const getRelationId = (value: unknown): string | null => {
   if (!value) {
     return null;
@@ -405,11 +433,13 @@ export const POST = async (request: NextRequest) => {
 
     if (Object.keys(updateData).length > 0) {
       try {
-        promise = await payload.update({
-          collection: "promises",
-          id: promise.id,
-          data: updateData,
-        });
+        promise = await withWriteConflictRetry(() =>
+          payload.update({
+            collection: "promises",
+            id: promise!.id,
+            data: updateData,
+          }),
+        );
         updated = true;
         logEvent({
           level: "info",
@@ -501,14 +531,16 @@ export const POST = async (request: NextRequest) => {
       let mediaId = existingImageId;
 
       if (existingImageId) {
-        await payload.update({
-          collection: "media",
-          id: existingImageId,
-          data: {
-            alt: fallbackAlt,
-          },
-          filePath,
-        });
+        await withWriteConflictRetry(() =>
+          payload.update({
+            collection: "media",
+            id: existingImageId,
+            data: {
+              alt: fallbackAlt,
+            },
+            filePath: filePath ?? undefined,
+          }),
+        );
         logEvent({
           level: "info",
           event: "image.media.updated",
@@ -518,13 +550,15 @@ export const POST = async (request: NextRequest) => {
           },
         });
       } else {
-        const media = await payload.create({
-          collection: "media",
-          data: {
-            alt: fallbackAlt,
-          },
-          filePath,
-        });
+        const media = await withWriteConflictRetry(() =>
+          payload.create({
+            collection: "media",
+            data: {
+              alt: fallbackAlt,
+            },
+            filePath: filePath ?? undefined,
+          }),
+        );
 
         mediaId = getRelationId(media);
         logEvent({
@@ -552,13 +586,15 @@ export const POST = async (request: NextRequest) => {
         });
       }
 
-      await payload.update({
-        collection: "promises",
-        id: promise.id,
-        data: {
-          image: mediaId,
-        },
-      });
+      await withWriteConflictRetry(() =>
+        payload.update({
+          collection: "promises",
+          id: promise!.id,
+          data: {
+            image: mediaId,
+          },
+        }),
+      );
 
       updated = true;
       return respond({
