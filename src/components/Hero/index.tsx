@@ -284,9 +284,18 @@ export const Hero = async ({ entitySlug, ...block }: HeroProps) => {
   const entityQuery = await payload.find({
     collection: "political-entities",
     where: {
-      slug: {
-        equals: entitySlug,
-      },
+      and: [
+        {
+          slug: {
+            equals: entitySlug,
+          },
+        },
+        {
+          publish: {
+            equals: true,
+          },
+        },
+      ],
     },
     limit: 1,
     depth: 2,

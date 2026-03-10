@@ -50,6 +50,7 @@ export interface PoliticalEntitie extends Item {
   periodFrom: number | null; // Original field: "Period From"
   periodTo: number | null; // Original field: "Period To"
   status: string | null; // Original field: "Status"
+  publishThisEntity: boolean; // Original field: "Publish this Entity"
   documents: string[]; // Original field: "Documents"
   fromFieldCountries: string | null; // Original field: "From field: Countries"
   documents2: string[]; // Original field: "Documents 2"
@@ -71,6 +72,7 @@ export const PoliticalEntitiestable: Table<PoliticalEntitie> = {
     periodFrom: "fldtQ4jnZMxIcZwME", // Original field: "Period From"
     periodTo: "fldVycONaMHHgSejz", // Original field: "Period To"
     status: "flduSYKzI0EpDwTe9", // Original field: "Status"
+    publishThisEntity: "fldDfq8c7LjutdXZv", // Original field: "Publish this Entity"
     documents: "fldArnGY008ctfl4z", // Original field: "Documents"
     fromFieldCountries: "fldERuoEvwI0lYESE", // Original field: "From field: Countries"
     documents2: "fldiihAK54nKrE5hb", // Original field: "Documents 2"
@@ -87,6 +89,7 @@ export const PoliticalEntitiestable: Table<PoliticalEntitie> = {
     periodFrom: "number | null",
     periodTo: "number | null",
     status: "string | null",
+    publishThisEntity: "boolean",
     documents: "string[]",
     fromFieldCountries: "string | null",
     documents2: "string[]",

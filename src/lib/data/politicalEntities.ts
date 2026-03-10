@@ -19,9 +19,18 @@ export const getPoliticalEntitiesByTenant = async (
     sort: "name",
     ...(locale ? { locale } : {}),
     where: {
-      tenant: {
-        equals: tenant,
-      },
+      and: [
+        {
+          tenant: {
+            equals: tenant,
+          },
+        },
+        {
+          publish: {
+            equals: true,
+          },
+        },
+      ],
     },
   });
 
@@ -48,6 +57,11 @@ export const getPoliticalEntityBySlug = async (
         {
           slug: {
             equals: slug,
+          },
+        },
+        {
+          publish: {
+            equals: true,
           },
         },
       ],

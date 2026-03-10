@@ -480,6 +480,7 @@ export const CreatePoliticalEntity: TaskConfig = {
           const periodTo = toIsoDate(entity.periodTo);
           const position =
             entity.title?.trim() || (existingEntity?.position ?? "Unknown");
+          const shouldPublish = Boolean(entity.publishThisEntity);
 
           if (!periodFrom || !periodTo) {
             failedCount += 1;
@@ -536,6 +537,7 @@ export const CreatePoliticalEntity: TaskConfig = {
                 position,
                 image: mediaId,
                 region: entity.region,
+                publish: shouldPublish,
                 airtableID: entity.id,
                 slug: formatSlug(entity.politicalEntityName),
               },
@@ -584,6 +586,10 @@ export const CreatePoliticalEntity: TaskConfig = {
 
             if (existingEntity.airtableID !== entity.id) {
               updateData.airtableID = entity.id;
+            }
+
+            if (Boolean(existingEntity.publish) !== shouldPublish) {
+              updateData.publish = shouldPublish;
             }
 
             const existingExternalUrl = await getMediaExternalUrl(

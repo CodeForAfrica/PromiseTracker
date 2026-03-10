@@ -28,6 +28,7 @@ export const PoliticalEntities: CollectionConfig = {
       "image",
       "region",
       "position",
+      "publish",
       "periodFrom",
       "periodTo",
     ],
@@ -137,6 +138,19 @@ export const PoliticalEntities: CollectionConfig = {
           },
         },
       ],
+    },
+    {
+      name: "publish",
+      type: "checkbox",
+      label: {
+        en: "Publish",
+        fr: "Publier",
+      },
+      defaultValue: false,
+      admin: {
+        position: "sidebar",
+        readOnly: true,
+      },
     },
     airtableID(),
   ],
