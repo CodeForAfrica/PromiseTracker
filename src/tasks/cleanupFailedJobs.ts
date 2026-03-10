@@ -69,20 +69,18 @@ export const CleanupFailedJobs: TaskConfig<"cleanupFailedJobs"> = {
       return { output: { deletedFailed: 0, deletedOrphaned: 0 } };
     }
 
-    await Promise.all([
-      failedCount &&
-        payload.delete({
-          collection: "payload-jobs",
-          where: failedWhere,
-          overrideAccess: true,
-        }),
-      orphanedCount &&
-        payload.delete({
-          collection: "payload-jobs",
-          where: orphanedWhere,
-          overrideAccess: true,
-        }),
-    ]);
+    const deleteOps = [];
+    if (failedCount) {
+      deleteOps.push(
+        payload.delete({ collection: "payload-jobs", where: failedWhere, overrideAccess: true }),
+      );
+    }
+    if (orphanedCount) {
+      deleteOps.push(
+        payload.delete({ collection: "payload-jobs", where: orphanedWhere, overrideAccess: true }),
+      );
+    }
+    await Promise.all(deleteOps);
 
     logger.info({
       msg: "cleanupFailedJobs:: Deleted jobs",
