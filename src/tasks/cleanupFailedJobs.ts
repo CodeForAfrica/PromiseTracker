@@ -1,17 +1,8 @@
 import { TaskConfig, type Where } from "payload";
 import { getTaskLogger, withTaskTracing } from "./utils";
 
-const DEFAULT_RETENTION_DAYS = 7;
-
-const getRetentionDays = () => {
-  const raw = Number(process.env.PAYLOAD_JOBS_FAILED_RETENTION_DAYS);
-  if (Number.isFinite(raw) && raw > 0) {
-    return raw;
-  }
-  return DEFAULT_RETENTION_DAYS;
-};
-
-const getCleanupQueue = () => process.env.PAYLOAD_JOBS_QUEUE || "everyMinute";
+const getCleanupQueue = () =>
+  process.env.PAYLOAD_JOBS_CLEANUP_QUEUE || "cleanup";
 
 export const CleanupFailedJobs: TaskConfig<"cleanupFailedJobs"> = {
   slug: "cleanupFailedJobs",
@@ -27,23 +18,10 @@ export const CleanupFailedJobs: TaskConfig<"cleanupFailedJobs"> = {
     const { payload } = req;
     const logger = getTaskLogger(req, "cleanupFailedJobs", input);
 
-    const retentionDays = getRetentionDays();
-    const cutoffDate = new Date(
-      Date.now() - retentionDays * 24 * 60 * 60 * 1000,
-    );
-
     const where: Where = {
       and: [
-        {
-          hasError: {
-            equals: true,
-          },
-        },
-        {
-          completedAt: {
-            less_than: cutoffDate.toISOString(),
-          },
-        },
+        { processing: { not_equals: true } },
+        { taskSlug: { not_equals: "cleanupFailedJobs" } },
       ],
     };
 
@@ -53,10 +31,7 @@ export const CleanupFailedJobs: TaskConfig<"cleanupFailedJobs"> = {
     });
 
     if (!totalDocs) {
-      logger.info({
-        msg: "cleanupFailedJobs:: No failed jobs to delete",
-        retentionDays,
-      });
+      logger.info({ msg: "cleanupFailedJobs:: No jobs to delete" });
       return { output: { deleted: 0 } };
     }
 
@@ -67,8 +42,7 @@ export const CleanupFailedJobs: TaskConfig<"cleanupFailedJobs"> = {
     });
 
     logger.info({
-      msg: "cleanupFailedJobs:: Deleted failed jobs",
-      retentionDays,
+      msg: "cleanupFailedJobs:: Deleted all non-processing jobs",
       deleted: totalDocs,
     });
 
