@@ -111,9 +111,8 @@ export const CreateTenantFromAirtable: TaskConfig<"createTenantFromAirtable"> =
               }
             } catch (countryError) {
               failedTenants += 1;
-              logger.error({
-                message:
-                  "createTenantFromAirtable:: Failed processing Airtable country",
+              logger.warn({
+                message: `createTenantFromAirtable:: Failed processing country "${country.countryName ?? country.id}" — skipping`,
                 airtableCountryId: country.id,
                 airtableCountryName: country.countryName,
                 airtableCountryLabel: country.country,
@@ -135,8 +134,7 @@ export const CreateTenantFromAirtable: TaskConfig<"createTenantFromAirtable"> =
           });
         } catch (error) {
           logger.error({
-            message:
-              "createTenantFromAirtable:: Error fetching countries from Airtable",
+            message: "createTenantFromAirtable:: Task aborted due to unhandled error",
             airtableBaseID,
             error: error instanceof Error ? error.message : String(error ?? ""),
           });

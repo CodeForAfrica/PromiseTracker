@@ -578,8 +578,9 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
               document.airtableID,
               "No extracted text available for AI analysis",
             );
-            logger.error({
-              message: "extractPromises:: No text to process",
+            logger.warn({
+              message:
+                "extractPromises:: Document has no extracted text — skipping AI extraction (run extractDocuments first)",
               documentId: document.id,
               documentTitle: document.title,
               documentAirtableID: document.airtableID,
@@ -804,8 +805,8 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
               ? documentError.message
               : String(documentError);
           await setDocumentFailedStatus(document.airtableID, errorMessage);
-          logger.error({
-            message: "extractPromises:: Failed processing document",
+          logger.warn({
+            message: `extractPromises:: Unexpected error processing document "${document.title ?? document.id}" — skipping. Error: ${errorMessage}`,
             documentId: document.id,
             documentTitle: document.title,
             documentAirtableID: document.airtableID,
@@ -826,7 +827,7 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
       };
     } catch (error) {
       logger.error({
-        message: "extractPromises:: Error in promise extraction task",
+        message: "extractPromises:: Task aborted due to unhandled error",
         requestedDocumentIds:
           (input as TaskInput | undefined)?.documentIds?.filter(Boolean) ?? [],
         error: error instanceof Error ? error.message : String(error),

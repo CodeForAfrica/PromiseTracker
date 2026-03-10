@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 
 import * as Sentry from "@sentry/nextjs";
 
+import { ValidationError } from "payload";
 import { getGlobalPayload } from "@/lib/payload";
 import { downloadFile } from "@/utils/files";
 import type { Promise as PayloadPromise } from "@/payload-types";
@@ -299,7 +300,6 @@ export const POST = async (request: NextRequest) => {
       event: "payload.invalidJson",
       level: "warn",
       error,
-      sentry: true,
     });
   }
 
@@ -325,7 +325,6 @@ export const POST = async (request: NextRequest) => {
       },
       event: "payload.missingMeedanId",
       level: "warn",
-      sentry: true,
     });
   }
 
@@ -405,27 +404,44 @@ export const POST = async (request: NextRequest) => {
     }
 
     if (Object.keys(updateData).length > 0) {
-      promise = await payload.update({
-        collection: "promises",
-        id: promise.id,
-        data: updateData,
-      });
-      updated = true;
-      logEvent({
-        level: "info",
-        event: "promise.updated",
-        details: {
-          promiseId: promise.id,
-          updatedFields: Object.keys(updateData),
-        },
-      });
+      try {
+        promise = await payload.update({
+          collection: "promises",
+          id: promise.id,
+          data: updateData,
+        });
+        updated = true;
+        logEvent({
+          level: "info",
+          event: "promise.updated",
+          details: {
+            promiseId: promise.id,
+            updatedFields: Object.keys(updateData),
+          },
+        });
+      } catch (updateError) {
+        if (updateError instanceof ValidationError) {
+          return respond({
+            status: 422,
+            body: { ok: false, error: updateError.message },
+            event: "promise.update.validationError",
+            level: "warn",
+            details: {
+              promiseId: promise.id,
+              updatedFields: Object.keys(updateData),
+              validationErrors: updateError.data,
+            },
+          });
+        }
+        throw updateError;
+      }
     }
 
     if (!promise) {
       return respond({
         status: 500,
-        body: { error: "Failed to persist promise" },
-        event: "promise.persistFailed",
+        body: { error: "Promise update returned an unexpected empty result" },
+        event: "promise.update.unexpectedNullResult",
         level: "error",
         sentry: true,
       });
@@ -524,7 +540,7 @@ export const POST = async (request: NextRequest) => {
       if (!mediaId) {
         return respond({
           status: 500,
-          body: { error: "Failed to cache image" },
+          body: { error: "Image was saved but returned no ID — cannot link to promise" },
           event: "image.media.missingId",
           level: "error",
           details: {
@@ -590,7 +606,14 @@ export const POST = async (request: NextRequest) => {
   } catch (error) {
     return respond({
       status: 500,
-      body: { ok: false, updated: false, error: "Failed to process webhook" },
+      body: {
+        ok: false,
+        updated: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unexpected error processing webhook",
+      },
       event: "webhook.processFailed",
       level: "error",
       details: {
