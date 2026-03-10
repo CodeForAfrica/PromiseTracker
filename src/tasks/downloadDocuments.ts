@@ -510,8 +510,8 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
           const errorMessage =
             docError instanceof Error ? docError.message : String(docError);
           await setDocumentFailedStatus(doc.airtableID, errorMessage);
-          logger.error({
-            message: "downloadDocuments:: Error processing document",
+          logger.warn({
+            message: `downloadDocuments:: Unexpected error processing document "${doc.title ?? doc.id}" — skipping`,
             id: doc.id,
             airtableID: doc.airtableID,
             title: doc.title,
@@ -530,7 +530,7 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
       };
     } catch (error) {
       logger.error({
-        message: "downloadDocuments:: Error in document download task",
+        message: "downloadDocuments:: Task aborted due to unhandled error",
         requestedDocumentIds:
           (input as TaskInput | undefined)?.documentIds?.filter(Boolean) ?? [],
         error: error instanceof Error ? error.message : String(error),

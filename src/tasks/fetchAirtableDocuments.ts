@@ -250,16 +250,16 @@ export const FetchAirtableDocuments: TaskConfig<"fetchAirtableDocuments"> = {
 
       if (failedDocs.length > 0) {
         failedDocs.forEach((failedDoc) => {
-          logger.error({
-            message:
-              "fetchAirtableDocuments:: Failed to create document from Airtable",
+          const failedDocError =
+            failedDoc.reason instanceof Error
+              ? failedDoc.reason.message
+              : String(failedDoc.reason);
+          logger.warn({
+            message: `fetchAirtableDocuments:: Failed to create document "${failedDoc.docName ?? failedDoc.docID}" — skipping. Error: ${failedDocError}`,
             airtableDocumentID: failedDoc.docID,
             documentName: failedDoc.docName,
             politicalEntityAirtableID: failedDoc.politicalEntityAirtableID,
-            error:
-              failedDoc.reason instanceof Error
-                ? failedDoc.reason.message
-                : String(failedDoc.reason),
+            error: failedDocError,
           });
         });
 
@@ -283,8 +283,7 @@ export const FetchAirtableDocuments: TaskConfig<"fetchAirtableDocuments"> = {
       const errorMessage =
         error instanceof Error ? error.message : String(error ?? "");
       logger.error({
-        message:
-          "fetchAirtableDocuments:: Error fetching documents from Airtable",
+        message: "fetchAirtableDocuments:: Task aborted due to unhandled error",
         error: errorMessage,
       });
       throw error;

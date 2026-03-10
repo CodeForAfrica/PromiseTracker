@@ -152,9 +152,14 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
               fileInput = filePath;
             } else if (file.url) {
               const url = `${process.env.NEXT_PUBLIC_APP_URL}${file.url}`;
-              logger.info(
-                `File does not exist locally. Downloading from ${url}`,
-              );
+              logger.info({
+                message: `extractDocuments:: File not found locally, downloading from remote storage`,
+                id: doc.id,
+                airtableID: doc.airtableID,
+                title: doc.title,
+                fileId: file.id,
+                fileUrl: url,
+              });
               try {
                 tempFilePath = await downloadFile(url);
                 fileInput = tempFilePath;
@@ -169,8 +174,8 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
                   fileUrl: file.url,
                 });
               } catch (downloadError) {
-                logger.error({
-                  message: "extractDocuments:: Error downloading remote file",
+                logger.warn({
+                  message: "extractDocuments:: Failed to download remote file — skipping this file",
                   id: doc.id,
                   airtableID: doc.airtableID,
                   title: doc.title,
@@ -294,8 +299,8 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
           const errorMessage =
             docError instanceof Error ? docError.message : String(docError);
           await setDocumentFailedStatus(doc.airtableID, errorMessage);
-          logger.error({
-            message: "extractDocuments:: Error processing individual document",
+          logger.warn({
+            message: `extractDocuments:: Unexpected error processing document "${doc.title ?? doc.id}" — skipping`,
             id: doc.id,
             airtableID: doc.airtableID,
             title: doc.title,
@@ -316,7 +321,7 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
       };
     } catch (error) {
       logger.error({
-        message: "extractDocuments:: Error in document extraction task",
+        message: "extractDocuments:: Task aborted due to unhandled error",
         requestedDocumentIds:
           (input as TaskInput | undefined)?.documentIds?.filter(Boolean) ?? [],
         error: error instanceof Error ? error.message : String(error),

@@ -308,8 +308,9 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
 
           if (!document) {
             failedExtractionDocs += 1;
-            logger.error({
-              message: "uploadToMeedan:: AI extraction is missing document",
+            logger.warn({
+              message:
+                "uploadToMeedan:: AI extraction has no linked document (data integrity issue) — skipping",
               extractionDocId: doc.id,
               extractionDocTitle: doc.title,
             });
@@ -357,15 +358,15 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
                 document.airtableID,
                 "Missing populated political entity for upload",
               );
-              logger.error({
+              logger.warn({
                 message:
-                  "uploadToMeedan:: Document has no populated political entity",
+                  "uploadToMeedan:: Document has no populated political entity — the relation may not be set or depth was insufficient to resolve it",
                 extractionDocId: doc.id,
                 extractionDocTitle: doc.title,
                 documentId,
                 documentTitle: document.title,
                 documentAirtableID: document.airtableID,
-                politicalEntity: entity,
+                politicalEntityRaw: typeof entity === "string" ? entity : null,
               });
               continue;
             }
@@ -377,8 +378,9 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
                 document.airtableID,
                 "Political entity tenant missing for upload",
               );
-              logger.error({
-                message: "uploadToMeedan:: Political entity has no tenant",
+              logger.warn({
+                message:
+                  "uploadToMeedan:: Political entity has no populated tenant — the relation may not be set or depth was insufficient to resolve it",
                 extractionDocId: doc.id,
                 extractionDocTitle: doc.title,
                 documentId,
@@ -387,7 +389,7 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
                 politicalEntityId: entity.id,
                 politicalEntityName: entity.name,
                 politicalEntityAirtableID: entity.airtableID,
-                tenant,
+                tenantRaw: typeof tenant === "string" ? tenant : null,
               });
               continue;
             }
@@ -475,8 +477,7 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
                       | undefined;
                   } catch (statusResolveError) {
                     logger.warn({
-                      message:
-                        "uploadToMeedan:: Could not resolve returned status to promise-status",
+                      message: `uploadToMeedan:: Could not look up promise-status for Meedan status "${returnedStatus}" — status relation will not be set on this extraction`,
                       extractionDocId: doc.id,
                       extractionUniqueId: extraction.uniqueId,
                       returnedStatus,
@@ -524,7 +525,7 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
               } catch (extractionError) {
                 failedExtractions += 1;
                 docFailedExtractions += 1;
-                logger.error({
+                logger.warn({
                   message: "uploadToMeedan:: Failed uploading extraction",
                   extractionDocId: doc.id,
                   extractionDocTitle: doc.title,
@@ -549,11 +550,10 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
             if (docFailedExtractions > 0) {
               await setDocumentFailedStatus(
                 document.airtableID,
-                `${docFailedExtractions} extraction(s) failed during upload`,
+                `${docFailedExtractions} of ${extractionsToUpload.length} extraction(s) failed during upload`,
               );
               logger.warn({
-                message:
-                  "uploadToMeedan:: Skipping Airtable processed mark because some extractions failed",
+                message: `uploadToMeedan:: Document skipped for Airtable completion mark — ${docFailedExtractions}/${extractionsToUpload.length} extraction(s) failed to upload`,
                 extractionDocId: doc.id,
                 extractionDocTitle: doc.title,
                 documentId,
@@ -590,7 +590,7 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
                 document.airtableID,
                 `Failed marking document processed: ${markCompleteErrorMessage}`,
               );
-              logger.error({
+              logger.warn({
                 message:
                   "uploadToMeedan:: Failed marking Airtable document as processed",
                 extractionDocId: doc.id,
@@ -608,8 +608,8 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
             const errorMessage =
               docError instanceof Error ? docError.message : String(docError);
             await setDocumentFailedStatus(document?.airtableID, errorMessage);
-            logger.error({
-              message: "uploadToMeedan:: Failed processing extraction document",
+            logger.warn({
+              message: `uploadToMeedan:: Unhandled error while processing extraction doc "${doc.title ?? doc.id}" — document skipped`,
               extractionDocId: doc.id,
               extractionDocTitle: doc.title,
               documentId,
@@ -637,7 +637,7 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
       };
     } catch (error) {
       logger.error({
-        message: "uploadToMeedan::  Uploading to Meedan failed:",
+        message: "uploadToMeedan:: Task aborted due to unhandled error",
         requestedDocumentIds:
           (input as TaskInput | undefined)?.documentIds?.filter(Boolean) ?? [],
         error: error instanceof Error ? error.message : String(error),

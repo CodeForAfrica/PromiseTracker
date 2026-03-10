@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 
 import * as Sentry from "@sentry/nextjs";
 
+import { ValidationError } from "payload";
 import { getGlobalPayload } from "@/lib/payload";
 import { downloadFile } from "@/utils/files";
 import type { Promise as PayloadPromise } from "@/payload-types";
@@ -85,6 +86,35 @@ const toErrorDetails = (error: unknown): Record<string, unknown> => {
 
 const hasIdProperty = (value: unknown): value is WithOptionalId => {
   return typeof value === "object" && value !== null && "id" in value;
+};
+
+const isWriteConflict = (error: unknown): boolean => {
+  if (!(error instanceof Error)) return false;
+  // MongoDB error code 112 (WriteConflict) is the canonical check.
+  // The message fallback covers driver versions that may not set .code reliably.
+  if ("code" in error && (error as { code: unknown }).code === 112) return true;
+  return error.message.includes("Write conflict");
+};
+
+const withWriteConflictRetry = async <T>(
+  fn: () => Promise<T>,
+  maxAttempts = 3,
+  baseDelayMs = 100,
+): Promise<T> => {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (!isWriteConflict(error) || attempt === maxAttempts) {
+        throw error;
+      }
+      await new Promise((resolve) =>
+        setTimeout(resolve, baseDelayMs * attempt),
+      );
+    }
+  }
+  // Unreachable: the loop always returns or throws before exhausting attempts.
+  throw new Error("withWriteConflictRetry: exhausted attempts");
 };
 
 const getRelationId = (value: unknown): string | null => {
@@ -299,7 +329,6 @@ export const POST = async (request: NextRequest) => {
       event: "payload.invalidJson",
       level: "warn",
       error,
-      sentry: true,
     });
   }
 
@@ -405,27 +434,46 @@ export const POST = async (request: NextRequest) => {
     }
 
     if (Object.keys(updateData).length > 0) {
-      promise = await payload.update({
-        collection: "promises",
-        id: promise.id,
-        data: updateData,
-      });
-      updated = true;
-      logEvent({
-        level: "info",
-        event: "promise.updated",
-        details: {
-          promiseId: promise.id,
-          updatedFields: Object.keys(updateData),
-        },
-      });
+      try {
+        promise = await withWriteConflictRetry(() =>
+          payload.update({
+            collection: "promises",
+            id: promise!.id,
+            data: updateData,
+          }),
+        );
+        updated = true;
+        logEvent({
+          level: "info",
+          event: "promise.updated",
+          details: {
+            promiseId: promise.id,
+            updatedFields: Object.keys(updateData),
+          },
+        });
+      } catch (updateError) {
+        if (updateError instanceof ValidationError) {
+          return respond({
+            status: 422,
+            body: { ok: false, error: "Validation failed — one or more fields were rejected" },
+            event: "promise.update.validationError",
+            level: "warn",
+            details: {
+              promiseId: promise.id,
+              updatedFields: Object.keys(updateData),
+              validationErrors: updateError.data,
+            },
+          });
+        }
+        throw updateError;
+      }
     }
 
     if (!promise) {
       return respond({
         status: 500,
-        body: { error: "Failed to persist promise" },
-        event: "promise.persistFailed",
+        body: { error: "Promise update returned an unexpected empty result" },
+        event: "promise.update.unexpectedNullResult",
         level: "error",
         sentry: true,
       });
@@ -485,14 +533,16 @@ export const POST = async (request: NextRequest) => {
       let mediaId = existingImageId;
 
       if (existingImageId) {
-        await payload.update({
-          collection: "media",
-          id: existingImageId,
-          data: {
-            alt: fallbackAlt,
-          },
-          filePath,
-        });
+        await withWriteConflictRetry(() =>
+          payload.update({
+            collection: "media",
+            id: existingImageId,
+            data: {
+              alt: fallbackAlt,
+            },
+            filePath: filePath ?? undefined,
+          }),
+        );
         logEvent({
           level: "info",
           event: "image.media.updated",
@@ -502,13 +552,15 @@ export const POST = async (request: NextRequest) => {
           },
         });
       } else {
-        const media = await payload.create({
-          collection: "media",
-          data: {
-            alt: fallbackAlt,
-          },
-          filePath,
-        });
+        const media = await withWriteConflictRetry(() =>
+          payload.create({
+            collection: "media",
+            data: {
+              alt: fallbackAlt,
+            },
+            filePath: filePath ?? undefined,
+          }),
+        );
 
         mediaId = getRelationId(media);
         logEvent({
@@ -524,7 +576,7 @@ export const POST = async (request: NextRequest) => {
       if (!mediaId) {
         return respond({
           status: 500,
-          body: { error: "Failed to cache image" },
+          body: { error: "Image was saved but returned no ID — cannot link to promise" },
           event: "image.media.missingId",
           level: "error",
           details: {
@@ -536,13 +588,15 @@ export const POST = async (request: NextRequest) => {
         });
       }
 
-      await payload.update({
-        collection: "promises",
-        id: promise.id,
-        data: {
-          image: mediaId,
-        },
-      });
+      await withWriteConflictRetry(() =>
+        payload.update({
+          collection: "promises",
+          id: promise!.id,
+          data: {
+            image: mediaId,
+          },
+        }),
+      );
 
       updated = true;
       return respond({
@@ -590,7 +644,11 @@ export const POST = async (request: NextRequest) => {
   } catch (error) {
     return respond({
       status: 500,
-      body: { ok: false, updated: false, error: "Failed to process webhook" },
+      body: {
+        ok: false,
+        updated: false,
+        error: "Unexpected error processing webhook",
+      },
       event: "webhook.processFailed",
       level: "error",
       details: {

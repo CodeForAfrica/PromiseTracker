@@ -73,8 +73,8 @@ export const FetchPromiseStatuses: TaskConfig<"fetchPromiseStatuses"> = {
           }
         } catch (statusError) {
           failed += 1;
-          logger.error({
-            message: "fetchPromiseStatuses:: Failed processing status",
+          logger.warn({
+            message: `fetchPromiseStatuses:: Failed to create/update status "${status.label ?? status.id}" — skipping`,
             meedanStatusId: status.id,
             label: status.label,
             description: status.description,
@@ -100,7 +100,7 @@ export const FetchPromiseStatuses: TaskConfig<"fetchPromiseStatuses"> = {
       };
     } catch (error) {
       logger.error({
-        message: "fetchPromiseStatuses:: Failed to fetch/save statuses",
+        message: "fetchPromiseStatuses:: Task aborted due to unhandled error",
         teamId,
         error: error instanceof Error ? error.message : String(error),
       });

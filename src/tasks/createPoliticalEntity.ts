@@ -654,9 +654,9 @@ export const CreatePoliticalEntity: TaskConfig = {
             } catch (documentError) {
               failedDocumentLinks += 1;
               const airtableDoc = airtableDocumentsById.get(docId);
-              logger.error({
+              logger.warn({
                 message:
-                  "createPoliticalEntity:: Failed syncing linked document URLs",
+                  "createPoliticalEntity:: Failed syncing linked document URLs — document link may be stale",
                 airtableEntityId: entity.id,
                 airtableEntityName: entity.politicalEntityName,
                 airtableDocumentId: docId,
@@ -679,8 +679,8 @@ export const CreatePoliticalEntity: TaskConfig = {
               ? entityError.message
               : String(entityError ?? "");
           await setEntityStatus(entity.id, simplifyEntityStatusError(errorMessage));
-          logger.error({
-            message: "createPoliticalEntity:: Failed processing entity",
+          logger.warn({
+            message: `createPoliticalEntity:: Unexpected error processing entity "${entity.politicalEntityName ?? entity.id}" — skipping`,
             airtableEntityId: entity.id,
             airtableEntityName: entity.politicalEntityName,
             airtableEntityTitle: entity.title,
@@ -704,8 +704,7 @@ export const CreatePoliticalEntity: TaskConfig = {
       });
     } catch (error) {
       logger.error({
-        message:
-          "createPoliticalEntity:: Error syncing political entities from Airtable",
+        message: "createPoliticalEntity:: Task aborted due to unhandled error",
         airtableBaseID,
         error: error instanceof Error ? error.message : String(error ?? ""),
       });
