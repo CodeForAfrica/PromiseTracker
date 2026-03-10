@@ -258,6 +258,7 @@ export interface PoliticalEntity {
   image: string | Media;
   periodFrom: string;
   periodTo: string;
+  publish?: boolean | null;
   airtableID?: string | null;
   meta?: {
     title?: string | null;
@@ -1674,6 +1675,7 @@ export interface PoliticalEntitiesSelect<T extends boolean = true> {
   image?: T;
   periodFrom?: T;
   periodTo?: T;
+  publish?: T;
   airtableID?: T;
   meta?:
     | T
