@@ -300,7 +300,7 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
             docError instanceof Error ? docError.message : String(docError);
           await setDocumentFailedStatus(doc.airtableID, errorMessage);
           logger.warn({
-            message: `extractDocuments:: Unexpected error processing document "${doc.title ?? doc.id}" — skipping. Error: ${errorMessage}`,
+            message: `extractDocuments:: Unexpected error processing document "${doc.title ?? doc.id}" — skipping`,
             id: doc.id,
             airtableID: doc.airtableID,
             title: doc.title,

@@ -609,7 +609,7 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
               docError instanceof Error ? docError.message : String(docError);
             await setDocumentFailedStatus(document?.airtableID, errorMessage);
             logger.warn({
-              message: `uploadToMeedan:: Unhandled error while processing extraction doc "${doc.title ?? doc.id}" — document skipped. Error: ${errorMessage}`,
+              message: `uploadToMeedan:: Unhandled error while processing extraction doc "${doc.title ?? doc.id}" — document skipped`,
               extractionDocId: doc.id,
               extractionDocTitle: doc.title,
               documentId,

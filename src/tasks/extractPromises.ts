@@ -806,7 +806,7 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
               : String(documentError);
           await setDocumentFailedStatus(document.airtableID, errorMessage);
           logger.warn({
-            message: `extractPromises:: Unexpected error processing document "${document.title ?? document.id}" — skipping. Error: ${errorMessage}`,
+            message: `extractPromises:: Unexpected error processing document "${document.title ?? document.id}" — skipping`,
             documentId: document.id,
             documentTitle: document.title,
             documentAirtableID: document.airtableID,

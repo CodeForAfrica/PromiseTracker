@@ -90,6 +90,8 @@ const hasIdProperty = (value: unknown): value is WithOptionalId => {
 
 const isWriteConflict = (error: unknown): boolean => {
   if (!(error instanceof Error)) return false;
+  // MongoDB error code 112 (WriteConflict) is the canonical check.
+  // The message fallback covers driver versions that may not set .code reliably.
   if ("code" in error && (error as { code: unknown }).code === 112) return true;
   return error.message.includes("Write conflict");
 };
@@ -99,7 +101,6 @@ const withWriteConflictRetry = async <T>(
   maxAttempts = 3,
   baseDelayMs = 100,
 ): Promise<T> => {
-  let lastError: unknown;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       return await fn();
@@ -107,13 +108,13 @@ const withWriteConflictRetry = async <T>(
       if (!isWriteConflict(error) || attempt === maxAttempts) {
         throw error;
       }
-      lastError = error;
       await new Promise((resolve) =>
         setTimeout(resolve, baseDelayMs * attempt),
       );
     }
   }
-  throw lastError;
+  // Unreachable: the loop always returns or throws before exhausting attempts.
+  throw new Error("withWriteConflictRetry: exhausted attempts");
 };
 
 const getRelationId = (value: unknown): string | null => {
@@ -353,6 +354,7 @@ export const POST = async (request: NextRequest) => {
       },
       event: "payload.missingMeedanId",
       level: "warn",
+      sentry: true,
     });
   }
 
@@ -453,7 +455,7 @@ export const POST = async (request: NextRequest) => {
         if (updateError instanceof ValidationError) {
           return respond({
             status: 422,
-            body: { ok: false, error: updateError.message },
+            body: { ok: false, error: "Validation failed — one or more fields were rejected" },
             event: "promise.update.validationError",
             level: "warn",
             details: {
