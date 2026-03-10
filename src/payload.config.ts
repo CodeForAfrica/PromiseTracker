@@ -98,6 +98,10 @@ export default buildConfig({
         cron: process.env.PAYLOAD_JOBS_CRON_SCHEDULE || "* * * * *",
         queue: process.env.PAYLOAD_JOBS_QUEUE || "everyMinute",
       },
+      {
+        cron: "0 * * * *",
+        queue: process.env.PAYLOAD_JOBS_CLEANUP_QUEUE || "cleanup",
+      },
     ],
     tasks,
     workflows,
@@ -111,11 +115,5 @@ export default buildConfig({
   secret: payloadSecret,
   typescript: {
     outputFile: path.resolve(dirname, "payload-types.ts"),
-  },
-  onInit: async (payload) => {
-    await payload.jobs.queue({
-      workflow: "airtableWorkflow",
-      input: {},
-    });
   },
 });

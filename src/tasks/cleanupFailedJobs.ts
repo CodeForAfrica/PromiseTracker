@@ -1,17 +1,13 @@
 import { TaskConfig, type Where } from "payload";
 import { getTaskLogger, withTaskTracing } from "./utils";
 
-const DEFAULT_RETENTION_DAYS = 7;
+const DEFAULT_RETENTION_HOURS = 24;
 
-const getRetentionDays = () => {
-  const raw = Number(process.env.PAYLOAD_JOBS_FAILED_RETENTION_DAYS);
-  if (Number.isFinite(raw) && raw > 0) {
-    return raw;
-  }
-  return DEFAULT_RETENTION_DAYS;
+const getRetentionMs = () => {
+  const raw = Number(process.env.PAYLOAD_JOBS_FAILED_RETENTION_HOURS);
+  const hours = Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_RETENTION_HOURS;
+  return hours * 60 * 60 * 1000;
 };
-
-const getCleanupQueue = () => process.env.PAYLOAD_JOBS_QUEUE || "everyMinute";
 
 export const CleanupFailedJobs: TaskConfig<"cleanupFailedJobs"> = {
   slug: "cleanupFailedJobs",
@@ -20,30 +16,20 @@ export const CleanupFailedJobs: TaskConfig<"cleanupFailedJobs"> = {
   schedule: [
     {
       cron: "0 * * * *",
-      queue: getCleanupQueue(),
+      queue: process.env.PAYLOAD_JOBS_CLEANUP_QUEUE || "cleanup",
     },
   ],
   handler: withTaskTracing("cleanupFailedJobs", async ({ req, input }) => {
     const { payload } = req;
     const logger = getTaskLogger(req, "cleanupFailedJobs", input);
 
-    const retentionDays = getRetentionDays();
-    const cutoffDate = new Date(
-      Date.now() - retentionDays * 24 * 60 * 60 * 1000,
-    );
+    const retentionMs = getRetentionMs();
+    const cutoffDate = new Date(Date.now() - retentionMs);
 
     const where: Where = {
       and: [
-        {
-          hasError: {
-            equals: true,
-          },
-        },
-        {
-          completedAt: {
-            less_than: cutoffDate.toISOString(),
-          },
-        },
+        { hasError: { equals: true } },
+        { completedAt: { less_than: cutoffDate.toISOString() } },
       ],
     };
 
@@ -55,7 +41,7 @@ export const CleanupFailedJobs: TaskConfig<"cleanupFailedJobs"> = {
     if (!totalDocs) {
       logger.info({
         msg: "cleanupFailedJobs:: No failed jobs to delete",
-        retentionDays,
+        retentionHours: retentionMs / (60 * 60 * 1000),
       });
       return { output: { deleted: 0 } };
     }
@@ -68,7 +54,7 @@ export const CleanupFailedJobs: TaskConfig<"cleanupFailedJobs"> = {
 
     logger.info({
       msg: "cleanupFailedJobs:: Deleted failed jobs",
-      retentionDays,
+      retentionHours: retentionMs / (60 * 60 * 1000),
       deleted: totalDocs,
     });
 
