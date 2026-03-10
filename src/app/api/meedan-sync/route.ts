@@ -645,10 +645,7 @@ export const POST = async (request: NextRequest) => {
       body: {
         ok: false,
         updated: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Unexpected error processing webhook",
+        error: "Unexpected error processing webhook",
       },
       event: "webhook.processFailed",
       level: "error",
