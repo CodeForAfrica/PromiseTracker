@@ -13,7 +13,9 @@ import { getTaskLogger, withTaskTracing, type TaskInput } from "./utils";
 const getExtractionsToUpload = (doc: AiExtractionDoc) => {
   return (
     doc.extractions
-      ?.filter((extraction) => !extraction.checkMediaId)
+      ?.filter(
+        (extraction) => !extraction.checkMediaId && !extraction.uploadError,
+      )
       .map(({ category, summary, source, uniqueId }) => ({
         category,
         summary,
@@ -148,14 +150,20 @@ const resolveCheckMediaSourceUrl = ({
 };
 
 const hasPendingExtractions = (doc: AiExtractionDoc): boolean =>
-  (doc.extractions ?? []).some((extraction) => !extraction?.checkMediaId);
+  (doc.extractions ?? []).some(
+    (extraction) => !extraction?.checkMediaId && !extraction?.uploadError,
+  );
 
-const hasUploadedExtractions = (doc: AiExtractionDoc): boolean =>
-  (doc.extractions ?? []).some((extraction) => Boolean(extraction?.checkMediaId));
+const hasHandledExtractions = (doc: AiExtractionDoc): boolean =>
+  (doc.extractions ?? []).some(
+    (extraction) =>
+      Boolean(extraction?.checkMediaId) || Boolean(extraction?.uploadError),
+  );
 
 const checkAndMarkDocumentComplete = async (
   doc: Document,
   airtableAPIKey?: string | null,
+  status = "Uploaded to Meedan",
 ): Promise<void> => {
   if (!doc.airtableID || !airtableAPIKey) {
     return;
@@ -164,7 +172,7 @@ const checkAndMarkDocumentComplete = async (
   await markDocumentAsProcessed({
     airtableAPIKey,
     airtableID: doc.airtableID,
-    status: "Uploaded to Meedan",
+    status,
   });
 };
 
@@ -244,23 +252,24 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
           return false;
         }
 
-        let hasAnyUploadedPromise = false;
+        let hasAnyHandledExtraction = false;
 
         for (const extractionDoc of extractionDocs as AiExtractionDoc[]) {
           if (hasPendingExtractions(extractionDoc)) {
             return false;
           }
 
-          if (hasUploadedExtractions(extractionDoc)) {
-            hasAnyUploadedPromise = true;
+          if (hasHandledExtractions(extractionDoc)) {
+            hasAnyHandledExtraction = true;
           }
         }
 
-        return hasAnyUploadedPromise;
+        return hasAnyHandledExtraction;
       };
 
       const markDocumentAsProcessedWhenReady = async (
         document: Document,
+        status?: string,
       ): Promise<boolean> => {
         if (!document.id || !document.airtableID || !airtableAPIKey) {
           return false;
@@ -271,7 +280,7 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
           return false;
         }
 
-        await checkAndMarkDocumentComplete(document, airtableAPIKey);
+        await checkAndMarkDocumentComplete(document, airtableAPIKey, status);
         return true;
       };
 
@@ -525,8 +534,27 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
               } catch (extractionError) {
                 failedExtractions += 1;
                 docFailedExtractions += 1;
+                const uploadErrorMessage =
+                  extractionError instanceof Error
+                    ? extractionError.message
+                    : String(extractionError);
+
+                // Persist the error on the extraction so it is never retried.
+                const updatedExtractions = doc.extractions?.map((ext) => {
+                  if (ext.uniqueId === extraction.uniqueId) {
+                    return { ...ext, uploadError: uploadErrorMessage };
+                  }
+                  return ext;
+                });
+                await payload.update({
+                  collection: "ai-extractions",
+                  id: doc.id,
+                  data: { extractions: updatedExtractions },
+                });
+
                 logger.warn({
-                  message: "uploadToMeedan:: Failed uploading extraction",
+                  message:
+                    "uploadToMeedan:: Failed uploading extraction — marked as permanently failed",
                   extractionDocId: doc.id,
                   extractionDocTitle: doc.title,
                   extractionUniqueId: extraction.uniqueId,
@@ -539,21 +567,14 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
                   politicalEntityAirtableID: entity?.airtableID,
                   tenantName: tenant?.name,
                   tenantCountry: tenant?.country,
-                  error:
-                    extractionError instanceof Error
-                      ? extractionError.message
-                      : String(extractionError),
+                  error: uploadErrorMessage,
                 });
               }
             }
 
             if (docFailedExtractions > 0) {
-              await setDocumentFailedStatus(
-                document.airtableID,
-                `${docFailedExtractions} of ${extractionsToUpload.length} extraction(s) failed during upload`,
-              );
               logger.warn({
-                message: `uploadToMeedan:: Document skipped for Airtable completion mark — ${docFailedExtractions}/${extractionsToUpload.length} extraction(s) failed to upload`,
+                message: `uploadToMeedan:: ${docFailedExtractions} out of ${doc.extractions?.length ?? 0} extraction(s) failed — marked permanently, will not be retried`,
                 extractionDocId: doc.id,
                 extractionDocTitle: doc.title,
                 documentId,
@@ -563,12 +584,19 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
                 failedExtractions: docFailedExtractions,
                 totalExtractionsToUpload: extractionsToUpload.length,
               });
-              continue;
             }
 
+            const totalExtractions = doc.extractions?.length ?? 0;
+            const completionStatus =
+              docFailedExtractions > 0
+                ? `Uploaded to Meedan (${docFailedExtractions} out of ${totalExtractions} failed)`
+                : undefined;
+
             try {
-              const markedAsProcessed =
-                await markDocumentAsProcessedWhenReady(document);
+              const markedAsProcessed = await markDocumentAsProcessedWhenReady(
+                document,
+                completionStatus,
+              );
 
               if (!markedAsProcessed) {
                 logger.info({

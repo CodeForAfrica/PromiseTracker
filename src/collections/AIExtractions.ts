@@ -119,6 +119,9 @@ export const AIExtractions: CollectionConfig = {
                 fr: "URL CheckMedia",
               },
               type: "text",
+              admin: {
+                width: "50%",
+              },
             },
             {
               name: "Status",
@@ -127,6 +130,24 @@ export const AIExtractions: CollectionConfig = {
               label: {
                 en: "Status",
                 fr: "Statut",
+              },
+              admin: {
+                width: "50%",
+              },
+            },
+            {
+              name: "uploadError",
+              type: "text",
+              admin: {
+                readOnly: true,
+                description: {
+                  en: "Set when the upload to Meedan fails permanently. Extractions with this field set will not be retried.",
+                  fr: "Défini lorsque le téléchargement vers Meedan échoue définitivement. Les extractions avec ce champ ne seront pas réessayées.",
+                },
+              },
+              label: {
+                en: "Upload Error",
+                fr: "Erreur d'upload",
               },
             },
           ],
