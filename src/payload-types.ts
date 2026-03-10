@@ -362,6 +362,10 @@ export interface AiExtraction {
         checkMediaId?: string | null;
         checkMediaURL?: string | null;
         Status?: (string | null) | PromiseStatus;
+        /**
+         * Set when the upload to Meedan fails permanently. Extractions with this field set will not be retried.
+         */
+        uploadError?: string | null;
         id?: string | null;
       }[]
     | null;
@@ -1226,6 +1230,7 @@ export interface AiExtractionsSelect<T extends boolean = true> {
         checkMediaId?: T;
         checkMediaURL?: T;
         Status?: T;
+        uploadError?: T;
         id?: T;
       };
   updatedAt?: T;
