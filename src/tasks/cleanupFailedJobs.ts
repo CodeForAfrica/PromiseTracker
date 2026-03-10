@@ -1,8 +1,13 @@
 import { TaskConfig, type Where } from "payload";
 import { getTaskLogger, withTaskTracing } from "./utils";
 
-const getCleanupQueue = () =>
-  process.env.PAYLOAD_JOBS_CLEANUP_QUEUE || "cleanup";
+const DEFAULT_RETENTION_HOURS = 1;
+
+const getRetentionMs = () => {
+  const raw = Number(process.env.PAYLOAD_JOBS_FAILED_RETENTION_HOURS);
+  const hours = Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_RETENTION_HOURS;
+  return hours * 60 * 60 * 1000;
+};
 
 export const CleanupFailedJobs: TaskConfig<"cleanupFailedJobs"> = {
   slug: "cleanupFailedJobs",
@@ -11,17 +16,20 @@ export const CleanupFailedJobs: TaskConfig<"cleanupFailedJobs"> = {
   schedule: [
     {
       cron: "0 * * * *",
-      queue: getCleanupQueue(),
+      queue: process.env.PAYLOAD_JOBS_CLEANUP_QUEUE || "cleanup",
     },
   ],
   handler: withTaskTracing("cleanupFailedJobs", async ({ req, input }) => {
     const { payload } = req;
     const logger = getTaskLogger(req, "cleanupFailedJobs", input);
 
+    const retentionMs = getRetentionMs();
+    const cutoffDate = new Date(Date.now() - retentionMs);
+
     const where: Where = {
       and: [
-        { processing: { not_equals: true } },
-        { taskSlug: { not_equals: "cleanupFailedJobs" } },
+        { hasError: { equals: true } },
+        { completedAt: { less_than: cutoffDate.toISOString() } },
       ],
     };
 
@@ -31,7 +39,10 @@ export const CleanupFailedJobs: TaskConfig<"cleanupFailedJobs"> = {
     });
 
     if (!totalDocs) {
-      logger.info({ msg: "cleanupFailedJobs:: No jobs to delete" });
+      logger.info({
+        msg: "cleanupFailedJobs:: No failed jobs to delete",
+        retentionHours: retentionMs / (60 * 60 * 1000),
+      });
       return { output: { deleted: 0 } };
     }
 
@@ -42,7 +53,8 @@ export const CleanupFailedJobs: TaskConfig<"cleanupFailedJobs"> = {
     });
 
     logger.info({
-      msg: "cleanupFailedJobs:: Deleted all non-processing jobs",
+      msg: "cleanupFailedJobs:: Deleted failed jobs",
+      retentionHours: retentionMs / (60 * 60 * 1000),
       deleted: totalDocs,
     });
 
