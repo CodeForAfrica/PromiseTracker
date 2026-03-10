@@ -16,18 +16,25 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getGlobalPayload } from "@/lib/payload";
+import { PayloadRequest } from "payload";
 
 export const GET = async (request: NextRequest) => {
   const payload = await getGlobalPayload();
 
-  const { user } = await payload.auth({ headers: request.headers });
+  const { user } = await payload.auth({
+    headers: request.headers,
+    req: request as unknown as PayloadRequest,
+  });
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   payload.jobs.run().catch((error: unknown) => {
-    payload.logger.error({ msg: "run-jobs:: Unhandled error in jobs.run()", error });
+    payload.logger.error({
+      msg: "run-jobs:: Unhandled error in jobs.run()",
+      error,
+    });
   });
 
   return NextResponse.json({ ok: true }, { status: 202 });
