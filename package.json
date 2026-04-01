@@ -48,7 +48,7 @@
     "@next/third-parties": "^15.5.3",
     "@payloadcms/db-mongodb": "3.77.0",
     "@payloadcms/email-nodemailer": "3.77.0",
-    "@payloadcms/next": "3.77.0",
+    "@payloadcms/next": "3.78.0",
     "@payloadcms/payload-cloud": "3.77.0",
     "@payloadcms/plugin-cloud-storage": "3.77.0",
     "@payloadcms/plugin-multi-tenant": "3.77.0",
