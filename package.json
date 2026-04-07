@@ -105,12 +105,15 @@
     "pnpm": "^9 || ^10"
   },
   "pnpm": {
+    "blockExoticSubdeps": true,
+    "minimumReleaseAge": 1440,
     "onlyBuiltDependencies": [
       "@sentry/cli",
       "esbuild",
       "sharp",
       "unrs-resolver"
-    ]
+    ],
+    "trustPolicy": "no-downgrade"
   },
   "packageManager": "pnpm@10.16.1"
 }
