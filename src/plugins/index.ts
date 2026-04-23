@@ -7,6 +7,7 @@ import { capitalizeFirstLetter, isProd } from "@/utils/utils";
 import { s3Storage } from "@payloadcms/storage-s3";
 import { seoPlugin } from "@payloadcms/plugin-seo";
 import { convertLexicalToPlaintext } from "@payloadcms/richtext-lexical/plaintext";
+import { importExportPlugin } from "@payloadcms/plugin-import-export";
 
 const accessKeyId = process.env.S3_ACCESS_KEY_ID ?? "";
 const bucket = process.env.S3_BUCKET ?? "";
@@ -15,6 +16,17 @@ const secretAccessKey = process.env.S3_SECRET_ACCESS_KEY ?? "";
 const s3Enabled = !!accessKeyId && !!region && !!secretAccessKey;
 
 export const plugins: Plugin[] = [
+  importExportPlugin({
+    debug: !isProd,
+    collections: [
+      {
+        slug: "promises",
+      },
+      {
+        slug: "ai-extractions",
+      },
+    ],
+  }),
   multiTenantPlugin<Config>({
     collections: {
       pages: {},
