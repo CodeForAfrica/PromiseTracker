@@ -1,4 +1,8 @@
 import { airtableID } from "@/fields/airtableID";
+import {
+  deleteAIExtractionExportRowsForDocument,
+  syncAIExtractionExportRowsForDocument,
+} from "@/lib/aiExtractionExportRows";
 import { CollectionConfig } from "payload";
 
 export const Documents: CollectionConfig = {
@@ -15,6 +19,26 @@ export const Documents: CollectionConfig = {
   },
   access: {
     read: () => true,
+  },
+  hooks: {
+    afterChange: [
+      async ({ doc, req }) => {
+        await syncAIExtractionExportRowsForDocument({
+          documentId: String(doc.id),
+          payload: req.payload,
+        });
+        return doc;
+      },
+    ],
+    afterDelete: [
+      async ({ doc, req }) => {
+        await deleteAIExtractionExportRowsForDocument({
+          documentId: String(doc.id),
+          payload: req.payload,
+        });
+        return doc;
+      },
+    ],
   },
   admin: {
     defaultColumns: ["title", "politicalEntity", "language", "type"],

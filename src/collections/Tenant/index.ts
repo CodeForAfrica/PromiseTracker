@@ -1,5 +1,9 @@
 import { countriesByContinent, getCountryFlag } from "@/data/countries";
 import { airtableID } from "@/fields/airtableID";
+import {
+  deleteAIExtractionExportRowsForTenant,
+  syncAIExtractionExportRowsForTenant,
+} from "@/lib/aiExtractionExportRows";
 import { CollectionConfig } from "payload";
 
 const africanCountries = countriesByContinent("Africa");
@@ -89,6 +93,24 @@ export const Tenants: CollectionConfig = {
     airtableID(),
   ],
   hooks: {
+    afterChange: [
+      async ({ doc, req }) => {
+        await syncAIExtractionExportRowsForTenant({
+          payload: req.payload,
+          tenantId: String(doc.id),
+        });
+        return doc;
+      },
+    ],
+    afterDelete: [
+      async ({ doc, req }) => {
+        await deleteAIExtractionExportRowsForTenant({
+          payload: req.payload,
+          tenantId: String(doc.id),
+        });
+        return doc;
+      },
+    ],
     afterRead: [
       async ({ doc }) => {
         doc.flag = getCountryFlag(doc.country);

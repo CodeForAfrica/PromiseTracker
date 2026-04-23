@@ -1,3 +1,7 @@
+import {
+  deleteAIExtractionExportRowsForAIExtraction,
+  syncAIExtractionExportRows,
+} from "@/lib/aiExtractionExportRows";
 import { CollectionConfig } from "payload";
 
 export const AIExtractions: CollectionConfig = {
@@ -21,6 +25,26 @@ export const AIExtractions: CollectionConfig = {
   },
   access: {
     read: () => true,
+  },
+  hooks: {
+    afterChange: [
+      async ({ doc, req }) => {
+        await syncAIExtractionExportRows({
+          aiExtractionId: String(doc.id),
+          payload: req.payload,
+        });
+        return doc;
+      },
+    ],
+    afterDelete: [
+      async ({ doc, req }) => {
+        await deleteAIExtractionExportRowsForAIExtraction({
+          aiExtractionId: String(doc.id),
+          payload: req.payload,
+        });
+        return doc;
+      },
+    ],
   },
   fields: [
     {

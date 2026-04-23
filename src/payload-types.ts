@@ -69,6 +69,7 @@ export interface Config {
   collections: {
     documents: Document;
     'ai-extractions': AiExtraction;
+    'ai-extraction-export-rows': AiExtractionExportRow;
     promises: Promise;
     media: Media;
     pages: Page;
@@ -91,6 +92,7 @@ export interface Config {
   collectionsSelect: {
     documents: DocumentsSelect<false> | DocumentsSelect<true>;
     'ai-extractions': AiExtractionsSelect<false> | AiExtractionsSelect<true>;
+    'ai-extraction-export-rows': AiExtractionExportRowsSelect<false> | AiExtractionExportRowsSelect<true>;
     promises: PromisesSelect<false> | PromisesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
@@ -141,6 +143,7 @@ export interface Config {
       fetchPromiseStatuses: TaskFetchPromiseStatuses;
       updatePromiseStatus: TaskUpdatePromiseStatus;
       syncMeedanPromises: TaskSyncMeedanPromises;
+      syncAIExtractionExportRows: TaskSyncAIExtractionExportRows;
       cleanupFailedJobs: TaskCleanupFailedJobs;
       createCollectionExport: TaskCreateCollectionExport;
       createCollectionImport: TaskCreateCollectionImport;
@@ -393,6 +396,48 @@ export interface PromiseStatus {
     color?: string | null;
     textColor?: string | null;
   };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ai-extraction-export-rows".
+ */
+export interface AiExtractionExportRow {
+  id: string;
+  uniqueKey: string;
+  aiExtraction?: (string | null) | AiExtraction;
+  document?: (string | null) | Document;
+  politicalEntity?: (string | null) | PoliticalEntity;
+  tenant?: (string | null) | Tenant;
+  status?: (string | null) | PromiseStatus;
+  tenantId?: string | null;
+  tenantName?: string | null;
+  tenantCountry?: string | null;
+  tenantLocale?: string | null;
+  politicalEntityId?: string | null;
+  politicalEntityName?: string | null;
+  politicalEntitySlug?: string | null;
+  politicalEntityPosition?: string | null;
+  documentId?: string | null;
+  documentTitle?: string | null;
+  documentUrl?: string | null;
+  documentLanguage?: string | null;
+  documentType?: string | null;
+  documentAirtableID?: string | null;
+  aiExtractionId?: string | null;
+  aiExtractionTitle?: string | null;
+  extractionRowId?: string | null;
+  uniqueId?: string | null;
+  category?: string | null;
+  summary?: string | null;
+  source?: string | null;
+  statusId?: string | null;
+  statusLabel?: string | null;
+  statusMeedanId?: string | null;
+  checkMediaId?: string | null;
+  checkMediaURL?: string | null;
+  uploadError?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1085,6 +1130,7 @@ export interface PayloadJob {
           | 'fetchPromiseStatuses'
           | 'updatePromiseStatus'
           | 'syncMeedanPromises'
+          | 'syncAIExtractionExportRows'
           | 'cleanupFailedJobs'
           | 'createCollectionExport'
           | 'createCollectionImport';
@@ -1131,6 +1177,7 @@ export interface PayloadJob {
                 | 'fetchPromiseStatuses'
                 | 'updatePromiseStatus'
                 | 'syncMeedanPromises'
+                | 'syncAIExtractionExportRows'
                 | 'cleanupFailedJobs'
                 | 'createCollectionExport'
                 | 'createCollectionImport'
@@ -1155,6 +1202,7 @@ export interface PayloadJob {
         | 'fetchPromiseStatuses'
         | 'updatePromiseStatus'
         | 'syncMeedanPromises'
+        | 'syncAIExtractionExportRows'
         | 'cleanupFailedJobs'
         | 'createCollectionExport'
         | 'createCollectionImport'
@@ -1189,6 +1237,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'ai-extractions';
         value: string | AiExtraction;
+      } | null)
+    | ({
+        relationTo: 'ai-extraction-export-rows';
+        value: string | AiExtractionExportRow;
       } | null)
     | ({
         relationTo: 'promises';
@@ -1320,6 +1372,47 @@ export interface AiExtractionsSelect<T extends boolean = true> {
         uploadError?: T;
         id?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ai-extraction-export-rows_select".
+ */
+export interface AiExtractionExportRowsSelect<T extends boolean = true> {
+  uniqueKey?: T;
+  aiExtraction?: T;
+  document?: T;
+  politicalEntity?: T;
+  tenant?: T;
+  status?: T;
+  tenantId?: T;
+  tenantName?: T;
+  tenantCountry?: T;
+  tenantLocale?: T;
+  politicalEntityId?: T;
+  politicalEntityName?: T;
+  politicalEntitySlug?: T;
+  politicalEntityPosition?: T;
+  documentId?: T;
+  documentTitle?: T;
+  documentUrl?: T;
+  documentLanguage?: T;
+  documentType?: T;
+  documentAirtableID?: T;
+  aiExtractionId?: T;
+  aiExtractionTitle?: T;
+  extractionRowId?: T;
+  uniqueId?: T;
+  category?: T;
+  summary?: T;
+  source?: T;
+  statusId?: T;
+  statusLabel?: T;
+  statusMeedanId?: T;
+  checkMediaId?: T;
+  checkMediaURL?: T;
+  uploadError?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2965,6 +3058,14 @@ export interface TaskUpdatePromiseStatus {
  * via the `definition` "TaskSyncMeedanPromises".
  */
 export interface TaskSyncMeedanPromises {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSyncAIExtractionExportRows".
+ */
+export interface TaskSyncAIExtractionExportRows {
   input?: unknown;
   output?: unknown;
 }

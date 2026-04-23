@@ -1,5 +1,9 @@
 import { airtableID } from "@/fields/airtableID";
 import { image } from "@/fields/image";
+import {
+  deleteAIExtractionExportRowsForPoliticalEntity,
+  syncAIExtractionExportRowsForPoliticalEntity,
+} from "@/lib/aiExtractionExportRows";
 import { slugField } from "@/fields/slug";
 import { CollectionConfig } from "payload";
 import { ensureUniqueSlug } from "./hooks/ensureUniqueSlug";
@@ -31,6 +35,26 @@ export const PoliticalEntities: CollectionConfig = {
       "publish",
       "periodFrom",
       "periodTo",
+    ],
+  },
+  hooks: {
+    afterChange: [
+      async ({ doc, req }) => {
+        await syncAIExtractionExportRowsForPoliticalEntity({
+          payload: req.payload,
+          politicalEntityId: String(doc.id),
+        });
+        return doc;
+      },
+    ],
+    afterDelete: [
+      async ({ doc, req }) => {
+        await deleteAIExtractionExportRowsForPoliticalEntity({
+          payload: req.payload,
+          politicalEntityId: String(doc.id),
+        });
+        return doc;
+      },
     ],
   },
   fields: [
