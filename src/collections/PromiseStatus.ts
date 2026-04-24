@@ -1,8 +1,29 @@
+import { syncAIExtractionExportRowsForStatus } from "@/lib/aiExtractionExportRows";
 import { CollectionConfig } from "payload";
 import { colorPickerField } from "@innovixx/payload-color-picker-field";
 
 export const PromiseStatus: CollectionConfig = {
   slug: "promise-status",
+  hooks: {
+    afterChange: [
+      async ({ doc, req }) => {
+        await syncAIExtractionExportRowsForStatus({
+          payload: req.payload,
+          statusId: String(doc.id),
+        });
+        return doc;
+      },
+    ],
+    afterDelete: [
+      async ({ doc, req }) => {
+        await syncAIExtractionExportRowsForStatus({
+          payload: req.payload,
+          statusId: String(doc.id),
+        });
+        return doc;
+      },
+    ],
+  },
   admin: {
     group: {
       en: "Documents",

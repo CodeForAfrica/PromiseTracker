@@ -52,6 +52,7 @@ export type AIExtractionExportRowData = {
 
 type ExistingExportRow = {
   id: string;
+  aiExtractionId?: string | null;
   uniqueKey?: string | null;
 };
 
@@ -407,6 +408,41 @@ export const syncAIExtractionExportRowsForTenant = async ({
     await syncAIExtractionExportRowsForPoliticalEntity({
       payload,
       politicalEntityId: String(entity.id),
+    });
+  }
+};
+
+export const syncAIExtractionExportRowsForStatus = async ({
+  payload,
+  statusId,
+}: {
+  payload: Payload;
+  statusId: string;
+}) => {
+  const { docs } = await payload.find({
+    collection: AI_EXTRACTION_EXPORT_ROWS_COLLECTION,
+    depth: 0,
+    limit: 0,
+    overrideAccess: true,
+    where: {
+      statusId: {
+        equals: statusId,
+      },
+    },
+  });
+
+  const aiExtractionIds = [
+    ...new Set(
+      (docs as ExistingExportRow[])
+        .map((doc) => doc.aiExtractionId)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+
+  for (const aiExtractionId of aiExtractionIds) {
+    await syncAIExtractionExportRows({
+      aiExtractionId,
+      payload,
     });
   }
 };
