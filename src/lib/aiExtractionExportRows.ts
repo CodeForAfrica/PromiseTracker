@@ -254,6 +254,91 @@ const deleteRowsWhere = async ({
   });
 };
 
+const logScopedSyncError = ({
+  context,
+  err,
+  message,
+  payload,
+}: {
+  context: Record<string, unknown>;
+  err: unknown;
+  message: string;
+  payload: Payload;
+}) => {
+  payload.logger?.error({
+    ...context,
+    err,
+    msg: message,
+  });
+};
+
+const aiExtractionExists = async ({
+  aiExtractionId,
+  payload,
+  req,
+}: LocalAPIContext & {
+  aiExtractionId: string;
+}): Promise<boolean> => {
+  const result = await payload.find({
+    collection: "ai-extractions",
+    depth: 0,
+    limit: 1,
+    overrideAccess: true,
+    req,
+    where: {
+      id: {
+        equals: aiExtractionId,
+      },
+    },
+  });
+
+  return result.docs.length > 0;
+};
+
+const findOrphanedAIExtractionIds = async ({
+  payload,
+  req,
+  retainedAIExtractionIds,
+}: LocalAPIContext & {
+  retainedAIExtractionIds: Set<string>;
+}): Promise<string[]> => {
+  const candidateAIExtractionIds = new Set<string>();
+  const orphanedAIExtractionIds: string[] = [];
+
+  await forEachMatchingDoc<ExistingExportRow>({
+    collection: AI_EXTRACTION_EXPORT_ROWS_COLLECTION,
+    onDoc: (doc) => {
+      if (doc.aiExtractionId) {
+        candidateAIExtractionIds.add(doc.aiExtractionId);
+      }
+    },
+    payload,
+    req,
+    where: {
+      aiExtractionId: {
+        not_in: [...retainedAIExtractionIds],
+      },
+    },
+  });
+
+  for (const aiExtractionId of candidateAIExtractionIds) {
+    if (
+      retainedAIExtractionIds.has(aiExtractionId) ||
+      (await aiExtractionExists({
+        aiExtractionId,
+        payload,
+        req,
+      }))
+    ) {
+      continue;
+    }
+
+    orphanedAIExtractionIds.push(aiExtractionId);
+  }
+
+  return orphanedAIExtractionIds;
+};
+
 export const syncAIExtractionExportRows = async ({
   aiExtractionId,
   payload,
@@ -411,11 +496,21 @@ export const syncAIExtractionExportRowsForDocument = async ({
   await forEachMatchingDoc<Pick<AiExtraction, "id">>({
     collection: "ai-extractions",
     onDoc: async (doc) => {
-      await syncAIExtractionExportRows({
-        aiExtractionId: String(doc.id),
-        payload,
-        req,
-      });
+      try {
+        await syncAIExtractionExportRows({
+          aiExtractionId: String(doc.id),
+          payload,
+          req,
+        });
+      } catch (err) {
+        logScopedSyncError({
+          context: { aiExtractionId: String(doc.id), documentId },
+          err,
+          message:
+            "Failed to sync AI extraction export rows for document-scoped sync item",
+          payload,
+        });
+      }
     },
     payload,
     req,
@@ -437,11 +532,21 @@ export const syncAIExtractionExportRowsForPoliticalEntity = async ({
   await forEachMatchingDoc<Pick<PayloadDocument, "id">>({
     collection: "documents",
     onDoc: async (doc) => {
-      await syncAIExtractionExportRowsForDocument({
-        documentId: String(doc.id),
-        payload,
-        req,
-      });
+      try {
+        await syncAIExtractionExportRowsForDocument({
+          documentId: String(doc.id),
+          payload,
+          req,
+        });
+      } catch (err) {
+        logScopedSyncError({
+          context: { documentId: String(doc.id), politicalEntityId },
+          err,
+          message:
+            "Failed to sync AI extraction export rows for political-entity-scoped document",
+          payload,
+        });
+      }
     },
     payload,
     req,
@@ -463,11 +568,21 @@ export const syncAIExtractionExportRowsForTenant = async ({
   await forEachMatchingDoc<Pick<PoliticalEntity, "id">>({
     collection: "political-entities",
     onDoc: async (entity) => {
-      await syncAIExtractionExportRowsForPoliticalEntity({
-        payload,
-        politicalEntityId: String(entity.id),
-        req,
-      });
+      try {
+        await syncAIExtractionExportRowsForPoliticalEntity({
+          payload,
+          politicalEntityId: String(entity.id),
+          req,
+        });
+      } catch (err) {
+        logScopedSyncError({
+          context: { politicalEntityId: String(entity.id), tenantId },
+          err,
+          message:
+            "Failed to sync AI extraction export rows for tenant-scoped political entity",
+          payload,
+        });
+      }
     },
     payload,
     req,
@@ -505,11 +620,21 @@ export const syncAIExtractionExportRowsForStatus = async ({
   });
 
   for (const aiExtractionId of aiExtractionIds) {
-    await syncAIExtractionExportRows({
-      aiExtractionId,
-      payload,
-      req,
-    });
+    try {
+      await syncAIExtractionExportRows({
+        aiExtractionId,
+        payload,
+        req,
+      });
+    } catch (err) {
+      logScopedSyncError({
+        context: { aiExtractionId, statusId },
+        err,
+        message:
+          "Failed to sync AI extraction export rows for status-scoped AI extraction",
+        payload,
+      });
+    }
   }
 };
 
@@ -544,13 +669,25 @@ export const rebuildAllAIExtractionExportRows = async ({
     return { deletedStaleRows: 0, processed };
   }
 
+  // Only delete rows whose parent AI extraction is confirmed missing now.
+  // This avoids deleting rows created concurrently after the rebuild scan started.
+  const orphanedAIExtractionIds = await findOrphanedAIExtractionIds({
+    payload,
+    req,
+    retainedAIExtractionIds: syncedAiExtractionIds,
+  });
+
+  if (orphanedAIExtractionIds.length === 0) {
+    return { deletedStaleRows: 0, processed };
+  }
+
   const deletedStaleRows = await payload.count({
     collection: AI_EXTRACTION_EXPORT_ROWS_COLLECTION,
     overrideAccess: true,
     req,
     where: {
       aiExtractionId: {
-        not_in: [...syncedAiExtractionIds],
+        in: orphanedAIExtractionIds,
       },
     },
   });
@@ -560,7 +697,7 @@ export const rebuildAllAIExtractionExportRows = async ({
     req,
     where: {
       aiExtractionId: {
-        not_in: [...syncedAiExtractionIds],
+        in: orphanedAIExtractionIds,
       },
     },
   });

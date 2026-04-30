@@ -238,4 +238,68 @@ describe("AI extraction export rows", () => {
     expect(payload.count).not.toHaveBeenCalled();
     expect(payload.delete).not.toHaveBeenCalled();
   });
+
+  it("only deletes export rows for AI extractions that no longer exist", async () => {
+    const payload = {
+      count: vi.fn().mockResolvedValue({ totalDocs: 2 }),
+      create: vi.fn(),
+      delete: vi.fn(),
+      find: vi
+        .fn()
+        .mockResolvedValueOnce({
+          docs: [{ id: "ai-extraction-1" }],
+          hasNextPage: false,
+        })
+        .mockResolvedValueOnce({
+          docs: [],
+          hasNextPage: false,
+        })
+        .mockResolvedValueOnce({
+          docs: [
+            { aiExtractionId: "ai-extraction-2" },
+            { aiExtractionId: "ai-extraction-3" },
+          ],
+          hasNextPage: false,
+        })
+        .mockResolvedValueOnce({
+          docs: [],
+          hasNextPage: false,
+        })
+        .mockResolvedValueOnce({
+          docs: [{ id: "ai-extraction-3" }],
+          hasNextPage: false,
+        }),
+      findByID: vi.fn().mockResolvedValue({
+        id: "ai-extraction-1",
+        extractions: [],
+      }),
+      update: vi.fn(),
+    };
+
+    const result = await rebuildAllAIExtractionExportRows({
+      payload: payload as never,
+    });
+
+    expect(result).toEqual({ deletedStaleRows: 2, processed: 1 });
+    expect(payload.count).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: "ai-extraction-export-rows",
+        where: {
+          aiExtractionId: {
+            in: ["ai-extraction-2"],
+          },
+        },
+      }),
+    );
+    expect(payload.delete).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: "ai-extraction-export-rows",
+        where: {
+          aiExtractionId: {
+            in: ["ai-extraction-2"],
+          },
+        },
+      }),
+    );
+  });
 });
