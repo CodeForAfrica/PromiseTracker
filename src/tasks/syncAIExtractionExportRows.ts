@@ -15,6 +15,17 @@ const isSyncExportRowsInput = (
 ): value is SyncAIExtractionExportRowsInput =>
   typeof value === "object" && value !== null;
 
+const scopedInputIsMissingRequiredId = (
+  input: SyncAIExtractionExportRowsInput,
+): boolean =>
+  (input.scope === "aiExtraction" &&
+    typeof input.aiExtractionId !== "string") ||
+  (input.scope === "document" && typeof input.documentId !== "string") ||
+  (input.scope === "politicalEntity" &&
+    typeof input.politicalEntityId !== "string") ||
+  (input.scope === "status" && typeof input.statusId !== "string") ||
+  (input.scope === "tenant" && typeof input.tenantId !== "string");
+
 export const SyncAIExtractionExportRows: TaskConfig = {
   slug: "syncAIExtractionExportRows",
   label: "Sync AI Extraction Export Rows",
@@ -23,6 +34,21 @@ export const SyncAIExtractionExportRows: TaskConfig = {
     async ({ req, input }) => {
       const logger = getTaskLogger(req, "syncAIExtractionExportRows", input);
       const parsedInput = isSyncExportRowsInput(input) ? input : {};
+
+      if (scopedInputIsMissingRequiredId(parsedInput)) {
+        logger.error({
+          input: parsedInput,
+          message:
+            "syncAIExtractionExportRows:: Refusing scoped export row sync with missing identifier",
+        });
+
+        return {
+          output: {
+            error: "missingIdentifier",
+            scope: parsedInput.scope,
+          },
+        };
+      }
 
       if (
         parsedInput.scope === "aiExtraction" &&
@@ -165,6 +191,21 @@ export const SyncAIExtractionExportRows: TaskConfig = {
           output: {
             politicalEntityId: parsedInput.politicalEntityId,
             scope: "politicalEntity",
+          },
+        };
+      }
+
+      if (parsedInput.scope && parsedInput.scope !== "all") {
+        logger.error({
+          input: parsedInput,
+          message:
+            "syncAIExtractionExportRows:: Refusing export row sync with unsupported scope",
+        });
+
+        return {
+          output: {
+            error: "unsupportedScope",
+            scope: parsedInput.scope,
           },
         };
       }

@@ -548,27 +548,21 @@ export const rebuildAllAIExtractionExportRows = async ({
     collection: AI_EXTRACTION_EXPORT_ROWS_COLLECTION,
     overrideAccess: true,
     req,
-    where:
-      syncedAiExtractionIds.size > 0
-        ? {
-            aiExtractionId: {
-              not_in: [...syncedAiExtractionIds],
-            },
-          }
-        : {},
+    where: {
+      aiExtractionId: {
+        not_in: [...syncedAiExtractionIds],
+      },
+    },
   });
 
   await deleteRowsWhere({
     payload,
     req,
-    where:
-      syncedAiExtractionIds.size > 0
-        ? {
-            aiExtractionId: {
-              not_in: [...syncedAiExtractionIds],
-            },
-          }
-        : {},
+    where: {
+      aiExtractionId: {
+        not_in: [...syncedAiExtractionIds],
+      },
+    },
   });
 
   return { deletedStaleRows: deletedStaleRows.totalDocs, processed };

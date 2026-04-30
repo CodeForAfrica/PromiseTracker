@@ -167,6 +167,7 @@ describe("AI extraction export rows", () => {
             { aiExtractionId: "ai-extraction-1" },
             { aiExtractionId: "ai-extraction-2" },
           ],
+          hasNextPage: false,
         })
         .mockResolvedValueOnce({ docs: [] })
         .mockResolvedValueOnce({ docs: [] }),
