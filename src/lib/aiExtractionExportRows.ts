@@ -10,6 +10,8 @@ import type { Payload, PayloadRequest, Where } from "payload";
 export const AI_EXTRACTION_EXPORT_ROWS_COLLECTION =
   "ai-extraction-export-rows" as const;
 
+const DEFAULT_SYNC_BATCH_SIZE = 100;
+
 type ExtractionItem = NonNullable<
   NonNullable<AiExtraction["extractions"]>[number]
 >;
@@ -60,6 +62,12 @@ type LocalAPIContext = {
   payload: Payload;
   req?: Partial<PayloadRequest>;
 };
+
+type SyncCollectionSlug =
+  | typeof AI_EXTRACTION_EXPORT_ROWS_COLLECTION
+  | "ai-extractions"
+  | "documents"
+  | "political-entities";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -114,6 +122,42 @@ const getExtractionRowId = (
   extraction: ExtractionItem,
   index: number,
 ): string => getId(extraction) || String(index + 1);
+
+const forEachMatchingDoc = async <T>({
+  batchSize = DEFAULT_SYNC_BATCH_SIZE,
+  collection,
+  onDoc,
+  payload,
+  req,
+  where,
+}: LocalAPIContext & {
+  batchSize?: number;
+  collection: SyncCollectionSlug;
+  onDoc: (doc: T) => Promise<void> | void;
+  where?: Where;
+}) => {
+  let hasNextPage = true;
+  let page = 1;
+
+  while (hasNextPage) {
+    const result = await payload.find({
+      collection,
+      depth: 0,
+      limit: batchSize,
+      overrideAccess: true,
+      page,
+      req,
+      where,
+    });
+
+    for (const doc of result.docs as T[]) {
+      await onDoc(doc);
+    }
+
+    hasNextPage = result.hasNextPage;
+    page += 1;
+  }
+};
 
 export const buildAIExtractionExportRows = (
   extractionDoc: AiExtraction,
@@ -176,11 +220,14 @@ const findExistingRows = async ({
 }: LocalAPIContext & {
   aiExtractionId: string;
 }): Promise<ExistingExportRow[]> => {
-  const { docs } = await payload.find({
+  const docs: ExistingExportRow[] = [];
+
+  await forEachMatchingDoc<ExistingExportRow>({
     collection: AI_EXTRACTION_EXPORT_ROWS_COLLECTION,
-    depth: 0,
-    limit: 0,
-    overrideAccess: true,
+    onDoc: (doc) => {
+      docs.push(doc);
+    },
+    payload,
     req,
     where: {
       aiExtractionId: {
@@ -189,7 +236,7 @@ const findExistingRows = async ({
     },
   });
 
-  return docs as ExistingExportRow[];
+  return docs;
 };
 
 const deleteRowsWhere = async ({
@@ -343,11 +390,16 @@ export const syncAIExtractionExportRowsForDocument = async ({
 }: LocalAPIContext & {
   documentId: string;
 }) => {
-  const { docs } = await payload.find({
+  await forEachMatchingDoc<Pick<AiExtraction, "id">>({
     collection: "ai-extractions",
-    depth: 0,
-    limit: 0,
-    overrideAccess: true,
+    onDoc: async (doc) => {
+      await syncAIExtractionExportRows({
+        aiExtractionId: String(doc.id),
+        payload,
+        req,
+      });
+    },
+    payload,
     req,
     where: {
       document: {
@@ -355,14 +407,6 @@ export const syncAIExtractionExportRowsForDocument = async ({
       },
     },
   });
-
-  for (const doc of docs as Pick<AiExtraction, "id">[]) {
-    await syncAIExtractionExportRows({
-      aiExtractionId: String(doc.id),
-      payload,
-      req,
-    });
-  }
 };
 
 export const syncAIExtractionExportRowsForPoliticalEntity = async ({
@@ -372,11 +416,16 @@ export const syncAIExtractionExportRowsForPoliticalEntity = async ({
 }: LocalAPIContext & {
   politicalEntityId: string;
 }) => {
-  const { docs } = await payload.find({
+  await forEachMatchingDoc<Pick<PayloadDocument, "id">>({
     collection: "documents",
-    depth: 0,
-    limit: 0,
-    overrideAccess: true,
+    onDoc: async (doc) => {
+      await syncAIExtractionExportRowsForDocument({
+        documentId: String(doc.id),
+        payload,
+        req,
+      });
+    },
+    payload,
     req,
     where: {
       politicalEntity: {
@@ -384,14 +433,6 @@ export const syncAIExtractionExportRowsForPoliticalEntity = async ({
       },
     },
   });
-
-  for (const doc of docs as Pick<PayloadDocument, "id">[]) {
-    await syncAIExtractionExportRowsForDocument({
-      documentId: String(doc.id),
-      payload,
-      req,
-    });
-  }
 };
 
 export const syncAIExtractionExportRowsForTenant = async ({
@@ -401,11 +442,16 @@ export const syncAIExtractionExportRowsForTenant = async ({
 }: LocalAPIContext & {
   tenantId: string;
 }) => {
-  const { docs } = await payload.find({
+  await forEachMatchingDoc<Pick<PoliticalEntity, "id">>({
     collection: "political-entities",
-    depth: 0,
-    limit: 0,
-    overrideAccess: true,
+    onDoc: async (entity) => {
+      await syncAIExtractionExportRowsForPoliticalEntity({
+        payload,
+        politicalEntityId: String(entity.id),
+        req,
+      });
+    },
+    payload,
     req,
     where: {
       tenant: {
@@ -413,14 +459,6 @@ export const syncAIExtractionExportRowsForTenant = async ({
       },
     },
   });
-
-  for (const entity of docs as Pick<PoliticalEntity, "id">[]) {
-    await syncAIExtractionExportRowsForPoliticalEntity({
-      payload,
-      politicalEntityId: String(entity.id),
-      req,
-    });
-  }
 };
 
 export const syncAIExtractionExportRowsForStatus = async ({
@@ -430,11 +468,16 @@ export const syncAIExtractionExportRowsForStatus = async ({
 }: LocalAPIContext & {
   statusId: string;
 }) => {
-  const { docs } = await payload.find({
+  const aiExtractionIds = new Set<string>();
+
+  await forEachMatchingDoc<ExistingExportRow>({
     collection: AI_EXTRACTION_EXPORT_ROWS_COLLECTION,
-    depth: 0,
-    limit: 0,
-    overrideAccess: true,
+    onDoc: (doc) => {
+      if (doc.aiExtractionId) {
+        aiExtractionIds.add(doc.aiExtractionId);
+      }
+    },
+    payload,
     req,
     where: {
       statusId: {
@@ -442,14 +485,6 @@ export const syncAIExtractionExportRowsForStatus = async ({
       },
     },
   });
-
-  const aiExtractionIds = [
-    ...new Set(
-      (docs as ExistingExportRow[])
-        .map((doc) => doc.aiExtractionId)
-        .filter((id): id is string => Boolean(id)),
-    ),
-  ];
 
   for (const aiExtractionId of aiExtractionIds) {
     await syncAIExtractionExportRows({
@@ -461,44 +496,56 @@ export const syncAIExtractionExportRowsForStatus = async ({
 };
 
 export const rebuildAllAIExtractionExportRows = async ({
-  batchSize = 100,
+  batchSize = DEFAULT_SYNC_BATCH_SIZE,
   payload,
   req,
 }: LocalAPIContext & {
   batchSize?: number;
 }) => {
-  await deleteRowsWhere({
-    payload,
-    req,
-    where: {},
-  });
-
-  let hasNextPage = true;
-  let page = 1;
+  const syncedAiExtractionIds = new Set<string>();
+  const staleRowIds: string[] = [];
   let processed = 0;
 
-  while (hasNextPage) {
-    const { docs, hasNextPage: nextPage } = await payload.find({
-      collection: "ai-extractions",
-      depth: 0,
-      limit: batchSize,
-      overrideAccess: true,
-      page,
-      req,
-    });
-
-    for (const doc of docs as Pick<AiExtraction, "id">[]) {
+  await forEachMatchingDoc<Pick<AiExtraction, "id">>({
+    batchSize,
+    collection: "ai-extractions",
+    onDoc: async (doc) => {
+      const aiExtractionId = String(doc.id);
+      syncedAiExtractionIds.add(aiExtractionId);
       await syncAIExtractionExportRows({
-        aiExtractionId: String(doc.id),
+        aiExtractionId,
         payload,
         req,
       });
       processed += 1;
-    }
+    },
+    payload,
+    req,
+  });
 
-    hasNextPage = nextPage;
-    page += 1;
+  await forEachMatchingDoc<ExistingExportRow>({
+    batchSize,
+    collection: AI_EXTRACTION_EXPORT_ROWS_COLLECTION,
+    onDoc: (row) => {
+      if (
+        !row.aiExtractionId ||
+        !syncedAiExtractionIds.has(row.aiExtractionId)
+      ) {
+        staleRowIds.push(row.id);
+      }
+    },
+    payload,
+    req,
+  });
+
+  for (const id of staleRowIds) {
+    await payload.delete({
+      collection: AI_EXTRACTION_EXPORT_ROWS_COLLECTION,
+      id,
+      overrideAccess: true,
+      req,
+    });
   }
 
-  return { processed };
+  return { deletedStaleRows: staleRowIds.length, processed };
 };

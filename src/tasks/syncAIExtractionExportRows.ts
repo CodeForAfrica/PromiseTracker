@@ -1,5 +1,7 @@
 import {
   rebuildAllAIExtractionExportRows,
+  syncAIExtractionExportRows,
+  syncAIExtractionExportRowsForDocument,
   syncAIExtractionExportRowsForPoliticalEntity,
   syncAIExtractionExportRowsForTenant,
 } from "@/lib/aiExtractionExportRows";
@@ -7,8 +9,10 @@ import { TaskConfig } from "payload";
 import { getTaskLogger, withTaskTracing } from "./utils";
 
 type SyncExportRowsInput = {
+  aiExtractionId?: string;
+  documentId?: string;
   politicalEntityId?: string;
-  scope?: "all" | "politicalEntity" | "tenant";
+  scope?: "aiExtraction" | "all" | "document" | "politicalEntity" | "tenant";
   tenantId?: string;
 };
 
@@ -23,6 +27,66 @@ export const SyncAIExtractionExportRows: TaskConfig = {
     async ({ req, input }) => {
       const logger = getTaskLogger(req, "syncAIExtractionExportRows", input);
       const parsedInput = isSyncExportRowsInput(input) ? input : {};
+
+      if (
+        parsedInput.scope === "aiExtraction" &&
+        typeof parsedInput.aiExtractionId === "string"
+      ) {
+        logger.info({
+          aiExtractionId: parsedInput.aiExtractionId,
+          message:
+            "syncAIExtractionExportRows:: Starting AI extraction scoped export row sync",
+        });
+
+        await syncAIExtractionExportRows({
+          aiExtractionId: parsedInput.aiExtractionId,
+          payload: req.payload,
+          req,
+        });
+
+        logger.info({
+          aiExtractionId: parsedInput.aiExtractionId,
+          message:
+            "syncAIExtractionExportRows:: Completed AI extraction scoped export row sync",
+        });
+
+        return {
+          output: {
+            aiExtractionId: parsedInput.aiExtractionId,
+            scope: "aiExtraction",
+          },
+        };
+      }
+
+      if (
+        parsedInput.scope === "document" &&
+        typeof parsedInput.documentId === "string"
+      ) {
+        logger.info({
+          documentId: parsedInput.documentId,
+          message:
+            "syncAIExtractionExportRows:: Starting document scoped export row sync",
+        });
+
+        await syncAIExtractionExportRowsForDocument({
+          documentId: parsedInput.documentId,
+          payload: req.payload,
+          req,
+        });
+
+        logger.info({
+          documentId: parsedInput.documentId,
+          message:
+            "syncAIExtractionExportRows:: Completed document scoped export row sync",
+        });
+
+        return {
+          output: {
+            documentId: parsedInput.documentId,
+            scope: "document",
+          },
+        };
+      }
 
       if (
         parsedInput.scope === "tenant" &&
@@ -89,6 +153,7 @@ export const SyncAIExtractionExportRows: TaskConfig = {
       });
 
       logger.info({
+        deletedStaleRows: result.deletedStaleRows,
         message:
           "syncAIExtractionExportRows:: Completed AI extraction export row rebuild",
         processed: result.processed,
