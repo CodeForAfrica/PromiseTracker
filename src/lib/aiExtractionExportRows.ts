@@ -108,7 +108,7 @@ const getDocumentUrl = (document: PayloadDocument | null): string => {
 const getExtractionRowId = (
   extraction: ExtractionItem,
   index: number,
-): string => extraction.uniqueId ?? extraction.id ?? String(index + 1);
+): string => getId(extraction) || String(index + 1);
 
 export const buildAIExtractionExportRows = (
   extractionDoc: AiExtraction,
@@ -193,21 +193,11 @@ const deleteRowsWhere = async ({
   payload: Payload;
   where: Where;
 }) => {
-  const { docs } = await payload.find({
+  await payload.delete({
     collection: AI_EXTRACTION_EXPORT_ROWS_COLLECTION,
-    depth: 0,
-    limit: 0,
     overrideAccess: true,
     where,
   });
-
-  for (const row of docs as ExistingExportRow[]) {
-    await payload.delete({
-      collection: AI_EXTRACTION_EXPORT_ROWS_COLLECTION,
-      id: row.id,
-      overrideAccess: true,
-    });
-  }
 };
 
 export const syncAIExtractionExportRows = async ({
