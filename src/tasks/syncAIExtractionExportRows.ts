@@ -3,6 +3,7 @@ import {
   syncAIExtractionExportRows,
   syncAIExtractionExportRowsForDocument,
   syncAIExtractionExportRowsForPoliticalEntity,
+  syncAIExtractionExportRowsForStatus,
   syncAIExtractionExportRowsForTenant,
 } from "@/lib/aiExtractionExportRows";
 import { TaskConfig } from "payload";
@@ -12,7 +13,14 @@ type SyncExportRowsInput = {
   aiExtractionId?: string;
   documentId?: string;
   politicalEntityId?: string;
-  scope?: "aiExtraction" | "all" | "document" | "politicalEntity" | "tenant";
+  scope?:
+    | "aiExtraction"
+    | "all"
+    | "document"
+    | "politicalEntity"
+    | "status"
+    | "tenant";
+  statusId?: string;
   tenantId?: string;
 };
 
@@ -84,6 +92,36 @@ export const SyncAIExtractionExportRows: TaskConfig = {
           output: {
             documentId: parsedInput.documentId,
             scope: "document",
+          },
+        };
+      }
+
+      if (
+        parsedInput.scope === "status" &&
+        typeof parsedInput.statusId === "string"
+      ) {
+        logger.info({
+          message:
+            "syncAIExtractionExportRows:: Starting status scoped export row sync",
+          statusId: parsedInput.statusId,
+        });
+
+        await syncAIExtractionExportRowsForStatus({
+          payload: req.payload,
+          req,
+          statusId: parsedInput.statusId,
+        });
+
+        logger.info({
+          message:
+            "syncAIExtractionExportRows:: Completed status scoped export row sync",
+          statusId: parsedInput.statusId,
+        });
+
+        return {
+          output: {
+            scope: "status",
+            statusId: parsedInput.statusId,
           },
         };
       }

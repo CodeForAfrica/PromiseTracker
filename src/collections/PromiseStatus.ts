@@ -1,6 +1,7 @@
-import { syncAIExtractionExportRowsForStatus } from "@/lib/aiExtractionExportRows";
 import { CollectionConfig } from "payload";
 import { colorPickerField } from "@innovixx/payload-color-picker-field";
+
+const exportRowSyncQueue = process.env.PAYLOAD_JOBS_QUEUE || "everyMinute";
 
 export const PromiseStatus: CollectionConfig = {
   slug: "promise-status",
@@ -8,15 +9,20 @@ export const PromiseStatus: CollectionConfig = {
     afterChange: [
       async ({ doc, req }) => {
         try {
-          await syncAIExtractionExportRowsForStatus({
-            payload: req.payload,
+          await req.payload.jobs.queue({
+            input: {
+              scope: "status",
+              statusId: String(doc.id),
+            },
+            overrideAccess: true,
+            queue: exportRowSyncQueue,
             req,
-            statusId: String(doc.id),
+            task: "syncAIExtractionExportRows",
           });
         } catch (err) {
           req.payload.logger.error({
             err,
-            msg: "Failed to sync AI extraction export rows after promise status change",
+            msg: "Failed to queue AI extraction export row sync after promise status change",
             statusId: String(doc.id),
           });
         }
@@ -26,15 +32,20 @@ export const PromiseStatus: CollectionConfig = {
     afterDelete: [
       async ({ doc, req }) => {
         try {
-          await syncAIExtractionExportRowsForStatus({
-            payload: req.payload,
+          await req.payload.jobs.queue({
+            input: {
+              scope: "status",
+              statusId: String(doc.id),
+            },
+            overrideAccess: true,
+            queue: exportRowSyncQueue,
             req,
-            statusId: String(doc.id),
+            task: "syncAIExtractionExportRows",
           });
         } catch (err) {
           req.payload.logger.error({
             err,
-            msg: "Failed to sync AI extraction export rows after promise status delete",
+            msg: "Failed to queue AI extraction export row sync after promise status delete",
             statusId: String(doc.id),
           });
         }

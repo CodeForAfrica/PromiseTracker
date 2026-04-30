@@ -301,16 +301,34 @@ export const syncAIExtractionExportRows = async ({
     });
   }
 
-  for (const row of existingRows) {
-    if (row.uniqueKey && syncedKeys.has(row.uniqueKey)) {
-      continue;
-    }
-
-    await payload.delete({
-      collection: AI_EXTRACTION_EXPORT_ROWS_COLLECTION,
-      id: row.id,
-      overrideAccess: true,
+  if (syncedKeys.size > 0) {
+    await deleteRowsWhere({
+      payload,
       req,
+      where: {
+        and: [
+          {
+            aiExtractionId: {
+              equals: aiExtractionId,
+            },
+          },
+          {
+            uniqueKey: {
+              not_in: [...syncedKeys],
+            },
+          },
+        ],
+      },
+    });
+  } else {
+    await deleteRowsWhere({
+      payload,
+      req,
+      where: {
+        aiExtractionId: {
+          equals: aiExtractionId,
+        },
+      },
     });
   }
 };
@@ -503,7 +521,6 @@ export const rebuildAllAIExtractionExportRows = async ({
   batchSize?: number;
 }) => {
   const syncedAiExtractionIds = new Set<string>();
-  const staleRowIds: string[] = [];
   let processed = 0;
 
   await forEachMatchingDoc<Pick<AiExtraction, "id">>({
@@ -523,29 +540,32 @@ export const rebuildAllAIExtractionExportRows = async ({
     req,
   });
 
-  await forEachMatchingDoc<ExistingExportRow>({
-    batchSize,
+  const deletedStaleRows = await payload.count({
     collection: AI_EXTRACTION_EXPORT_ROWS_COLLECTION,
-    onDoc: (row) => {
-      if (
-        !row.aiExtractionId ||
-        !syncedAiExtractionIds.has(row.aiExtractionId)
-      ) {
-        staleRowIds.push(row.id);
-      }
-    },
-    payload,
+    overrideAccess: true,
     req,
+    where:
+      syncedAiExtractionIds.size > 0
+        ? {
+            aiExtractionId: {
+              not_in: [...syncedAiExtractionIds],
+            },
+          }
+        : {},
   });
 
-  for (const id of staleRowIds) {
-    await payload.delete({
-      collection: AI_EXTRACTION_EXPORT_ROWS_COLLECTION,
-      id,
-      overrideAccess: true,
-      req,
-    });
-  }
+  await deleteRowsWhere({
+    payload,
+    req,
+    where:
+      syncedAiExtractionIds.size > 0
+        ? {
+            aiExtractionId: {
+              not_in: [...syncedAiExtractionIds],
+            },
+          }
+        : {},
+  });
 
-  return { deletedStaleRows: staleRowIds.length, processed };
+  return { deletedStaleRows: deletedStaleRows.totalDocs, processed };
 };
