@@ -1,57 +1,15 @@
-import { CollectionConfig } from "payload";
+import type { CollectionConfig } from "payload";
 import { colorPickerField } from "@innovixx/payload-color-picker-field";
-
-const exportRowSyncQueue = process.env.PAYLOAD_JOBS_QUEUE || "everyMinute";
+import {
+  queueAIExtractionExportRowsSyncAfterPromiseStatusChange,
+  queueAIExtractionExportRowsSyncAfterPromiseStatusDelete,
+} from "./hooks";
 
 export const PromiseStatus: CollectionConfig = {
   slug: "promise-status",
   hooks: {
-    afterChange: [
-      async ({ doc, req }) => {
-        try {
-          await req.payload.jobs.queue({
-            input: {
-              scope: "status",
-              statusId: String(doc.id),
-            },
-            overrideAccess: true,
-            queue: exportRowSyncQueue,
-            req,
-            task: "syncAIExtractionExportRows",
-          });
-        } catch (err) {
-          req.payload.logger.error({
-            err,
-            msg: "Failed to queue AI extraction export row sync after promise status change",
-            statusId: String(doc.id),
-          });
-        }
-        return doc;
-      },
-    ],
-    afterDelete: [
-      async ({ doc, req }) => {
-        try {
-          await req.payload.jobs.queue({
-            input: {
-              scope: "status",
-              statusId: String(doc.id),
-            },
-            overrideAccess: true,
-            queue: exportRowSyncQueue,
-            req,
-            task: "syncAIExtractionExportRows",
-          });
-        } catch (err) {
-          req.payload.logger.error({
-            err,
-            msg: "Failed to queue AI extraction export row sync after promise status delete",
-            statusId: String(doc.id),
-          });
-        }
-        return doc;
-      },
-    ],
+    afterChange: [queueAIExtractionExportRowsSyncAfterPromiseStatusChange],
+    afterDelete: [queueAIExtractionExportRowsSyncAfterPromiseStatusDelete],
   },
   admin: {
     group: {
@@ -101,7 +59,6 @@ export const PromiseStatus: CollectionConfig = {
         },
       ],
     },
-
     {
       name: "description",
       type: "textarea",

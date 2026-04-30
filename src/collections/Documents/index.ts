@@ -1,8 +1,9 @@
+import type { CollectionConfig } from "payload";
 import { airtableID } from "@/fields/airtableID";
-import { deleteAIExtractionExportRowsForDocument } from "@/lib/aiExtractionExportRows";
-import { CollectionConfig } from "payload";
-
-const exportRowSyncQueue = process.env.PAYLOAD_JOBS_QUEUE || "everyMinute";
+import {
+  deleteAIExtractionExportRowsAfterDocumentDelete,
+  queueAIExtractionExportRowsSyncAfterDocumentChange,
+} from "./hooks";
 
 export const Documents: CollectionConfig = {
   slug: "documents",
@@ -20,47 +21,8 @@ export const Documents: CollectionConfig = {
     read: () => true,
   },
   hooks: {
-    afterChange: [
-      async ({ doc, req }) => {
-        try {
-          await req.payload.jobs.queue({
-            input: {
-              documentId: String(doc.id),
-              scope: "document",
-            },
-            overrideAccess: true,
-            queue: exportRowSyncQueue,
-            req,
-            task: "syncAIExtractionExportRows",
-          });
-        } catch (err) {
-          req.payload.logger.error({
-            documentId: String(doc.id),
-            err,
-            msg: "Failed to queue AI extraction export row sync after document change",
-          });
-        }
-        return doc;
-      },
-    ],
-    afterDelete: [
-      async ({ doc, req }) => {
-        try {
-          await deleteAIExtractionExportRowsForDocument({
-            documentId: String(doc.id),
-            payload: req.payload,
-            req,
-          });
-        } catch (err) {
-          req.payload.logger.error({
-            documentId: String(doc.id),
-            err,
-            msg: "Failed to delete AI extraction export rows after document delete",
-          });
-        }
-        return doc;
-      },
-    ],
+    afterChange: [queueAIExtractionExportRowsSyncAfterDocumentChange],
+    afterDelete: [deleteAIExtractionExportRowsAfterDocumentDelete],
   },
   admin: {
     defaultColumns: ["title", "politicalEntity", "language", "type"],

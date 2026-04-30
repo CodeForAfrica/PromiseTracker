@@ -1,3 +1,4 @@
+import type { SyncAIExtractionExportRowsInput } from "@/lib/aiExtractionExportRowsJobs";
 import {
   rebuildAllAIExtractionExportRows,
   syncAIExtractionExportRows,
@@ -9,22 +10,9 @@ import {
 import { TaskConfig } from "payload";
 import { getTaskLogger, withTaskTracing } from "./utils";
 
-type SyncExportRowsInput = {
-  aiExtractionId?: string;
-  documentId?: string;
-  politicalEntityId?: string;
-  scope?:
-    | "aiExtraction"
-    | "all"
-    | "document"
-    | "politicalEntity"
-    | "status"
-    | "tenant";
-  statusId?: string;
-  tenantId?: string;
-};
-
-const isSyncExportRowsInput = (value: unknown): value is SyncExportRowsInput =>
+const isSyncExportRowsInput = (
+  value: unknown,
+): value is SyncAIExtractionExportRowsInput =>
   typeof value === "object" && value !== null;
 
 export const SyncAIExtractionExportRows: TaskConfig = {

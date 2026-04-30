@@ -1,11 +1,12 @@
 import { airtableID } from "@/fields/airtableID";
 import { image } from "@/fields/image";
-import { deleteAIExtractionExportRowsForPoliticalEntity } from "@/lib/aiExtractionExportRows";
 import { slugField } from "@/fields/slug";
-import { CollectionConfig } from "payload";
+import type { CollectionConfig } from "payload";
+import {
+  deleteAIExtractionExportRowsAfterPoliticalEntityDelete,
+  queueAIExtractionExportRowsSyncAfterPoliticalEntityChange,
+} from "./hooks";
 import { ensureUniqueSlug } from "./hooks/ensureUniqueSlug";
-
-const exportRowSyncQueue = process.env.PAYLOAD_JOBS_QUEUE || "everyMinute";
 
 export const PoliticalEntities: CollectionConfig = {
   slug: "political-entities",
@@ -37,47 +38,8 @@ export const PoliticalEntities: CollectionConfig = {
     ],
   },
   hooks: {
-    afterChange: [
-      async ({ doc, req }) => {
-        try {
-          await req.payload.jobs.queue({
-            input: {
-              politicalEntityId: String(doc.id),
-              scope: "politicalEntity",
-            },
-            overrideAccess: true,
-            queue: exportRowSyncQueue,
-            req,
-            task: "syncAIExtractionExportRows",
-          });
-        } catch (err) {
-          req.payload.logger.error({
-            err,
-            msg: "Failed to queue AI extraction export row sync after political entity change",
-            politicalEntityId: String(doc.id),
-          });
-        }
-        return doc;
-      },
-    ],
-    afterDelete: [
-      async ({ doc, req }) => {
-        try {
-          await deleteAIExtractionExportRowsForPoliticalEntity({
-            payload: req.payload,
-            politicalEntityId: String(doc.id),
-            req,
-          });
-        } catch (err) {
-          req.payload.logger.error({
-            err,
-            msg: "Failed to delete AI extraction export rows after political entity delete",
-            politicalEntityId: String(doc.id),
-          });
-        }
-        return doc;
-      },
-    ],
+    afterChange: [queueAIExtractionExportRowsSyncAfterPoliticalEntityChange],
+    afterDelete: [deleteAIExtractionExportRowsAfterPoliticalEntityDelete],
   },
   fields: [
     {

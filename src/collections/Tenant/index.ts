@@ -1,10 +1,11 @@
-import { countriesByContinent, getCountryFlag } from "@/data/countries";
+import type { CollectionConfig } from "payload";
 import { airtableID } from "@/fields/airtableID";
-import { deleteAIExtractionExportRowsForTenant } from "@/lib/aiExtractionExportRows";
-import { CollectionConfig } from "payload";
-
-const africanCountries = countriesByContinent("Africa");
-const exportRowSyncQueue = process.env.PAYLOAD_JOBS_QUEUE || "everyMinute";
+import {
+  deleteAIExtractionExportRowsAfterTenantDelete,
+  populateTenantFlagAfterRead,
+  queueAIExtractionExportRowsSyncAfterTenantChange,
+  TENANT_COUNTRY_OPTIONS,
+} from "./hooks";
 
 export const Tenants: CollectionConfig = {
   slug: "tenants",
@@ -67,7 +68,7 @@ export const Tenants: CollectionConfig = {
     {
       name: "country",
       type: "select",
-      options: africanCountries,
+      options: TENANT_COUNTRY_OPTIONS,
       unique: true,
       required: true,
       label: {
@@ -91,52 +92,8 @@ export const Tenants: CollectionConfig = {
     airtableID(),
   ],
   hooks: {
-    afterChange: [
-      async ({ doc, req }) => {
-        try {
-          await req.payload.jobs.queue({
-            input: {
-              scope: "tenant",
-              tenantId: String(doc.id),
-            },
-            overrideAccess: true,
-            queue: exportRowSyncQueue,
-            req,
-            task: "syncAIExtractionExportRows",
-          });
-        } catch (err) {
-          req.payload.logger.error({
-            err,
-            msg: "Failed to queue AI extraction export row sync after tenant change",
-            tenantId: String(doc.id),
-          });
-        }
-        return doc;
-      },
-    ],
-    afterDelete: [
-      async ({ doc, req }) => {
-        try {
-          await deleteAIExtractionExportRowsForTenant({
-            payload: req.payload,
-            req,
-            tenantId: String(doc.id),
-          });
-        } catch (err) {
-          req.payload.logger.error({
-            err,
-            msg: "Failed to delete AI extraction export rows after tenant delete",
-            tenantId: String(doc.id),
-          });
-        }
-        return doc;
-      },
-    ],
-    afterRead: [
-      async ({ doc }) => {
-        doc.flag = getCountryFlag(doc.country);
-        return doc;
-      },
-    ],
+    afterChange: [queueAIExtractionExportRowsSyncAfterTenantChange],
+    afterDelete: [deleteAIExtractionExportRowsAfterTenantDelete],
+    afterRead: [populateTenantFlagAfterRead],
   },
 };

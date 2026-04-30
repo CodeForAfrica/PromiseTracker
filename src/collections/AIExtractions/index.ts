@@ -1,7 +1,8 @@
-import { deleteAIExtractionExportRowsForAIExtraction } from "@/lib/aiExtractionExportRows";
-import { CollectionConfig } from "payload";
-
-const exportRowSyncQueue = process.env.PAYLOAD_JOBS_QUEUE || "everyMinute";
+import type { CollectionConfig } from "payload";
+import {
+  deleteAIExtractionExportRowsAfterAIExtractionDelete,
+  queueAIExtractionExportRowsSyncAfterAIExtractionChange,
+} from "./hooks";
 
 export const AIExtractions: CollectionConfig = {
   slug: "ai-extractions",
@@ -26,47 +27,8 @@ export const AIExtractions: CollectionConfig = {
     read: () => true,
   },
   hooks: {
-    afterChange: [
-      async ({ doc, req }) => {
-        try {
-          await req.payload.jobs.queue({
-            input: {
-              aiExtractionId: String(doc.id),
-              scope: "aiExtraction",
-            },
-            overrideAccess: true,
-            queue: exportRowSyncQueue,
-            req,
-            task: "syncAIExtractionExportRows",
-          });
-        } catch (err) {
-          req.payload.logger.error({
-            aiExtractionId: String(doc.id),
-            err,
-            msg: "Failed to queue AI extraction export row sync after AI extraction change",
-          });
-        }
-        return doc;
-      },
-    ],
-    afterDelete: [
-      async ({ doc, req }) => {
-        try {
-          await deleteAIExtractionExportRowsForAIExtraction({
-            aiExtractionId: String(doc.id),
-            payload: req.payload,
-            req,
-          });
-        } catch (err) {
-          req.payload.logger.error({
-            aiExtractionId: String(doc.id),
-            err,
-            msg: "Failed to delete AI extraction export rows after AI extraction delete",
-          });
-        }
-        return doc;
-      },
-    ],
+    afterChange: [queueAIExtractionExportRowsSyncAfterAIExtractionChange],
+    afterDelete: [deleteAIExtractionExportRowsAfterAIExtractionDelete],
   },
   fields: [
     {
