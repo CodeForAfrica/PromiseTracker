@@ -540,6 +540,10 @@ export const rebuildAllAIExtractionExportRows = async ({
     req,
   });
 
+  if (syncedAiExtractionIds.size === 0) {
+    return { deletedStaleRows: 0, processed };
+  }
+
   const deletedStaleRows = await payload.count({
     collection: AI_EXTRACTION_EXPORT_ROWS_COLLECTION,
     overrideAccess: true,

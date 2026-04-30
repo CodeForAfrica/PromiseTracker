@@ -1,5 +1,6 @@
 import {
   buildAIExtractionExportRows,
+  rebuildAllAIExtractionExportRows,
   syncAIExtractionExportRowsForStatus,
 } from "@/lib/aiExtractionExportRows";
 import type { AiExtraction } from "@/payload-types";
@@ -213,5 +214,27 @@ describe("AI extraction export rows", () => {
         id: "ai-extraction-2",
       }),
     );
+  });
+
+  it("does not wipe export rows when rebuild finds no AI extractions", async () => {
+    const payload = {
+      count: vi.fn(),
+      create: vi.fn(),
+      delete: vi.fn(),
+      find: vi.fn().mockResolvedValueOnce({
+        docs: [],
+        hasNextPage: false,
+      }),
+      findByID: vi.fn(),
+      update: vi.fn(),
+    };
+
+    const result = await rebuildAllAIExtractionExportRows({
+      payload: payload as never,
+    });
+
+    expect(result).toEqual({ deletedStaleRows: 0, processed: 0 });
+    expect(payload.count).not.toHaveBeenCalled();
+    expect(payload.delete).not.toHaveBeenCalled();
   });
 });

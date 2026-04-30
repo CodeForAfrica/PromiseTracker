@@ -1,5 +1,6 @@
 import { countriesByContinent, getCountryFlag } from "@/data/countries";
 import { airtableID } from "@/fields/airtableID";
+import { deleteAIExtractionExportRowsForTenant } from "@/lib/aiExtractionExportRows";
 import { CollectionConfig } from "payload";
 
 const africanCountries = countriesByContinent("Africa");
@@ -116,20 +117,15 @@ export const Tenants: CollectionConfig = {
     afterDelete: [
       async ({ doc, req }) => {
         try {
-          await req.payload.jobs.queue({
-            input: {
-              scope: "tenant",
-              tenantId: String(doc.id),
-            },
-            overrideAccess: true,
-            queue: exportRowSyncQueue,
+          await deleteAIExtractionExportRowsForTenant({
+            payload: req.payload,
             req,
-            task: "syncAIExtractionExportRows",
+            tenantId: String(doc.id),
           });
         } catch (err) {
           req.payload.logger.error({
             err,
-            msg: "Failed to queue AI extraction export row sync after tenant delete",
+            msg: "Failed to delete AI extraction export rows after tenant delete",
             tenantId: String(doc.id),
           });
         }
