@@ -69,6 +69,7 @@ export interface Config {
   collections: {
     documents: Document;
     'ai-extractions': AiExtraction;
+    'ai-extraction-export-rows': AiExtractionExportRow;
     promises: Promise;
     media: Media;
     pages: Page;
@@ -79,6 +80,8 @@ export interface Config {
     partners: Partner;
     'political-entities': PoliticalEntity;
     'promise-status': PromiseStatus;
+    exports: Export;
+    imports: Import;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -89,6 +92,7 @@ export interface Config {
   collectionsSelect: {
     documents: DocumentsSelect<false> | DocumentsSelect<true>;
     'ai-extractions': AiExtractionsSelect<false> | AiExtractionsSelect<true>;
+    'ai-extraction-export-rows': AiExtractionExportRowsSelect<false> | AiExtractionExportRowsSelect<true>;
     promises: PromisesSelect<false> | PromisesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
@@ -99,6 +103,8 @@ export interface Config {
     partners: PartnersSelect<false> | PartnersSelect<true>;
     'political-entities': PoliticalEntitiesSelect<false> | PoliticalEntitiesSelect<true>;
     'promise-status': PromiseStatusSelect<false> | PromiseStatusSelect<true>;
+    exports: ExportsSelect<false> | ExportsSelect<true>;
+    imports: ImportsSelect<false> | ImportsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -137,7 +143,10 @@ export interface Config {
       fetchPromiseStatuses: TaskFetchPromiseStatuses;
       updatePromiseStatus: TaskUpdatePromiseStatus;
       syncMeedanPromises: TaskSyncMeedanPromises;
+      syncAIExtractionExportRows: TaskSyncAIExtractionExportRows;
       cleanupFailedJobs: TaskCleanupFailedJobs;
+      createCollectionExport: TaskCreateCollectionExport;
+      createCollectionImport: TaskCreateCollectionImport;
       inline: {
         input: unknown;
         output: unknown;
@@ -387,6 +396,48 @@ export interface PromiseStatus {
     color?: string | null;
     textColor?: string | null;
   };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ai-extraction-export-rows".
+ */
+export interface AiExtractionExportRow {
+  id: string;
+  uniqueKey: string;
+  aiExtraction?: (string | null) | AiExtraction;
+  document?: (string | null) | Document;
+  politicalEntity?: (string | null) | PoliticalEntity;
+  tenant?: (string | null) | Tenant;
+  status?: (string | null) | PromiseStatus;
+  tenantId?: string | null;
+  tenantName?: string | null;
+  tenantCountry?: string | null;
+  tenantLocale?: string | null;
+  politicalEntityId?: string | null;
+  politicalEntityName?: string | null;
+  politicalEntitySlug?: string | null;
+  politicalEntityPosition?: string | null;
+  documentId?: string | null;
+  documentTitle?: string | null;
+  documentUrl?: string | null;
+  documentLanguage?: string | null;
+  documentType?: string | null;
+  documentAirtableID?: string | null;
+  aiExtractionId?: string | null;
+  aiExtractionTitle?: string | null;
+  extractionRowId?: string | null;
+  uniqueId?: string | null;
+  category?: string | null;
+  summary?: string | null;
+  source?: string | null;
+  statusId?: string | null;
+  statusLabel?: string | null;
+  statusMeedanId?: string | null;
+  checkMediaId?: string | null;
+  checkMediaURL?: string | null;
+  uploadError?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -925,6 +976,81 @@ export interface SiteSetting {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "exports".
+ */
+export interface Export {
+  id: string;
+  name?: string | null;
+  format: 'csv' | 'json';
+  limit?: number | null;
+  page?: number | null;
+  sort?: string | null;
+  sortOrder?: ('asc' | 'desc') | null;
+  locale?: ('all' | 'en' | 'fr') | null;
+  drafts?: ('yes' | 'no') | null;
+  selectionToUse?: ('currentSelection' | 'currentFilters' | 'all') | null;
+  fields?: string[] | null;
+  collectionSlug: string;
+  where?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "imports".
+ */
+export interface Import {
+  id: string;
+  collectionSlug: string;
+  importMode?: ('create' | 'update' | 'upsert') | null;
+  matchField?: string | null;
+  status?: ('pending' | 'completed' | 'partial' | 'failed') | null;
+  summary?: {
+    imported?: number | null;
+    updated?: number | null;
+    total?: number | null;
+    issues?: number | null;
+    issueDetails?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -1004,7 +1130,10 @@ export interface PayloadJob {
           | 'fetchPromiseStatuses'
           | 'updatePromiseStatus'
           | 'syncMeedanPromises'
-          | 'cleanupFailedJobs';
+          | 'syncAIExtractionExportRows'
+          | 'cleanupFailedJobs'
+          | 'createCollectionExport'
+          | 'createCollectionImport';
         taskID: string;
         input?:
           | {
@@ -1048,7 +1177,10 @@ export interface PayloadJob {
                 | 'fetchPromiseStatuses'
                 | 'updatePromiseStatus'
                 | 'syncMeedanPromises'
+                | 'syncAIExtractionExportRows'
                 | 'cleanupFailedJobs'
+                | 'createCollectionExport'
+                | 'createCollectionImport'
               )
             | null;
           taskID?: string | null;
@@ -1070,7 +1202,10 @@ export interface PayloadJob {
         | 'fetchPromiseStatuses'
         | 'updatePromiseStatus'
         | 'syncMeedanPromises'
+        | 'syncAIExtractionExportRows'
         | 'cleanupFailedJobs'
+        | 'createCollectionExport'
+        | 'createCollectionImport'
       )
     | null;
   queue?: string | null;
@@ -1102,6 +1237,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'ai-extractions';
         value: string | AiExtraction;
+      } | null)
+    | ({
+        relationTo: 'ai-extraction-export-rows';
+        value: string | AiExtractionExportRow;
       } | null)
     | ({
         relationTo: 'promises';
@@ -1233,6 +1372,47 @@ export interface AiExtractionsSelect<T extends boolean = true> {
         uploadError?: T;
         id?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ai-extraction-export-rows_select".
+ */
+export interface AiExtractionExportRowsSelect<T extends boolean = true> {
+  uniqueKey?: T;
+  aiExtraction?: T;
+  document?: T;
+  politicalEntity?: T;
+  tenant?: T;
+  status?: T;
+  tenantId?: T;
+  tenantName?: T;
+  tenantCountry?: T;
+  tenantLocale?: T;
+  politicalEntityId?: T;
+  politicalEntityName?: T;
+  politicalEntitySlug?: T;
+  politicalEntityPosition?: T;
+  documentId?: T;
+  documentTitle?: T;
+  documentUrl?: T;
+  documentLanguage?: T;
+  documentType?: T;
+  documentAirtableID?: T;
+  aiExtractionId?: T;
+  aiExtractionTitle?: T;
+  extractionRowId?: T;
+  uniqueId?: T;
+  category?: T;
+  summary?: T;
+  source?: T;
+  statusId?: T;
+  statusLabel?: T;
+  statusMeedanId?: T;
+  checkMediaId?: T;
+  checkMediaURL?: T;
+  uploadError?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1708,6 +1888,65 @@ export interface PromiseStatusSelect<T extends boolean = true> {
       };
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "exports_select".
+ */
+export interface ExportsSelect<T extends boolean = true> {
+  name?: T;
+  format?: T;
+  limit?: T;
+  page?: T;
+  sort?: T;
+  sortOrder?: T;
+  locale?: T;
+  drafts?: T;
+  selectionToUse?: T;
+  fields?: T;
+  collectionSlug?: T;
+  where?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "imports_select".
+ */
+export interface ImportsSelect<T extends boolean = true> {
+  collectionSlug?: T;
+  importMode?: T;
+  matchField?: T;
+  status?: T;
+  summary?:
+    | T
+    | {
+        imported?: T;
+        updated?: T;
+        total?: T;
+        issues?: T;
+        issueDetails?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2824,10 +3063,70 @@ export interface TaskSyncMeedanPromises {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSyncAIExtractionExportRows".
+ */
+export interface TaskSyncAIExtractionExportRows {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "TaskCleanupFailedJobs".
  */
 export interface TaskCleanupFailedJobs {
   input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskCreateCollectionExport".
+ */
+export interface TaskCreateCollectionExport {
+  input: {
+    name?: string | null;
+    format: 'csv' | 'json';
+    limit?: number | null;
+    page?: number | null;
+    sort?: string | null;
+    sortOrder?: ('asc' | 'desc') | null;
+    locale?: ('all' | 'en' | 'fr') | null;
+    drafts?: ('yes' | 'no') | null;
+    selectionToUse?: ('currentSelection' | 'currentFilters' | 'all') | null;
+    fields?: string[] | null;
+    collectionSlug: string;
+    where?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+    id?: string | null;
+    batchSize?: number | null;
+    userID?: string | null;
+    userCollection?: string | null;
+    exportCollection?: string | null;
+    maxLimit?: number | null;
+  };
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskCreateCollectionImport".
+ */
+export interface TaskCreateCollectionImport {
+  input: {
+    importId: string;
+    importCollection: string;
+    userID?: string | null;
+    userCollection?: string | null;
+    batchSize?: number | null;
+    debug?: boolean | null;
+    defaultVersionStatus?: ('draft' | 'published') | null;
+    maxLimit?: number | null;
+  };
   output?: unknown;
 }
 /**

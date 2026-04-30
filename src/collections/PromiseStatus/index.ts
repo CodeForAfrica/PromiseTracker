@@ -1,8 +1,16 @@
-import { CollectionConfig } from "payload";
+import type { CollectionConfig } from "payload";
 import { colorPickerField } from "@innovixx/payload-color-picker-field";
+import {
+  queueAIExtractionExportRowsSyncAfterPromiseStatusChange,
+  queueAIExtractionExportRowsSyncAfterPromiseStatusDelete,
+} from "./hooks";
 
 export const PromiseStatus: CollectionConfig = {
   slug: "promise-status",
+  hooks: {
+    afterChange: [queueAIExtractionExportRowsSyncAfterPromiseStatusChange],
+    afterDelete: [queueAIExtractionExportRowsSyncAfterPromiseStatusDelete],
+  },
   admin: {
     group: {
       en: "Documents",
@@ -51,7 +59,6 @@ export const PromiseStatus: CollectionConfig = {
         },
       ],
     },
-
     {
       name: "description",
       type: "textarea",

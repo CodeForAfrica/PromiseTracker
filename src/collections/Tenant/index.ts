@@ -1,8 +1,11 @@
-import { countriesByContinent, getCountryFlag } from "@/data/countries";
+import type { CollectionConfig } from "payload";
 import { airtableID } from "@/fields/airtableID";
-import { CollectionConfig } from "payload";
-
-const africanCountries = countriesByContinent("Africa");
+import {
+  deleteAIExtractionExportRowsAfterTenantDelete,
+  populateTenantFlagAfterRead,
+  queueAIExtractionExportRowsSyncAfterTenantChange,
+  TENANT_COUNTRY_OPTIONS,
+} from "./hooks";
 
 export const Tenants: CollectionConfig = {
   slug: "tenants",
@@ -65,7 +68,7 @@ export const Tenants: CollectionConfig = {
     {
       name: "country",
       type: "select",
-      options: africanCountries,
+      options: TENANT_COUNTRY_OPTIONS,
       unique: true,
       required: true,
       label: {
@@ -89,11 +92,8 @@ export const Tenants: CollectionConfig = {
     airtableID(),
   ],
   hooks: {
-    afterRead: [
-      async ({ doc }) => {
-        doc.flag = getCountryFlag(doc.country);
-        return doc;
-      },
-    ],
+    afterChange: [queueAIExtractionExportRowsSyncAfterTenantChange],
+    afterDelete: [deleteAIExtractionExportRowsAfterTenantDelete],
+    afterRead: [populateTenantFlagAfterRead],
   },
 };

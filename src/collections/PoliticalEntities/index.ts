@@ -1,7 +1,11 @@
 import { airtableID } from "@/fields/airtableID";
 import { image } from "@/fields/image";
 import { slugField } from "@/fields/slug";
-import { CollectionConfig } from "payload";
+import type { CollectionConfig } from "payload";
+import {
+  deleteAIExtractionExportRowsAfterPoliticalEntityDelete,
+  queueAIExtractionExportRowsSyncAfterPoliticalEntityChange,
+} from "./hooks";
 import { ensureUniqueSlug } from "./hooks/ensureUniqueSlug";
 
 export const PoliticalEntities: CollectionConfig = {
@@ -32,6 +36,10 @@ export const PoliticalEntities: CollectionConfig = {
       "periodFrom",
       "periodTo",
     ],
+  },
+  hooks: {
+    afterChange: [queueAIExtractionExportRowsSyncAfterPoliticalEntityChange],
+    afterDelete: [deleteAIExtractionExportRowsAfterPoliticalEntityDelete],
   },
   fields: [
     {

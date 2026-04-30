@@ -1,4 +1,8 @@
-import { CollectionConfig } from "payload";
+import type { CollectionConfig } from "payload";
+import {
+  deleteAIExtractionExportRowsAfterAIExtractionDelete,
+  queueAIExtractionExportRowsSyncAfterAIExtractionChange,
+} from "./hooks";
 
 export const AIExtractions: CollectionConfig = {
   slug: "ai-extractions",
@@ -21,6 +25,10 @@ export const AIExtractions: CollectionConfig = {
   },
   access: {
     read: () => true,
+  },
+  hooks: {
+    afterChange: [queueAIExtractionExportRowsSyncAfterAIExtractionChange],
+    afterDelete: [deleteAIExtractionExportRowsAfterAIExtractionDelete],
   },
   fields: [
     {

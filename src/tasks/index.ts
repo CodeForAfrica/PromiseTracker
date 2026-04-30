@@ -10,6 +10,7 @@ import { FetchPromiseStatuses } from "./fetchMeedanPromiseStatus";
 import { UpdatePromiseStatus } from "./updatePromiseStatus";
 import { SyncMeedanPromises } from "./syncMeedanPromises";
 import { CleanupFailedJobs } from "./cleanupFailedJobs";
+import { SyncAIExtractionExportRows } from "./syncAIExtractionExportRows";
 
 export const tasks: TaskConfig[] = [
   CreateTenantFromAirtable,
@@ -22,5 +23,6 @@ export const tasks: TaskConfig[] = [
   FetchPromiseStatuses,
   UpdatePromiseStatus,
   SyncMeedanPromises,
+  SyncAIExtractionExportRows,
   CleanupFailedJobs,
 ];

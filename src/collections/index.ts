@@ -3,6 +3,7 @@ import { Users } from "./Users";
 import { Media } from "./Media";
 import { Documents } from "./Documents";
 import { AIExtractions } from "./AIExtractions";
+import { AIExtractionExportRows } from "./AIExtractionExportRows";
 import { Promises } from "./Promises";
 import { Tenants } from "./Tenant";
 import { Pages } from "./Pages";
@@ -15,6 +16,7 @@ import { GlobalPages } from "./Pages/GlobalPages";
 export const collections: CollectionConfig[] = [
   Documents,
   AIExtractions,
+  AIExtractionExportRows,
   Promises,
   Media,
   Pages,
