@@ -23,19 +23,37 @@ export const Documents: CollectionConfig = {
   hooks: {
     afterChange: [
       async ({ doc, req }) => {
-        await syncAIExtractionExportRowsForDocument({
-          documentId: String(doc.id),
-          payload: req.payload,
-        });
+        try {
+          await syncAIExtractionExportRowsForDocument({
+            documentId: String(doc.id),
+            payload: req.payload,
+            req,
+          });
+        } catch (err) {
+          req.payload.logger.error({
+            documentId: String(doc.id),
+            err,
+            msg: "Failed to sync AI extraction export rows after document change",
+          });
+        }
         return doc;
       },
     ],
     afterDelete: [
       async ({ doc, req }) => {
-        await deleteAIExtractionExportRowsForDocument({
-          documentId: String(doc.id),
-          payload: req.payload,
-        });
+        try {
+          await deleteAIExtractionExportRowsForDocument({
+            documentId: String(doc.id),
+            payload: req.payload,
+            req,
+          });
+        } catch (err) {
+          req.payload.logger.error({
+            documentId: String(doc.id),
+            err,
+            msg: "Failed to delete AI extraction export rows after document delete",
+          });
+        }
         return doc;
       },
     ],

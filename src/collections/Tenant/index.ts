@@ -1,12 +1,10 @@
 import { countriesByContinent, getCountryFlag } from "@/data/countries";
 import { airtableID } from "@/fields/airtableID";
-import {
-  deleteAIExtractionExportRowsForTenant,
-  syncAIExtractionExportRowsForTenant,
-} from "@/lib/aiExtractionExportRows";
+import { deleteAIExtractionExportRowsForTenant } from "@/lib/aiExtractionExportRows";
 import { CollectionConfig } from "payload";
 
 const africanCountries = countriesByContinent("Africa");
+const exportRowSyncQueue = process.env.PAYLOAD_JOBS_QUEUE || "everyMinute";
 
 export const Tenants: CollectionConfig = {
   slug: "tenants",
@@ -95,19 +93,42 @@ export const Tenants: CollectionConfig = {
   hooks: {
     afterChange: [
       async ({ doc, req }) => {
-        await syncAIExtractionExportRowsForTenant({
-          payload: req.payload,
-          tenantId: String(doc.id),
-        });
+        try {
+          await req.payload.jobs.queue({
+            input: {
+              scope: "tenant",
+              tenantId: String(doc.id),
+            },
+            overrideAccess: true,
+            queue: exportRowSyncQueue,
+            req,
+            task: "syncAIExtractionExportRows",
+          });
+        } catch (err) {
+          req.payload.logger.error({
+            err,
+            msg: "Failed to queue AI extraction export row sync after tenant change",
+            tenantId: String(doc.id),
+          });
+        }
         return doc;
       },
     ],
     afterDelete: [
       async ({ doc, req }) => {
-        await deleteAIExtractionExportRowsForTenant({
-          payload: req.payload,
-          tenantId: String(doc.id),
-        });
+        try {
+          await deleteAIExtractionExportRowsForTenant({
+            payload: req.payload,
+            req,
+            tenantId: String(doc.id),
+          });
+        } catch (err) {
+          req.payload.logger.error({
+            err,
+            msg: "Failed to delete AI extraction export rows after tenant delete",
+            tenantId: String(doc.id),
+          });
+        }
         return doc;
       },
     ],

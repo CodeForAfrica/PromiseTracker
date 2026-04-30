@@ -29,19 +29,37 @@ export const AIExtractions: CollectionConfig = {
   hooks: {
     afterChange: [
       async ({ doc, req }) => {
-        await syncAIExtractionExportRows({
-          aiExtractionId: String(doc.id),
-          payload: req.payload,
-        });
+        try {
+          await syncAIExtractionExportRows({
+            aiExtractionId: String(doc.id),
+            payload: req.payload,
+            req,
+          });
+        } catch (err) {
+          req.payload.logger.error({
+            aiExtractionId: String(doc.id),
+            err,
+            msg: "Failed to sync AI extraction export rows after AI extraction change",
+          });
+        }
         return doc;
       },
     ],
     afterDelete: [
       async ({ doc, req }) => {
-        await deleteAIExtractionExportRowsForAIExtraction({
-          aiExtractionId: String(doc.id),
-          payload: req.payload,
-        });
+        try {
+          await deleteAIExtractionExportRowsForAIExtraction({
+            aiExtractionId: String(doc.id),
+            payload: req.payload,
+            req,
+          });
+        } catch (err) {
+          req.payload.logger.error({
+            aiExtractionId: String(doc.id),
+            err,
+            msg: "Failed to delete AI extraction export rows after AI extraction delete",
+          });
+        }
         return doc;
       },
     ],

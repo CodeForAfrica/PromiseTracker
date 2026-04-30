@@ -7,19 +7,37 @@ export const PromiseStatus: CollectionConfig = {
   hooks: {
     afterChange: [
       async ({ doc, req }) => {
-        await syncAIExtractionExportRowsForStatus({
-          payload: req.payload,
-          statusId: String(doc.id),
-        });
+        try {
+          await syncAIExtractionExportRowsForStatus({
+            payload: req.payload,
+            req,
+            statusId: String(doc.id),
+          });
+        } catch (err) {
+          req.payload.logger.error({
+            err,
+            msg: "Failed to sync AI extraction export rows after promise status change",
+            statusId: String(doc.id),
+          });
+        }
         return doc;
       },
     ],
     afterDelete: [
       async ({ doc, req }) => {
-        await syncAIExtractionExportRowsForStatus({
-          payload: req.payload,
-          statusId: String(doc.id),
-        });
+        try {
+          await syncAIExtractionExportRowsForStatus({
+            payload: req.payload,
+            req,
+            statusId: String(doc.id),
+          });
+        } catch (err) {
+          req.payload.logger.error({
+            err,
+            msg: "Failed to sync AI extraction export rows after promise status delete",
+            statusId: String(doc.id),
+          });
+        }
         return doc;
       },
     ],

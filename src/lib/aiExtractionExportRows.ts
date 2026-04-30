@@ -5,7 +5,7 @@ import type {
   PromiseStatus,
   Tenant,
 } from "@/payload-types";
-import type { Payload, Where } from "payload";
+import type { Payload, PayloadRequest, Where } from "payload";
 
 export const AI_EXTRACTION_EXPORT_ROWS_COLLECTION =
   "ai-extraction-export-rows" as const;
@@ -54,6 +54,11 @@ type ExistingExportRow = {
   id: string;
   aiExtractionId?: string | null;
   uniqueKey?: string | null;
+};
+
+type LocalAPIContext = {
+  payload: Payload;
+  req?: Partial<PayloadRequest>;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -167,15 +172,16 @@ export const buildAIExtractionExportRows = (
 const findExistingRows = async ({
   aiExtractionId,
   payload,
-}: {
+  req,
+}: LocalAPIContext & {
   aiExtractionId: string;
-  payload: Payload;
 }): Promise<ExistingExportRow[]> => {
   const { docs } = await payload.find({
     collection: AI_EXTRACTION_EXPORT_ROWS_COLLECTION,
     depth: 0,
     limit: 0,
     overrideAccess: true,
+    req,
     where: {
       aiExtractionId: {
         equals: aiExtractionId,
@@ -188,14 +194,15 @@ const findExistingRows = async ({
 
 const deleteRowsWhere = async ({
   payload,
+  req,
   where,
-}: {
-  payload: Payload;
+}: LocalAPIContext & {
   where: Where;
 }) => {
   await payload.delete({
     collection: AI_EXTRACTION_EXPORT_ROWS_COLLECTION,
     overrideAccess: true,
+    req,
     where,
   });
 };
@@ -203,19 +210,20 @@ const deleteRowsWhere = async ({
 export const syncAIExtractionExportRows = async ({
   aiExtractionId,
   payload,
-}: {
+  req,
+}: LocalAPIContext & {
   aiExtractionId: string;
-  payload: Payload;
 }) => {
   const extractionDoc = (await payload.findByID({
     collection: "ai-extractions",
     depth: 3,
     id: aiExtractionId,
     overrideAccess: true,
+    req,
   })) as AiExtraction;
 
   const rows = buildAIExtractionExportRows(extractionDoc);
-  const existingRows = await findExistingRows({ aiExtractionId, payload });
+  const existingRows = await findExistingRows({ aiExtractionId, payload, req });
   const existingRowsByKey = new Map(
     existingRows
       .filter((row) => row.uniqueKey)
@@ -233,6 +241,7 @@ export const syncAIExtractionExportRows = async ({
         data: row,
         id: existingRow.id,
         overrideAccess: true,
+        req,
       });
       continue;
     }
@@ -241,6 +250,7 @@ export const syncAIExtractionExportRows = async ({
       collection: AI_EXTRACTION_EXPORT_ROWS_COLLECTION,
       data: row,
       overrideAccess: true,
+      req,
     });
   }
 
@@ -253,6 +263,7 @@ export const syncAIExtractionExportRows = async ({
       collection: AI_EXTRACTION_EXPORT_ROWS_COLLECTION,
       id: row.id,
       overrideAccess: true,
+      req,
     });
   }
 };
@@ -260,12 +271,13 @@ export const syncAIExtractionExportRows = async ({
 export const deleteAIExtractionExportRowsForAIExtraction = async ({
   aiExtractionId,
   payload,
-}: {
+  req,
+}: LocalAPIContext & {
   aiExtractionId: string;
-  payload: Payload;
 }) =>
   deleteRowsWhere({
     payload,
+    req,
     where: {
       aiExtractionId: {
         equals: aiExtractionId,
@@ -276,12 +288,13 @@ export const deleteAIExtractionExportRowsForAIExtraction = async ({
 export const deleteAIExtractionExportRowsForDocument = async ({
   documentId,
   payload,
-}: {
+  req,
+}: LocalAPIContext & {
   documentId: string;
-  payload: Payload;
 }) =>
   deleteRowsWhere({
     payload,
+    req,
     where: {
       documentId: {
         equals: documentId,
@@ -292,12 +305,13 @@ export const deleteAIExtractionExportRowsForDocument = async ({
 export const deleteAIExtractionExportRowsForPoliticalEntity = async ({
   payload,
   politicalEntityId,
-}: {
-  payload: Payload;
+  req,
+}: LocalAPIContext & {
   politicalEntityId: string;
 }) =>
   deleteRowsWhere({
     payload,
+    req,
     where: {
       politicalEntityId: {
         equals: politicalEntityId,
@@ -308,12 +322,13 @@ export const deleteAIExtractionExportRowsForPoliticalEntity = async ({
 export const deleteAIExtractionExportRowsForTenant = async ({
   payload,
   tenantId,
-}: {
-  payload: Payload;
+  req,
+}: LocalAPIContext & {
   tenantId: string;
 }) =>
   deleteRowsWhere({
     payload,
+    req,
     where: {
       tenantId: {
         equals: tenantId,
@@ -324,15 +339,16 @@ export const deleteAIExtractionExportRowsForTenant = async ({
 export const syncAIExtractionExportRowsForDocument = async ({
   documentId,
   payload,
-}: {
+  req,
+}: LocalAPIContext & {
   documentId: string;
-  payload: Payload;
 }) => {
   const { docs } = await payload.find({
     collection: "ai-extractions",
     depth: 0,
     limit: 0,
     overrideAccess: true,
+    req,
     where: {
       document: {
         equals: documentId,
@@ -344,6 +360,7 @@ export const syncAIExtractionExportRowsForDocument = async ({
     await syncAIExtractionExportRows({
       aiExtractionId: String(doc.id),
       payload,
+      req,
     });
   }
 };
@@ -351,8 +368,8 @@ export const syncAIExtractionExportRowsForDocument = async ({
 export const syncAIExtractionExportRowsForPoliticalEntity = async ({
   payload,
   politicalEntityId,
-}: {
-  payload: Payload;
+  req,
+}: LocalAPIContext & {
   politicalEntityId: string;
 }) => {
   const { docs } = await payload.find({
@@ -360,6 +377,7 @@ export const syncAIExtractionExportRowsForPoliticalEntity = async ({
     depth: 0,
     limit: 0,
     overrideAccess: true,
+    req,
     where: {
       politicalEntity: {
         equals: politicalEntityId,
@@ -371,6 +389,7 @@ export const syncAIExtractionExportRowsForPoliticalEntity = async ({
     await syncAIExtractionExportRowsForDocument({
       documentId: String(doc.id),
       payload,
+      req,
     });
   }
 };
@@ -378,8 +397,8 @@ export const syncAIExtractionExportRowsForPoliticalEntity = async ({
 export const syncAIExtractionExportRowsForTenant = async ({
   payload,
   tenantId,
-}: {
-  payload: Payload;
+  req,
+}: LocalAPIContext & {
   tenantId: string;
 }) => {
   const { docs } = await payload.find({
@@ -387,6 +406,7 @@ export const syncAIExtractionExportRowsForTenant = async ({
     depth: 0,
     limit: 0,
     overrideAccess: true,
+    req,
     where: {
       tenant: {
         equals: tenantId,
@@ -398,6 +418,7 @@ export const syncAIExtractionExportRowsForTenant = async ({
     await syncAIExtractionExportRowsForPoliticalEntity({
       payload,
       politicalEntityId: String(entity.id),
+      req,
     });
   }
 };
@@ -405,8 +426,8 @@ export const syncAIExtractionExportRowsForTenant = async ({
 export const syncAIExtractionExportRowsForStatus = async ({
   payload,
   statusId,
-}: {
-  payload: Payload;
+  req,
+}: LocalAPIContext & {
   statusId: string;
 }) => {
   const { docs } = await payload.find({
@@ -414,6 +435,7 @@ export const syncAIExtractionExportRowsForStatus = async ({
     depth: 0,
     limit: 0,
     overrideAccess: true,
+    req,
     where: {
       statusId: {
         equals: statusId,
@@ -433,6 +455,7 @@ export const syncAIExtractionExportRowsForStatus = async ({
     await syncAIExtractionExportRows({
       aiExtractionId,
       payload,
+      req,
     });
   }
 };
@@ -440,12 +463,13 @@ export const syncAIExtractionExportRowsForStatus = async ({
 export const rebuildAllAIExtractionExportRows = async ({
   batchSize = 100,
   payload,
-}: {
+  req,
+}: LocalAPIContext & {
   batchSize?: number;
-  payload: Payload;
 }) => {
   await deleteRowsWhere({
     payload,
+    req,
     where: {},
   });
 
@@ -460,12 +484,14 @@ export const rebuildAllAIExtractionExportRows = async ({
       limit: batchSize,
       overrideAccess: true,
       page,
+      req,
     });
 
     for (const doc of docs as Pick<AiExtraction, "id">[]) {
       await syncAIExtractionExportRows({
         aiExtractionId: String(doc.id),
         payload,
+        req,
       });
       processed += 1;
     }
