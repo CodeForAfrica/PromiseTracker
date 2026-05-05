@@ -1,5 +1,9 @@
+import type { CollectionConfig } from "payload";
 import { airtableID } from "@/fields/airtableID";
-import { CollectionConfig } from "payload";
+import {
+  deleteAIExtractionExportRowsAfterDocumentDelete,
+  queueAIExtractionExportRowsSyncAfterDocumentChange,
+} from "./hooks";
 
 export const Documents: CollectionConfig = {
   slug: "documents",
@@ -15,6 +19,10 @@ export const Documents: CollectionConfig = {
   },
   access: {
     read: () => true,
+  },
+  hooks: {
+    afterChange: [queueAIExtractionExportRowsSyncAfterDocumentChange],
+    afterDelete: [deleteAIExtractionExportRowsAfterDocumentDelete],
   },
   admin: {
     defaultColumns: ["title", "politicalEntity", "language", "type"],

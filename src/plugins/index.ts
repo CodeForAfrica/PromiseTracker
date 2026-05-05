@@ -2,6 +2,7 @@ import { Plugin } from "payload";
 import { sentryPlugin } from "@payloadcms/plugin-sentry";
 import * as Sentry from "@sentry/nextjs";
 import { multiTenantPlugin } from "@payloadcms/plugin-multi-tenant";
+import { importExportPlugin } from "@payloadcms/plugin-import-export";
 import { Config } from "@/payload-types";
 import { capitalizeFirstLetter, isProd } from "@/utils/utils";
 import { s3Storage } from "@payloadcms/storage-s3";
@@ -15,6 +16,36 @@ const secretAccessKey = process.env.S3_SECRET_ACCESS_KEY ?? "";
 const s3Enabled = !!accessKeyId && !!region && !!secretAccessKey;
 
 export const plugins: Plugin[] = [
+  importExportPlugin({
+    debug: !isProd,
+    collections: [
+      {
+        slug: "promises",
+      },
+      {
+        slug: "ai-extraction-export-rows",
+        export: {
+          format: "csv",
+        },
+        import: false,
+      },
+    ],
+    overrideExportCollection: ({ collection }) => ({
+      ...collection,
+      access: {
+        ...collection.access,
+        create: ({ req }) => Boolean(req.user),
+        read: ({ req }) => Boolean(req.user),
+      },
+      admin: {
+        ...collection.admin,
+        group: {
+          en: "Documents",
+          fr: "Documents",
+        },
+      },
+    }),
+  }),
   multiTenantPlugin<Config>({
     collections: {
       pages: {},
