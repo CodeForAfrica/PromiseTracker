@@ -17,6 +17,10 @@ import { isProd } from "@/utils/utils";
 import { plugins } from "@/plugins";
 import * as Sentry from "@sentry/nextjs";
 import { defaultLocale, locales } from "@/utils/locales";
+import {
+  AI_EXTRACTION_EXPORT_ROWS_SYNC_CRON_SCHEDULE,
+  AI_EXTRACTION_EXPORT_ROWS_SYNC_QUEUE,
+} from "@/lib/aiExtractionExportRowsJobs";
 import { en } from "@payloadcms/translations/languages/en";
 import { fr } from "@payloadcms/translations/languages/fr";
 
@@ -97,6 +101,10 @@ export default buildConfig({
       {
         cron: process.env.PAYLOAD_JOBS_CRON_SCHEDULE || "* * * * *",
         queue: process.env.PAYLOAD_JOBS_QUEUE || "everyMinute",
+      },
+      {
+        cron: AI_EXTRACTION_EXPORT_ROWS_SYNC_CRON_SCHEDULE,
+        queue: AI_EXTRACTION_EXPORT_ROWS_SYNC_QUEUE,
       },
       {
         cron: "0 * * * *",

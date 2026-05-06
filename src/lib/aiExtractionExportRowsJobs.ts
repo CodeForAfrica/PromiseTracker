@@ -1,7 +1,10 @@
 import type { PayloadRequest } from "payload";
 
 export const AI_EXTRACTION_EXPORT_ROWS_SYNC_QUEUE =
-  process.env.PAYLOAD_JOBS_QUEUE || "everyMinute";
+  process.env.PAYLOAD_EXPORT_SYNC_QUEUE || "exportSync";
+
+export const AI_EXTRACTION_EXPORT_ROWS_SYNC_CRON_SCHEDULE =
+  process.env.PAYLOAD_EXPORT_SYNC_CRON_SCHEDULE || "0 * * * *";
 
 export type SyncAIExtractionExportRowsInput = {
   aiExtractionId?: string;
