@@ -60,8 +60,9 @@ export const SyncAIExtractionExportRows: TaskConfig = {
             "syncAIExtractionExportRows:: Starting AI extraction scoped export row sync",
         });
 
-        await syncAIExtractionExportRows({
+        const stats = await syncAIExtractionExportRows({
           aiExtractionId: parsedInput.aiExtractionId,
+          logger,
           payload: req.payload,
           req,
         });
@@ -70,6 +71,7 @@ export const SyncAIExtractionExportRows: TaskConfig = {
           aiExtractionId: parsedInput.aiExtractionId,
           message:
             "syncAIExtractionExportRows:: Completed AI extraction scoped export row sync",
+          ...stats,
         });
 
         return {
@@ -90,8 +92,9 @@ export const SyncAIExtractionExportRows: TaskConfig = {
             "syncAIExtractionExportRows:: Starting document scoped export row sync",
         });
 
-        await syncAIExtractionExportRowsForDocument({
+        const stats = await syncAIExtractionExportRowsForDocument({
           documentId: parsedInput.documentId,
+          logger,
           payload: req.payload,
           req,
         });
@@ -100,6 +103,7 @@ export const SyncAIExtractionExportRows: TaskConfig = {
           documentId: parsedInput.documentId,
           message:
             "syncAIExtractionExportRows:: Completed document scoped export row sync",
+          ...stats,
         });
 
         return {
@@ -120,7 +124,8 @@ export const SyncAIExtractionExportRows: TaskConfig = {
           statusId: parsedInput.statusId,
         });
 
-        await syncAIExtractionExportRowsForStatus({
+        const stats = await syncAIExtractionExportRowsForStatus({
+          logger,
           payload: req.payload,
           req,
           statusId: parsedInput.statusId,
@@ -130,6 +135,7 @@ export const SyncAIExtractionExportRows: TaskConfig = {
           message:
             "syncAIExtractionExportRows:: Completed status scoped export row sync",
           statusId: parsedInput.statusId,
+          ...stats,
         });
 
         return {
@@ -150,7 +156,8 @@ export const SyncAIExtractionExportRows: TaskConfig = {
           tenantId: parsedInput.tenantId,
         });
 
-        await syncAIExtractionExportRowsForTenant({
+        const stats = await syncAIExtractionExportRowsForTenant({
+          logger,
           payload: req.payload,
           req,
           tenantId: parsedInput.tenantId,
@@ -160,6 +167,7 @@ export const SyncAIExtractionExportRows: TaskConfig = {
           message:
             "syncAIExtractionExportRows:: Completed tenant-scoped export row sync",
           tenantId: parsedInput.tenantId,
+          ...stats,
         });
 
         return { output: { scope: "tenant", tenantId: parsedInput.tenantId } };
@@ -175,7 +183,8 @@ export const SyncAIExtractionExportRows: TaskConfig = {
           politicalEntityId: parsedInput.politicalEntityId,
         });
 
-        await syncAIExtractionExportRowsForPoliticalEntity({
+        const stats = await syncAIExtractionExportRowsForPoliticalEntity({
+          logger,
           payload: req.payload,
           politicalEntityId: parsedInput.politicalEntityId,
           req,
@@ -185,6 +194,7 @@ export const SyncAIExtractionExportRows: TaskConfig = {
           message:
             "syncAIExtractionExportRows:: Completed political-entity-scoped export row sync",
           politicalEntityId: parsedInput.politicalEntityId,
+          ...stats,
         });
 
         return {
@@ -215,15 +225,15 @@ export const SyncAIExtractionExportRows: TaskConfig = {
       );
 
       const result = await rebuildAllAIExtractionExportRows({
+        logger,
         payload: req.payload,
         req,
       });
 
       logger.info({
-        deletedStaleRows: result.deletedStaleRows,
+        ...result,
         message:
           "syncAIExtractionExportRows:: Completed AI extraction export row rebuild",
-        processed: result.processed,
       });
 
       return { output: result };

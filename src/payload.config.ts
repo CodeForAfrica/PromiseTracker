@@ -19,6 +19,7 @@ import * as Sentry from "@sentry/nextjs";
 import { defaultLocale, locales } from "@/utils/locales";
 import {
   AI_EXTRACTION_EXPORT_ROWS_SYNC_CRON_SCHEDULE,
+  AI_EXTRACTION_EXPORT_ROWS_SYNC_LIMIT,
   AI_EXTRACTION_EXPORT_ROWS_SYNC_QUEUE,
 } from "@/lib/aiExtractionExportRowsJobs";
 import { en } from "@payloadcms/translations/languages/en";
@@ -103,7 +104,14 @@ export default buildConfig({
         queue: process.env.PAYLOAD_JOBS_QUEUE || "everyMinute",
       },
       {
+        // The import-export plugin queues createCollectionExport jobs on the
+        // default queue; without a runner here, admin exports never execute.
+        cron: process.env.PAYLOAD_DEFAULT_QUEUE_CRON_SCHEDULE || "* * * * *",
+        queue: "default",
+      },
+      {
         cron: AI_EXTRACTION_EXPORT_ROWS_SYNC_CRON_SCHEDULE,
+        limit: AI_EXTRACTION_EXPORT_ROWS_SYNC_LIMIT,
         queue: AI_EXTRACTION_EXPORT_ROWS_SYNC_QUEUE,
       },
       {

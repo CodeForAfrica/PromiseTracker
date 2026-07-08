@@ -1,6 +1,7 @@
 import {
   buildAIExtractionExportRows,
   rebuildAllAIExtractionExportRows,
+  syncAIExtractionExportRows,
   syncAIExtractionExportRowsForStatus,
 } from "@/lib/aiExtractionExportRows";
 import type { AiExtraction } from "@/payload-types";
@@ -217,6 +218,78 @@ describe("AI extraction export rows", () => {
     );
   });
 
+  it("skips unchanged rows and only writes what changed", async () => {
+    const extractionDoc = {
+      id: "x1",
+      title: "Manifesto",
+      document: null,
+      extractions: [
+        { id: "r1", category: "Health", summary: "same", source: "q1", uniqueId: "u1" },
+        { id: "r2", category: "Roads", summary: "new summary", source: "q2", uniqueId: "u2" },
+        { id: "r3", category: "Water", summary: "brand new", source: "q3", uniqueId: "u3" },
+      ],
+    };
+
+    const unchangedRow = {
+      id: "row-1",
+      uniqueKey: "x1:r1",
+      aiExtraction: "x1",
+      aiExtractionId: "x1",
+      aiExtractionTitle: "Manifesto",
+      extractionRowId: "r1",
+      uniqueId: "u1",
+      category: "Health",
+      summary: "same",
+      source: "q1",
+    };
+    const changedRow = {
+      ...unchangedRow,
+      id: "row-2",
+      uniqueKey: "x1:r2",
+      extractionRowId: "r2",
+      uniqueId: "u2",
+      category: "Roads",
+      summary: "old summary",
+      source: "q2",
+    };
+    const staleRow = { id: "row-stale", uniqueKey: "x1:gone" };
+
+    const payload = {
+      create: vi.fn().mockResolvedValue({}),
+      delete: vi.fn().mockResolvedValue({ docs: [staleRow] }),
+      find: vi.fn().mockResolvedValueOnce({
+        docs: [unchangedRow, changedRow, staleRow],
+        hasNextPage: false,
+      }),
+      findByID: vi.fn().mockResolvedValue(extractionDoc),
+      update: vi.fn().mockResolvedValue({}),
+    };
+    const logger = { info: vi.fn() };
+
+    const stats = await syncAIExtractionExportRows({
+      aiExtractionId: "x1",
+      logger,
+      payload: payload as never,
+    });
+
+    expect(stats).toEqual({ created: 1, deleted: 1, skipped: 1, updated: 1 });
+    expect(payload.update).toHaveBeenCalledTimes(1);
+    expect(payload.update).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "row-2" }),
+    );
+    expect(payload.create).toHaveBeenCalledTimes(1);
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.objectContaining({
+        aiExtractionId: "x1",
+        created: 1,
+        deleted: 1,
+        rowCount: 3,
+        skipped: 1,
+        updated: 1,
+      }),
+    );
+  });
+
   it("does not wipe export rows when rebuild finds no AI extractions", async () => {
     const payload = {
       count: vi.fn(),
@@ -234,7 +307,14 @@ describe("AI extraction export rows", () => {
       payload: payload as never,
     });
 
-    expect(result).toEqual({ deletedStaleRows: 0, processed: 0 });
+    expect(result).toEqual({
+      created: 0,
+      deleted: 0,
+      deletedStaleRows: 0,
+      processed: 0,
+      skipped: 0,
+      updated: 0,
+    });
     expect(payload.count).not.toHaveBeenCalled();
     expect(payload.delete).not.toHaveBeenCalled();
   });
@@ -280,7 +360,14 @@ describe("AI extraction export rows", () => {
       payload: payload as never,
     });
 
-    expect(result).toEqual({ deletedStaleRows: 2, processed: 1 });
+    expect(result).toEqual({
+      created: 0,
+      deleted: 0,
+      deletedStaleRows: 2,
+      processed: 1,
+      skipped: 0,
+      updated: 0,
+    });
     expect(payload.count).toHaveBeenCalledWith(
       expect.objectContaining({
         collection: "ai-extraction-export-rows",

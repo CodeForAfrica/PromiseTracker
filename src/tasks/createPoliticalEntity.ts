@@ -367,6 +367,18 @@ export const CreatePoliticalEntity: TaskConfig = {
         return formatISO(toDate(timestamp * 1000));
       };
 
+      // Airtable dates are formatted with a local UTC offset while Payload
+      // returns stored dates as UTC strings, so compare instants, not strings.
+      const isSameInstant = (
+        a?: string | null,
+        b?: string | null,
+      ): boolean => {
+        if (!a || !b) {
+          return (a || "") === (b || "");
+        }
+        return new Date(a).getTime() === new Date(b).getTime();
+      };
+
       const countryCache = new Map<string, any>();
       const normalizeStatusMessage = (value: string) => {
         const trimmed = value.trim();
@@ -602,11 +614,17 @@ export const CreatePoliticalEntity: TaskConfig = {
               updateData.position = position;
             }
 
-            if (periodFrom && existingEntity.periodFrom !== periodFrom) {
+            if (
+              periodFrom &&
+              !isSameInstant(existingEntity.periodFrom, periodFrom)
+            ) {
               updateData.periodFrom = periodFrom;
             }
 
-            if (periodTo && existingEntity.periodTo !== periodTo) {
+            if (
+              periodTo &&
+              !isSameInstant(existingEntity.periodTo, periodTo)
+            ) {
               updateData.periodTo = periodTo;
             }
 

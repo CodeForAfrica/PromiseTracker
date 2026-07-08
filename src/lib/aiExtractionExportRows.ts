@@ -56,9 +56,35 @@ type ExistingExportRow = {
   id: string;
   aiExtractionId?: string | null;
   uniqueKey?: string | null;
+} & Record<string, unknown>;
+
+type SyncLogger = {
+  info: (logPayload: Record<string, unknown>) => void;
+};
+
+export type ExportRowSyncStats = {
+  created: number;
+  deleted: number;
+  skipped: number;
+  updated: number;
+};
+
+const emptyStats = (): ExportRowSyncStats => ({
+  created: 0,
+  deleted: 0,
+  skipped: 0,
+  updated: 0,
+});
+
+const addStats = (into: ExportRowSyncStats, from: ExportRowSyncStats): void => {
+  into.created += from.created;
+  into.deleted += from.deleted;
+  into.skipped += from.skipped;
+  into.updated += from.updated;
 };
 
 type LocalAPIContext = {
+  logger?: SyncLogger;
   payload: Payload;
   req?: Partial<PayloadRequest>;
 };
@@ -213,6 +239,67 @@ export const buildAIExtractionExportRows = (
   });
 };
 
+const EXPORT_ROW_FIELDS = [
+  "uniqueKey",
+  "aiExtraction",
+  "aiExtractionId",
+  "aiExtractionTitle",
+  "extractionRowId",
+  "uniqueId",
+  "category",
+  "summary",
+  "source",
+  "uploadError",
+  "checkMediaId",
+  "checkMediaURL",
+  "status",
+  "statusId",
+  "statusLabel",
+  "statusMeedanId",
+  "document",
+  "documentId",
+  "documentTitle",
+  "documentUrl",
+  "documentLanguage",
+  "documentType",
+  "documentAirtableID",
+  "politicalEntity",
+  "politicalEntityId",
+  "politicalEntityName",
+  "politicalEntitySlug",
+  "politicalEntityPosition",
+  "tenant",
+  "tenantId",
+  "tenantName",
+  "tenantCountry",
+  "tenantLocale",
+] as const satisfies ReadonlyArray<keyof AIExtractionExportRowData>;
+
+// Empty strings, null, undefined, and populated-vs-id relationship values all
+// count as equal so a no-op sync issues no writes.
+const normalizeFieldValue = (value: unknown): string => {
+  if (value === null || value === undefined) {
+    return "";
+  }
+  if (typeof value === "string") {
+    return value;
+  }
+  if (isRecord(value) && typeof value.id === "string") {
+    return value.id;
+  }
+  return String(value);
+};
+
+const isRowUnchanged = (
+  existingRow: ExistingExportRow,
+  row: AIExtractionExportRowData,
+): boolean =>
+  EXPORT_ROW_FIELDS.every(
+    (field) =>
+      normalizeFieldValue(existingRow[field]) ===
+      normalizeFieldValue(row[field]),
+  );
+
 const findExistingRows = async ({
   aiExtractionId,
   payload,
@@ -245,13 +332,15 @@ const deleteRowsWhere = async ({
   where,
 }: LocalAPIContext & {
   where: Where;
-}) => {
-  await payload.delete({
+}): Promise<number> => {
+  const result = await payload.delete({
     collection: AI_EXTRACTION_EXPORT_ROWS_COLLECTION,
     overrideAccess: true,
     req,
     where,
   });
+
+  return Array.isArray(result?.docs) ? result.docs.length : 0;
 };
 
 const logScopedSyncError = ({
@@ -341,11 +430,12 @@ const findOrphanedAIExtractionIds = async ({
 
 export const syncAIExtractionExportRows = async ({
   aiExtractionId,
+  logger,
   payload,
   req,
 }: LocalAPIContext & {
   aiExtractionId: string;
-}) => {
+}): Promise<ExportRowSyncStats> => {
   const extractionDoc = (await payload.findByID({
     collection: "ai-extractions",
     depth: 3,
@@ -362,12 +452,18 @@ export const syncAIExtractionExportRows = async ({
       .map((row) => [row.uniqueKey as string, row]),
   );
   const syncedKeys = new Set<string>();
+  const stats = emptyStats();
 
   for (const row of rows) {
     const existingRow = existingRowsByKey.get(row.uniqueKey);
     syncedKeys.add(row.uniqueKey);
 
     if (existingRow) {
+      if (isRowUnchanged(existingRow, row)) {
+        stats.skipped += 1;
+        continue;
+      }
+
       await payload.update({
         collection: AI_EXTRACTION_EXPORT_ROWS_COLLECTION,
         data: row,
@@ -375,6 +471,7 @@ export const syncAIExtractionExportRows = async ({
         overrideAccess: true,
         req,
       });
+      stats.updated += 1;
       continue;
     }
 
@@ -384,10 +481,11 @@ export const syncAIExtractionExportRows = async ({
       overrideAccess: true,
       req,
     });
+    stats.created += 1;
   }
 
   if (syncedKeys.size > 0) {
-    await deleteRowsWhere({
+    stats.deleted = await deleteRowsWhere({
       payload,
       req,
       where: {
@@ -406,7 +504,7 @@ export const syncAIExtractionExportRows = async ({
       },
     });
   } else {
-    await deleteRowsWhere({
+    stats.deleted = await deleteRowsWhere({
       payload,
       req,
       where: {
@@ -416,6 +514,15 @@ export const syncAIExtractionExportRows = async ({
       },
     });
   }
+
+  logger?.info({
+    aiExtractionId,
+    message: "aiExtractionExportRows:: Extraction synced",
+    rowCount: rows.length,
+    ...stats,
+  });
+
+  return stats;
 };
 
 export const deleteAIExtractionExportRowsForAIExtraction = async ({
@@ -488,20 +595,27 @@ export const deleteAIExtractionExportRowsForTenant = async ({
 
 export const syncAIExtractionExportRowsForDocument = async ({
   documentId,
+  logger,
   payload,
   req,
 }: LocalAPIContext & {
   documentId: string;
-}) => {
+}): Promise<ExportRowSyncStats> => {
+  const stats = emptyStats();
+
   await forEachMatchingDoc<Pick<AiExtraction, "id">>({
     collection: "ai-extractions",
     onDoc: async (doc) => {
       try {
-        await syncAIExtractionExportRows({
-          aiExtractionId: String(doc.id),
-          payload,
-          req,
-        });
+        addStats(
+          stats,
+          await syncAIExtractionExportRows({
+            aiExtractionId: String(doc.id),
+            logger,
+            payload,
+            req,
+          }),
+        );
       } catch (err) {
         logScopedSyncError({
           context: { aiExtractionId: String(doc.id), documentId },
@@ -520,24 +634,33 @@ export const syncAIExtractionExportRowsForDocument = async ({
       },
     },
   });
+
+  return stats;
 };
 
 export const syncAIExtractionExportRowsForPoliticalEntity = async ({
+  logger,
   payload,
   politicalEntityId,
   req,
 }: LocalAPIContext & {
   politicalEntityId: string;
-}) => {
+}): Promise<ExportRowSyncStats> => {
+  const stats = emptyStats();
+
   await forEachMatchingDoc<Pick<PayloadDocument, "id">>({
     collection: "documents",
     onDoc: async (doc) => {
       try {
-        await syncAIExtractionExportRowsForDocument({
-          documentId: String(doc.id),
-          payload,
-          req,
-        });
+        addStats(
+          stats,
+          await syncAIExtractionExportRowsForDocument({
+            documentId: String(doc.id),
+            logger,
+            payload,
+            req,
+          }),
+        );
       } catch (err) {
         logScopedSyncError({
           context: { documentId: String(doc.id), politicalEntityId },
@@ -556,24 +679,33 @@ export const syncAIExtractionExportRowsForPoliticalEntity = async ({
       },
     },
   });
+
+  return stats;
 };
 
 export const syncAIExtractionExportRowsForTenant = async ({
+  logger,
   payload,
   tenantId,
   req,
 }: LocalAPIContext & {
   tenantId: string;
-}) => {
+}): Promise<ExportRowSyncStats> => {
+  const stats = emptyStats();
+
   await forEachMatchingDoc<Pick<PoliticalEntity, "id">>({
     collection: "political-entities",
     onDoc: async (entity) => {
       try {
-        await syncAIExtractionExportRowsForPoliticalEntity({
-          payload,
-          politicalEntityId: String(entity.id),
-          req,
-        });
+        addStats(
+          stats,
+          await syncAIExtractionExportRowsForPoliticalEntity({
+            logger,
+            payload,
+            politicalEntityId: String(entity.id),
+            req,
+          }),
+        );
       } catch (err) {
         logScopedSyncError({
           context: { politicalEntityId: String(entity.id), tenantId },
@@ -592,15 +724,19 @@ export const syncAIExtractionExportRowsForTenant = async ({
       },
     },
   });
+
+  return stats;
 };
 
 export const syncAIExtractionExportRowsForStatus = async ({
+  logger,
   payload,
   statusId,
   req,
 }: LocalAPIContext & {
   statusId: string;
-}) => {
+}): Promise<ExportRowSyncStats> => {
+  const stats = emptyStats();
   const aiExtractionIds = new Set<string>();
 
   await forEachMatchingDoc<ExistingExportRow>({
@@ -621,11 +757,15 @@ export const syncAIExtractionExportRowsForStatus = async ({
 
   for (const aiExtractionId of aiExtractionIds) {
     try {
-      await syncAIExtractionExportRows({
-        aiExtractionId,
-        payload,
-        req,
-      });
+      addStats(
+        stats,
+        await syncAIExtractionExportRows({
+          aiExtractionId,
+          logger,
+          payload,
+          req,
+        }),
+      );
     } catch (err) {
       logScopedSyncError({
         context: { aiExtractionId, statusId },
@@ -636,16 +776,20 @@ export const syncAIExtractionExportRowsForStatus = async ({
       });
     }
   }
+
+  return stats;
 };
 
 export const rebuildAllAIExtractionExportRows = async ({
   batchSize = DEFAULT_SYNC_BATCH_SIZE,
+  logger,
   payload,
   req,
 }: LocalAPIContext & {
   batchSize?: number;
 }) => {
   const syncedAiExtractionIds = new Set<string>();
+  const stats = emptyStats();
   let processed = 0;
 
   await forEachMatchingDoc<Pick<AiExtraction, "id">>({
@@ -654,19 +798,31 @@ export const rebuildAllAIExtractionExportRows = async ({
     onDoc: async (doc) => {
       const aiExtractionId = String(doc.id);
       syncedAiExtractionIds.add(aiExtractionId);
-      await syncAIExtractionExportRows({
-        aiExtractionId,
-        payload,
-        req,
-      });
+      addStats(
+        stats,
+        await syncAIExtractionExportRows({
+          aiExtractionId,
+          logger,
+          payload,
+          req,
+        }),
+      );
       processed += 1;
+
+      if (processed % batchSize === 0) {
+        logger?.info({
+          message: "aiExtractionExportRows:: Rebuild progress",
+          processed,
+          ...stats,
+        });
+      }
     },
     payload,
     req,
   });
 
   if (syncedAiExtractionIds.size === 0) {
-    return { deletedStaleRows: 0, processed };
+    return { deletedStaleRows: 0, processed, ...stats };
   }
 
   // Only delete rows whose parent AI extraction is confirmed missing now.
@@ -678,7 +834,7 @@ export const rebuildAllAIExtractionExportRows = async ({
   });
 
   if (orphanedAIExtractionIds.length === 0) {
-    return { deletedStaleRows: 0, processed };
+    return { deletedStaleRows: 0, processed, ...stats };
   }
 
   const deletedStaleRows = await payload.count({
@@ -702,5 +858,5 @@ export const rebuildAllAIExtractionExportRows = async ({
     },
   });
 
-  return { deletedStaleRows: deletedStaleRows.totalDocs, processed };
+  return { deletedStaleRows: deletedStaleRows.totalDocs, processed, ...stats };
 };
