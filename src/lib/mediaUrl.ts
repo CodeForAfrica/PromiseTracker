@@ -1,3 +1,37 @@
+import type { Payload } from "payload";
+
+export type MediaChecksumMatch = {
+  id: string;
+  url?: string | null;
+  externalUrl?: string | null;
+};
+
+export const findMediaByChecksum = async (
+  payload: Payload,
+  checksum: string | null | undefined,
+): Promise<MediaChecksumMatch | null> => {
+  if (!checksum) {
+    return null;
+  }
+
+  const { docs } = await payload.find({
+    collection: "media",
+    where: {
+      checksum: {
+        equals: checksum,
+      },
+    },
+    select: {
+      url: true,
+      externalUrl: true,
+    },
+    depth: 0,
+    limit: 1,
+  });
+
+  return (docs[0] as MediaChecksumMatch | undefined) ?? null;
+};
+
 export const normalizeMediaSourceUrl = (value?: string | null): string => {
   const trimmed = (value ?? "").trim();
 

@@ -1,13 +1,17 @@
 import { TaskConfig } from "payload";
 import { createHash } from "node:crypto";
-import { unlink } from "node:fs/promises";
 import { updateDocumentStatus } from "@/lib/airtable";
 import {
   addMediaSourceLookup,
+  findMediaByChecksum,
   getMediaIdFromLookup,
   normalizeMediaSourceUrl,
 } from "@/lib/mediaUrl";
-import { downloadFile } from "@/utils/files";
+import {
+  downloadFile,
+  removeDownloadedFile,
+  sha256File,
+} from "@/utils/files";
 import { getTaskLogger, withTaskTracing, type TaskInput } from "./utils";
 
 type DocURL = {
@@ -403,12 +407,42 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
             let filePath: string | null = null;
 
             try {
-              filePath = await downloadFile(fileUrl);
+              filePath = await downloadFile(fileUrl, {
+                fileName: doc.title ?? undefined,
+              });
+              const checksum = await sha256File(filePath);
+              const existingMedia = await findMediaByChecksum(
+                payload,
+                checksum,
+              );
+
+              if (existingMedia) {
+                fileIds.push(existingMedia.id);
+                addMediaSourceLookup(
+                  mediaSourceLookup,
+                  existingMedia.id,
+                  fileUrl,
+                  existingMedia.url,
+                  existingMedia.externalUrl,
+                );
+                reusedFromMediaCount += 1;
+                logger.info({
+                  message:
+                    "downloadDocuments:: Reused existing media with matching checksum",
+                  id: doc.id,
+                  airtableID: doc.airtableID,
+                  title: doc.title,
+                  mediaId: existingMedia.id,
+                });
+                continue;
+              }
+
               const mediaUpload = await payload.create({
                 collection: "media",
                 data: {
                   alt: doc.title,
                   externalUrl: fileUrl,
+                  checksum,
                 },
                 filePath,
               });
@@ -439,7 +473,7 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
             } finally {
               if (filePath) {
                 try {
-                  await unlink(filePath);
+                  await removeDownloadedFile(filePath);
                 } catch (cleanupError) {
                   logger.warn({
                     message:

@@ -1,7 +1,9 @@
-import { randomUUID } from "node:crypto";
-import { existsSync } from "node:fs";
-import { mkdir, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { createHash, randomUUID } from "node:crypto";
+import { createReadStream, createWriteStream } from "node:fs";
+import { mkdir, rm, unlink } from "node:fs/promises";
+import { dirname, join, sep } from "node:path";
+import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
 import { fileURLToPath } from "node:url";
 
 export const mimeToExtension: Record<string, string> = {
@@ -43,6 +45,32 @@ const DEFAULT_MAX_DOWNLOAD_BYTES =
 type DownloadFileOptions = {
   allowedMimeTypes?: string[];
   maxBytes?: number;
+  fileName?: string;
+};
+
+const MAX_FILE_NAME_LENGTH = 100;
+
+// Names come from Airtable and are user-controlled; strip anything that is
+// not a word character so they are safe to use as a filesystem path segment.
+const sanitizeFileName = (value: string): string =>
+  value
+    .trim()
+    .replace(/ /g, "-")
+    .replace(/[^\w-]+/g, "")
+    .toLowerCase()
+    .slice(0, MAX_FILE_NAME_LENGTH);
+
+export const removeDownloadedFile = async (
+  filePath: string,
+): Promise<void> => {
+  const parent = dirname(filePath);
+  // Named downloads live in their own subdirectory of tempDir — remove the
+  // whole directory so empty per-download folders do not accumulate.
+  if (parent !== tempDir && parent.startsWith(tempDir + sep)) {
+    await rm(parent, { recursive: true, force: true });
+    return;
+  }
+  await unlink(filePath).catch(() => {});
 };
 
 export const downloadFile = async (
@@ -55,10 +83,6 @@ export const downloadFile = async (
     parsedUrl = new URL(url);
   } catch (_error) {
     throw new Error(`Invalid download URL: ${url}`);
-  }
-
-  if (!existsSync(tempDir)) {
-    await mkdir(tempDir, { recursive: true });
   }
 
   const res = await fetch(parsedUrl);
@@ -75,7 +99,13 @@ export const downloadFile = async (
     );
   }
 
-  const fileName = `file-${randomUUID()}`;
+  const requestedFileName = sanitizeFileName(options.fileName ?? "");
+  const fileName = requestedFileName || `file-${randomUUID()}`;
+  // Named files get their own subdirectory so concurrent downloads of
+  // same-named files cannot clobber each other in the shared temp dir.
+  const downloadDir = requestedFileName
+    ? join(tempDir, randomUUID())
+    : tempDir;
 
   const contentType = res.headers.get("content-type")?.split(";")[0] || "";
   if (
@@ -90,27 +120,45 @@ export const downloadFile = async (
     throw new Error("Missing response body");
   }
 
-  const reader = res.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (!value) continue;
-    total += value.length;
-    if (total > maxBytes) {
-      throw new Error(`Download exceeds size limit (${total} > ${maxBytes})`);
-    }
-    chunks.push(value);
-  }
+  await mkdir(downloadDir, { recursive: true });
 
-  const buffer = Buffer.concat(
-    chunks.map((chunk) => Buffer.from(chunk)),
-    total,
-  );
   const extension = mimeToExtension[contentType] || "";
   const docFileName = `${fileName}${extension}`;
-  const filePath = join(tempDir, docFileName);
-  await writeFile(filePath, Buffer.from(buffer), { flag: "w" });
+  const filePath = join(downloadDir, docFileName);
+
+  // Stream the response straight to disk so memory usage stays constant
+  // regardless of file size; enforce the size limit as bytes arrive.
+  let total = 0;
+  const enforceSizeLimit = async function* (source: AsyncIterable<Uint8Array>) {
+    for await (const chunk of source) {
+      total += chunk.length;
+      if (total > maxBytes) {
+        throw new Error(`Download exceeds size limit (${total} > ${maxBytes})`);
+      }
+      yield chunk;
+    }
+  };
+
+  try {
+    await pipeline(
+      enforceSizeLimit(Readable.fromWeb(res.body as never)),
+      createWriteStream(filePath),
+    );
+  } catch (error) {
+    await removeDownloadedFile(filePath).catch(() => {});
+    throw error;
+  }
+
   return filePath;
 };
+
+export const sha256File = async (filePath: string): Promise<string> => {
+  const hash = createHash("sha256");
+  for await (const chunk of createReadStream(filePath)) {
+    hash.update(chunk as Buffer);
+  }
+  return hash.digest("hex");
+};
+
+export const sha256Buffer = (data: Buffer | Uint8Array): string =>
+  createHash("sha256").update(data).digest("hex");

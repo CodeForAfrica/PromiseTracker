@@ -230,6 +230,10 @@ export interface Media {
    * Original source URL for synced media
    */
   externalUrl?: string | null;
+  /**
+   * SHA-256 of the file contents, used to avoid duplicate downloads
+   */
+  checksum?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -1446,6 +1450,7 @@ export interface PromisesSelect<T extends boolean = true> {
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
   externalUrl?: T;
+  checksum?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;

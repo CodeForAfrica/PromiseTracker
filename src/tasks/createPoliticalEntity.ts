@@ -7,12 +7,16 @@ import {
   updatePoliticalEntityStatus,
 } from "@/lib/airtable";
 import { TaskConfig } from "payload";
-import { downloadFile } from "@/utils/files";
-import { unlink } from "node:fs/promises";
+import {
+  downloadFile,
+  removeDownloadedFile,
+  sha256File,
+} from "@/utils/files";
 import { formatSlug } from "@/fields/slug/formatSlug";
 import type { Media } from "@/payload-types";
 import {
   addMediaSourceLookup,
+  findMediaByChecksum,
   getMediaIdFromLookup,
   normalizeMediaSourceUrl,
 } from "@/lib/mediaUrl";
@@ -239,6 +243,57 @@ export const CreatePoliticalEntity: TaskConfig = {
 
       const getExistingMediaIdForUrl = (url: string): string | null => {
         return getMediaIdFromLookup(mediaSourceLookup, url);
+      };
+
+      // Airtable attachment URLs change on every fetch, so URL lookups miss
+      // media downloaded on previous runs. Deduplicate on the file checksum
+      // after download to avoid creating a new media record each sync.
+      const downloadImageAsMedia = async (
+        imageUrl: string,
+        alt: string,
+      ): Promise<string> => {
+        const filePath = await downloadFile(imageUrl, { fileName: alt });
+        try {
+          const checksum = await sha256File(filePath);
+          const existingMedia = await findMediaByChecksum(payload, checksum);
+
+          if (existingMedia) {
+            cacheMediaSourceLookup(
+              existingMedia.id,
+              imageUrl,
+              existingMedia.url,
+              existingMedia.externalUrl,
+            );
+            return existingMedia.id;
+          }
+
+          const mediaUpload = await payload.create({
+            collection: "media",
+            data: {
+              alt,
+              externalUrl: imageUrl,
+              checksum,
+            },
+            filePath,
+          });
+
+          const mediaId = (mediaUpload as any)?.id ?? mediaUpload;
+          if (!mediaId) {
+            throw new Error(
+              "Failed to resolve media ID for political entity image",
+            );
+          }
+
+          cacheMediaSourceLookup(
+            mediaId,
+            imageUrl,
+            (mediaUpload as any)?.url,
+            (mediaUpload as any)?.externalUrl,
+          );
+          return mediaId;
+        } finally {
+          await removeDownloadedFile(filePath).catch(() => {});
+        }
       };
 
       const getMediaExternalUrl = async (
@@ -500,32 +555,12 @@ export const CreatePoliticalEntity: TaskConfig = {
           }
 
           if (!existingEntity) {
-            let mediaId = getExistingMediaIdForUrl(imageUrl);
-
-            if (!mediaId) {
-              const filePath = await downloadFile(imageUrl);
-              const mediaUpload = await payload.create({
-                collection: "media",
-                data: {
-                  alt: entity.politicalEntityName || "",
-                  externalUrl: imageUrl,
-                },
-                filePath,
-              });
-              await unlink(filePath);
-
-              mediaId = (mediaUpload as any)?.id ?? mediaUpload;
-              if (!mediaId) {
-                throw new Error("Failed to resolve media ID for political entity image");
-              }
-
-              cacheMediaSourceLookup(
-                mediaId,
+            const mediaId =
+              getExistingMediaIdForUrl(imageUrl) ??
+              (await downloadImageAsMedia(
                 imageUrl,
-                (mediaUpload as any)?.url,
-                (mediaUpload as any)?.externalUrl,
-              );
-            }
+                entity.politicalEntityName || "",
+              ));
 
             const createdEntity = await payload.create({
               collection: "political-entities",
@@ -597,42 +632,20 @@ export const CreatePoliticalEntity: TaskConfig = {
             );
 
             if (existingExternalUrl !== imageUrl) {
-              const reusableMediaId = getExistingMediaIdForUrl(imageUrl);
               const currentImageId =
                 typeof existingEntity.image === "string"
                   ? existingEntity.image
                   : existingEntity.image?.id;
 
-              if (reusableMediaId) {
-                if (reusableMediaId !== currentImageId) {
-                  updateData.image = reusableMediaId;
-                }
-              } else {
-                const filePath = await downloadFile(imageUrl);
-                const mediaUpload = await payload.create({
-                  collection: "media",
-                  data: {
-                    alt: entity.politicalEntityName || "",
-                    externalUrl: imageUrl,
-                  },
-                  filePath,
-                });
-                await unlink(filePath);
-
-                const uploadedMediaId = (mediaUpload as any)?.id ?? mediaUpload;
-                if (!uploadedMediaId) {
-                  throw new Error(
-                    "Failed to resolve updated media ID for political entity image",
-                  );
-                }
-
-                updateData.image = uploadedMediaId;
-                cacheMediaSourceLookup(
-                  uploadedMediaId,
+              const resolvedMediaId =
+                getExistingMediaIdForUrl(imageUrl) ??
+                (await downloadImageAsMedia(
                   imageUrl,
-                  (mediaUpload as any)?.url,
-                  (mediaUpload as any)?.externalUrl,
-                );
+                  entity.politicalEntityName || "",
+                ));
+
+              if (resolvedMediaId !== currentImageId) {
+                updateData.image = resolvedMediaId;
               }
             }
 
