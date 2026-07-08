@@ -20,6 +20,25 @@ const normalizeAirtableStatus = (status: string): string => {
   return `${trimmed.slice(0, MAX_AIRTABLE_STATUS_LENGTH - 3)}...`;
 };
 
+export const getPublishedPoliticalEntityIDs = async ({
+  airtableAPIKey,
+}: {
+  airtableAPIKey: string;
+}) => {
+  const db = new AirtableTs({ apiKey: airtableAPIKey });
+  const politicalEntitiesTable = await db.table(PoliticalEntitiestable);
+
+  const publishedEntities = await db.scan(PoliticalEntitiestable, {
+    // @ts-expect-error: Type 'string | string[]' is not assignable to type 'string'.
+    filterByFormula: formula(politicalEntitiesTable, [
+      "AND",
+      ["=", { field: "publishThisEntity" }, true],
+    ]),
+  });
+
+  return new Set(publishedEntities.map((entity) => entity.id));
+};
+
 export const getUnprocessedDocuments = async ({
   airtableAPIKey,
 }: {
@@ -36,7 +55,24 @@ export const getUnprocessedDocuments = async ({
     ]),
   });
 
-  return unProcessedDocuments;
+  if (unProcessedDocuments.length === 0) {
+    return unProcessedDocuments;
+  }
+
+  const publishedEntityIDs = await getPublishedPoliticalEntityIDs({
+    airtableAPIKey,
+  });
+
+  // Documents linked only to unpublished entities stay unprocessed until
+  // "Publish this Entity" is checked in Airtable. Documents with no entity
+  // link pass through so the fetch task can flag them as failed.
+  return unProcessedDocuments.filter((doc) => {
+    const linkedEntityIDs = doc.politicalEntity ?? [];
+    if (linkedEntityIDs.length === 0) {
+      return true;
+    }
+    return linkedEntityIDs.some((entityID) => publishedEntityIDs.has(entityID));
+  });
 };
 
 export const markDocumentAsProcessed = async ({
