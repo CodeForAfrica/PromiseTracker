@@ -14,7 +14,8 @@ const getRetentionMs = () => {
 
 const getStuckTimeoutMs = () => {
   const raw = Number(process.env.PAYLOAD_JOBS_STUCK_TIMEOUT_HOURS);
-  const hours = Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_STUCK_TIMEOUT_HOURS;
+  const hours =
+    Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_STUCK_TIMEOUT_HOURS;
   return hours * 60 * 60 * 1000;
 };
 
@@ -48,7 +49,8 @@ export const CleanupFailedJobs: TaskConfig<"cleanupFailedJobs"> = {
 
     // 2. Orphaned pending jobs: never attempted and older than the stuck timeout.
     //    These pile up in queues that have no worker (e.g. "default").
-    //    The cleanup queue is excluded to protect its own scheduled pending job.
+    //    Only the cleanup queue is excluded to protect its own scheduled pending
+    //    job; application queues such as exportSync should still be cleaned up.
     const orphanedWhere: Where = {
       and: [
         { processing: { equals: false } },
@@ -77,7 +79,10 @@ export const CleanupFailedJobs: TaskConfig<"cleanupFailedJobs"> = {
     ] = await Promise.all([
       payload.count({ collection: "payload-jobs", where: failedWhere }),
       payload.count({ collection: "payload-jobs", where: orphanedWhere }),
-      payload.count({ collection: "payload-jobs", where: stuckProcessingWhere }),
+      payload.count({
+        collection: "payload-jobs",
+        where: stuckProcessingWhere,
+      }),
     ]);
 
     const retentionHours = retentionMs / (60 * 60 * 1000);
@@ -89,18 +94,28 @@ export const CleanupFailedJobs: TaskConfig<"cleanupFailedJobs"> = {
         retentionHours,
         stuckHours,
       });
-      return { output: { deletedFailed: 0, deletedOrphaned: 0, deletedStuck: 0 } };
+      return {
+        output: { deletedFailed: 0, deletedOrphaned: 0, deletedStuck: 0 },
+      };
     }
 
     const deleteOps = [];
     if (failedCount) {
       deleteOps.push(
-        payload.delete({ collection: "payload-jobs", where: failedWhere, overrideAccess: true }),
+        payload.delete({
+          collection: "payload-jobs",
+          where: failedWhere,
+          overrideAccess: true,
+        }),
       );
     }
     if (orphanedCount) {
       deleteOps.push(
-        payload.delete({ collection: "payload-jobs", where: orphanedWhere, overrideAccess: true }),
+        payload.delete({
+          collection: "payload-jobs",
+          where: orphanedWhere,
+          overrideAccess: true,
+        }),
       );
     }
     if (stuckCount) {
@@ -132,7 +147,11 @@ export const CleanupFailedJobs: TaskConfig<"cleanupFailedJobs"> = {
     });
 
     return {
-      output: { deletedFailed: failedCount, deletedOrphaned: orphanedCount, deletedStuck: stuckCount },
+      output: {
+        deletedFailed: failedCount,
+        deletedOrphaned: orphanedCount,
+        deletedStuck: stuckCount,
+      },
     };
   }),
 };
