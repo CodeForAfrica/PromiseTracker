@@ -80,6 +80,16 @@ const uniqueStrings = (values: Array<string | null>): string[] => {
   return result;
 };
 
+// The canonical promise identifier: the ProjectMedia GraphQL global ID, the
+// same value the workflow sync stores from the published-reports search.
+export const getProjectMediaGlobalId = (
+  payload: MeedanWebhookPayload,
+): string | null =>
+  createGraphqlIdFromAnnotation(
+    payload?.object?.annotated_type,
+    payload?.object?.annotated_id,
+  );
+
 export const buildMeedanIdCandidates = (
   payload: MeedanWebhookPayload,
   primaryId?: string | null

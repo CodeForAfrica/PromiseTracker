@@ -10,6 +10,7 @@ import { downloadFile } from "@/utils/files";
 import type { Promise as PayloadPromise } from "@/payload-types";
 import {
   buildMeedanIdCandidates,
+  getProjectMediaGlobalId,
   normaliseString,
   type MeedanWebhookPayload,
 } from "./utils";
@@ -359,6 +360,7 @@ export const POST = async (request: NextRequest) => {
   }
 
   const meedanIdCandidates = buildMeedanIdCandidates(parsed, meedanId);
+  const canonicalMeedanId = getProjectMediaGlobalId(parsed);
 
   const annotationData = parsed?.object?.data;
   const options = annotationData?.options;
@@ -393,7 +395,7 @@ export const POST = async (request: NextRequest) => {
 
     const { docs } = await payload.find({
       collection: "promises",
-      limit: 1,
+      limit: 10,
       where: {
         meedanId: {
           in: meedanIdCandidates,
@@ -408,7 +410,16 @@ export const POST = async (request: NextRequest) => {
       },
     });
 
-    let promise: PayloadPromise | null = docs[0] ?? null;
+    // Prefer the promise carrying the canonical ProjectMedia global ID (the
+    // one the workflow sync maintains) when duplicates match the candidates.
+    let promise: PayloadPromise | null =
+      (canonicalMeedanId
+        ? docs.find(
+            (doc) => (doc.meedanId ?? "").trim() === canonicalMeedanId,
+          )
+        : undefined) ??
+      docs[0] ??
+      null;
     const created = false;
     let updated = false;
 
@@ -429,8 +440,12 @@ export const POST = async (request: NextRequest) => {
     if (description) updateData.description = description;
     if (url) updateData.url = url;
     if (publishState) updateData.publishStatus = publishState;
-    if ((promise.meedanId ?? "").trim() !== meedanId) {
-      updateData.meedanId = meedanId;
+    // meedanId is the ProjectMedia global ID assigned by the workflow sync;
+    // the webhook's data.id is an annotation ID from a different ID space.
+    // Only backfill a missing meedanId — overwriting it orphans the promise
+    // and makes the next workflow sync create a duplicate.
+    if (!(promise.meedanId ?? "").trim() && canonicalMeedanId) {
+      updateData.meedanId = canonicalMeedanId;
     }
 
     if (Object.keys(updateData).length > 0) {
