@@ -1,6 +1,8 @@
 import { withSentryConfig } from "@sentry/nextjs";
 import { withPayload } from "@payloadcms/next/withPayload";
 
+import { buildSecurityHeaders } from "./src/lib/security/headers.mjs";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Your Next.js config here
@@ -8,6 +10,16 @@ const nextConfig = {
     ignoreDuringBuilds: false,
   },
   output: "standalone",
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: buildSecurityHeaders({
+          isDev: process.env.NODE_ENV !== "production",
+        }),
+      },
+    ];
+  },
   webpack: (webpackConfig) => {
     webpackConfig.resolve.extensionAlias = {
       ".cjs": [".cts", ".cjs"],

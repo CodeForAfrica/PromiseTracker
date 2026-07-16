@@ -13,9 +13,10 @@ export const getPromiseUpdateEmbed =
         depth: 2,
         ...(locale ? { locale } : {}),
       });
-      const { embedCode, updateLabel, defaultImage } = doc;
+      const { formUrl, embedCode, updateLabel, defaultImage } = doc;
 
       return {
+        formUrl,
         embedCode,
         updateLabel,
         defaultImage: defaultImage as Media,

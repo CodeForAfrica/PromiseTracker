@@ -959,7 +959,14 @@ export interface SiteSetting {
   newsletter: {
     title: string;
     description: string;
-    embedCode: string;
+    /**
+     * Preferred. The Mailchimp form action URL, e.g. https://example.us1.list-manage.com/subscribe/post?u=…&id=…. Only approved newsletter providers are accepted.
+     */
+    signupUrl?: string | null;
+    /**
+     * Legacy. Sanitized before rendering: scripts, iframes, event handlers, and forms posting to unapproved providers are removed. Prefer the Signup Form URL field above.
+     */
+    embedCode?: string | null;
   };
   actNow: {
     title: string;
@@ -1796,6 +1803,7 @@ export interface SiteSettingsSelect<T extends boolean = true> {
     | {
         title?: T;
         description?: T;
+        signupUrl?: T;
         embedCode?: T;
       };
   actNow?:
@@ -2534,9 +2542,13 @@ export interface PromiseUpdate {
    */
   defaultImage: string | Media;
   /**
-   * Paste the Airtable embed snippet that should appear inside the update dialog.
+   * Preferred. The https URL of the Airtable shared form, e.g. https://airtable.com/embed/app…/shr…. Only approved embed providers are accepted.
    */
-  embedCode: string;
+  formUrl?: string | null;
+  /**
+   * Legacy. Paste the Airtable iframe embed snippet. The iframe src must be on an approved embed provider; scripts are rejected. Prefer the Update Form URL field above.
+   */
+  embedCode?: string | null;
   /**
    * The label that should appear on the update dialog trigger button.
    */
@@ -2671,7 +2683,14 @@ export interface GlobalSiteSetting {
   newsletter: {
     title: string;
     description: string;
-    embedCode: string;
+    /**
+     * Preferred. The Mailchimp form action URL, e.g. https://example.us1.list-manage.com/subscribe/post?u=…&id=…. Only approved newsletter providers are accepted.
+     */
+    signupUrl?: string | null;
+    /**
+     * Legacy. Sanitized before rendering: scripts, iframes, event handlers, and forms posting to unapproved providers are removed. Prefer the Signup Form URL field above.
+     */
+    embedCode?: string | null;
   };
   actNow: {
     title: string;
@@ -2859,6 +2878,7 @@ export interface SettingsSelect<T extends boolean = true> {
  */
 export interface PromiseUpdatesSelect<T extends boolean = true> {
   defaultImage?: T;
+  formUrl?: T;
   embedCode?: T;
   updateLabel?: T;
   updatedAt?: T;
@@ -2954,6 +2974,7 @@ export interface GlobalSiteSettingsSelect<T extends boolean = true> {
     | {
         title?: T;
         description?: T;
+        signupUrl?: T;
         embedCode?: T;
       };
   actNow?:

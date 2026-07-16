@@ -4,6 +4,9 @@ import Image from "next/image";
 
 import email from "@/assets/subscribe-email.svg?url";
 import { getDomain } from "@/lib/domain";
+import { getMailchimpBotFieldName } from "@/lib/embeds/validation";
+import { sanitizeNewsletterEmbedHtml } from "@/lib/embeds/sanitize";
+import { isAllowedFormActionUrl } from "@/lib/security/embedPolicy.mjs";
 import {
   getTenantBySubDomain,
   getTenantSiteSettings,
@@ -40,11 +43,23 @@ const Newsletter = async ({ image }: NewsletterBlockProps) => {
     return null;
   }
 
-  const { title, description, embedCode } = newsletter;
+  const { title, description, signupUrl, embedCode } = newsletter;
 
-  if (!title || !embedCode) {
+  // Preferred: structured provider configuration (Mailchimp form action
+  // URL) rendered as a first-party form. Legacy embed HTML is only used
+  // as a fallback, after strict sanitization.
+  const safeSignupUrl =
+    signupUrl && isAllowedFormActionUrl(signupUrl) ? signupUrl.trim() : null;
+  const sanitizedEmbedCode =
+    !safeSignupUrl && embedCode ? sanitizeNewsletterEmbedHtml(embedCode) : null;
+
+  if (!title || (!safeSignupUrl && !sanitizedEmbedCode)) {
     return null;
   }
+
+  const botFieldName = safeSignupUrl
+    ? getMailchimpBotFieldName(safeSignupUrl)
+    : null;
   const imageMedia =
     image && typeof image === "object" ? (image as Media) : null;
 
@@ -187,12 +202,97 @@ const Newsletter = async ({ image }: NewsletterBlockProps) => {
                   {description}
                 </Typography>
               ) : null}
-              <Box
-                sx={formSx}
-                dangerouslySetInnerHTML={{
-                  __html: embedCode,
-                }}
-              />
+              {safeSignupUrl ? (
+                <Box
+                  component="form"
+                  action={safeSignupUrl}
+                  method="post"
+                  target="_blank"
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 1,
+                  }}
+                >
+                  <Box
+                    component="input"
+                    type="email"
+                    name="EMAIL"
+                    required
+                    placeholder="Email Address"
+                    aria-label="Email Address"
+                    sx={{
+                      background: "none",
+                      border: "none",
+                      borderBottom: "1px solid currentColor",
+                      borderRadius: 0,
+                      color: "currentColor",
+                      fontFamily: "inherit",
+                      fontSize: "18px",
+                      fontStyle: "normal",
+                      fontWeight: 400,
+                      margin: "1rem 0",
+                      width: "100%",
+                      "&:focus": {
+                        outline: "none",
+                      },
+                      "&::placeholder": {
+                        opacity: 1,
+                      },
+                    }}
+                  />
+                  {botFieldName ? (
+                    // Mailchimp anti-bot honeypot, mirrored from their
+                    // own embed markup; must stay empty and off-screen.
+                    <Box
+                      component="input"
+                      type="text"
+                      name={botFieldName}
+                      tabIndex={-1}
+                      defaultValue=""
+                      autoComplete="off"
+                      aria-hidden="true"
+                      sx={{ position: "absolute", left: "-5000px" }}
+                    />
+                  ) : null}
+                  <Box
+                    component="button"
+                    type="submit"
+                    sx={{
+                      background: "none",
+                      backgroundImage: `url("${email}")`,
+                      backgroundRepeat: "no-repeat",
+                      backgroundSize: "100% 100%",
+                      border: "none",
+                      cursor: "pointer",
+                      height: 45,
+                      width: 140,
+                      padding: 0,
+                      color: "transparent",
+                      fontSize: 0,
+                      textIndent: "-9999px",
+                      "&:hover, &:focus": {
+                        background: "none",
+                        backgroundImage: `url("${email}")`,
+                        backgroundRepeat: "no-repeat",
+                        backgroundSize: "100% 100%",
+                        border: "none",
+                      },
+                    }}
+                  >
+                    Subscribe
+                  </Box>
+                </Box>
+              ) : (
+                <Box
+                  sx={formSx}
+                  dangerouslySetInnerHTML={{
+                    // Sanitized above: scripts, iframes, event handlers,
+                    // and non-allowlisted form actions are stripped.
+                    __html: sanitizedEmbedCode ?? "",
+                  }}
+                />
+              )}
             </Box>
           </Grid>
         </Grid>

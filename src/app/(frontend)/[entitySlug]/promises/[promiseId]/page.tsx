@@ -21,6 +21,10 @@ import { getPromiseById } from "@/lib/data/promises";
 import { resolveMedia } from "@/lib/data/media";
 import { getPromiseUpdateEmbed } from "@/lib/data/promiseUpdates";
 import {
+  resolveUpdateFormUrl,
+  withUpdateFormPrefill,
+} from "@/lib/embeds/validation";
+import {
   buildSeoMetadata,
   getEntitySeo,
   composeTitleSegments,
@@ -35,82 +39,6 @@ import { resolveTenantLocale } from "@/utils/locales";
 
 const FALLBACK_STATUS_COLOR = "#909090";
 const FALLBACK_STATUS_TEXT_COLOR = "#202020";
-
-/**
- * Prefill Airtable embed with Promise(title), CheckMedia Link(url), Date(update date)
- * - injects query params into iframe `src` safely; encodes spaces in keys
- * - formats date as `YYYY-MM-DD`; gracefully no-ops if values missing
- */
-const prefillAirtableForm = (
-  embedCode: string,
-  promiseTitle?: string,
-  promiseUrl?: string,
-  updateDate?: string | Date,
-) => {
-  const hasAny = Boolean(
-    (promiseTitle && promiseTitle.trim()) ||
-      (promiseUrl && promiseUrl.trim()) ||
-      (updateDate && String(updateDate).trim()),
-  );
-
-  if (!hasAny) {
-    return embedCode;
-  }
-
-  return embedCode.replace(/src="([^"]+)"/, (match, src) => {
-    const formatDate = (value: string | Date | undefined) => {
-      if (!value) return null;
-      const d = new Date(value);
-      return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
-    };
-
-    try {
-      const url = new URL(src);
-      if (promiseTitle && promiseTitle.trim()) {
-        url.searchParams.set("prefill_Promise", promiseTitle.trim());
-      }
-      if (promiseUrl && promiseUrl.trim()) {
-        url.searchParams.set("prefill_CheckMedia Link", promiseUrl.trim());
-        url.searchParams.set("hide_CheckMedia Link", "true");
-      }
-      const formattedDate = formatDate(updateDate);
-      if (formattedDate) {
-        url.searchParams.set("prefill_Date", formattedDate);
-      }
-      return `src="${url.toString()}"`;
-    } catch (error) {
-      const separator = src.includes("?") ? "&" : "?";
-      const params: string[] = [];
-      if (promiseTitle && promiseTitle.trim()) {
-        params.push(
-          `${encodeURIComponent("prefill_Promise")}=${encodeURIComponent(
-            promiseTitle.trim(),
-          )}`,
-        );
-      }
-      if (promiseUrl && promiseUrl.trim()) {
-        params.push(
-          `${encodeURIComponent("prefill_CheckMedia Link")}=${encodeURIComponent(
-            promiseUrl.trim(),
-          )}`,
-        );
-        params.push(
-          `${encodeURIComponent("hide_CheckMedia Link")}=${encodeURIComponent("true")}`,
-        );
-      }
-      const formattedDate = formatDate(updateDate);
-      if (formattedDate) {
-        params.push(
-          `${encodeURIComponent("prefill_Date")}=${encodeURIComponent(formattedDate)}`,
-        );
-      }
-      if (!params.length) {
-        return match;
-      }
-      return `src="${src}${separator}${params.join("&")}"`;
-    }
-  });
-};
 
 type Params = {
   entitySlug: string;
@@ -311,14 +239,16 @@ export default async function PromiseDetailPage({
   const titleText = promise.title?.trim() || "Promise";
   const promiseUpdateSettings = await getPromiseUpdateEmbed(locale);
   const siteSettings = await getTenantSiteSettings(tenant, locale);
-  const rawPromiseUpdateEmbed = promiseUpdateSettings?.embedCode ?? null;
-  const promiseUpdateEmbed = rawPromiseUpdateEmbed
-    ? prefillAirtableForm(
-        rawPromiseUpdateEmbed,
-        titleText,
+  // Resolve the update form URL from the structured CMS configuration
+  // (or a legacy iframe snippet) and reject anything outside the embed
+  // allowlist before it reaches the client.
+  const baseUpdateFormUrl = resolveUpdateFormUrl(promiseUpdateSettings);
+  const promiseUpdateFormUrl = baseUpdateFormUrl
+    ? withUpdateFormPrefill(baseUpdateFormUrl, {
+        promiseTitle: titleText,
         promiseUrl,
-        statusDate,
-      )
+        updateDate: statusDate,
+      })
     : null;
 
   const { actNow } = siteSettings || {};
@@ -399,7 +329,7 @@ export default async function PromiseDetailPage({
               <Box sx={{ mt: 2 }}>
                 <PromiseActions
                   share={actNow?.share ?? null}
-                  updateEmbed={promiseUpdateEmbed}
+                  updateFormUrl={promiseUpdateFormUrl}
                   updateLabel={promiseUpdateSettings?.updateLabel ?? null}
                 />
               </Box>
