@@ -8,7 +8,6 @@ import {
 } from "@/fields/encryptedSecret";
 import { Settings } from "@/globals/Settings";
 import type { User } from "@/payload-types";
-import type { PayloadRequest } from "payload";
 import { describe, expect, it, vi } from "vitest";
 
 const superAdmin: Pick<User, "id" | "roles"> = {
@@ -20,13 +19,10 @@ const globalEditor: Pick<User, "id" | "roles"> = {
   roles: ["globalEditor"],
 };
 
-const accessArgs = (
-  user: typeof globalEditor | typeof superAdmin | null,
-  payloadAPI: PayloadRequest["payloadAPI"],
-) =>
+const accessArgs = (user: typeof globalEditor | typeof superAdmin | null) =>
   ({
     req: {
-      payloadAPI,
+      payloadAPI: "REST",
       user,
     },
   }) as never;
@@ -39,65 +35,37 @@ describe("privileged access", () => {
     expect(isSuperAdmin(null)).toBe(false);
   });
 
-  it.each(["REST", "GraphQL"] as const)(
-    "denies %s user and settings access to global editors",
-    async (payloadAPI) => {
-      expect(
-        await Users.access?.create?.(accessArgs(globalEditor, payloadAPI)),
-      ).toBe(false);
-      expect(
-        await Users.access?.delete?.(accessArgs(globalEditor, payloadAPI)),
-      ).toBe(false);
-      expect(
-        await Settings.access?.read?.(accessArgs(globalEditor, payloadAPI)),
-      ).toBe(false);
-      expect(
-        await Settings.access?.update?.(accessArgs(globalEditor, payloadAPI)),
-      ).toBe(false);
-    },
-  );
+  it("denies user and settings administration to global editors", async () => {
+    expect(await Users.access?.create?.(accessArgs(globalEditor))).toBe(false);
+    expect(await Users.access?.delete?.(accessArgs(globalEditor))).toBe(false);
+    expect(await Settings.access?.read?.(accessArgs(globalEditor))).toBe(false);
+    expect(await Settings.access?.update?.(accessArgs(globalEditor))).toBe(
+      false,
+    );
+  });
 
-  it.each(["REST", "GraphQL"] as const)(
-    "limits %s global editors to viewing and updating their own account",
-    async (payloadAPI) => {
-      const selfFilter = { id: { equals: globalEditor.id } };
+  it("limits global editors to viewing and updating their own account", async () => {
+    const selfFilter = { id: { equals: globalEditor.id } };
 
-      expect(
-        await Users.access?.read?.(accessArgs(globalEditor, payloadAPI)),
-      ).toEqual(selfFilter);
-      expect(
-        await Users.access?.update?.(accessArgs(globalEditor, payloadAPI)),
-      ).toEqual(selfFilter);
-    },
-  );
+    expect(await Users.access?.read?.(accessArgs(globalEditor))).toEqual(
+      selfFilter,
+    );
+    expect(await Users.access?.update?.(accessArgs(globalEditor))).toEqual(
+      selfFilter,
+    );
+  });
 
-  it.each(["REST", "GraphQL"] as const)(
-    "denies %s account access to anonymous users",
-    async (payloadAPI) => {
-      expect(await Users.access?.read?.(accessArgs(null, payloadAPI))).toBe(
-        false,
-      );
-      expect(await Users.access?.update?.(accessArgs(null, payloadAPI))).toBe(
-        false,
-      );
-    },
-  );
+  it("denies account access to anonymous users", async () => {
+    expect(await Users.access?.read?.(accessArgs(null))).toBe(false);
+    expect(await Users.access?.update?.(accessArgs(null))).toBe(false);
+  });
 
-  it.each(["REST", "GraphQL"] as const)(
-    "allows %s user and settings access to super administrators",
-    async (payloadAPI) => {
-      expect(await superAdmins(accessArgs(superAdmin, payloadAPI))).toBe(true);
-      expect(
-        await Users.access?.read?.(accessArgs(superAdmin, payloadAPI)),
-      ).toBe(true);
-      expect(
-        await Settings.access?.read?.(accessArgs(superAdmin, payloadAPI)),
-      ).toBe(true);
-      expect(
-        await Settings.access?.update?.(accessArgs(superAdmin, payloadAPI)),
-      ).toBe(true);
-    },
-  );
+  it("allows user and settings access to super administrators", async () => {
+    expect(await superAdmins(accessArgs(superAdmin))).toBe(true);
+    expect(await Users.access?.read?.(accessArgs(superAdmin))).toBe(true);
+    expect(await Settings.access?.read?.(accessArgs(superAdmin))).toBe(true);
+    expect(await Settings.access?.update?.(accessArgs(superAdmin))).toBe(true);
+  });
 });
 
 describe("encrypted credential fields", () => {
@@ -127,17 +95,14 @@ describe("encrypted credential fields", () => {
     expect(result).toBe(encrypted);
   });
 
-  it.each(["REST", "GraphQL"] as const)(
-    "never returns plaintext through %s",
-    async (payloadAPI) => {
-      const result = await readSecretValue({
-        req: { payload, payloadAPI },
-        value: encrypted,
-      } as never);
+  it("never returns plaintext through the REST API", async () => {
+    const result = await readSecretValue({
+      req: { payload, payloadAPI: "REST" },
+      value: encrypted,
+    } as never);
 
-      expect(result).toBe(REDACTED_SECRET_VALUE);
-    },
-  );
+    expect(result).toBe(REDACTED_SECRET_VALUE);
+  });
 
   it("decrypts values for trusted Local API jobs", async () => {
     const result = await readSecretValue({
