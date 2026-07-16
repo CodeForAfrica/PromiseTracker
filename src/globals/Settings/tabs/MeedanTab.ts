@@ -1,4 +1,5 @@
 import type { Tab } from "payload";
+import { encryptedSecretField } from "@/fields/encryptedSecret";
 
 export const MeedanTab: Tab = {
   label: {
@@ -17,9 +18,8 @@ export const MeedanTab: Tab = {
         {
           type: "row",
           fields: [
-            {
+            encryptedSecretField({
               name: "meedanAPIKey",
-              type: "text",
               required: true,
               label: {
                 en: "Meedan API Key",
@@ -31,7 +31,7 @@ export const MeedanTab: Tab = {
                     "@/globals/Settings/tabs/MaskedApiKeyField#MaskedApiKeyField",
                 },
               },
-            },
+            }),
             {
               name: "teamId",
               type: "text",

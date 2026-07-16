@@ -74,6 +74,9 @@ export default buildConfig({
     url: process.env.DATABASE_URI || "",
   }),
   editor: lexicalEditor(),
+  graphQL: {
+    disable: true,
+  },
   email,
   globals,
   hooks: {

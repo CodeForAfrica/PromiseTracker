@@ -805,6 +805,7 @@ export interface PromiseListBlock {
  */
 export interface User {
   id: string;
+  roles: ('superAdmin' | 'globalEditor')[];
   tenants?:
     | {
         tenant: string | Tenant;
@@ -1681,6 +1682,7 @@ export interface TenantSelectorBlockSelect<T extends boolean = true> {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  roles?: T;
   tenants?:
     | T
     | {
