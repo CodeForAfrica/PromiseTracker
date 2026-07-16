@@ -6,7 +6,7 @@ import { getPromiseUpdateEmbed } from "@/lib/data/promiseUpdates";
 import { getTenantBySubDomain } from "@/lib/data/tenants";
 import { getDomain } from "@/lib/domain";
 import { resolveTenantLocale } from "@/utils/locales";
-import { resolveBrowserLocale } from "@/app/(frontend)/layout";
+import { resolveBrowserLocale } from "@/lib/locale";
 
 export type LatestPromisesProps = LatestPromisesBlock & {
   entitySlug: string;

@@ -14,7 +14,7 @@ import type {
 } from "@/payload-types";
 import { getGlobalPayload } from "@/lib/payload";
 import { resolveTenantLocale } from "@/utils/locales";
-import { resolveBrowserLocale } from "@/app/(frontend)/layout";
+import { resolveBrowserLocale } from "@/lib/locale";
 
 const payload = await getGlobalPayload();
 
