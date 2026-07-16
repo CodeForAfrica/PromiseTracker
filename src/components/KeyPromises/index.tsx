@@ -1,4 +1,4 @@
-import { resolveBrowserLocale } from "@/app/(frontend)/layout";
+import { resolveBrowserLocale } from "@/lib/locale";
 import { resolveMedia } from "@/lib/data/media";
 import { getPromiseUpdateEmbed } from "@/lib/data/promiseUpdates";
 import { getTenantBySubDomain } from "@/lib/data/tenants";

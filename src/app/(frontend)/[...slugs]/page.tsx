@@ -21,7 +21,7 @@ import {
   resolveTenantSeoContext,
 } from "@/lib/seo";
 import { resolveTenantLocale } from "@/utils/locales";
-import { resolveBrowserLocale } from "../layout";
+import { resolveBrowserLocale } from "@/lib/locale";
 import type { EntityPage } from "@/payload-types";
 import type { MenuLink } from "@/types/navigation";
 
