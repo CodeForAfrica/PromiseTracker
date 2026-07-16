@@ -12,6 +12,7 @@ import {
 import { validateProviderApiKey } from "@/lib/ai/providerCredentialValidation";
 import { trimToUndefined } from "@/lib/ai/stringUtils";
 import type { Tab } from "payload";
+import { encryptedSecretField } from "@/fields/encryptedSecret";
 
 type AIProviderCredentialRow = {
   provider?: string | null;
@@ -483,9 +484,8 @@ export const AITab: Tab = {
                   },
                   options: AI_PROVIDER_OPTIONS,
                 },
-                {
+                encryptedSecretField({
                   name: "apiKey",
-                  type: "text",
                   label: {
                     en: "API Key",
                     fr: "Clé API",
@@ -499,7 +499,7 @@ export const AITab: Tab = {
                     },
                   },
                   validate: validateProviderCredentialApiKey,
-                },
+                }),
                 {
                   name: "baseURL",
                   type: "text",
@@ -621,17 +621,16 @@ export const AITab: Tab = {
             condition: () => false,
           },
         },
-        {
+        encryptedSecretField({
           name: "apiKey",
           label: {
             en: "Legacy API Key (Deprecated)",
             fr: "Clé API héritée (dépréciée)",
           },
-          type: "text",
           admin: {
             condition: () => false,
           },
-        },
+        }),
       ],
     },
   ],

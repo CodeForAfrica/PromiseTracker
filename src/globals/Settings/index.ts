@@ -2,6 +2,7 @@ import { GlobalConfig } from "payload";
 import { AITab } from "./tabs/AITab";
 import { AirtableTab } from "./tabs/AirtableTab";
 import { MeedanTab } from "./tabs/MeedanTab";
+import { superAdmins } from "@/access/roles";
 
 export const Settings: GlobalConfig = {
   slug: "settings",
@@ -10,8 +11,8 @@ export const Settings: GlobalConfig = {
     fr: "Paramètres",
   },
   access: {
-    read: ({ req }) => Boolean(req.user),
-    update: ({ req }) => Boolean(req.user),
+    read: superAdmins,
+    update: superAdmins,
   },
   admin: {
     group: {

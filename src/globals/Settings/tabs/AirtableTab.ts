@@ -1,4 +1,5 @@
 import type { Tab } from "payload";
+import { encryptedSecretField } from "@/fields/encryptedSecret";
 
 export const AirtableTab: Tab = {
   label: {
@@ -17,13 +18,12 @@ export const AirtableTab: Tab = {
         {
           type: "row",
           fields: [
-            {
+            encryptedSecretField({
               name: "airtableAPIKey",
               label: {
                 en: "Airtable API Key",
                 fr: "Clé API Airtable",
               },
-              type: "text",
               required: true,
               admin: {
                 components: {
@@ -31,7 +31,7 @@ export const AirtableTab: Tab = {
                     "@/globals/Settings/tabs/MaskedApiKeyField#MaskedApiKeyField",
                 },
               },
-            },
+            }),
             {
               name: "airtableBaseID",
               label: {

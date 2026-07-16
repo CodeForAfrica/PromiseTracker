@@ -57,8 +57,11 @@ export const MaskedApiKeyField: React.FC<TextFieldClientProps> = (props) => {
     typeof props.field.admin?.description === "string"
       ? props.field.admin.description
       : "";
-  const previewDescription = maskedPreview
-    ? `Saved value preview: ${maskedPreview}`
+  const hasSavedSecret = fieldValue === "********";
+  const previewDescription = hasSavedSecret
+    ? "A saved secret is configured. Enter a new value to replace it."
+    : maskedPreview
+      ? `New value preview: ${maskedPreview}`
     : "Value preview appears after you enter an API key.";
   const combinedDescription = `${staticDescription} ${previewDescription}`.trim();
 
