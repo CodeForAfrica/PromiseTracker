@@ -1,4 +1,5 @@
 import type { CollectionConfig } from "payload";
+import { authenticatedUsers } from "@/access/roles";
 import {
   deleteAIExtractionExportRowsAfterAIExtractionDelete,
   queueAIExtractionExportRowsSyncAfterAIExtractionChange,
@@ -23,8 +24,10 @@ export const AIExtractions: CollectionConfig = {
     },
     useAsTitle: "title",
   },
+  // Extraction records expose internal pipeline state (CheckMedia IDs,
+  // upload errors, raw extractions) and are not public presentation content.
   access: {
-    read: () => true,
+    read: authenticatedUsers,
   },
   hooks: {
     afterChange: [queueAIExtractionExportRowsSyncAfterAIExtractionChange],

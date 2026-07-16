@@ -21,6 +21,11 @@ export const isSuperAdmin = (
 export const authenticated: CollectionAdminAccess = ({ req }) =>
   Boolean(req.user);
 
+export const authenticatedUsers: Access = ({ req }) => Boolean(req.user);
+
+export const authenticatedFieldAccess: FieldAccess = ({ req }) =>
+  Boolean(req.user);
+
 export const superAdmins: Access = ({ req }) => isSuperAdmin(req.user);
 
 export const superAdminsOrSelf: Access = ({ req }) => {
