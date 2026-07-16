@@ -1,5 +1,19 @@
-import { CollectionConfig } from "payload";
+import { Access, CollectionConfig } from "payload";
+import { authenticatedFieldAccess } from "@/access/roles";
 import { image as imageField } from "@/fields/image";
+
+// Anonymous visitors only ever see published promises; editors see drafts too.
+const publishedOrAuthenticated: Access = ({ req }) => {
+  if (req.user) {
+    return true;
+  }
+
+  return {
+    publishStatus: {
+      equals: "published",
+    },
+  };
+};
 
 export const Promises: CollectionConfig = {
   slug: "promises",
@@ -22,7 +36,7 @@ export const Promises: CollectionConfig = {
     defaultColumns: ["title", "status", "politicalEntity", "url"],
   },
   access: {
-    read: () => true,
+    read: publishedOrAuthenticated,
   },
   fields: [
     {
@@ -30,6 +44,10 @@ export const Promises: CollectionConfig = {
       type: "text",
       required: true,
       unique: true,
+      // External-system identifier; not part of the public presentation data.
+      access: {
+        read: authenticatedFieldAccess,
+      },
       label: {
         en: "Meedan ID",
         fr: "ID Meedan",

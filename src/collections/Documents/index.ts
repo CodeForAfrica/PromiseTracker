@@ -1,4 +1,5 @@
 import type { CollectionConfig } from "payload";
+import { authenticatedUsers } from "@/access/roles";
 import { airtableID } from "@/fields/airtableID";
 import {
   deleteAIExtractionExportRowsAfterDocumentDelete,
@@ -17,8 +18,10 @@ export const Documents: CollectionConfig = {
       fr: "Documents",
     },
   },
+  // Source documents carry internal processing data (extracted text, source
+  // URLs, sync metadata) and are not public presentation content.
   access: {
-    read: () => true,
+    read: authenticatedUsers,
   },
   hooks: {
     afterChange: [queueAIExtractionExportRowsSyncAfterDocumentChange],
