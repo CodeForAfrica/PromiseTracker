@@ -1,12 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { unlink } from "node:fs/promises";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 
 import * as Sentry from "@sentry/nextjs";
 
 import { ValidationError } from "payload";
 import { getGlobalPayload } from "@/lib/payload";
 import { downloadFile } from "@/utils/files";
+import {
+  createIdempotencyCache,
+  createRateLimiter,
+  safeCompare,
+} from "@/utils/requestGuards";
+import { assertSafeRemoteUrl, UnsafeRemoteUrlError } from "@/utils/ssrf";
+import {
+  getMeedanAllowedImageHosts,
+  MEEDAN_ALLOWED_IMAGE_MIME_TYPES,
+} from "@/lib/meedanMedia";
 import type { Promise as PayloadPromise } from "@/payload-types";
 import {
   buildMeedanIdCandidates,
@@ -19,14 +29,16 @@ const WEBHOOK_SECRET_ENV_KEY = "WEBHOOK_SECRET_KEY";
 const ROUTE_TAG = "meedan-sync";
 const DEFAULT_MAX_IMAGE_BYTES =
   Number(process.env.MEEDAN_MAX_IMAGE_BYTES) || 10 * 1024 * 1024;
-const ALLOWED_IMAGE_MIME_TYPES = [
-  "image/jpeg",
-  "image/jpg",
-  "image/png",
-  "image/gif",
-  "image/webp",
-  "image/svg+xml",
-];
+
+// Per-process abuse controls: bound repeated deliveries and make retried /
+// duplicated webhook deliveries idempotent.
+const rateLimiter = createRateLimiter({
+  limit: Number(process.env.MEEDAN_SYNC_RATE_LIMIT_PER_MINUTE) || 60,
+  windowMs: 60_000,
+});
+const idempotencyCache = createIdempotencyCache({
+  ttlMs: Number(process.env.MEEDAN_SYNC_IDEMPOTENCY_TTL_MS) || 10 * 60_000,
+});
 
 type WithOptionalId = {
   id?: unknown;
@@ -155,6 +167,9 @@ export const POST = async (request: NextRequest) => {
   const userAgent = request.headers.get("user-agent")?.trim() ?? null;
   let annotationType: string | null = null;
   let meedanId: string | null = null;
+  // Fingerprint of the raw request body; when set, respond() records the
+  // outcome so duplicate deliveries replay it instead of re-processing.
+  let idempotencyKey: string | null = null;
 
   const buildLogData = (details: Record<string, unknown> = {}) => ({
     route: ROUTE_TAG,
@@ -280,6 +295,17 @@ export const POST = async (request: NextRequest) => {
       });
     }
 
+    if (idempotencyKey) {
+      // Deterministic outcomes (including 4xx validation failures) are
+      // recorded so duplicate deliveries replay them; 5xx outcomes are
+      // released so a retry can be re-processed.
+      if (status < 500) {
+        idempotencyCache.complete(idempotencyKey, { status, body });
+      } else {
+        idempotencyCache.release(idempotencyKey);
+      }
+    }
+
     return NextResponse.json(body, {
       status,
       headers: {
@@ -307,7 +333,7 @@ export const POST = async (request: NextRequest) => {
 
   const providedSecret = request.headers.get("authorization")?.trim() ?? null;
 
-  if (!providedSecret || providedSecret !== configuredSecret) {
+  if (!providedSecret || !safeCompare(providedSecret, configuredSecret)) {
     return respond({
       status: 401,
       body: { error: "Unauthorized" },
@@ -319,10 +345,21 @@ export const POST = async (request: NextRequest) => {
     });
   }
 
+  if (!rateLimiter.allow(clientIp ?? "unknown")) {
+    return respond({
+      status: 429,
+      body: { error: "Too many requests" },
+      event: "rateLimit.exceeded",
+      level: "warn",
+    });
+  }
+
+  let rawBody: string;
   let parsed: MeedanWebhookPayload;
 
   try {
-    parsed = await request.json();
+    rawBody = await request.text();
+    parsed = JSON.parse(rawBody);
   } catch (error) {
     return respond({
       status: 400,
@@ -332,6 +369,34 @@ export const POST = async (request: NextRequest) => {
       error,
     });
   }
+
+  const bodyFingerprint = createHash("sha256").update(rawBody).digest("hex");
+  const idempotency = idempotencyCache.begin(bodyFingerprint);
+
+  if (idempotency.state === "replay") {
+    return respond({
+      status: idempotency.record.status,
+      body: { ...idempotency.record.body, replayed: true },
+      event: "request.replayedDuplicate",
+      details: {
+        bodyFingerprint,
+      },
+    });
+  }
+
+  if (idempotency.state === "in-flight") {
+    return respond({
+      status: 409,
+      body: { error: "Duplicate request is already being processed" },
+      event: "request.duplicateInFlight",
+      level: "warn",
+      details: {
+        bodyFingerprint,
+      },
+    });
+  }
+
+  idempotencyKey = bodyFingerprint;
 
   annotationType = parsed?.object?.annotation_type?.trim() ?? null;
   if (annotationType && annotationType !== "report_design") {
@@ -507,7 +572,14 @@ export const POST = async (request: NextRequest) => {
       });
     }
 
-    if (!imageUrl.startsWith("https://")) {
+    try {
+      // HTTPS + configured hostname allowlist + blocked-address checks. The
+      // same rules are re-applied (including per-redirect) inside
+      // downloadFile; this early check produces a clean 400 for bad URLs.
+      assertSafeRemoteUrl(new URL(imageUrl), {
+        allowedHostnames: getMeedanAllowedImageHosts(),
+      });
+    } catch (error) {
       return respond({
         status: 400,
         body: { error: "Invalid image URL" },
@@ -515,6 +587,8 @@ export const POST = async (request: NextRequest) => {
         level: "warn",
         details: {
           imageUrl,
+          reason:
+            error instanceof UnsafeRemoteUrlError ? error.message : "unparseable",
         },
       });
     }
@@ -532,8 +606,10 @@ export const POST = async (request: NextRequest) => {
 
     try {
       filePath = await downloadFile(imageUrl, {
-        allowedMimeTypes: ALLOWED_IMAGE_MIME_TYPES,
+        allowedMimeTypes: MEEDAN_ALLOWED_IMAGE_MIME_TYPES,
+        allowedHostnames: getMeedanAllowedImageHosts(),
         maxBytes: DEFAULT_MAX_IMAGE_BYTES,
+        verifySignature: true,
       });
       logEvent({
         level: "info",

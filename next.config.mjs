@@ -8,6 +8,26 @@ const nextConfig = {
     ignoreDuringBuilds: false,
   },
   output: "standalone",
+  async headers() {
+    return [
+      {
+        // Locally stored uploads (Payload serves them from this route). The
+        // sandboxing CSP and nosniff header ensure that even a hostile file
+        // (e.g. HTML or SVG smuggled into storage) cannot execute scripts or
+        // be MIME-sniffed into something executable. In production, prefer
+        // serving media from a separate origin (S3/CDN) for full isolation.
+        source: "/api/media/file/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          {
+            key: "Content-Security-Policy",
+            value: "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+          },
+          { key: "Content-Disposition", value: "inline" },
+        ],
+      },
+    ];
+  },
   webpack: (webpackConfig) => {
     webpackConfig.resolve.extensionAlias = {
       ".cjs": [".cts", ".cjs"],
