@@ -27,12 +27,34 @@ ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
 
+# The build imports payload.config (which requires DATABASE_URI/PAYLOAD_SECRET
+# to be present) but never opens a database connection. Both default to
+# build-time placeholders, so producing the production artifact does NOT
+# require a reachable — or even real — application database. Real runtime
+# values are supplied to the container at deploy time, not baked into the image.
 RUN --mount=type=secret,id=database_uri,env=DATABASE_URI \
     --mount=type=secret,id=payload_secret,env=PAYLOAD_SECRET \
     --mount=type=secret,id=sentry_auth_token,env=SENTRY_AUTH_TOKEN \
     --mount=type=secret,id=sentry_org,env=SENTRY_ORG \
     --mount=type=secret,id=sentry_project,env=SENTRY_PROJECT \
+    : "${DATABASE_URI:=mongodb://build-placeholder:27017/build}"; \
+    : "${PAYLOAD_SECRET:=build-time-placeholder-secret}"; \
+    export DATABASE_URI PAYLOAD_SECRET; \
     NODE_OPTIONS="--no-deprecation" pnpm exec next build
+
+# Migrator image: the same source and dependencies as the build, but retaining
+# the Payload CLI and migrations/ directory (which the slim standalone runner
+# prunes). Run as a single one-off container during the release to execute
+# `payload migrate` exactly once before traffic switches — never in every
+# runtime replica.
+FROM base AS migrator
+WORKDIR /app
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    TIKA_ENABLED=0
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+CMD ["pnpm", "migrate"]
 
 # Production image, copy all the files and run next
 FROM base AS runner
@@ -76,6 +98,13 @@ RUN mkdir -p /app/temp /app/media \
 USER nextjs
 
 EXPOSE 3000
+
+# Liveness probe: process is up and serving. Intentionally hits the
+# dependency-free /api/health/live endpoint so a Mongo/Tika outage never
+# causes the container to be killed. Readiness (Mongo + Tika) is checked
+# separately by the platform via /api/health/ready.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+  CMD curl --silent --fail --max-time 4 "http://127.0.0.1:${PORT}/api/health/live" || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["node", "server.js"]
