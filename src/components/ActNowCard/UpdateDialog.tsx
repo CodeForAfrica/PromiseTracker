@@ -1,99 +1,99 @@
-import { Box, Dialog, IconButton } from "@mui/material";
+"use client";
+
+import { useId } from "react";
+import {
+  Box,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+} from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import { useMemo } from "react";
+
+import { isAllowedIframeUrl } from "@/lib/security/embedPolicy.mjs";
+
+/**
+ * Sandbox capabilities granted to the embedded update form, kept to the
+ * minimum Airtable's shared forms need (documented in
+ * docs/security/embeds-and-csp.md):
+ * - allow-scripts: the form is a JavaScript application.
+ * - allow-forms: submitting the form.
+ * - allow-same-origin: the form needs access to its own (airtable.com)
+ *   origin for storage/XHR. It never matches this site's origin because
+ *   src is restricted to allowlisted third-party hosts.
+ * - allow-popups + allow-popups-to-escape-sandbox: links inside the
+ *   form open in a new tab.
+ * Deliberately NOT granted: top-navigation, downloads, modals,
+ * pointer-lock, presentation.
+ */
+const IFRAME_SANDBOX =
+  "allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox";
+
+/** No powerful browser features are delegated to the embed. */
+const IFRAME_ALLOW =
+  "camera 'none'; microphone 'none'; geolocation 'none'; payment 'none'; fullscreen 'none'";
 
 type UpdateDialogProps = {
   open: boolean;
   onClose: () => void;
-  embedCode: string;
+  /** Validated https URL of the update form on an allowlisted provider. */
+  src: string;
+  /** Accessible dialog title, e.g. the CMS-configured update label. */
+  title?: string | null;
 };
 
-const UpdateDialog = ({ open, onClose, embedCode }: UpdateDialogProps) => {
-  const iframeSrc = useMemo(() => {
-    const match = embedCode.match(/<iframe[^>]*src=["']([^"']+)["']/i);
-    return match?.[1] ?? "";
-  }, [embedCode]);
+const UpdateDialog = ({ open, onClose, src, title }: UpdateDialogProps) => {
+  const titleId = useId();
+  const dialogTitle = title?.trim() || "Submit a promise update";
+
+  // Defense in depth: never render an iframe pointing outside the
+  // embed allowlist, even if a caller passes an unvalidated URL.
+  if (!isAllowedIframeUrl(src)) {
+    return null;
+  }
 
   return (
-    <>
-      <Dialog
-        open={open}
-        onClose={onClose}
-        scroll="body"
-        maxWidth="md"
-        fullWidth
-        keepMounted
-        disableAutoFocus
-        disableEnforceFocus
-        PaperProps={{
-          sx: {
-            display: "none",
-          },
+    <Dialog
+      open={open}
+      onClose={onClose}
+      aria-labelledby={titleId}
+      maxWidth="md"
+      fullWidth
+      scroll="body"
+    >
+      <DialogTitle id={titleId} sx={{ pr: 8 }}>
+        {dialogTitle}
+      </DialogTitle>
+      <IconButton
+        onClick={onClose}
+        aria-label="Close"
+        sx={{
+          position: "absolute",
+          top: 12,
+          right: 12,
+          color: "text.secondary",
         }}
-      />
-      <Box
-        aria-hidden={!open}
-        sx={(theme) => ({
-          position: "fixed",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          width: { xs: "calc(100% - 24px)", sm: "calc(100% - 48px)" },
-          maxWidth: theme.breakpoints.values.md,
-          maxHeight: "calc(100% - 48px)",
-          bgcolor: "common.white",
-          borderRadius: 2,
-          boxShadow: "0px 12px 40px rgba(0,0,0,0.2)",
-          overflow: "hidden",
-          opacity: open ? 1 : 0,
-          pointerEvents: open ? "auto" : "none",
-          transition: "opacity 160ms ease",
-          zIndex: theme.zIndex.modal + 1,
-        })}
       >
-        <IconButton
-          onClick={onClose}
-          aria-label="Close update dialog"
+        <CloseIcon />
+      </IconButton>
+      <DialogContent dividers sx={{ p: 0 }}>
+        <Box
+          component="iframe"
+          title={dialogTitle}
+          src={src}
+          sandbox={IFRAME_SANDBOX}
+          allow={IFRAME_ALLOW}
+          referrerPolicy="strict-origin-when-cross-origin"
+          loading="lazy"
           sx={{
-            position: "absolute",
-            top: 12,
-            right: 12,
-            zIndex: 1,
-            bgcolor: "rgba(255,255,255,0.9)",
-            boxShadow: "0px 2px 10px rgba(0,0,0,0.15)",
-            "&:hover": {
-              bgcolor: "common.white",
-            },
+            display: "block",
+            width: "100%",
+            minHeight: { xs: 640, md: 760 },
+            border: "none",
           }}
-        >
-          <CloseIcon />
-        </IconButton>
-        {iframeSrc ? (
-          <Box
-            component="iframe"
-            title="Update promise form"
-            src={iframeSrc}
-            sx={{
-              width: "100%",
-              minHeight: { xs: 640, md: 760 },
-              border: "none",
-            }}
-          />
-        ) : (
-          <Box
-            sx={{
-              width: "100%",
-              "& iframe": {
-                width: "100%",
-                minHeight: { xs: 640, md: 760 },
-                border: "none",
-              },
-            }}
-            dangerouslySetInnerHTML={{ __html: embedCode }}
-          />
-        )}
-      </Box>
-    </>
+        />
+      </DialogContent>
+    </Dialog>
   );
 };
 

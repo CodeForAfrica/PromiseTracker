@@ -35,7 +35,8 @@ type ActionContent = {
 type PromiseActionsProps = {
   share?: ShareContent;
   update?: ActionContent;
-  updateEmbed?: string | null;
+  /** Validated https URL of the update form on an allowlisted provider. */
+  updateFormUrl?: string | null;
   updateLabel?: string | null;
 };
 
@@ -77,15 +78,15 @@ const getShareMetadata = (share?: ShareContent) => {
 const PromiseActions = ({
   share,
   update,
-  updateEmbed,
+  updateFormUrl,
   updateLabel,
 }: PromiseActionsProps) => {
   const [shareOpen, setShareOpen] = useState(false);
   const [updateOpen, setUpdateOpen] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
 
-  const embedCode = (updateEmbed ?? "").trim();
-  const hasUpdate = Boolean(embedCode);
+  const formUrl = (updateFormUrl ?? "").trim();
+  const hasUpdate = Boolean(formUrl);
   const updateButtonLabel =
     updateLabel?.trim() || update?.title?.trim() || "Submit Update";
 
@@ -257,7 +258,8 @@ const PromiseActions = ({
         <UpdateDialog
           open={updateOpen}
           onClose={handleCloseUpdate}
-          embedCode={embedCode}
+          src={formUrl}
+          title={updateButtonLabel}
         />
       ) : null}
 

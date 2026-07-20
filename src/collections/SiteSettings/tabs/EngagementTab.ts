@@ -1,6 +1,11 @@
 import { socialLinks } from "@/fields/socialLinks";
 import { Tab } from "payload";
 
+import {
+  validateNewsletterEmbedCodeField,
+  validateNewsletterSignupUrlField,
+} from "@/lib/embeds/validation";
+
 export const EngagementTab: Tab = {
   label: {
     en: "Engagement",
@@ -53,7 +58,7 @@ export const EngagementTab: Tab = {
       fields: [
         {
           type: "collapsible",
-          label: "Title & Embed Code",
+          label: "Title & Signup Form",
           fields: [
             {
               name: "title",
@@ -68,11 +73,40 @@ export const EngagementTab: Tab = {
               localized: true,
             },
             {
+              name: "signupUrl",
+              type: "text",
+              label: {
+                en: "Signup Form URL",
+                fr: "URL du formulaire d'inscription",
+              },
+              validate: (value: string | null | undefined) =>
+                validateNewsletterSignupUrlField(value),
+              admin: {
+                description: {
+                  en: "Preferred. The Mailchimp form action URL, e.g. https://example.us1.list-manage.com/subscribe/post?u=…&id=…. Only approved newsletter providers are accepted.",
+                  fr: "Recommandé. L'URL d'action du formulaire Mailchimp, p. ex. https://example.us1.list-manage.com/subscribe/post?u=…&id=…. Seuls les fournisseurs approuvés sont acceptés.",
+                },
+              },
+            },
+            {
               name: "embedCode",
               type: "code",
-              required: true,
+              label: {
+                en: "Embed Code (legacy)",
+                fr: "Code d'intégration (hérité)",
+              },
+              validate: (
+                value: string | null | undefined,
+                {
+                  siblingData,
+                }: { siblingData: Partial<{ signupUrl?: string | null }> },
+              ) => validateNewsletterEmbedCodeField(value, siblingData?.signupUrl),
               admin: {
                 language: "html",
+                description: {
+                  en: "Legacy. Sanitized before rendering: scripts, iframes, event handlers, and forms posting to unapproved providers are removed. Prefer the Signup Form URL field above.",
+                  fr: "Hérité. Assaini avant affichage : les scripts, iframes, gestionnaires d'événements et formulaires vers des fournisseurs non approuvés sont supprimés. Préférez le champ URL du formulaire ci-dessus.",
+                },
               },
             },
           ],

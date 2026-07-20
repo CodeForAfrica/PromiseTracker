@@ -1,6 +1,8 @@
 import { withSentryConfig } from "@sentry/nextjs";
 import { withPayload } from "@payloadcms/next/withPayload";
 
+import { buildSecurityHeaders } from "./src/lib/security/headers.mjs";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Your Next.js config here
@@ -11,14 +13,21 @@ const nextConfig = {
   async headers() {
     return [
       {
-        // Locally stored uploads (Payload serves them from this route). The
-        // sandboxing CSP and nosniff header ensure that even a hostile file
-        // (e.g. HTML or SVG smuggled into storage) cannot execute scripts or
-        // be MIME-sniffed into something executable. In production, prefer
-        // serving media from a separate origin (S3/CDN) for full isolation.
+        source: "/(.*)",
+        headers: buildSecurityHeaders({
+          isDev: process.env.NODE_ENV !== "production",
+        }),
+      },
+      {
+        // Locally stored uploads (Payload serves them from this route). This
+        // rule comes after the site-wide one so its sandboxing CSP overrides
+        // the global policy for served files: even a hostile file (e.g. HTML
+        // or SVG smuggled into storage) cannot execute scripts or be
+        // MIME-sniffed into something executable (nosniff comes from the
+        // global rule). In production, prefer serving media from a separate
+        // origin (S3/CDN) for full isolation.
         source: "/api/media/file/:path*",
         headers: [
-          { key: "X-Content-Type-Options", value: "nosniff" },
           {
             key: "Content-Security-Policy",
             value: "default-src 'none'; style-src 'unsafe-inline'; sandbox",

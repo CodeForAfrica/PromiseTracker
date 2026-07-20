@@ -1,5 +1,10 @@
 import { GlobalConfig } from "payload";
 
+import {
+  validateUpdateEmbedCodeField,
+  validateUpdateFormUrlField,
+} from "@/lib/embeds/validation";
+
 export const PromiseUpdates: GlobalConfig = {
   slug: "promise-updates",
   label: {
@@ -30,20 +35,40 @@ export const PromiseUpdates: GlobalConfig = {
       },
     },
     {
-      name: "embedCode",
-      type: "code",
-      required: true,
+      name: "formUrl",
+      type: "text",
       localized: true,
+      validate: (value: string | null | undefined) =>
+        validateUpdateFormUrlField(value),
       admin: {
-        language: "html",
         description: {
-          en: "Paste the Airtable embed snippet that should appear inside the update dialog.",
-          fr: "Collez le code d'intégration Airtable à afficher dans la boîte de dialogue de mise à jour.",
+          en: "Preferred. The https URL of the Airtable shared form, e.g. https://airtable.com/embed/app…/shr…. Only approved embed providers are accepted.",
+          fr: "Recommandé. L'URL https du formulaire partagé Airtable, p. ex. https://airtable.com/embed/app…/shr…. Seuls les fournisseurs d'intégration approuvés sont acceptés.",
         },
       },
       label: {
-        en: "Airtable Embed Code",
-        fr: "Code d'intégration Airtable",
+        en: "Update Form URL",
+        fr: "URL du formulaire de mise à jour",
+      },
+    },
+    {
+      name: "embedCode",
+      type: "code",
+      localized: true,
+      validate: (
+        value: string | null | undefined,
+        { siblingData }: { siblingData: Partial<{ formUrl?: string | null }> },
+      ) => validateUpdateEmbedCodeField(value, siblingData?.formUrl),
+      admin: {
+        language: "html",
+        description: {
+          en: "Legacy. Paste the Airtable iframe embed snippet. The iframe src must be on an approved embed provider; scripts are rejected. Prefer the Update Form URL field above.",
+          fr: "Hérité. Collez le code d'intégration iframe Airtable. La source de l'iframe doit provenir d'un fournisseur approuvé ; les scripts sont rejetés. Préférez le champ URL du formulaire ci-dessus.",
+        },
+      },
+      label: {
+        en: "Airtable Embed Code (legacy)",
+        fr: "Code d'intégration Airtable (hérité)",
       },
     },
     {
