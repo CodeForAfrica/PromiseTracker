@@ -34,8 +34,13 @@ export const slugField: Slug = (fieldToUse = "title", overrides = {}) => {
     label: "Slug",
     ...(slugOverrides || {}),
     hooks: {
-      // Kept this in for hook or API based updates
-      beforeValidate: [formatSlugHook(fieldToUse)],
+      ...(slugOverrides?.hooks || {}),
+      // Kept this in for hook or API based updates. Hooks passed via
+      // slugOverrides (e.g. uniqueness guards) must run after formatting.
+      beforeValidate: [
+        formatSlugHook(fieldToUse),
+        ...(slugOverrides?.hooks?.beforeValidate ?? []),
+      ],
     },
     admin: {
       position: "sidebar",

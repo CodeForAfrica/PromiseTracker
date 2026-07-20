@@ -1,12 +1,40 @@
 import { getGlobalPayload } from "@/lib/payload";
 import Promises from "./Promises";
 import { slugify } from "@/utils/utils";
-import { PromiseListBlock } from "@/payload-types";
+import { PoliticalEntity, PromiseListBlock } from "@/payload-types";
 import { resolveEntityLocale } from "@/utils/locales";
 import { getPromiseUpdateEmbed } from "@/lib/data/promiseUpdates";
+import { getPoliticalEntityBySlug } from "@/lib/data/politicalEntities";
+import { buildPublishedPromisesQuery } from "@/lib/data/promiseQueries";
+import { getTenantBySubDomain } from "@/lib/data/tenants";
+import { getDomain } from "@/lib/domain";
 
 export type PromiseListProps = PromiseListBlock & {
   entitySlug?: string;
+  entity?: PoliticalEntity;
+};
+
+const resolveEntity = async (
+  entity: PoliticalEntity | undefined,
+  entitySlug: string | undefined,
+): Promise<PoliticalEntity | undefined> => {
+  // Prefer the entity the route already resolved — never re-resolve by slug
+  // alone, since slugs are only unique per tenant.
+  if (entity) {
+    return entity;
+  }
+
+  if (!entitySlug) {
+    return undefined;
+  }
+
+  const { subdomain } = await getDomain();
+  const tenant = await getTenantBySubDomain(subdomain);
+  if (!tenant) {
+    return undefined;
+  }
+
+  return getPoliticalEntityBySlug(tenant, entitySlug);
 };
 
 async function Index(props: PromiseListProps) {
@@ -14,27 +42,7 @@ async function Index(props: PromiseListProps) {
     props;
   const payload = await getGlobalPayload();
 
-  const entityQuery = await payload.find({
-    collection: "political-entities",
-    where: {
-      and: [
-        {
-          slug: {
-            equals: entitySlug,
-          },
-        },
-        {
-          publish: {
-            equals: true,
-          },
-        },
-      ],
-    },
-    limit: 1,
-    depth: 2,
-  });
-
-  const entity = entityQuery.docs[0];
+  const entity = await resolveEntity(props.entity, entitySlug);
 
   if (!entity) {
     return null;
@@ -43,26 +51,11 @@ async function Index(props: PromiseListProps) {
   const promiseUpdateSettings = await getPromiseUpdateEmbed();
   const fallbackImage = promiseUpdateSettings?.defaultImage ?? null;
 
-  const { docs } = await payload.find({
-    collection: "promises",
-    where: {
-      and: [
-        {
-          politicalEntity: {
-            equals: entity.id,
-          },
-        },
-        {
-          publishStatus: {
-            equals: "published",
-          },
-        },
-      ],
-    },
-    depth: 2,
-    sort: "-createdAt",
-    locale,
-  });
+  // Deliberately unpaginated: the main promise list renders every published
+  // promise for the entity (client-side filtering handles navigation).
+  const { docs } = await payload.find(
+    buildPublishedPromisesQuery(entity.id, { locale }),
+  );
 
   if (!docs || docs.length === 0) {
     return null;

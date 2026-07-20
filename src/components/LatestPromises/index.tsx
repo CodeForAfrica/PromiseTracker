@@ -1,79 +1,53 @@
 import LatestPromises from "./LatestPromises";
-import { LatestPromisesBlock } from "@/payload-types";
+import { LatestPromisesBlock, PoliticalEntity } from "@/payload-types";
 
 import { getGlobalPayload } from "@/lib/payload";
 import { getPromiseUpdateEmbed } from "@/lib/data/promiseUpdates";
+import { getPoliticalEntityBySlug } from "@/lib/data/politicalEntities";
+import { buildPublishedPromisesQuery } from "@/lib/data/promiseQueries";
 import { getTenantBySubDomain } from "@/lib/data/tenants";
 import { getDomain } from "@/lib/domain";
-import { resolveTenantLocale } from "@/utils/locales";
-import { resolveBrowserLocale } from "@/lib/locale";
+import { resolveEntityLocale, resolveTenantLocale } from "@/utils/locales";
 
 export type LatestPromisesProps = LatestPromisesBlock & {
   entitySlug: string;
+  entity?: PoliticalEntity;
 };
 
 export default async function Index({
   entitySlug,
+  entity: resolvedEntity,
   title,
   seeAllLink,
 }: LatestPromisesProps) {
-  if (!entitySlug) {
+  if (!resolvedEntity && !entitySlug) {
     return null;
   }
   const payload = await getGlobalPayload();
-  const { subdomain } = await getDomain();
-  const tenant = await getTenantBySubDomain(subdomain);
-  const locale = tenant
-    ? resolveTenantLocale(tenant)
-    : await resolveBrowserLocale();
 
-  const entityQuery = await payload.find({
-    collection: "political-entities",
-    where: {
-      and: [
-        {
-          slug: {
-            equals: entitySlug,
-          },
-        },
-        {
-          publish: {
-            equals: true,
-          },
-        },
-      ],
-    },
-    limit: 1,
-    depth: 2,
-    locale,
-  });
-
-  const entity = entityQuery.docs[0];
+  // Prefer the entity the route already resolved — never re-resolve by slug
+  // alone, since slugs are only unique per tenant.
+  let entity = resolvedEntity;
+  if (!entity) {
+    const { subdomain } = await getDomain();
+    const tenant = await getTenantBySubDomain(subdomain);
+    if (!tenant) {
+      return null;
+    }
+    entity = await getPoliticalEntityBySlug(
+      tenant,
+      entitySlug,
+      resolveTenantLocale(tenant),
+    );
+  }
 
   if (!entity) {
     return null;
   }
-  const { docs } = await payload.find({
-    collection: "promises",
-    where: {
-      and: [
-        {
-          politicalEntity: {
-            equals: entity.id,
-          },
-        },
-        {
-          publishStatus: {
-            equals: "published",
-          },
-        },
-      ],
-    },
-    depth: 2,
-    limit: 3,
-    sort: "-createdAt",
-    locale,
-  });
+  const locale = resolveEntityLocale(entity);
+  const { docs } = await payload.find(
+    buildPublishedPromisesQuery(entity.id, { limit: 3, locale }),
+  );
 
   if (!docs || docs.length === 0) {
     return null;
