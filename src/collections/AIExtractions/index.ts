@@ -1,9 +1,13 @@
-import type { CollectionConfig } from "payload";
+import { randomUUID } from "node:crypto";
+import type { CollectionConfig, FieldHook } from "payload";
 import { authenticatedUsers } from "@/access/roles";
 import {
   deleteAIExtractionExportRowsAfterAIExtractionDelete,
   queueAIExtractionExportRowsSyncAfterAIExtractionChange,
 } from "./hooks";
+
+export const ensureExtractionRowUniqueId: FieldHook = ({ value }) =>
+  typeof value === "string" && value.trim() ? value : randomUUID();
 
 export const AIExtractions: CollectionConfig = {
   slug: "ai-extractions",
@@ -104,8 +108,14 @@ export const AIExtractions: CollectionConfig = {
             {
               name: "uniqueId",
               type: "text",
+              // Required so every extraction row can be matched to its
+              // downstream upload; system-generated, never user-supplied.
+              required: true,
               admin: {
                 hidden: true,
+              },
+              hooks: {
+                beforeValidate: [ensureExtractionRowUniqueId],
               },
               label: {
                 en: "Unique ID",
