@@ -1,0 +1,102 @@
+name: Verify
+
+# Reusable verification pipeline. Called by CI (on pull requests) and by the
+# deploy workflow (which must not run when this fails).
+on:
+  workflow_call:
+
+env:
+  NODE_VERSION: "22.12.0"
+  # Isolated, local, test-named database — never a shared/hosted cluster.
+  DATABASE_URI: mongodb://127.0.0.1:27017/promisetracker_ci_test
+  PAYLOAD_SECRET: test-payload-secret-not-for-production
+  PT_ASSERT_TEST_DB: "true"
+  NODE_OPTIONS: "--no-deprecation"
+
+jobs:
+  verify:
+    name: Lint, types, tests
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      # Frozen installation: fail if the lockfile is out of date.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Generated-artifact drift: regenerate committed types/import map and
+      # fail if anything changed.
+      - name: Check generated artifacts are up to date
+        run: |
+          pnpm run generate:all
+          if ! git diff --exit-code; then
+            echo "::error::Generated artifacts are out of date. Run 'pnpm run generate:all' and commit the result."
+            exit 1
+          fi
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Type-check
+        run: pnpm run typecheck
+
+      - name: Integration tests
+        run: pnpm run test:int
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Critical E2E smoke tests
+        run: pnpm run test:e2e
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  security:
+    name: Dependency security scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Software-composition analysis: fail on high/critical advisories.
+      - name: Audit dependencies
+        run: pnpm audit --audit-level high --prod

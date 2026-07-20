@@ -18,7 +18,12 @@ env:
   SENTRY_ENVIRONMENT: "development"
 
 jobs:
+  # Mandatory verification gate. Deployment cannot run when this fails.
+  verify:
+    uses: ./.github/workflows/verify.yml
+
   deploy:
+    needs: verify
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:

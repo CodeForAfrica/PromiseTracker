@@ -1,7 +1,18 @@
-// Any setup scripts you might need go here
-
-// Load .env files. Next.js loads .env.local automatically, but Vitest does
-// not, and that is where DATABASE_URI and other local secrets live.
+// Runs in each Vitest worker before test modules are imported.
 import { config } from "dotenv";
+import { inject } from "vitest";
 
-config({ path: [".env.local", ".env"] });
+import { assertIsolatedTestDatabase } from "./src/lib/testDatabaseGuard";
+
+// Load the DEDICATED test environment, never .env / .env.local, so tests can
+// not inherit developer or production configuration.
+config({ path: ".env.test" });
+
+// Point Payload at the unique, isolated test database created in
+// vitest.globalSetup.ts. This must happen before any test imports
+// @/payload.config, since buildConfig reads DATABASE_URI at import time.
+const databaseUri = inject("databaseUri");
+process.env.DATABASE_URI = databaseUri;
+
+// Hard guard: refuse to run if anything rewired us onto a shared/prod host.
+assertIsolatedTestDatabase(process.env.DATABASE_URI);
