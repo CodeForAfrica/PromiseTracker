@@ -7,6 +7,10 @@ import type {
   Promise as PromiseDoc,
 } from "@/payload-types";
 import type { PublishedReport } from "@/lib/meedan";
+import {
+  getMeedanAllowedImageHosts,
+  MEEDAN_ALLOWED_IMAGE_MIME_TYPES,
+} from "@/lib/meedanMedia";
 import { getGlobalPayload } from "@/lib/payload";
 import { downloadFile } from "@/utils/files";
 
@@ -228,7 +232,11 @@ export const syncMeedanReports = async ({
 
     let filePath: string | null = null;
     try {
-      filePath = await downloadFile(url);
+      filePath = await downloadFile(url, {
+        allowedMimeTypes: MEEDAN_ALLOWED_IMAGE_MIME_TYPES,
+        allowedHostnames: getMeedanAllowedImageHosts(),
+        verifySignature: true,
+      });
 
       const media = (await payload.create({
         collection: "media",

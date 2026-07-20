@@ -10,8 +10,15 @@ import { NextRequest, NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 
 import { getGlobalPayload } from "@/lib/payload";
+import { validateFileSignature } from "@/utils/fileSignature";
+import {
+  createByteBudget,
+  createConcurrencyGate,
+  createRateLimiter,
+} from "@/utils/requestGuards";
 import {
   getCorsHeaders,
+  getUploadFileExtension,
   getUploadMaxBytes,
   inferUploadKindFromMetadata,
   isAuthorizedUploadRequest,
@@ -25,6 +32,20 @@ import {
 
 export const runtime = "nodejs";
 const ROUTE_TAG = "airtable-upload";
+
+// Per-process abuse controls; documented in docs/remote-file-ingestion.md.
+const uploadRateLimiter = createRateLimiter({
+  limit: Number(process.env.AIRTABLE_UPLOAD_RATE_LIMIT_PER_MINUTE) || 30,
+  windowMs: 60_000,
+});
+const uploadConcurrencyGate = createConcurrencyGate(
+  Number(process.env.AIRTABLE_UPLOAD_MAX_CONCURRENT) || 4,
+);
+const uploadByteBudget = createByteBudget({
+  maxBytes:
+    Number(process.env.AIRTABLE_UPLOAD_DAILY_MAX_BYTES) ||
+    5 * 1024 * 1024 * 1024,
+});
 
 type UploadSuccessResponse = {
   ok: true;
@@ -68,6 +89,18 @@ const getTraceId = (request: NextRequest): string => {
   }
 
   return randomUUID();
+};
+
+const getClientIp = (request: NextRequest): string | null => {
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  if (forwardedFor) {
+    const first = forwardedFor.split(",")[0]?.trim();
+    if (first) {
+      return first;
+    }
+  }
+
+  return request.headers.get("x-real-ip")?.trim() ?? null;
 };
 
 const toErrorDetails = (error: unknown): Record<string, unknown> => {
@@ -617,6 +650,45 @@ export const POST = async (request: NextRequest) => {
     );
   }
 
+  if (!uploadRateLimiter.allow(getClientIp(request) ?? "unknown")) {
+    logEvent({
+      level: "warn",
+      event: "rateLimit.exceeded",
+      details: {
+        status: 429,
+      },
+    });
+    return jsonResponse(
+      request,
+      429,
+      {
+        ok: false,
+        error: "Too many upload requests. Try again shortly.",
+      },
+      traceId,
+    );
+  }
+
+  const releaseUploadSlot = uploadConcurrencyGate.tryAcquire();
+  if (!releaseUploadSlot) {
+    logEvent({
+      level: "warn",
+      event: "concurrency.saturated",
+      details: {
+        status: 429,
+      },
+    });
+    return jsonResponse(
+      request,
+      429,
+      {
+        ok: false,
+        error: "Too many concurrent uploads. Try again shortly.",
+      },
+      traceId,
+    );
+  }
+
   try {
     return await Sentry.startSpan(
       {
@@ -658,6 +730,57 @@ export const POST = async (request: NextRequest) => {
             hasAlt: Boolean(parsedUpload.alt?.trim()),
           },
         });
+
+        if (!uploadByteBudget.tryConsume(parsedUpload.filesize)) {
+          logEvent({
+            level: "warn",
+            event: "quota.dailyByteBudgetExceeded",
+            details: {
+              status: 429,
+              uploadSizeBytes: parsedUpload.filesize,
+            },
+          });
+          return jsonResponse(
+            request,
+            429,
+            {
+              ok: false,
+              error: "Upload storage budget exceeded. Try again later.",
+            },
+            traceId,
+          );
+        }
+
+        // Reject files whose content does not match the extension/MIME they
+        // claim (e.g. an executable renamed to .png).
+        const signatureCheck = await validateFileSignature(
+          parsedUpload.tempFilePath,
+          {
+            mimeType: parsedUpload.mimeType,
+            extension: getUploadFileExtension(parsedUpload.originalFilename),
+          },
+        );
+        if (!signatureCheck.ok) {
+          logEvent({
+            level: "warn",
+            event: "upload.signatureMismatch",
+            details: {
+              status: 415,
+              uploadMimeType: parsedUpload.mimeType,
+              originalFilename: parsedUpload.originalFilename,
+              reason: signatureCheck.message,
+            },
+          });
+          return jsonResponse(
+            request,
+            415,
+            {
+              ok: false,
+              error: signatureCheck.message,
+            },
+            traceId,
+          );
+        }
 
         const payload = await getGlobalPayload();
         const alt =
@@ -893,6 +1016,7 @@ export const POST = async (request: NextRequest) => {
       traceId,
     );
   } finally {
+    releaseUploadSlot();
     if (tempFilePath) {
       try {
         await unlink(tempFilePath);

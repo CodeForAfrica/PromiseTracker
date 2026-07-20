@@ -161,7 +161,13 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
                 fileUrl: url,
               });
               try {
-                tempFilePath = await downloadFile(url);
+                // This URL is built from the app's own configured origin and
+                // its own media path, so the SSRF address checks are relaxed
+                // (in development NEXT_PUBLIC_APP_URL is http://localhost).
+                tempFilePath = await downloadFile(url, {
+                  requireHttps: false,
+                  allowPrivateAddresses: true,
+                });
                 fileInput = tempFilePath;
 
                 logger.info({

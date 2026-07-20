@@ -1,4 +1,4 @@
-import { timingSafeEqual } from "node:crypto";
+import { safeCompare } from "@/utils/requestGuards";
 
 export type UploadKind = "document" | "entityImage";
 
@@ -31,13 +31,14 @@ const DOCUMENT_EXTENSIONS = new Set([
   ".csv",
 ]);
 
+// SVG is intentionally not accepted: it can carry embedded scripts and the
+// product does not need vector uploads.
 const IMAGE_MIME_TYPES = new Set([
   "image/jpeg",
   "image/jpg",
   "image/png",
   "image/gif",
   "image/webp",
-  "image/svg+xml",
 ]);
 
 const IMAGE_EXTENSIONS = new Set([
@@ -46,8 +47,32 @@ const IMAGE_EXTENSIONS = new Set([
   ".png",
   ".gif",
   ".webp",
-  ".svg",
 ]);
+
+// Which MIME types legitimately accompany each extension. Extension and
+// MIME metadata must agree before the file signature is even inspected.
+const EXTENSION_TO_MIME_TYPES: Record<string, string[]> = {
+  ".pdf": ["application/pdf"],
+  ".doc": ["application/msword"],
+  ".docx": [
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ],
+  ".xls": ["application/vnd.ms-excel"],
+  ".xlsx": [
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  ],
+  ".ppt": ["application/vnd.ms-powerpoint"],
+  ".pptx": [
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  ],
+  ".txt": ["text/plain"],
+  ".csv": ["text/csv", "text/plain"],
+  ".jpg": ["image/jpeg", "image/jpg"],
+  ".jpeg": ["image/jpeg", "image/jpg"],
+  ".png": ["image/png"],
+  ".gif": ["image/gif"],
+  ".webp": ["image/webp"],
+};
 
 const formatBytesToMb = (bytes: number): string =>
   `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
@@ -155,17 +180,6 @@ const isAllowedOrigin = (
   return allowedOrigins.some((rule) => isOriginMatchedByRule(requestOrigin, rule));
 };
 
-const safeCompare = (left: string, right: string): boolean => {
-  const leftBuffer = Buffer.from(left);
-  const rightBuffer = Buffer.from(right);
-
-  if (leftBuffer.length !== rightBuffer.length) {
-    return false;
-  }
-
-  return timingSafeEqual(leftBuffer, rightBuffer);
-};
-
 const getExtension = (fileName: string): string => {
   const trimmed = fileName.trim();
   if (!trimmed.includes(".")) {
@@ -205,7 +219,9 @@ export const validateUploadMetadata = (
   const extensionAllowed =
     extension.length > 0 ? policy.allowedExtensions.has(extension) : false;
 
-  if (!mimeAllowed && !extensionAllowed) {
+  // Both signals must be present, allowed for this upload kind, and agree
+  // with each other — a mismatch means the file is lying about its type.
+  if (!mimeAllowed || !extensionAllowed) {
     return {
       ok: false,
       status: 415,
@@ -213,8 +229,20 @@ export const validateUploadMetadata = (
     };
   }
 
+  const expectedMimeTypes = EXTENSION_TO_MIME_TYPES[extension] ?? [];
+  if (!expectedMimeTypes.includes(mimeType)) {
+    return {
+      ok: false,
+      status: 415,
+      message: `File extension "${extension}" does not match MIME type "${mimeType}".`,
+    };
+  }
+
   return { ok: true };
 };
+
+export const getUploadFileExtension = (fileName: string): string =>
+  getExtension(fileName);
 
 export const inferUploadKindFromMetadata = (
   metadata: UploadMetadataValidationInput,
