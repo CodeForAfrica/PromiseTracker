@@ -71,7 +71,7 @@ export const BlockRenderer = ({ blocks, entity }: BlockProps) => {
             if (Block) {
               return (
                 <div key={String(key)}>
-                  <Block {...block} entitySlug={entity?.slug} />
+                  <Block {...block} entitySlug={entity?.slug} entity={entity} />
                 </div>
               );
             }

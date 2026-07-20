@@ -20,6 +20,10 @@ import {
   getPageSeo,
   resolveTenantSeoContext,
 } from "@/lib/seo";
+import {
+  resolveGlobalRoute,
+  resolvePublicRoute,
+} from "@/lib/routes/publicRoutes";
 import { resolveTenantLocale } from "@/utils/locales";
 import { resolveBrowserLocale } from "@/lib/locale";
 import type { EntityPage } from "@/payload-types";
@@ -222,8 +226,16 @@ export default async function Page(params: Args) {
   const slugs = paramsValue?.slugs ?? [];
 
   if (!tenant) {
-    const pageSlug = slugs[0] ?? "index";
-    const globalPage = await queryGlobalPageBySlug({ slug: pageSlug, locale });
+    const globalRoute = resolveGlobalRoute(slugs);
+
+    if (globalRoute.type === "not-found") {
+      return notFound();
+    }
+
+    const globalPage = await queryGlobalPageBySlug({
+      slug: globalRoute.pageSlug,
+      locale,
+    });
 
     if (!globalPage) {
       return notFound();
@@ -245,124 +257,16 @@ export default async function Page(params: Args) {
     );
   }
 
-  const [maybePoliticalEntitySlug, pageSlugCandidate] = slugs;
-
   const politicalEntities = await getPoliticalEntitiesByTenant(tenant, locale);
+  const resolution = resolvePublicRoute(slugs, politicalEntities);
 
-  const politicalEntity = politicalEntities.find(
-    (entity) => entity.slug === maybePoliticalEntitySlug
-  );
+  if (resolution.type === "not-found") {
+    return notFound();
+  }
+
   const payload = await getGlobalPayload();
 
-  if (!politicalEntity) {
-    const hasExplicitPageSlug =
-      Boolean(pageSlugCandidate) || Boolean(maybePoliticalEntitySlug);
-
-    if (!hasExplicitPageSlug) {
-      const entityPageSettings = await payload.findGlobal({
-        slug: "entity-page",
-        locale,
-      });
-      const entityBlocks = entityPageSettings?.entitySelector?.blocks ?? [];
-
-      const entityNavMenus =
-        (entityPageSettings?.primaryNavigation?.menus || [])
-          .map((m) => toMenuLink(m?.link ?? m))
-          .filter((x: MenuLink | null): x is MenuLink => Boolean(x)) || [];
-
-      const entitySecondaryNavColumns =
-        (entityPageSettings?.secondaryNavigationList || [])
-          .map((entry) => {
-            const menus = entry?.secondaryNavigation?.menus || [];
-            const links = menus
-              .map((m) => toMenuLink(m?.link ?? m))
-              .filter((x: MenuLink | null): x is MenuLink => Boolean(x));
-            if (!entry?.secondaryNavigation?.titles && links.length === 0) {
-              return null;
-            }
-            return {
-              title: entry?.secondaryNavigation?.titles || null,
-              links,
-            };
-          })
-          .filter((col): col is { title: string | null; links: MenuLink[] } =>
-            Boolean(col)
-          ) || [];
-
-      const navigationForEntity = { ...navigation, menus: entityNavMenus };
-
-      const footerForTenant =
-        entitySecondaryNavColumns.length > 0
-          ? { ...footer, secondaryNavColumns: entitySecondaryNavColumns }
-          : footer;
-
-      return (
-        <>
-          <Navigation
-            title={title}
-            {...navigationForEntity}
-            tenantSelectionHref={tenantSelectionHref}
-          />
-          <Suspense>
-            <BlockRenderer blocks={entityBlocks} />
-          </Suspense>
-          <Footer title={title} description={description} {...footerForTenant} />
-        </>
-      );
-    }
-
-    const fallbackPageSlug =
-      pageSlugCandidate ?? maybePoliticalEntitySlug ?? "index";
-
-    const tenantPage = await queryPageBySlug({
-      slug: fallbackPageSlug,
-      tenant,
-      locale,
-    });
-
-    if (tenantPage) {
-      return (
-        <>
-          <Navigation
-            title={title}
-            {...navigation}
-            tenantName={tenant?.name ?? null}
-            tenantSelectionHref={tenantSelectionHref}
-            tenantFlag={tenant?.flag ?? null}
-            tenantFlagLabel={tenant?.name ?? tenant?.country ?? null}
-          />
-          <Suspense>
-            <BlockRenderer blocks={tenantPage.blocks} />
-          </Suspense>
-          <Footer title={title} description={description} {...footer} />
-        </>
-      );
-    }
-
-    const globalPage = await queryGlobalPageBySlug({
-      slug: fallbackPageSlug,
-      locale,
-    });
-
-    if (globalPage) {
-      return (
-        <>
-          <Navigation
-            title={title}
-            {...navigation}
-            tenantName={tenant?.name ?? null}
-            tenantSelectionHref={tenantSelectionHref}
-            tenantFlag={tenant?.flag ?? null}
-            tenantFlagLabel={tenant?.name ?? tenant?.country ?? null}
-          />
-          <Suspense>
-            <BlockRenderer blocks={globalPage.blocks} />
-          </Suspense>
-          <Footer title={title} description={description} {...footer} />
-        </>
-      );
-    }
-
+  if (resolution.type === "entity-selector") {
     const entityPageSettings = await payload.findGlobal({
       slug: "entity-page",
       locale,
@@ -415,7 +319,61 @@ export default async function Page(params: Args) {
     );
   }
 
-  const tenantPageSlug = pageSlugCandidate ?? "index";
+  if (resolution.type === "tenant-page") {
+    const tenantPage = await queryPageBySlug({
+      slug: resolution.pageSlug,
+      tenant,
+      locale,
+    });
+
+    if (tenantPage) {
+      return (
+        <>
+          <Navigation
+            title={title}
+            {...navigation}
+            tenantName={tenant?.name ?? null}
+            tenantSelectionHref={tenantSelectionHref}
+            tenantFlag={tenant?.flag ?? null}
+            tenantFlagLabel={tenant?.name ?? tenant?.country ?? null}
+          />
+          <Suspense>
+            <BlockRenderer blocks={tenantPage.blocks} />
+          </Suspense>
+          <Footer title={title} description={description} {...footer} />
+        </>
+      );
+    }
+
+    const globalPage = await queryGlobalPageBySlug({
+      slug: resolution.pageSlug,
+      locale,
+    });
+
+    if (globalPage) {
+      return (
+        <>
+          <Navigation
+            title={title}
+            {...navigation}
+            tenantName={tenant?.name ?? null}
+            tenantSelectionHref={tenantSelectionHref}
+            tenantFlag={tenant?.flag ?? null}
+            tenantFlagLabel={tenant?.name ?? tenant?.country ?? null}
+          />
+          <Suspense>
+            <BlockRenderer blocks={globalPage.blocks} />
+          </Suspense>
+          <Footer title={title} description={description} {...footer} />
+        </>
+      );
+    }
+
+    return notFound();
+  }
+
+  const politicalEntity = resolution.entity;
+  const tenantPageSlug = resolution.pageSlug;
 
   const page = await queryPageBySlug({
     slug: tenantPageSlug,
