@@ -57,7 +57,8 @@ export interface ActNowButtonCardProps {
   petition?: ActionContent;
   follow?: ActionContent;
   update?: ActionContent;
-  updateEmbed?: string | null;
+  /** Validated https URL of the update form on an allowlisted provider. */
+  updateFormUrl?: string | null;
   entity?: EntitySummary | null;
   sx?: SxProps<Theme>;
 }
@@ -102,7 +103,7 @@ export const ActNowCard = ({
   petition,
   follow,
   update,
-  updateEmbed,
+  updateFormUrl,
   entity,
   sx,
 }: ActNowButtonCardProps) => {
@@ -161,8 +162,8 @@ export const ActNowCard = ({
     );
   };
 
-  const embedCode = (updateEmbed ?? "").trim();
-  const payloadConfigured = Boolean(embedCode);
+  const formUrl = (updateFormUrl ?? "").trim();
+  const payloadConfigured = Boolean(formUrl);
 
   const updateButtonLabel = (update?.title ?? "").trim() || "Update";
 
@@ -364,7 +365,8 @@ export const ActNowCard = ({
         <UpdateDialog
           open={updateOpen}
           onClose={handleCloseUpdate}
-          embedCode={embedCode}
+          src={formUrl}
+          title={updateButtonLabel}
         />
       ) : null}
       <Snackbar
