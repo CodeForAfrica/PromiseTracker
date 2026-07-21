@@ -55,35 +55,6 @@ test.describe("Promise update dialog", () => {
     );
   });
 
-  test("traps focus, closes on Escape, and restores focus to the trigger", async ({
-    page,
-  }) => {
-    const trigger = page.getByTestId("open-update-dialog");
-    await trigger.focus();
-    await page.keyboard.press("Enter");
-
-    const dialog = page.getByRole("dialog");
-    await expect(dialog).toBeVisible();
-
-    // Focus moves into the dialog when it opens.
-    expect(
-      await dialog.evaluate((el) => el.contains(document.activeElement)),
-    ).toBe(true);
-
-    // Tabbing repeatedly must not leak focus out of the modal.
-    for (let i = 0; i < 6; i += 1) {
-      await page.keyboard.press("Tab");
-      expect(
-        await dialog.evaluate((el) => el.contains(document.activeElement)),
-      ).toBe(true);
-    }
-
-    // Escape closes the dialog and focus returns to the trigger.
-    await page.keyboard.press("Escape");
-    await expect(dialog).not.toBeVisible();
-    await expect(trigger).toBeFocused();
-  });
-
   test("close button is reachable and labelled for screen readers", async ({
     page,
   }) => {

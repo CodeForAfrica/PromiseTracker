@@ -24,6 +24,7 @@ import {
 } from "@/lib/aiExtractionExportRowsJobs";
 import { en } from "@payloadcms/translations/languages/en";
 import { fr } from "@payloadcms/translations/languages/fr";
+import { assertIsolatedTestDatabase } from "@/lib/testDatabaseGuard";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -32,6 +33,17 @@ const ONE_GIB_IN_BYTES = 1024 * 1024 * 1024;
 const payloadSecret = process.env.PAYLOAD_SECRET;
 if (!payloadSecret) {
   throw new Error("PAYLOAD_SECRET is required");
+}
+
+const databaseUri = process.env.DATABASE_URI;
+if (!databaseUri) {
+  throw new Error("DATABASE_URI is required");
+}
+
+// When running the verification pipeline (tests / E2E dev server), refuse to
+// boot against a shared or production-like database.
+if (process.env.PT_ASSERT_TEST_DB === "true") {
+  assertIsolatedTestDatabase(databaseUri);
 }
 
 let nodemailerAdapterArgs: NodemailerAdapterArgs | undefined;
@@ -71,7 +83,7 @@ export default buildConfig({
     uploadTimeout: 300 * 1000,
   },
   db: mongooseAdapter({
-    url: process.env.DATABASE_URI || "",
+    url: databaseUri,
   }),
   editor: lexicalEditor(),
   graphQL: {
