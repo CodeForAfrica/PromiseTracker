@@ -1,7 +1,8 @@
 import { getGlobalPayload } from "@/lib/payload";
 import type { Promise as PromiseDocument } from "@/payload-types";
 
-const payload = await getGlobalPayload();
+// Resolved lazily per-call (memoized) rather than at module top-level, so
+// importing this module does not open a MongoDB connection at build time.
 
 type GetPromiseByIdOptions = {
   locale?: "en" | "fr";
@@ -12,6 +13,7 @@ export const getPromiseById = async (
   options: GetPromiseByIdOptions = {}
 ): Promise<PromiseDocument | null> => {
   const { locale } = options;
+  const payload = await getGlobalPayload();
 
   try {
     const doc = await payload.findByID({

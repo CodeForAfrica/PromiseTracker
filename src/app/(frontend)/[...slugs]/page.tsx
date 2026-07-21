@@ -25,6 +25,9 @@ import {
   resolvePublicRoute,
 } from "@/lib/routes/publicRoutes";
 import { resolveTenantLocale } from "@/utils/locales";
+
+// Multi-tenant, subdomain-resolved route — never statically prerendered.
+export const dynamic = "force-dynamic";
 import { resolveBrowserLocale } from "@/lib/locale";
 import type { EntityPage } from "@/payload-types";
 import type { MenuLink } from "@/types/navigation";
