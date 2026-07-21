@@ -47,6 +47,11 @@ on:
       SENTRY_PROJECT:
         required: false
 
+# Least-privilege default for GITHUB_TOKEN; the build only reads repo contents
+# and pushes to the registry via dedicated secrets.
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest

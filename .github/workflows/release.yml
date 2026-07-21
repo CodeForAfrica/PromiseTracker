@@ -19,6 +19,10 @@ concurrency:
   group: "release-production"
   cancel-in-progress: false
 
+# Least-privilege default for GITHUB_TOKEN across all jobs.
+permissions:
+  contents: read
+
 env:
   IMAGE_NAME: "codeforafrica/promisetracker-v2"
   DOKKU_REMOTE_URL: "ssh://azureuser@ui-1.dev.codeforafrica.org"

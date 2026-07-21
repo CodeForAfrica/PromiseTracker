@@ -47,6 +47,11 @@ on:
       PAYLOAD_SECRET:
         required: true
 
+# Least-privilege default for GITHUB_TOKEN; the deploy authenticates to
+# DockerHub/Dokku via dedicated secrets, not the workflow token.
+permissions:
+  contents: read
+
 jobs:
   promote:
     runs-on: ubuntu-latest
