@@ -601,6 +601,98 @@ export const AITab: Tab = {
           },
         },
         {
+          name: "limits",
+          type: "group",
+          label: {
+            en: "Extraction Limits",
+            fr: "Limites d'extraction",
+          },
+          admin: {
+            description:
+              "Operational ceilings for AI extraction. Leave blank to use safe defaults. Rejected or truncated documents are flagged for operator review.",
+          },
+          fields: [
+            {
+              type: "row",
+              fields: [
+                {
+                  name: "perCallTimeoutMs",
+                  type: "number",
+                  min: 1,
+                  label: { en: "Per-call timeout (ms)" },
+                  admin: { description: "Default: 120000" },
+                },
+                {
+                  name: "maxDocumentDurationMs",
+                  type: "number",
+                  min: 1,
+                  label: { en: "Max AI duration per document (ms)" },
+                  admin: { description: "Default: 1200000" },
+                },
+                {
+                  name: "maxRetriesPerCall",
+                  type: "number",
+                  min: 0,
+                  label: { en: "Max retries per call" },
+                  admin: { description: "Default: 4" },
+                },
+              ],
+            },
+            {
+              type: "row",
+              fields: [
+                {
+                  name: "maxDocumentChars",
+                  type: "number",
+                  min: 1,
+                  label: { en: "Max document characters" },
+                  admin: { description: "Default: 1500000" },
+                },
+                {
+                  name: "maxChunksPerDocument",
+                  type: "number",
+                  min: 1,
+                  label: { en: "Max chunks per document" },
+                  admin: { description: "Default: 120" },
+                },
+                {
+                  name: "maxTokensPerDocument",
+                  type: "number",
+                  min: 1,
+                  label: { en: "Max tokens per document" },
+                  admin: { description: "Default: 2000000" },
+                },
+              ],
+            },
+            {
+              type: "row",
+              fields: [
+                {
+                  name: "maxCostUsdPerDocument",
+                  type: "number",
+                  min: 0,
+                  label: { en: "Max cost per document (USD)" },
+                  admin: { description: "Default: 10" },
+                },
+                {
+                  name: "inputCostUsdPerMillionTokens",
+                  type: "number",
+                  min: 0,
+                  label: { en: "Input cost (USD / 1M tokens)" },
+                  admin: { description: "Default: 3" },
+                },
+                {
+                  name: "outputCostUsdPerMillionTokens",
+                  type: "number",
+                  min: 0,
+                  label: { en: "Output cost (USD / 1M tokens)" },
+                  admin: { description: "Default: 15" },
+                },
+              ],
+            },
+          ],
+        },
+        {
           name: "model",
           type: "select",
           label: {

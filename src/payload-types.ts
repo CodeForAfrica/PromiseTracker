@@ -80,6 +80,7 @@ export interface Config {
     partners: Partner;
     'political-entities': PoliticalEntity;
     'promise-status': PromiseStatus;
+    'workflow-locks': WorkflowLock;
     exports: Export;
     imports: Import;
     'payload-kv': PayloadKv;
@@ -103,6 +104,7 @@ export interface Config {
     partners: PartnersSelect<false> | PartnersSelect<true>;
     'political-entities': PoliticalEntitiesSelect<false> | PoliticalEntitiesSelect<true>;
     'promise-status': PromiseStatusSelect<false> | PromiseStatusSelect<true>;
+    'workflow-locks': WorkflowLocksSelect<false> | WorkflowLocksSelect<true>;
     exports: ExportsSelect<false> | ExportsSelect<true>;
     imports: ImportsSelect<false> | ImportsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -196,6 +198,11 @@ export interface Document {
   type?: ('promise' | 'evidence') | null;
   airtableID?: string | null;
   fullyProcessed?: boolean | null;
+  extractionReview?: {
+    status?: ('rejected' | 'truncated' | 'failed') | null;
+    reason?: string | null;
+    flaggedAt?: string | null;
+  };
   extractedText?:
     | {
         text?: {
@@ -371,7 +378,7 @@ export interface AiExtraction {
         category: string;
         summary: string;
         source: string;
-        uniqueId?: string | null;
+        uniqueId: string;
         checkMediaId?: string | null;
         checkMediaURL?: string | null;
         Status?: (string | null) | PromiseStatus;
@@ -988,6 +995,20 @@ export interface SiteSetting {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "workflow-locks".
+ */
+export interface WorkflowLock {
+  id: string;
+  workflow: string;
+  runId?: string | null;
+  status?: ('idle' | 'running') | null;
+  lockedAt?: string | null;
+  expiresAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "exports".
  */
 export interface Export {
@@ -1293,6 +1314,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'promise-status';
         value: string | PromiseStatus;
+      } | null)
+    | ({
+        relationTo: 'workflow-locks';
+        value: string | WorkflowLock;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1355,6 +1380,13 @@ export interface DocumentsSelect<T extends boolean = true> {
   type?: T;
   airtableID?: T;
   fullyProcessed?: T;
+  extractionReview?:
+    | T
+    | {
+        status?: T;
+        reason?: T;
+        flaggedAt?: T;
+      };
   extractedText?:
     | T
     | {
@@ -1901,6 +1933,19 @@ export interface PromiseStatusSelect<T extends boolean = true> {
         color?: T;
         textColor?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "workflow-locks_select".
+ */
+export interface WorkflowLocksSelect<T extends boolean = true> {
+  workflow?: T;
+  runId?: T;
+  status?: T;
+  lockedAt?: T;
+  expiresAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2521,6 +2566,47 @@ export interface Setting {
      * Optional override in "provider:model" format. Must match the selected provider.
      */
     customModelId?: string | null;
+    /**
+     * Operational ceilings for AI extraction. Leave blank to use safe defaults. Rejected or truncated documents are flagged for operator review.
+     */
+    limits?: {
+      /**
+       * Default: 120000
+       */
+      perCallTimeoutMs?: number | null;
+      /**
+       * Default: 1200000
+       */
+      maxDocumentDurationMs?: number | null;
+      /**
+       * Default: 4
+       */
+      maxRetriesPerCall?: number | null;
+      /**
+       * Default: 1500000
+       */
+      maxDocumentChars?: number | null;
+      /**
+       * Default: 120
+       */
+      maxChunksPerDocument?: number | null;
+      /**
+       * Default: 2000000
+       */
+      maxTokensPerDocument?: number | null;
+      /**
+       * Default: 10
+       */
+      maxCostUsdPerDocument?: number | null;
+      /**
+       * Default: 3
+       */
+      inputCostUsdPerMillionTokens?: number | null;
+      /**
+       * Default: 15
+       */
+      outputCostUsdPerMillionTokens?: number | null;
+    };
     model?: ('gemini-2.5-pro' | 'gemini-2.5-flash-lite') | null;
     apiKey?: string | null;
   };
@@ -2859,6 +2945,19 @@ export interface SettingsSelect<T extends boolean = true> {
         modelProvider?: T;
         modelPreset?: T;
         customModelId?: T;
+        limits?:
+          | T
+          | {
+              perCallTimeoutMs?: T;
+              maxDocumentDurationMs?: T;
+              maxRetriesPerCall?: T;
+              maxDocumentChars?: T;
+              maxChunksPerDocument?: T;
+              maxTokensPerDocument?: T;
+              maxCostUsdPerDocument?: T;
+              inputCostUsdPerMillionTokens?: T;
+              outputCostUsdPerMillionTokens?: T;
+            };
         model?: T;
         apiKey?: T;
       };

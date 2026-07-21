@@ -157,6 +157,52 @@ export const Documents: CollectionConfig = {
       },
     },
     {
+      // Explicit operator-reviewable state for documents the AI extraction
+      // pipeline rejected (over size limits) or truncated (chunk/candidate
+      // ceilings), or that failed terminally. Cleared by operators after
+      // review; documents in this state are visible in admin filters.
+      name: "extractionReview",
+      type: "group",
+      label: {
+        en: "Extraction Review",
+        fr: "Révision de l'extraction",
+      },
+      admin: {
+        position: "sidebar",
+      },
+      fields: [
+        {
+          name: "status",
+          type: "select",
+          options: [
+            { value: "rejected", label: { en: "Rejected", fr: "Rejeté" } },
+            { value: "truncated", label: { en: "Truncated", fr: "Tronqué" } },
+            { value: "failed", label: { en: "Failed", fr: "Échoué" } },
+          ],
+          label: {
+            en: "Status",
+            fr: "Statut",
+          },
+        },
+        {
+          name: "reason",
+          type: "text",
+          label: {
+            en: "Reason",
+            fr: "Raison",
+          },
+        },
+        {
+          name: "flaggedAt",
+          type: "date",
+          label: {
+            en: "Flagged At",
+            fr: "Signalé le",
+          },
+        },
+      ],
+    },
+    {
       type: "tabs",
       admin: {
         readOnly: true,

@@ -5,6 +5,16 @@ import { TaskConfig } from "payload";
 import { z } from "zod";
 import { updateDocumentStatus } from "@/lib/airtable";
 import {
+  createDocumentBudget,
+  ExtractionBudgetExceededError,
+  type DocumentBudget,
+} from "@/lib/ai/documentBudget";
+import {
+  resolveExtractionLimits,
+  type ExtractionLimits,
+} from "@/lib/ai/extractionLimits";
+import { callAIWithRetry, RetryExhaustedError } from "@/lib/ai/retry";
+import {
   resolveConfiguredLanguageModel,
   type AISettingsInput,
 } from "@/lib/ai/providerRegistry";
@@ -16,6 +26,67 @@ const MAX_CHUNK_CHARS = 14_000;
 const CHUNK_OVERLAP_CHARS = 450;
 const MAX_NORMALIZATION_CANDIDATES = 220;
 const MAX_TOOL_STEPS = 40;
+
+type ReviewStatus = "rejected" | "truncated" | "failed";
+
+/**
+ * Runs one bounded AI call: per-call deadline, bounded exponential backoff
+ * with provider rate-limit guidance, and document-level budget accounting.
+ * Emits an `ai.call.complete` metric log per call.
+ */
+const runBoundedAICall = async <
+  T extends { usage?: { inputTokens?: number; outputTokens?: number; totalTokens?: number } },
+>({
+  call,
+  callName,
+  limits,
+  budget,
+  logger,
+  documentId,
+}: {
+  call: (signal: AbortSignal) => Promise<T>;
+  callName: string;
+  limits: ExtractionLimits;
+  budget: DocumentBudget;
+  logger: TaskLogger;
+  documentId: string;
+}): Promise<T> => {
+  budget.assertWithinBudget();
+
+  const startedAt = Date.now();
+  const { result, retries } = await callAIWithRetry(call, {
+    maxRetries: limits.maxRetriesPerCall,
+    perCallTimeoutMs: limits.perCallTimeoutMs,
+    baseDelayMs: limits.retryBaseDelayMs,
+    maxDelayMs: limits.retryMaxDelayMs,
+    onRetry: ({ attempt, delayMs, error }) => {
+      logger.warn({
+        message: "extractPromises:: Retrying AI call",
+        callName,
+        documentId,
+        attempt,
+        delayMs,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    },
+  });
+
+  budget.recordUsage(result.usage ?? null);
+  budget.recordRetries(retries);
+
+  logger.info({
+    message: "ai.call.complete",
+    callName,
+    documentId,
+    durationMs: Date.now() - startedAt,
+    retries,
+    inputTokens: result.usage?.inputTokens ?? null,
+    outputTokens: result.usage?.outputTokens ?? null,
+    budget: budget.snapshot(),
+  });
+
+  return result;
+};
 
 const passOnePromiseSchema = z.object({
   category: z.string().min(1).describe("Thematic category for the promise"),
@@ -236,6 +307,8 @@ const extractPromisesFromChunks = async ({
   documentId,
   documentTitle,
   documentAirtableID,
+  limits,
+  budget,
 }: {
   model: ReturnType<typeof resolveConfiguredLanguageModel>["model"];
   chunks: string[];
@@ -243,6 +316,8 @@ const extractPromisesFromChunks = async ({
   documentId: string;
   documentTitle: string;
   documentAirtableID: string | null | undefined;
+  limits: ExtractionLimits;
+  budget: DocumentBudget;
 }) => {
   const candidates: PromiseCandidate[] = [];
   let recoverableChunkFailures = 0;
@@ -255,12 +330,23 @@ const extractPromisesFromChunks = async ({
 
   for (const [index, chunk] of chunks.entries()) {
     try {
-      const { output: chunkPromises } = await generateText({
-        model,
-        system: buildPassOneSystemPrompt(),
-        prompt: buildPassOnePrompt(chunk, index, chunks.length),
-        output,
-        maxRetries: 4,
+      const { output: chunkPromises } = await runBoundedAICall({
+        callName: "passOneChunkExtraction",
+        limits,
+        budget,
+        logger,
+        documentId,
+        call: (signal) =>
+          generateText({
+            model,
+            system: buildPassOneSystemPrompt(),
+            prompt: buildPassOnePrompt(chunk, index, chunks.length),
+            output,
+            // Retries/backoff are handled by callAIWithRetry so backoff and
+            // rate-limit guidance stay bounded and observable.
+            maxRetries: 0,
+            abortSignal: signal,
+          }),
       });
 
       candidates.push(...chunkPromises);
@@ -285,9 +371,16 @@ const extractPromisesFromChunks = async ({
         error: error instanceof Error ? error.message : String(error),
       });
 
+      // Budget ceilings are terminal for the document — stop immediately
+      // instead of burning further provider spend on remaining chunks.
+      if (error instanceof ExtractionBudgetExceededError) {
+        throw error;
+      }
+
       if (
         APICallError.isInstance(error) ||
-        NoObjectGeneratedError.isInstance(error)
+        NoObjectGeneratedError.isInstance(error) ||
+        error instanceof RetryExhaustedError
       ) {
         recoverableChunkFailures += 1;
         continue;
@@ -314,10 +407,18 @@ const normalizeCandidatesWithTools = async ({
   model,
   documentTitle,
   candidates,
+  limits,
+  budget,
+  logger,
+  documentId,
 }: {
   model: ReturnType<typeof resolveConfiguredLanguageModel>["model"];
   documentTitle: string;
   candidates: PromiseCandidate[];
+  limits: ExtractionLimits;
+  budget: DocumentBudget;
+  logger: TaskLogger;
+  documentId: string;
 }) => {
   const normalizedPromises: PromiseCandidate[] = [];
   let normalizedTitle = documentTitle;
@@ -352,17 +453,29 @@ const normalizeCandidatesWithTools = async ({
     },
   });
 
-  const normalizationRun = await generateText({
-    model,
-    system: buildNormalizationSystemPrompt(),
-    prompt: buildNormalizationPrompt({ documentTitle, candidates }),
-    tools: {
-      recordPromise,
-      finalizeExtraction,
-    },
-    toolChoice: "required",
-    stopWhen: [hasToolCall("finalizeExtraction"), stepCountIs(MAX_TOOL_STEPS)],
-    maxRetries: 3,
+  const normalizationRun = await runBoundedAICall({
+    callName: "normalizeCandidates",
+    limits,
+    budget,
+    logger,
+    documentId,
+    call: (signal) =>
+      generateText({
+        model,
+        system: buildNormalizationSystemPrompt(),
+        prompt: buildNormalizationPrompt({ documentTitle, candidates }),
+        tools: {
+          recordPromise,
+          finalizeExtraction,
+        },
+        toolChoice: "required",
+        stopWhen: [
+          hasToolCall("finalizeExtraction"),
+          stepCountIs(MAX_TOOL_STEPS),
+        ],
+        maxRetries: 0,
+        abortSignal: signal,
+      }),
   });
 
   const finalized = normalizationRun.steps.some((step) =>
@@ -410,10 +523,15 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
           requireExtractionCapabilities: true,
         });
 
+      const limits = resolveExtractionLimits(
+        settings.ai as Parameters<typeof resolveExtractionLimits>[0],
+      );
+
       logger.info({
         message: "extractPromises:: Resolved AI model",
         modelId,
         providerId,
+        limits,
       });
 
       const setDocumentStatus = async (
@@ -448,6 +566,54 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
         reason: string,
       ) => {
         await setDocumentStatus(airtableID, `Failed: ${reason}`);
+      };
+
+      // Puts a document into the explicit operator-reviewable state (visible
+      // in the admin sidebar and mirrored to Airtable) when the pipeline
+      // rejects, truncates, or terminally fails it.
+      const flagDocumentForReview = async (
+        document: { id: string; airtableID?: string | null; title?: string },
+        status: ReviewStatus,
+        reason: string,
+      ) => {
+        try {
+          await payload.update({
+            collection: "documents",
+            id: document.id,
+            data: {
+              extractionReview: {
+                status,
+                reason,
+                flaggedAt: new Date().toISOString(),
+              },
+            },
+          });
+        } catch (updateError) {
+          logger.error({
+            message:
+              "extractPromises:: Failed to persist extraction review state",
+            documentId: document.id,
+            reviewStatus: status,
+            reason,
+            error:
+              updateError instanceof Error
+                ? updateError.message
+                : String(updateError),
+          });
+        }
+
+        await setDocumentStatus(
+          document.airtableID,
+          `Needs Review: ${reason}`,
+        );
+
+        logger.warn({
+          message: "ai.document.review_flagged",
+          documentId: document.id,
+          documentTitle: document.title,
+          reviewStatus: status,
+          reason,
+        });
       };
 
       const taskInput = input as TaskInput | undefined;
@@ -589,7 +755,31 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
             continue;
           }
 
-          const chunks = splitTextIntoChunks(plainText);
+          if (plainText.length > limits.maxDocumentChars) {
+            await flagDocumentForReview(
+              document,
+              "rejected",
+              `Extracted text (${plainText.length} chars) exceeds the ${limits.maxDocumentChars}-character limit`,
+            );
+            continue;
+          }
+
+          const budget = createDocumentBudget(limits);
+
+          let chunks = splitTextIntoChunks(plainText);
+          const chunksWereTruncated =
+            chunks.length > limits.maxChunksPerDocument;
+          if (chunksWereTruncated) {
+            chunks = chunks.slice(0, limits.maxChunksPerDocument);
+            logger.warn({
+              message:
+                "extractPromises:: Chunk list truncated to the per-document ceiling",
+              documentId: document.id,
+              documentTitle: document.title,
+              chunkLimit: limits.maxChunksPerDocument,
+            });
+          }
+
           const extractedCandidates = await extractPromisesFromChunks({
             model,
             chunks,
@@ -597,6 +787,8 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
             documentId: document.id,
             documentTitle: document.title,
             documentAirtableID: document.airtableID,
+            limits,
+            budget,
           });
 
           const mergedCandidates = mergeByAtomicPromise(
@@ -626,6 +818,10 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
             model,
             documentTitle: document.title,
             candidates: limitedCandidates,
+            limits,
+            budget,
+            logger,
+            documentId: document.id,
           });
 
           const finalPromises = mergeByAtomicPromise(
@@ -644,6 +840,16 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
             finalPromises: finalPromises.length,
             candidateListWasTruncated,
           });
+
+          if (chunksWereTruncated || candidateListWasTruncated) {
+            await flagDocumentForReview(
+              document,
+              "truncated",
+              chunksWereTruncated
+                ? `Document was truncated to ${limits.maxChunksPerDocument} chunks before AI analysis`
+                : `Candidate list was truncated to ${MAX_NORMALIZATION_CANDIDATES} before normalization`,
+            );
+          }
 
           const finalizeForceReextract = async () => {
             if (!shouldForceReextract || existingExtractions.length === 0) {
@@ -731,6 +937,16 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
               id: document.id,
               data: {
                 fullyProcessed: true,
+                // A clean run clears any stale operator-review flag.
+                ...(chunksWereTruncated || candidateListWasTruncated
+                  ? {}
+                  : {
+                      extractionReview: {
+                        status: null,
+                        reason: null,
+                        flaggedAt: null,
+                      },
+                    }),
               },
             });
 
@@ -748,6 +964,16 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
               id: document.id,
               data: {
                 fullyProcessed: true,
+                // A clean run clears any stale operator-review flag.
+                ...(chunksWereTruncated || candidateListWasTruncated
+                  ? {}
+                  : {
+                      extractionReview: {
+                        status: null,
+                        reason: null,
+                        flaggedAt: null,
+                      },
+                    }),
               },
             });
 
@@ -763,6 +989,15 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
             id: document.id,
             title: normalized.title || document.title,
             promises: finalPromises,
+          });
+
+          logger.info({
+            message: "ai.document.complete",
+            documentId: document.id,
+            documentTitle: document.title,
+            chunks: chunks.length,
+            finalPromises: finalPromises.length,
+            ...budget.snapshot(),
           });
         } catch (documentError) {
           if (
@@ -804,7 +1039,30 @@ export const ExtractPromises: TaskConfig<"extractPromises"> = {
             documentError instanceof Error
               ? documentError.message
               : String(documentError);
-          await setDocumentFailedStatus(document.airtableID, errorMessage);
+
+          // Budget/retry exhaustion is terminal for the document — surface
+          // it in the operator-reviewable state rather than only in Airtable.
+          if (
+            documentError instanceof ExtractionBudgetExceededError ||
+            documentError instanceof RetryExhaustedError
+          ) {
+            await flagDocumentForReview(document, "failed", errorMessage);
+          } else {
+            await setDocumentFailedStatus(document.airtableID, errorMessage);
+          }
+
+          logger.error({
+            message: "ai.document.terminal_failure",
+            documentId: document.id,
+            documentTitle: document.title,
+            reason:
+              documentError instanceof ExtractionBudgetExceededError
+                ? `budget:${documentError.reason}`
+                : documentError instanceof RetryExhaustedError
+                  ? "retry_exhausted"
+                  : "error",
+            error: errorMessage,
+          });
           logger.warn({
             message: `extractPromises:: Unexpected error processing document "${document.title ?? document.id}" — skipping`,
             documentId: document.id,
