@@ -1,0 +1,34 @@
+{
+  "name": "promisetracker",
+  "description": "PromiseTracker CMS + frontend. Health probes are wired to the bounded liveness/readiness endpoints served by the app.",
+  "healthchecks": {
+    "web": [
+      {
+        "name": "startup probe",
+        "type": "startup",
+        "path": "/api/health/live",
+        "attempts": 10,
+        "initialDelay": 15,
+        "wait": 5,
+        "timeout": 5
+      },
+      {
+        "name": "liveness probe",
+        "type": "liveness",
+        "path": "/api/health/live",
+        "attempts": 3,
+        "wait": 30,
+        "timeout": 5,
+        "onFailure": "restart"
+      },
+      {
+        "name": "readiness probe",
+        "type": "readiness",
+        "path": "/api/health/ready",
+        "attempts": 3,
+        "wait": 10,
+        "timeout": 5
+      }
+    ]
+  }
+}

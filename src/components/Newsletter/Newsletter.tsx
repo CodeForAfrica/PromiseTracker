@@ -19,9 +19,12 @@ import { getGlobalPayload } from "@/lib/payload";
 import { resolveTenantLocale } from "@/utils/locales";
 import { resolveBrowserLocale } from "@/lib/locale";
 
-const payload = await getGlobalPayload();
-
 const Newsletter = async ({ image }: NewsletterBlockProps) => {
+  // Resolved lazily (memoized), never at module top-level — a top-level await
+  // would connect to MongoDB just by importing this component, which the
+  // BlockRenderer does at build time and would force `next build` to require
+  // a reachable database.
+  const payload = await getGlobalPayload();
   const { subdomain } = await getDomain();
   const tenant = await getTenantBySubDomain(subdomain);
   const locale = tenant

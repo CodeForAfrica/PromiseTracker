@@ -1,0 +1,108 @@
+name: Promote
+
+# Reusable deploy step. Promotes a previously-built, immutable image (pinned by
+# digest) to a GitHub environment. The environment gates the job: configure
+# "required reviewers" on the `production` environment in repo settings to make
+# production deployment require human approval.
+#
+# Order of operations enforces the release invariants:
+#   1. Migrations run ONCE, in a single one-off container (never in every
+#      replica). If they fail, the job fails here and traffic is never switched.
+#   2. Only then is the runtime image promoted (traffic switch).
+#   3. A bounded post-deploy readiness check confirms the new instance serves.
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      app_name:
+        required: true
+        type: string
+      dokku_remote_url:
+        required: true
+        type: string
+      app_url:
+        required: true
+        type: string
+      runtime_image:
+        required: true
+        type: string
+      migrator_image:
+        required: true
+        type: string
+      run_migrations:
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      SSH_PRIVATE_KEY:
+        required: true
+      DOCKER_HUB_USERNAME:
+        required: true
+      DOCKER_HUB_ACCESS_TOKEN:
+        required: true
+      DATABASE_URI:
+        required: true
+      PAYLOAD_SECRET:
+        required: true
+
+# Least-privilege default for GITHUB_TOKEN; the deploy authenticates to
+# DockerHub/Dokku via dedicated secrets, not the workflow token.
+permissions:
+  contents: read
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ inputs.app_url }}
+    steps:
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+      # Single-instance, observable migration step. Runs the migrator image
+      # built from the same commit. A non-zero exit fails the job BEFORE the
+      # promote step below, so traffic is never switched onto an un-migrated or
+      # partially-migrated database. See docs/deployment/release-pipeline.md for
+      # forward-fix / rollback handling on failure.
+      - name: Run database migrations (once)
+        if: ${{ inputs.run_migrations }}
+        env:
+          DATABASE_URI: ${{ secrets.DATABASE_URI }}
+          PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
+        run: |
+          docker run --rm \
+            -e DATABASE_URI \
+            -e PAYLOAD_SECRET \
+            -e TIKA_ENABLED=0 \
+            "${{ inputs.migrator_image }}"
+
+      # Promote the EXACT runtime image (by digest) that was built and verified.
+      - name: Deploy runtime image to Dokku
+        uses: dokku/github-action@v1.7.0
+        with:
+          git_remote_url: ${{ inputs.dokku_remote_url }}/${{ inputs.app_name }}
+          ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          deploy_docker_image: ${{ inputs.runtime_image }}
+
+      # Bounded post-deploy readiness gate: fail the release if the new instance
+      # does not become ready (Mongo + Tika) within the window.
+      - name: Verify readiness
+        run: |
+          url="${{ inputs.app_url }}/api/health/ready"
+          for attempt in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "$url" || echo "000")
+            if [ "$code" = "200" ]; then
+              echo "Ready after ${attempt} attempt(s)."
+              exit 0
+            fi
+            echo "Attempt ${attempt}: readiness returned ${code}; retrying in 10s..."
+            sleep 10
+          done
+          echo "::error::${{ inputs.environment }} did not become ready in time."
+          exit 1

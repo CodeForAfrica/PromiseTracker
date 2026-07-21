@@ -1,0 +1,88 @@
+name: Promise Tracker | Release | Production
+
+# Approval-gated production release. Builds ONE immutable image, verifies it,
+# promotes the exact digest to staging, then (after human approval on the
+# `production` GitHub environment) runs migrations once and promotes the SAME
+# digest to production.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      skip_staging:
+        description: "Promote straight to production (skip staging)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: "release-production"
+  cancel-in-progress: false
+
+# Least-privilege default for GITHUB_TOKEN across all jobs.
+permissions:
+  contents: read
+
+env:
+  IMAGE_NAME: "codeforafrica/promisetracker-v2"
+  DOKKU_REMOTE_URL: "ssh://azureuser@ui-1.dev.codeforafrica.org"
+
+jobs:
+  # Mandatory verification gate (lint, types, integration + E2E, SCA).
+  verify:
+    uses: ./.github/workflows/verify.yml
+
+  build:
+    needs: verify
+    uses: ./.github/workflows/build-image.yml
+    with:
+      image_name: "codeforafrica/promisetracker-v2"
+      next_public_app_url: "https://promisetracker.codeforafrica.org"
+      sentry_environment: "production"
+    secrets:
+      DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+      DOCKER_HUB_ACCESS_TOKEN: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+      SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+
+  staging:
+    needs: build
+    if: ${{ !inputs.skip_staging }}
+    uses: ./.github/workflows/promote.yml
+    with:
+      environment: staging
+      app_name: promisetracker-v2-staging
+      dokku_remote_url: "ssh://azureuser@ui-1.dev.codeforafrica.org"
+      app_url: "https://promisetracker-v2.staging.codeforafrica.org"
+      runtime_image: ${{ needs.build.outputs.runtime_image }}
+      migrator_image: ${{ needs.build.outputs.migrator_image }}
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+      DOCKER_HUB_ACCESS_TOKEN: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+      DATABASE_URI: ${{ secrets.STAGING_DATABASE_URI }}
+      PAYLOAD_SECRET: ${{ secrets.STAGING_PAYLOAD_SECRET }}
+
+  # Requires approval on the `production` environment (configure required
+  # reviewers in repo settings). `always() && !failure() && !cancelled()` lets
+  # production proceed whether or not staging was skipped, but never after a
+  # failure upstream.
+  production:
+    needs: [build, staging]
+    if: ${{ always() && !failure() && !cancelled() }}
+    uses: ./.github/workflows/promote.yml
+    with:
+      environment: production
+      app_name: promisetracker-v2
+      dokku_remote_url: "ssh://azureuser@ui-1.dev.codeforafrica.org"
+      app_url: "https://promisetracker.codeforafrica.org"
+      runtime_image: ${{ needs.build.outputs.runtime_image }}
+      migrator_image: ${{ needs.build.outputs.migrator_image }}
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+      DOCKER_HUB_ACCESS_TOKEN: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+      DATABASE_URI: ${{ secrets.DATABASE_URI }}
+      PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}

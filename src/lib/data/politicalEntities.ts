@@ -6,12 +6,13 @@ import type {
 } from "@/payload-types";
 import type { PayloadLocale } from "@/utils/locales";
 
-const payload = await getGlobalPayload();
-
+// Resolved lazily per-call (memoized) rather than at module top-level, so
+// importing this module does not open a MongoDB connection at build time.
 export const getPoliticalEntitiesByTenant = async (
   tenant: Tenant,
   locale?: PayloadLocale,
 ): Promise<PoliticalEntity[]> => {
+  const payload = await getGlobalPayload();
   const { docs } = await payload.find({
     collection: "political-entities",
     limit: 0,
@@ -42,6 +43,7 @@ export const getPoliticalEntityBySlug = async (
   slug: string,
   locale?: PayloadLocale,
 ): Promise<PoliticalEntity | undefined> => {
+  const payload = await getGlobalPayload();
   const { docs } = await payload.find({
     collection: "political-entities",
     limit: 1,
@@ -86,6 +88,7 @@ export const getPromiseCountsForEntities = async (
     return {};
   }
 
+  const payload = await getGlobalPayload();
   const counts = entityIds.reduce<
     Record<
       string,

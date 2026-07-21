@@ -37,6 +37,9 @@ import type {
 } from "@/payload-types";
 import { resolveTenantLocale } from "@/utils/locales";
 
+// Multi-tenant, subdomain-resolved route — never statically prerendered.
+export const dynamic = "force-dynamic";
+
 const FALLBACK_STATUS_COLOR = "#909090";
 const FALLBACK_STATUS_TEXT_COLOR = "#202020";
 

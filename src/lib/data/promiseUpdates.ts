@@ -3,10 +3,11 @@ import type { PromiseUpdateSettings } from "@/types/promiseUpdates";
 import type { Media } from "@/payload-types";
 import type { PayloadLocale } from "@/utils/locales";
 
-const payload = await getGlobalPayload();
-
+// Resolved lazily per-call (memoized) rather than at module top-level, so
+// importing this module does not open a MongoDB connection at build time.
 export const getPromiseUpdateEmbed =
   async (locale?: PayloadLocale): Promise<PromiseUpdateSettings | null> => {
+    const payload = await getGlobalPayload();
     try {
       const doc = await payload.findGlobal({
         slug: "promise-updates",

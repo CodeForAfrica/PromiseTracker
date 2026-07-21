@@ -9,6 +9,12 @@ import { resolveBrowserLocale } from "@/lib/locale";
 import { getTenantBySubDomain } from "@/lib/data/tenants";
 import { resolveTenantLocale } from "@/utils/locales";
 
+// This layout resolves the tenant from the request subdomain (a DB lookup),
+// so the whole (frontend) segment is dynamic and must never be statically
+// prerendered. This also keeps `next build` from connecting to MongoDB while
+// collecting page data.
+export const dynamic = "force-dynamic";
+
 const inter = Inter({
   subsets: ["latin"],
   weight: ["300", "400", "600", "700"],

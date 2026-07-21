@@ -1,7 +1,11 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { withSentryConfig } from "@sentry/nextjs";
 import { withPayload } from "@payloadcms/next/withPayload";
 
 import { buildSecurityHeaders } from "./src/lib/security/headers.mjs";
+
+const projectDir = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -10,6 +14,11 @@ const nextConfig = {
     ignoreDuringBuilds: false,
   },
   output: "standalone",
+  // Pin the standalone tracing root to this project so `.next/standalone/
+  // server.js` lands at a deterministic path (matches the Dockerfile's
+  // `COPY .next/standalone ./`). Without this, a parent directory holding
+  // another lockfile (e.g. a git worktree) makes Next infer the wrong root.
+  outputFileTracingRoot: projectDir,
   async headers() {
     return [
       {
