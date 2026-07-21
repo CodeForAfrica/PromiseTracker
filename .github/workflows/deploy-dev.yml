@@ -8,6 +8,11 @@ concurrency:
   group: "${{ github.workflow }} @ ${{ github.ref }}"
   cancel-in-progress: true
 
+# Least-privilege default for GITHUB_TOKEN. Deployment authenticates to
+# DockerHub/Dokku via dedicated secrets, not the workflow token.
+permissions:
+  contents: read
+
 env:
   APP_NAME: promisetracker-v2
   DOKKU_REMOTE_BRANCH: "master"

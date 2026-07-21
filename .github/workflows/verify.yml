@@ -5,6 +5,10 @@ name: Verify
 on:
   workflow_call:
 
+# Least-privilege default for GITHUB_TOKEN; jobs only read repository contents.
+permissions:
+  contents: read
+
 env:
   NODE_VERSION: "22.12.0"
   # Isolated, local, test-named database — never a shared/hosted cluster.
