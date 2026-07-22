@@ -99,14 +99,18 @@ jobs:
             "sentry_project=${{ secrets.SENTRY_PROJECT }}"
           tags: "${{ inputs.image_name }}:${{ github.sha }}"
 
-      # Build the migrator image from the same commit for the release migrate step.
+      # Build the migrator image from the same commit for the release migrate
+      # step. Unlike the runtime image (deployed to the arm64 Dokku host), the
+      # migrator is only ever executed via `docker run` on the amd64 GitHub
+      # runner, so it must be built for the runner's architecture — building it
+      # arm64-only produced "no matching manifest for linux/amd64" at run time.
       - name: Build and push migrator image
         id: build_migrator
         uses: docker/build-push-action@v6
         with:
           context: .
           target: migrator
-          platforms: ${{ inputs.platforms }}
+          platforms: linux/amd64
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
