@@ -23,16 +23,18 @@ on:
         required: false
         type: string
         default: linux/arm64
+    # Only digests are exported (sha256:…). The full image reference is NOT an
+    # output: the image name contains a value matching a repository secret, and
+    # GitHub empties any output containing a secret when it crosses a job /
+    # reusable-workflow boundary. Callers reassemble `<image_name>@<digest>`
+    # from a plain image-name input plus these digests.
     outputs:
-      runtime_image:
-        description: "Immutable runtime image reference pinned by digest"
-        value: ${{ jobs.build.outputs.runtime_image }}
-      migrator_image:
-        description: "Immutable migrator image reference pinned by digest"
-        value: ${{ jobs.build.outputs.migrator_image }}
       runtime_digest:
-        description: "Runtime image digest"
+        description: "Runtime image digest (sha256:…)"
         value: ${{ jobs.build.outputs.runtime_digest }}
+      migrator_digest:
+        description: "Migrator image digest (sha256:…)"
+        value: ${{ jobs.build.outputs.migrator_digest }}
     secrets:
       DOCKER_HUB_USERNAME:
         required: true
@@ -56,9 +58,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      runtime_image: ${{ steps.refs.outputs.runtime_image }}
-      migrator_image: ${{ steps.refs.outputs.migrator_image }}
       runtime_digest: ${{ steps.build_runtime.outputs.digest }}
+      migrator_digest: ${{ steps.build_migrator.outputs.digest }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -110,13 +111,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           tags: "${{ inputs.image_name }}-migrator:${{ github.sha }}"
-
-      # Pin both images by digest so downstream jobs promote the exact bytes.
-      - name: Compute immutable image references
-        id: refs
-        run: |
-          echo "runtime_image=${{ inputs.image_name }}@${{ steps.build_runtime.outputs.digest }}" >> "$GITHUB_OUTPUT"
-          echo "migrator_image=${{ inputs.image_name }}-migrator@${{ steps.build_migrator.outputs.digest }}" >> "$GITHUB_OUTPUT"
 
       - name: Summarize
         run: |

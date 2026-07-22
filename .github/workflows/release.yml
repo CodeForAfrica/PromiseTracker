@@ -56,8 +56,9 @@ jobs:
       app_name: promisetracker-v2-staging
       dokku_remote_url: "ssh://azureuser@ui-1.dev.codeforafrica.org"
       app_url: "https://promisetracker-v2.staging.codeforafrica.org"
-      runtime_image: ${{ needs.build.outputs.runtime_image }}
-      migrator_image: ${{ needs.build.outputs.migrator_image }}
+      image_name: "codeforafrica/promisetracker-v2"
+      runtime_digest: ${{ needs.build.outputs.runtime_digest }}
+      migrator_digest: ${{ needs.build.outputs.migrator_digest }}
     secrets:
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
@@ -78,8 +79,9 @@ jobs:
       app_name: promisetracker-v2
       dokku_remote_url: "ssh://azureuser@ui-1.dev.codeforafrica.org"
       app_url: "https://promisetracker.codeforafrica.org"
-      runtime_image: ${{ needs.build.outputs.runtime_image }}
-      migrator_image: ${{ needs.build.outputs.migrator_image }}
+      image_name: "codeforafrica/promisetracker-v2"
+      runtime_digest: ${{ needs.build.outputs.runtime_digest }}
+      migrator_digest: ${{ needs.build.outputs.migrator_digest }}
     secrets:
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}

@@ -25,10 +25,20 @@ on:
       app_url:
         required: true
         type: string
-      runtime_image:
+      # The image reference is assembled here from a plain image name plus the
+      # build digests. It is intentionally NOT passed pre-assembled: the org's
+      # image name contains a value that matches a repository secret, and
+      # GitHub empties any job/workflow output that contains a secret when it
+      # crosses a job or reusable-workflow boundary — which previously made the
+      # promoted reference arrive empty ("docker: invalid reference format").
+      # Digests (sha256:…) contain no secret and propagate cleanly.
+      image_name:
         required: true
         type: string
-      migrator_image:
+      runtime_digest:
+        required: true
+        type: string
+      migrator_digest:
         required: true
         type: string
       run_migrations:
@@ -80,7 +90,7 @@ jobs:
             -e DATABASE_URI \
             -e PAYLOAD_SECRET \
             -e TIKA_ENABLED=0 \
-            "${{ inputs.migrator_image }}"
+            "${{ inputs.image_name }}-migrator@${{ inputs.migrator_digest }}"
 
       # Promote the EXACT runtime image (by digest) that was built and verified.
       - name: Deploy runtime image to Dokku
@@ -88,7 +98,7 @@ jobs:
         with:
           git_remote_url: ${{ inputs.dokku_remote_url }}/${{ inputs.app_name }}
           ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
-          deploy_docker_image: ${{ inputs.runtime_image }}
+          deploy_docker_image: ${{ inputs.image_name }}@${{ inputs.runtime_digest }}
 
       # Bounded post-deploy readiness gate: fail the release if the new instance
       # does not become ready (Mongo + Tika) within the window.
