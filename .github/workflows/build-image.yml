@@ -62,7 +62,7 @@ jobs:
       migrator_digest: ${{ steps.build_migrator.outputs.digest }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
