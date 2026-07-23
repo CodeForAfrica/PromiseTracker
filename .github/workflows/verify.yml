@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 env:
-  NODE_VERSION: "22.12.0"
+  NODE_VERSION: "24.18.0"
   # Isolated, local, test-named database — never a shared/hosted cluster.
   DATABASE_URI: mongodb://127.0.0.1:27017/promisetracker_ci_test
   PAYLOAD_SECRET: test-payload-secret-not-for-production

@@ -1,9 +1,9 @@
 # To use this Dockerfile, you have to set `output: 'standalone'` in your next.config.mjs file.
 # Based on https://github.com/vercel/next.js/blob/canary/examples/with-docker/Dockerfile
 
-ARG PNPM_VERSION=10.16.1
+ARG PNPM_VERSION=10.33.0
 
-FROM node:22.12.0-alpine AS base
+FROM node:24.18.0-alpine AS base
 ARG PNPM_VERSION
 RUN npm install -g pnpm@${PNPM_VERSION}
 
