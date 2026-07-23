@@ -99,11 +99,14 @@ jobs:
             *.cache-to=type=gha,mode=max,scope=runtime
 
       # Export the pushed manifest digest so callers can pin by digest.
+      # The metadata is passed via env (never inlined into the script body) so
+      # its JSON braces/quotes cannot break shell parsing.
       - name: Extract digest
         id: digest
+        env:
+          METADATA: ${{ steps.bake.outputs.metadata }}
         run: |
-          digest="$(echo '${{ steps.bake.outputs.metadata }}' \
-            | jq -r '.runtime."containerimage.digest"')"
+          digest="$(jq -r '.runtime."containerimage.digest"' <<< "$METADATA")"
           if [ -z "$digest" ] || [ "$digest" = "null" ]; then
             echo "::error::Could not read runtime image digest from bake metadata"
             exit 1
@@ -156,9 +159,10 @@ jobs:
 
       - name: Extract digest
         id: digest
+        env:
+          METADATA: ${{ steps.bake.outputs.metadata }}
         run: |
-          digest="$(echo '${{ steps.bake.outputs.metadata }}' \
-            | jq -r '.migrator."containerimage.digest"')"
+          digest="$(jq -r '.migrator."containerimage.digest"' <<< "$METADATA")"
           if [ -z "$digest" ] || [ "$digest" = "null" ]; then
             echo "::error::Could not read migrator image digest from bake metadata"
             exit 1
