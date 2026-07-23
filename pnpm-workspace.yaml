@@ -1,0 +1,21 @@
+minimumReleaseAge: 1440
+trustPolicy: no-downgrade
+blockExoticSubdeps: true
+
+# Scoped, exact-version exceptions to trustPolicy: no-downgrade.
+# Each of these is the version demanded by a mainstream/first-party parent
+# (e.g. eslint-import-resolver-typescript is required by eslint-config-next),
+# and the flag is a provenance/attestation *gap* on that specific version, not
+# evidence of a takeover. Pinned to exact versions so any future downgraded
+# release is re-flagged. Revisit when parents ship provenance-signed updates.
+trustPolicyExclude:
+  - eslint-import-resolver-typescript@3.10.1
+  - pino@9.14.0
+  - semver@6.3.1
+
+# Packages allowed to run install scripts
+allowBuilds:
+  "@sentry/cli": true
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
