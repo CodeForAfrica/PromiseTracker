@@ -29,7 +29,6 @@ export const getPublishedPoliticalEntityIDs = async ({
   const politicalEntitiesTable = await db.table(PoliticalEntitiestable);
 
   const publishedEntities = await db.scan(PoliticalEntitiestable, {
-    // @ts-expect-error: Type 'string | string[]' is not assignable to type 'string'.
     filterByFormula: formula(politicalEntitiesTable, [
       "AND",
       ["=", { field: "publishThisEntity" }, true],
@@ -48,7 +47,6 @@ export const getUnprocessedDocuments = async ({
   const documentsTable = await db.table(documentListTable);
 
   const unProcessedDocuments = await db.scan(documentListTable, {
-    // @ts-expect-error: Type 'string | string[]' is not assignable to type 'string'.
     filterByFormula: formula(documentsTable, [
       "AND",
       ["=", { field: "processed" }, false],

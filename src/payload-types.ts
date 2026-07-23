@@ -132,6 +132,9 @@ export interface Config {
     'payload-jobs-stats': PayloadJobsStatsSelect<false> | PayloadJobsStatsSelect<true>;
   };
   locale: 'en' | 'fr';
+  widgets: {
+    collections: CollectionsWidget;
+  };
   user: User;
   jobs: {
     tasks: {
@@ -2257,69 +2260,50 @@ export interface Setting {
      */
     modelPreset?:
       | (
-          | 'google:gemini-1.5-flash'
-          | 'google:gemini-1.5-flash-latest'
-          | 'google:gemini-1.5-flash-001'
-          | 'google:gemini-1.5-flash-002'
-          | 'google:gemini-1.5-flash-8b'
-          | 'google:gemini-1.5-flash-8b-latest'
-          | 'google:gemini-1.5-flash-8b-001'
-          | 'google:gemini-1.5-pro'
-          | 'google:gemini-1.5-pro-latest'
-          | 'google:gemini-1.5-pro-001'
-          | 'google:gemini-1.5-pro-002'
           | 'google:gemini-2.0-flash'
           | 'google:gemini-2.0-flash-001'
-          | 'google:gemini-2.0-flash-live-001'
           | 'google:gemini-2.0-flash-lite'
-          | 'google:gemini-2.0-pro-exp-02-05'
-          | 'google:gemini-2.0-flash-thinking-exp-01-21'
-          | 'google:gemini-2.0-flash-exp'
+          | 'google:gemini-2.0-flash-lite-001'
           | 'google:gemini-2.5-pro'
           | 'google:gemini-2.5-flash'
           | 'google:gemini-2.5-flash-image'
           | 'google:gemini-2.5-flash-lite'
-          | 'google:gemini-2.5-flash-lite-preview-09-2025'
-          | 'google:gemini-2.5-flash-preview-04-17'
-          | 'google:gemini-2.5-flash-preview-09-2025'
-          | 'google:gemini-3.1-pro-preview'
+          | 'google:gemini-2.5-flash-preview-tts'
+          | 'google:gemini-2.5-pro-preview-tts'
+          | 'google:gemini-2.5-flash-native-audio-latest'
+          | 'google:gemini-2.5-flash-native-audio-preview-09-2025'
+          | 'google:gemini-2.5-flash-native-audio-preview-12-2025'
+          | 'google:gemini-2.5-computer-use-preview-10-2025'
           | 'google:gemini-3-pro-preview'
           | 'google:gemini-3-pro-image-preview'
           | 'google:gemini-3-flash-preview'
+          | 'google:gemini-3.1-pro-preview'
+          | 'google:gemini-3.1-pro-preview-customtools'
+          | 'google:gemini-3.1-flash-image-preview'
+          | 'google:gemini-3.1-flash-lite-preview'
+          | 'google:gemini-3.1-flash-tts-preview'
+          | 'google:gemini-3.5-flash'
+          | 'google:gemini-3.5-flash-lite'
+          | 'google:gemini-3.6-flash'
           | 'google:gemini-pro-latest'
           | 'google:gemini-flash-latest'
           | 'google:gemini-flash-lite-latest'
-          | 'google:gemini-2.5-pro-exp-03-25'
-          | 'google:gemini-exp-1206'
+          | 'google:deep-research-pro-preview-12-2025'
+          | 'google:nano-banana-pro-preview'
+          | 'google:aqa'
+          | 'google:gemini-robotics-er-1.5-preview'
+          | 'google:gemma-3-1b-it'
+          | 'google:gemma-3-4b-it'
+          | 'google:gemma-3n-e4b-it'
+          | 'google:gemma-3n-e2b-it'
           | 'google:gemma-3-12b-it'
           | 'google:gemma-3-27b-it'
-          | 'xai:grok-4-1-fast-reasoning'
-          | 'xai:grok-4-1-fast-non-reasoning'
-          | 'xai:grok-4-fast-non-reasoning'
-          | 'xai:grok-4-fast-reasoning'
-          | 'xai:grok-code-fast-1'
-          | 'xai:grok-4'
-          | 'xai:grok-4-0709'
-          | 'xai:grok-4-latest'
-          | 'xai:grok-3'
-          | 'xai:grok-3-latest'
-          | 'xai:grok-3-fast'
-          | 'xai:grok-3-fast-latest'
-          | 'xai:grok-3-mini'
-          | 'xai:grok-3-mini-latest'
-          | 'xai:grok-3-mini-fast'
-          | 'xai:grok-3-mini-fast-latest'
-          | 'xai:grok-2-vision-1212'
-          | 'xai:grok-2-vision'
-          | 'xai:grok-2-vision-latest'
-          | 'xai:grok-2-image-1212'
-          | 'xai:grok-2-image'
-          | 'xai:grok-2-image-latest'
-          | 'xai:grok-2-1212'
-          | 'xai:grok-2'
-          | 'xai:grok-2-latest'
-          | 'xai:grok-vision-beta'
-          | 'xai:grok-beta'
+          | 'xai:grok-4.5'
+          | 'xai:grok-4.3'
+          | 'xai:grok-4.20-0309-reasoning'
+          | 'xai:grok-4.20-0309-non-reasoning'
+          | 'xai:grok-4.20-multi-agent-0309'
+          | 'xai:grok-build-0.1'
           | 'openai:o1'
           | 'openai:o1-2024-12-17'
           | 'openai:o3-mini'
@@ -2338,18 +2322,21 @@ export interface Setting {
           | 'openai:gpt-4o-2024-05-13'
           | 'openai:gpt-4o-2024-08-06'
           | 'openai:gpt-4o-2024-11-20'
+          | 'openai:gpt-4o-audio-preview'
+          | 'openai:gpt-4o-audio-preview-2024-12-17'
+          | 'openai:gpt-4o-audio-preview-2025-06-03'
           | 'openai:gpt-4o-mini'
           | 'openai:gpt-4o-mini-2024-07-18'
-          | 'openai:gpt-4-turbo'
-          | 'openai:gpt-4-turbo-2024-04-09'
-          | 'openai:gpt-4'
-          | 'openai:gpt-4-0613'
-          | 'openai:gpt-4.5-preview'
-          | 'openai:gpt-4.5-preview-2025-02-27'
+          | 'openai:gpt-4o-mini-audio-preview'
+          | 'openai:gpt-4o-mini-audio-preview-2024-12-17'
+          | 'openai:gpt-4o-search-preview'
+          | 'openai:gpt-4o-search-preview-2025-03-11'
+          | 'openai:gpt-4o-mini-search-preview'
+          | 'openai:gpt-4o-mini-search-preview-2025-03-11'
           | 'openai:gpt-3.5-turbo-0125'
           | 'openai:gpt-3.5-turbo'
           | 'openai:gpt-3.5-turbo-1106'
-          | 'openai:chatgpt-4o-latest'
+          | 'openai:gpt-3.5-turbo-16k'
           | 'openai:gpt-5'
           | 'openai:gpt-5-2025-08-07'
           | 'openai:gpt-5-mini'
@@ -2358,21 +2345,35 @@ export interface Setting {
           | 'openai:gpt-5-nano-2025-08-07'
           | 'openai:gpt-5-chat-latest'
           | 'openai:gpt-5.1'
+          | 'openai:gpt-5.1-2025-11-13'
           | 'openai:gpt-5.1-chat-latest'
           | 'openai:gpt-5.2'
+          | 'openai:gpt-5.2-2025-12-11'
           | 'openai:gpt-5.2-chat-latest'
           | 'openai:gpt-5.2-pro'
-          | 'anthropic:claude-3-5-haiku-20241022'
-          | 'anthropic:claude-3-5-haiku-latest'
-          | 'anthropic:claude-3-7-sonnet-20250219'
-          | 'anthropic:claude-3-7-sonnet-latest'
+          | 'openai:gpt-5.2-pro-2025-12-11'
+          | 'openai:gpt-5.3-chat-latest'
+          | 'openai:gpt-5.4'
+          | 'openai:gpt-5.4-2026-03-05'
+          | 'openai:gpt-5.4-mini'
+          | 'openai:gpt-5.4-mini-2026-03-17'
+          | 'openai:gpt-5.4-nano'
+          | 'openai:gpt-5.4-nano-2026-03-17'
+          | 'openai:gpt-5.4-pro'
+          | 'openai:gpt-5.4-pro-2026-03-05'
+          | 'openai:gpt-5.5'
+          | 'openai:gpt-5.5-2026-04-23'
+          | 'openai:gpt-5.6'
+          | 'openai:gpt-5.6-luna'
+          | 'openai:gpt-5.6-sol'
+          | 'openai:gpt-5.6-terra'
           | 'anthropic:claude-3-haiku-20240307'
           | 'anthropic:claude-haiku-4-5-20251001'
           | 'anthropic:claude-haiku-4-5'
           | 'anthropic:claude-opus-4-0'
+          | 'anthropic:claude-opus-4-20250514'
           | 'anthropic:claude-opus-4-1-20250805'
           | 'anthropic:claude-opus-4-1'
-          | 'anthropic:claude-opus-4-20250514'
           | 'anthropic:claude-opus-4-5'
           | 'anthropic:claude-opus-4-5-20251101'
           | 'anthropic:claude-sonnet-4-0'
@@ -2381,22 +2382,28 @@ export interface Setting {
           | 'anthropic:claude-sonnet-4-5'
           | 'anthropic:claude-sonnet-4-6'
           | 'anthropic:claude-opus-4-6'
+          | 'anthropic:claude-opus-4-7'
+          | 'anthropic:claude-opus-4-8'
+          | 'anthropic:claude-fable-5'
+          | 'anthropic:claude-sonnet-5'
           | 'mistral:ministral-3b-latest'
           | 'mistral:ministral-8b-latest'
+          | 'mistral:ministral-14b-latest'
           | 'mistral:mistral-large-latest'
           | 'mistral:mistral-medium-latest'
+          | 'mistral:mistral-medium-3'
+          | 'mistral:mistral-large-2512'
           | 'mistral:mistral-medium-2508'
           | 'mistral:mistral-medium-2505'
-          | 'mistral:mistral-small-latest'
+          | 'mistral:mistral-small-2506'
           | 'mistral:pixtral-large-latest'
-          | 'mistral:magistral-small-2507'
-          | 'mistral:magistral-medium-2507'
-          | 'mistral:magistral-small-2506'
-          | 'mistral:magistral-medium-2506'
-          | 'mistral:pixtral-12b-2409'
-          | 'mistral:open-mistral-7b'
-          | 'mistral:open-mixtral-8x7b'
-          | 'mistral:open-mixtral-8x22b'
+          | 'mistral:mistral-medium-3.5'
+          | 'mistral:mistral-small-latest'
+          | 'mistral:mistral-small-2603'
+          | 'mistral:magistral-medium-latest'
+          | 'mistral:magistral-small-latest'
+          | 'mistral:magistral-medium-2509'
+          | 'mistral:magistral-small-2509'
           | 'deepseek:deepseek-chat'
           | 'deepseek:deepseek-reasoner'
           | 'cerebras:llama3.1-8b'
@@ -2460,6 +2467,7 @@ export interface Setting {
           | 'togetherai:upstage/SOLAR-10.7B-Instruct-v1.0'
           | 'cohere:command-a-03-2025'
           | 'cohere:command-a-reasoning-08-2025'
+          | 'cohere:command-a-vision-07-2025'
           | 'cohere:command-r7b-12-2024'
           | 'cohere:command-r-plus-04-2024'
           | 'cohere:command-r-plus'
@@ -2487,7 +2495,7 @@ export interface Setting {
           | 'fireworks:accounts/fireworks/models/yi-large'
           | 'fireworks:accounts/fireworks/models/kimi-k2-instruct'
           | 'fireworks:accounts/fireworks/models/kimi-k2-thinking'
-          | 'fireworks:accounts/fireworks/models/kimi-k2p5'
+          | 'fireworks:accounts/fireworks/models/kimi-k2p6'
           | 'fireworks:accounts/fireworks/models/minimax-m2'
           | 'deepinfra:01-ai/Yi-34B-Chat'
           | 'deepinfra:Austism/chronos-hermes-13b-v2'
@@ -3110,6 +3118,16 @@ export interface PayloadJobsStatsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "collections_widget".
+ */
+export interface CollectionsWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "TaskCreateTenantFromAirtable".
  */
 export interface TaskCreateTenantFromAirtable {
@@ -3210,17 +3228,37 @@ export interface TaskCleanupFailedJobs {
  */
 export interface TaskCreateCollectionExport {
   input: {
-    name?: string | null;
+    id: string;
+    name: string;
+    batchSize?: number | null;
+    collectionSlug:
+      | 'documents'
+      | 'ai-extractions'
+      | 'ai-extraction-export-rows'
+      | 'promises'
+      | 'media'
+      | 'pages'
+      | 'global-pages'
+      | 'users'
+      | 'site-settings'
+      | 'tenants'
+      | 'partners'
+      | 'political-entities'
+      | 'promise-status'
+      | 'workflow-locks'
+      | 'exports'
+      | 'imports';
+    drafts?: ('yes' | 'no') | null;
+    exportCollection: string;
+    fields?: string[] | null;
     format: 'csv' | 'json';
     limit?: number | null;
+    locale?: string | null;
+    maxLimit?: number | null;
     page?: number | null;
     sort?: string | null;
-    sortOrder?: ('asc' | 'desc') | null;
-    locale?: ('all' | 'en' | 'fr') | null;
-    drafts?: ('yes' | 'no') | null;
-    selectionToUse?: ('currentSelection' | 'currentFilters' | 'all') | null;
-    fields?: string[] | null;
-    collectionSlug: string;
+    userCollection?: string | null;
+    userID?: string | null;
     where?:
       | {
           [k: string]: unknown;
@@ -3230,12 +3268,6 @@ export interface TaskCreateCollectionExport {
       | number
       | boolean
       | null;
-    id?: string | null;
-    batchSize?: number | null;
-    userID?: string | null;
-    userCollection?: string | null;
-    exportCollection?: string | null;
-    maxLimit?: number | null;
   };
   output?: unknown;
 }
