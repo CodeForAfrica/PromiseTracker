@@ -13,6 +13,13 @@ trustPolicyExclude:
   - pino@9.14.0
   - semver@6.3.1
 
+# Dependency overrides.
+# next declares sharp as an optional dependency at ^0.34.3, which pins it to the
+# vulnerable 0.34.x line (libvips CVEs, GHSA-f88m-g3jw-g9cj). Force the whole
+# tree onto the patched 0.35.x — the sharp API is compatible across 0.34→0.35.
+overrides:
+  sharp: 0.35.3
+
 # Packages allowed to run install scripts
 allowBuilds:
   "@sentry/cli": true
