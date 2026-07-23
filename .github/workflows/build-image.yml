@@ -81,7 +81,7 @@ jobs:
       # Build the runtime image once. No real/reachable database is required.
       - name: Build and push runtime image
         id: build_runtime
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           target: runner
@@ -106,7 +106,7 @@ jobs:
       # arm64-only produced "no matching manifest for linux/amd64" at run time.
       - name: Build and push migrator image
         id: build_migrator
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           target: migrator
