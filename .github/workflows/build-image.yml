@@ -7,6 +7,12 @@ name: Build image
 #
 # Production artifact creation does not require a reachable database: the
 # Dockerfile defaults DATABASE_URI/PAYLOAD_SECRET to build-time placeholders.
+#
+# PERFORMANCE: each target is built on a NATIVE runner via docker/bake-action —
+# runtime on an arm64 runner (arm64 Dokku host) and migrator on an amd64 runner
+# (it is only ever `docker run` on the amd64 GitHub runner during a release).
+# This replaces the previous single-runner QEMU-emulated arm64 build, which
+# took ~45 min; native builds run in a fraction of that and in parallel.
 on:
   workflow_call:
     inputs:
@@ -19,10 +25,6 @@ on:
       sentry_environment:
         required: true
         type: string
-      platforms:
-        required: false
-        type: string
-        default: linux/arm64
     # Only digests are exported (sha256:…). The full image reference is NOT an
     # output: the image name contains a value matching a repository secret, and
     # GitHub empties any output containing a secret when it crosses a job /
@@ -31,10 +33,10 @@ on:
     outputs:
       runtime_digest:
         description: "Runtime image digest (sha256:…)"
-        value: ${{ jobs.build.outputs.runtime_digest }}
+        value: ${{ jobs.runtime.outputs.digest }}
       migrator_digest:
         description: "Migrator image digest (sha256:…)"
-        value: ${{ jobs.build.outputs.migrator_digest }}
+        value: ${{ jobs.migrator.outputs.digest }}
     secrets:
       DOCKER_HUB_USERNAME:
         required: true
@@ -55,19 +57,17 @@ permissions:
   contents: read
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  # Runtime image, built natively on arm64 (no QEMU) — this is the image
+  # deployed to the arm64 Dokku host.
+  runtime:
+    runs-on: ubuntu-24.04-arm
     outputs:
-      runtime_digest: ${{ steps.build_runtime.outputs.digest }}
-      migrator_digest: ${{ steps.build_migrator.outputs.digest }}
+      digest: ${{ steps.digest.outputs.digest }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
         with:
           fetch-depth: 1
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -78,48 +78,96 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      # Build the runtime image once. No real/reachable database is required.
       - name: Build and push runtime image
-        id: build_runtime
-        uses: docker/build-push-action@v7
+        id: bake
+        uses: docker/bake-action@v7
+        env:
+          IMAGE_NAME: ${{ inputs.image_name }}
+          TAG: ${{ github.sha }}
+          NEXT_PUBLIC_APP_URL: ${{ inputs.next_public_app_url }}
+          NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          SENTRY_ENVIRONMENT: ${{ inputs.sentry_environment }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         with:
-          context: .
-          target: runner
-          platforms: ${{ inputs.platforms }}
+          files: docker-bake.hcl
+          targets: runtime
           push: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          build-args: |
-            NEXT_PUBLIC_APP_URL=${{ inputs.next_public_app_url }}
-            NEXT_PUBLIC_SENTRY_DSN=${{ secrets.SENTRY_DSN }}
-            SENTRY_ENVIRONMENT=${{ inputs.sentry_environment }}
-          secrets: |
-            "sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN }}"
-            "sentry_org=${{ secrets.SENTRY_ORG }}"
-            "sentry_project=${{ secrets.SENTRY_PROJECT }}"
-          tags: "${{ inputs.image_name }}:${{ github.sha }}"
+          set: |
+            *.cache-from=type=gha,scope=runtime
+            *.cache-to=type=gha,mode=max,scope=runtime
 
-      # Build the migrator image from the same commit for the release migrate
-      # step. Unlike the runtime image (deployed to the arm64 Dokku host), the
-      # migrator is only ever executed via `docker run` on the amd64 GitHub
-      # runner, so it must be built for the runner's architecture — building it
-      # arm64-only produced "no matching manifest for linux/amd64" at run time.
-      - name: Build and push migrator image
-        id: build_migrator
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          target: migrator
-          platforms: linux/amd64
-          push: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          tags: "${{ inputs.image_name }}-migrator:${{ github.sha }}"
+      # Export the pushed manifest digest so callers can pin by digest.
+      - name: Extract digest
+        id: digest
+        run: |
+          digest="$(echo '${{ steps.bake.outputs.metadata }}' \
+            | jq -r '.runtime."containerimage.digest"')"
+          if [ -z "$digest" ] || [ "$digest" = "null" ]; then
+            echo "::error::Could not read runtime image digest from bake metadata"
+            exit 1
+          fi
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
 
       - name: Summarize
         run: |
           {
-            echo "### Built images"
-            echo "- runtime: \`${{ inputs.image_name }}@${{ steps.build_runtime.outputs.digest }}\`"
-            echo "- migrator: \`${{ inputs.image_name }}-migrator@${{ steps.build_migrator.outputs.digest }}\`"
+            echo "### Built runtime image"
+            echo "- runtime: \`${{ inputs.image_name }}@${{ steps.digest.outputs.digest }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # Migrator image, built natively on amd64. Unlike the runtime image (deployed
+  # to the arm64 Dokku host), the migrator is only ever executed via `docker
+  # run` on the amd64 GitHub runner during the release migrate step, so it must
+  # be built for the runner's architecture.
+  migrator:
+    runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.digest.outputs.digest }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+      - name: Build and push migrator image
+        id: bake
+        uses: docker/bake-action@v7
+        env:
+          IMAGE_NAME: ${{ inputs.image_name }}
+          TAG: ${{ github.sha }}
+        with:
+          files: docker-bake.hcl
+          targets: migrator
+          push: true
+          set: |
+            *.cache-from=type=gha,scope=migrator
+            *.cache-to=type=gha,mode=max,scope=migrator
+
+      - name: Extract digest
+        id: digest
+        run: |
+          digest="$(echo '${{ steps.bake.outputs.metadata }}' \
+            | jq -r '.migrator."containerimage.digest"')"
+          if [ -z "$digest" ] || [ "$digest" = "null" ]; then
+            echo "::error::Could not read migrator image digest from bake metadata"
+            exit 1
+          fi
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+      - name: Summarize
+        run: |
+          {
+            echo "### Built migrator image"
+            echo "- migrator: \`${{ inputs.image_name }}-migrator@${{ steps.digest.outputs.digest }}\`"
           } >> "$GITHUB_STEP_SUMMARY"
