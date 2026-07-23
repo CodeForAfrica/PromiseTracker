@@ -59,6 +59,10 @@ CMD ["pnpm", "migrate"]
 # Production image, copy all the files and run next
 FROM base AS runner
 ARG TIKA_VERSION=3.2.3
+# SHA-256 of tika-server-standard-${TIKA_VERSION}.jar. MUST be updated together
+# with TIKA_VERSION. To get it for a new version:
+#   curl -sSL https://repo1.maven.org/maven2/org/apache/tika/tika-server-standard/<v>/tika-server-standard-<v>.jar | sha256sum
+ARG TIKA_SHA256=c00898065af088925ba4b65856db66e6140e4c750d28219b61b96885885e7593
 WORKDIR /app
 
 ENV NODE_ENV=production \
@@ -76,8 +80,14 @@ RUN apk add --no-cache openjdk17-jre-headless curl
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
+# Pull the Tika server jar from Maven Central rather than archive.apache.org:
+# the archive host is throttled to ~200KB/s and this 66MB download took ~8.5min
+# on cold-cache builds; Maven Central is a fast CDN (~20s) and keeps every
+# version permanently. The checksum is verified so a corrupt/tampered download
+# fails the build.
 RUN mkdir -p /opt/tika \
-  && curl -fsSL "https://archive.apache.org/dist/tika/${TIKA_VERSION}/tika-server-standard-${TIKA_VERSION}.jar" -o "${TIKA_SERVER_JAR}" \
+  && curl -fsSL "https://repo1.maven.org/maven2/org/apache/tika/tika-server-standard/${TIKA_VERSION}/tika-server-standard-${TIKA_VERSION}.jar" -o "${TIKA_SERVER_JAR}" \
+  && echo "${TIKA_SHA256}  ${TIKA_SERVER_JAR}" | sha256sum -c - \
   && chmod 644 "${TIKA_SERVER_JAR}"
 
 COPY --from=builder /app/public ./public
