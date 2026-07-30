@@ -30,6 +30,7 @@ interface PromisesProps {
   withFilter?: boolean;
   projectMeta?: ProjectMeta;
   promiseStatuses?: SortItem[];
+  promiseCategories?: SortItem[];
   sortLabels?: {
     sortByDeadline: SortItem;
     sortByMostRecent: SortItem;
@@ -81,6 +82,7 @@ function Promises({
   withFilter = true,
   projectMeta,
   promiseStatuses = [],
+  promiseCategories = [],
   sortLabels,
   filterByConfig,
   sortByConfig,
@@ -89,7 +91,8 @@ function Promises({
 }: PromisesProps) {
   const sortByDeadline = sortLabels?.sortByDeadline;
   const sortByMostRecent = sortLabels?.sortByMostRecent;
-  const filterCategoryItems = projectMeta?.tags ?? [];
+  const filterCategoryItems =
+    promiseCategories.length > 0 ? promiseCategories : (projectMeta?.tags ?? []);
   const filterStatusItems = promiseStatuses;
   const [items, setItems] = useState(itemsProp);
   const [selectedFilters, setSelectedFilters] = useState<any[]>([]);
@@ -139,9 +142,16 @@ function Promises({
         return selectedFilters.some((c) => c.slug === promiseSlug);
       };
 
+      const hasCategory = (item: PromiseWithHref) => {
+        const promiseSlug = slugify(item.category ?? "");
+        return selectedFilters.some((c) => c.slug === promiseSlug);
+      };
+
       let filteredItems: PromiseWithHref[] = [];
       if (filterBy === "status") {
         filteredItems = itemsProp.filter(hasStatus);
+      } else if (filterBy === "category") {
+        filteredItems = itemsProp.filter(hasCategory);
       }
 
       const hasFilters = selectedFilters?.length;

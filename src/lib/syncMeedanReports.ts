@@ -20,6 +20,7 @@ type PromiseData = {
   status: string | null;
   publishStatus: string;
   politicalEntity: string | null;
+  category: string | null;
   image: string | null;
   url: string;
 };
@@ -28,6 +29,7 @@ const buildPromiseData = (
   report: PublishedReport,
   statusId: string | null,
   politicalEntityId: string | null,
+  categoryValue: string | null,
   imageId: string | null,
   rawPublishStatus: string | null
 ): PromiseData => {
@@ -39,6 +41,7 @@ const buildPromiseData = (
     status: statusId,
     publishStatus: coerce(rawPublishStatus),
     politicalEntity: politicalEntityId,
+    category: categoryValue,
     image: imageId,
     url: coerce(report.url),
   };
@@ -77,6 +80,7 @@ const normaliseExistingDoc = (doc: PromiseDoc): PromiseData => {
     status: getRelationId(doc.status),
     publishStatus: coerce(doc.publishStatus),
     politicalEntity: getRelationId(doc.politicalEntity),
+    category: coerce(doc.category),
     image: getRelationId(doc.image as unknown),
     url: coerce(doc.url),
   };
@@ -193,6 +197,7 @@ export const syncMeedanReports = async ({
   };
 
   const extractionEntityIndex = new Map<string, string>();
+  const extractionCategoryIndex = new Map<string, string>();
 
   for (const extractionDoc of aiExtractionDocsRaw as AiExtractionDoc[]) {
     const document = await resolveDocument(extractionDoc.document);
@@ -206,16 +211,20 @@ export const syncMeedanReports = async ({
           : (politicalEntityValue.id ?? null);
     }
 
-    if (!politicalEntityId) {
-      continue;
-    }
-
     for (const extraction of extractionDoc.extractions ?? []) {
       const checkMediaId = extraction.checkMediaId?.trim();
       if (!checkMediaId) {
         continue;
       }
-      extractionEntityIndex.set(checkMediaId, politicalEntityId);
+
+      const category = extraction.category?.trim();
+      if (category) {
+        extractionCategoryIndex.set(checkMediaId, category);
+      }
+
+      if (politicalEntityId) {
+        extractionEntityIndex.set(checkMediaId, politicalEntityId);
+      }
     }
   }
 
@@ -392,11 +401,18 @@ export const syncMeedanReports = async ({
         meedanId: report.meedanId,
       });
     }
+
+    const categoryValue =
+      extractionCategoryIndex.get(report.meedanId) ??
+      existingData?.category ??
+      null;
+
     const imageId = await resolveImageForReport(report, existingData);
     const data = buildPromiseData(
       report,
       resolvedStatusId,
       politicalEntityId,
+      categoryValue,
       imageId,
       reportStatusValue
     );
