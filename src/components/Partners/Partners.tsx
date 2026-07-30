@@ -38,10 +38,14 @@ const Partners = React.forwardRef<HTMLDivElement, Props>(function Partners(
       >
         <Typography
           component="h2"
-          variant="h2"
+          variant="h4"
           sx={{
+            width: "100%",
+            margin: 0,
             textAlign: { xs: "center", lg: "left" },
-            textTransform: "capitalize",
+            textTransform: "uppercase",
+            fontWeight: 600,
+            letterSpacing: "0.64px",
           }}
         >
           {title}
@@ -54,7 +58,7 @@ const Partners = React.forwardRef<HTMLDivElement, Props>(function Partners(
                 xs: "center",
                 lg: "space-between",
               }}
-              rowSpacing={{ xs: 4, md: 5 }}
+              rowSpacing={{ xs: 4, md: 5, lg: 0 }}
               columnSpacing={{ lg: 4 }}
             >
               {partners.slice(0, 6).map((partner) => (
@@ -65,13 +69,24 @@ const Partners = React.forwardRef<HTMLDivElement, Props>(function Partners(
                     lg: 4,
                   }}
                 >
-                  <CMSLink {...partner.url} label={""} entitySlug={entitySlug}>
+                  <CMSLink
+                    {...partner.url}
+                    label={""}
+                    entitySlug={entitySlug}
+                    sx={{
+                      display: "block",
+                      margin: 0,
+                      width: { lg: "16.25rem" },
+                      height: { lg: "7.5rem" },
+                    }}
+                  >
                     <Box
                       sx={{
                         width: "100%",
                         maxWidth: { xs: 260, sm: 320, lg: 280 },
                         aspectRatio: "3 / 2",
                         position: "relative",
+                        m: 0,
                         mx: "auto",
                       }}
                       component={"figure"}
