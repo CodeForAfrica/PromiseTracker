@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Box, Typography } from "@mui/material";
 
 import type { HeroChartGroup, HeroStatusSummary } from "../index";
@@ -8,6 +8,8 @@ import DesktopChart from "./DesktopChart";
 import MobileChart from "./MobileChart";
 import ProfileDetails from "./ProfileDetails";
 import RectChart from "./RectChart";
+
+const AUTO_TOGGLE_INTERVAL_MS = 6000;
 
 type ProfileChartProps = {
   headline: {
@@ -38,6 +40,14 @@ export const ProfileChart = ({
   shareTitle,
 }: ProfileChartProps) => {
   const [showRectChart, setShowRectChart] = useState(false);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setShowRectChart((prev) => !prev);
+    }, AUTO_TOGGLE_INTERVAL_MS);
+
+    return () => clearInterval(id);
+  }, [showRectChart]);
 
   const orderedRectStatuses = useMemo(() => {
     return statuses
