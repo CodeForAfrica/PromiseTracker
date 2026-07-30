@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Box } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 
 import type { HeroChartGroup, HeroStatusSummary } from "../index";
 import DesktopChart from "./DesktopChart";
@@ -10,6 +10,10 @@ import ProfileDetails from "./ProfileDetails";
 import RectChart from "./RectChart";
 
 type ProfileChartProps = {
+  headline: {
+    tagline?: string;
+    name: string;
+  };
   promiseLabel: string;
   trailText: string;
   name: string;
@@ -22,6 +26,7 @@ type ProfileChartProps = {
 };
 
 export const ProfileChart = ({
+  headline,
   promiseLabel,
   trailText,
   name,
@@ -42,6 +47,30 @@ export const ProfileChart = ({
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      {headline.tagline || headline.name ? (
+        <Typography
+          component="h1"
+          variant="h1"
+          sx={(theme) => ({
+            mb: theme.typography.pxToRem(12),
+          })}
+        >
+          {headline.tagline ? (
+            <>
+              <Typography
+                component="span"
+                variant="inherit"
+                sx={{ color: "#005DFD" }}
+              >
+                {headline.tagline}
+              </Typography>{" "}
+              {headline.name}
+            </>
+          ) : (
+            headline.name
+          )}
+        </Typography>
+      ) : null}
       <ProfileDetails
         name={name}
         position={position}

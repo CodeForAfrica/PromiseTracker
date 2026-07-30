@@ -23,7 +23,13 @@ export const ProgressChart = ({
   const accentColor = statuses[0]?.color ?? "";
 
   return (
-    <Stack spacing={2} alignItems="stretch" sx={{ px: 2 }}>
+    <Stack
+      spacing={2}
+      alignItems="stretch"
+      sx={{ px: 2 }}
+      height={"100%"}
+      justifyContent={"space-between"}
+    >
       <Typography
         variant="caption"
         sx={(theme) => ({

@@ -15,10 +15,6 @@ type ProfileProps = {
   updatedAtLabel: string;
   updatedAtDisplay: string;
   image: ProfileImage | null;
-  headline: {
-    tagline?: string;
-    name: string;
-  };
 };
 
 const MOBILE_SIZE = 149;
@@ -30,7 +26,6 @@ export const Profile = ({
   updatedAtLabel,
   updatedAtDisplay,
   image,
-  headline,
 }: ProfileProps) => {
   const dateLine = [updatedAtLabel?.trim(), updatedAtDisplay]
     .filter(Boolean)
@@ -98,30 +93,6 @@ export const Profile = ({
           },
         }}
       >
-        {headline.tagline || headline.name ? (
-          <Typography
-            component="h1"
-            variant="h1"
-            sx={(theme) => ({
-              mb: theme.typography.pxToRem(12),
-            })}
-          >
-            {headline.tagline ? (
-              <>
-                <Typography
-                  component="span"
-                  variant="inherit"
-                  sx={{ color: "#005DFD" }}
-                >
-                  {headline.tagline}
-                </Typography>{" "}
-                {headline.name}
-              </>
-            ) : (
-              headline.name
-            )}
-          </Typography>
-        ) : null}
         <Typography
           variant="h5"
           sx={(theme) => ({
