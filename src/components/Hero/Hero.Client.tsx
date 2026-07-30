@@ -51,7 +51,6 @@ export const HeroClient = ({ data }: HeroClientProps) => {
           <Grid size={{ xs: 12, lg: 4 }}>
             <Profile
               name={entity.name}
-              headline={headline}
               profileTitle={copy.profileTitle}
               updatedAtLabel={copy.updatedAtLabel}
               updatedAtDisplay={entity.updatedAtDisplay}
@@ -60,6 +59,7 @@ export const HeroClient = ({ data }: HeroClientProps) => {
           </Grid>
           <Grid size={{ xs: 12, lg: 8 }}>
             <ProfileChart
+              headline={headline}
               promiseLabel={copy.promiseLabel}
               trailText={copy.trailText}
               name={entity.name}

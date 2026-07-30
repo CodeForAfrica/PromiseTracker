@@ -37,6 +37,16 @@ const resolveEntity = async (
   return getPoliticalEntityBySlug(tenant, entitySlug);
 };
 
+const FILTER_LABELS: Record<string, string> = {
+  status: "Status",
+  category: "Category",
+};
+
+const SORT_LABELS: Record<string, string> = {
+  mostRecent: "Most Recent",
+  deadline: "Deadline",
+};
+
 async function Index(props: PromiseListProps) {
   const { title, filterBy, sortBy, filterByLabel, sortByLabel, entitySlug } =
     props;
@@ -90,13 +100,31 @@ async function Index(props: PromiseListProps) {
   });
 
   const promiseStatuses = Array.from(promiseStatusesMap.values());
+
+  const promiseCategoriesMap = new Map<string, { slug: string; name: string }>();
+
+  promises.forEach((promise) => {
+    const categoryLabel = promise.category ?? "";
+    const slug = slugify(categoryLabel);
+
+    if (!slug || promiseCategoriesMap.has(slug)) {
+      return;
+    }
+
+    promiseCategoriesMap.set(slug, {
+      slug,
+      name: categoryLabel,
+    });
+  });
+
+  const promiseCategories = Array.from(promiseCategoriesMap.values());
   const entityImage =
     typeof entity.image === "string" ? null : (entity.image ?? null);
   const filterByOptions = {
     label: filterByLabel ?? "",
     items:
       filterBy?.map((filter: string) => ({
-        name: filter,
+        name: FILTER_LABELS[filter] ?? filter,
         slug: filter,
       })) ?? [],
   };
@@ -104,7 +132,7 @@ async function Index(props: PromiseListProps) {
     label: sortByLabel ?? "",
     items:
       sortBy?.map((sort: string) => ({
-        name: sort,
+        name: SORT_LABELS[sort] ?? sort,
         slug: sort,
       })) ?? [],
   };
@@ -116,6 +144,7 @@ async function Index(props: PromiseListProps) {
       filterByConfig={filterByOptions}
       sortByConfig={sortByOptions}
       promiseStatuses={promiseStatuses}
+      promiseCategories={promiseCategories}
       entity={{ name: entity.name, slug: entity.slug, image: entityImage }}
       fallbackImage={fallbackImage}
     />

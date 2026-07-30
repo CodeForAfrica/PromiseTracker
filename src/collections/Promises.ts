@@ -93,6 +93,17 @@ export const Promises: CollectionConfig = {
       },
     },
     {
+      name: "category",
+      type: "text",
+      label: {
+        en: "Category",
+        fr: "Catégorie",
+      },
+      admin: {
+        position: "sidebar",
+      },
+    },
+    {
       name: "politicalEntity",
       type: "relationship",
       relationTo: "political-entities",

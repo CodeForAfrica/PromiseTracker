@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Box } from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
+import { Box, Typography } from "@mui/material";
 
 import type { HeroChartGroup, HeroStatusSummary } from "../index";
 import DesktopChart from "./DesktopChart";
@@ -9,7 +9,13 @@ import MobileChart from "./MobileChart";
 import ProfileDetails from "./ProfileDetails";
 import RectChart from "./RectChart";
 
+const AUTO_TOGGLE_INTERVAL_MS = 6000;
+
 type ProfileChartProps = {
+  headline: {
+    tagline?: string;
+    name: string;
+  };
   promiseLabel: string;
   trailText: string;
   name: string;
@@ -22,6 +28,7 @@ type ProfileChartProps = {
 };
 
 export const ProfileChart = ({
+  headline,
   promiseLabel,
   trailText,
   name,
@@ -34,6 +41,14 @@ export const ProfileChart = ({
 }: ProfileChartProps) => {
   const [showRectChart, setShowRectChart] = useState(false);
 
+  useEffect(() => {
+    const id = setInterval(() => {
+      setShowRectChart((prev) => !prev);
+    }, AUTO_TOGGLE_INTERVAL_MS);
+
+    return () => clearInterval(id);
+  }, [showRectChart]);
+
   const orderedRectStatuses = useMemo(() => {
     return statuses
       .slice()
@@ -42,6 +57,30 @@ export const ProfileChart = ({
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      {headline.tagline || headline.name ? (
+        <Typography
+          component="h1"
+          variant="h1"
+          sx={(theme) => ({
+            mb: theme.typography.pxToRem(12),
+          })}
+        >
+          {headline.tagline ? (
+            <>
+              <Typography
+                component="span"
+                variant="inherit"
+                sx={{ color: "#005DFD" }}
+              >
+                {headline.tagline}
+              </Typography>{" "}
+              {headline.name}
+            </>
+          ) : (
+            headline.name
+          )}
+        </Typography>
+      ) : null}
       <ProfileDetails
         name={name}
         position={position}
