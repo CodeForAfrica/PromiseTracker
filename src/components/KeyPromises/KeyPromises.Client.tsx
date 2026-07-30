@@ -102,33 +102,37 @@ const KeyPromiseCard = ({
         sx={{ minHeight: { lg: theme.typography.pxToRem(387) } }}
       >
         <Grid>
-          <Typography
-            component="h3"
+          <Box
             sx={(theme) => ({
-              typography: { xs: "h4", lg: "h2" },
-              p: "0 !important",
               position: "relative",
-              overflow: "hidden",
-              display: "-webkit-box",
-              WebkitBoxOrient: "vertical",
-              WebkitLineClamp: { xs: 3, lg: 2 },
-              minHeight: { lg: theme.typography.pxToRem(56) },
-              textTransform: "none",
-              lineHeight: "48px",
-              pb: 1,
+              pb: theme.typography.pxToRem(20),
               "&::after": {
                 content: '""',
                 width: theme.typography.pxToRem(72),
                 borderBottom: { lg: `8px solid ${statusColor}` },
-                marginTop: { lg: theme.typography.pxToRem(8) },
                 position: "absolute",
-                bottom: -2,
+                bottom: 0,
                 left: 0,
               },
             })}
           >
-            {item.title}
-          </Typography>
+            <Typography
+              component="h3"
+              sx={(theme) => ({
+                typography: { xs: "h4", lg: "h2" },
+                p: "0 !important",
+                overflow: "hidden",
+                display: "-webkit-box",
+                WebkitBoxOrient: "vertical",
+                WebkitLineClamp: { xs: 3, lg: 2 },
+                minHeight: { lg: theme.typography.pxToRem(56) },
+                textTransform: "none",
+                lineHeight: "48px",
+              })}
+            >
+              {item.title}
+            </Typography>
+          </Box>
           {item.description ? (
             <Typography
               variant="body2"
