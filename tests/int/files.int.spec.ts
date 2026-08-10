@@ -15,12 +15,15 @@ vi.mock("node:dns/promises", () => {
   return { default: { lookup }, lookup };
 });
 
+import sharp from "sharp";
 import {
+  computeMediaChecksum,
   downloadFile,
   removeDownloadedFile,
   sha256Buffer,
   sha256File,
 } from "@/utils/files";
+import { detectPayloadReencodedFormat } from "@/utils/fileSignature";
 
 const sha256 = (value: string) =>
   createHash("sha256").update(value).digest("hex");
@@ -46,6 +49,80 @@ describe("sha256File", () => {
     } finally {
       await rm(dir, { recursive: true, force: true });
     }
+  });
+});
+
+describe("computeMediaChecksum", () => {
+  const withTempFile = async <T>(
+    fileName: string,
+    data: Buffer,
+    run: (filePath: string) => Promise<T>,
+  ): Promise<T> => {
+    const dir = await mkdtemp(join(tmpdir(), "checksum-spec-"));
+    const filePath = join(dir, fileName);
+    await writeFile(filePath, data);
+    try {
+      return await run(filePath);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  };
+
+  it("hashes non-reencoded formats (e.g. png) as raw bytes, same as sha256File", async () => {
+    const png = await sharp({
+      create: { width: 4, height: 4, channels: 3, background: "red" },
+    })
+      .png()
+      .toBuffer();
+
+    await withTempFile("image.png", png, async (filePath) => {
+      expect(await detectPayloadReencodedFormat(filePath)).toBeNull();
+      expect(await computeMediaChecksum(filePath)).toBe(
+        await sha256File(filePath),
+      );
+    });
+  });
+
+  it("hashes webp files against Payload's re-encoded bytes, not the raw download", async () => {
+    const webp = await sharp({
+      create: { width: 4, height: 4, channels: 3, background: "blue" },
+    })
+      .webp()
+      .toBuffer();
+
+    await withTempFile("image.webp", webp, async (filePath) => {
+      expect(await detectPayloadReencodedFormat(filePath)).toBe(
+        "image/webp",
+      );
+
+      const expectedReencoded = await sharp(webp, { animated: true })
+        .rotate()
+        .toBuffer();
+
+      const checksum = await computeMediaChecksum(filePath);
+      expect(checksum).toBe(sha256Buffer(expectedReencoded));
+      // Sanity check that this actually differs from a naive raw-byte hash —
+      // otherwise the test wouldn't be exercising the fix at all.
+      expect(checksum).not.toBe(await sha256File(filePath));
+    });
+  });
+
+  it("produces the same checksum across repeated downloads of the same source image", async () => {
+    const webp = await sharp({
+      create: { width: 6, height: 6, channels: 3, background: "green" },
+    })
+      .webp()
+      .toBuffer();
+
+    const checksums = await Promise.all(
+      [0, 1].map((run) =>
+        withTempFile(`download-${run}.webp`, webp, (filePath) =>
+          computeMediaChecksum(filePath),
+        ),
+      ),
+    );
+
+    expect(checksums[0]).toBe(checksums[1]);
   });
 });
 

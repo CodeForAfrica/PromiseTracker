@@ -28,6 +28,19 @@ const PNG = startsWith([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 const GIF = (header: Buffer) =>
   startsWith([0x47, 0x49, 0x46, 0x38, 0x37, 0x61])(header) ||
   startsWith([0x47, 0x49, 0x46, 0x38, 0x39, 0x61])(header);
+// Deliberately checks only the major brand, not the compatible-brands list —
+// this must match `file-type`'s own detection exactly (its ISO-BMFF branch
+// switches on `brandMajor` alone), since that's what determines the
+// `file.mimetype` Payload's `fileIsAnimatedType` check reencodes on. A file
+// with a generic major brand (e.g. "mif1") and "avif" only in compatible
+// brands is classified by file-type as image/heif, so Payload leaves it
+// un-reencoded too — checking compatible brands here would make this more
+// accurate than file-type and reintroduce the exact checksum mismatch this
+// fixes.
+const AVIF = (header: Buffer) =>
+  startsWith([0x66, 0x74, 0x79, 0x70], 4)(header) && // "ftyp" box at offset 4
+  (startsWith([0x61, 0x76, 0x69, 0x66], 8)(header) || // major brand "avif"
+    startsWith([0x61, 0x76, 0x69, 0x73], 8)(header)); // major brand "avis"
 const PDF = startsWith([0x25, 0x50, 0x44, 0x46]); // %PDF
 const ZIP = (header: Buffer) =>
   startsWith([0x50, 0x4b, 0x03, 0x04])(header) ||
@@ -140,6 +153,39 @@ export const validateFileSignature = async (
     const buffer = Buffer.alloc(HEADER_LENGTH);
     const { bytesRead } = await handle.read(buffer, 0, HEADER_LENGTH, 0);
     return validateBufferSignature(buffer.subarray(0, bytesRead), claim);
+  } finally {
+    await handle.close();
+  }
+};
+
+export type PayloadReencodedMimeType = "image/gif" | "image/webp" | "image/avif";
+
+/**
+ * Payload CMS unconditionally re-encodes uploads of these three mimetypes
+ * through sharp before persisting them (its `fileIsAnimatedType` check in
+ * `generateFileData.js`), even with no resize/format options configured.
+ * Detected from magic bytes, independent of any claimed Content-Type or
+ * file extension, so a pre-upload checksum can be computed against the same
+ * bytes Payload will actually store.
+ */
+export const detectPayloadReencodedFormat = async (
+  filePath: string,
+): Promise<PayloadReencodedMimeType | null> => {
+  const handle = await open(filePath, "r");
+  try {
+    const buffer = Buffer.alloc(HEADER_LENGTH);
+    const { bytesRead } = await handle.read(buffer, 0, HEADER_LENGTH, 0);
+    const header = buffer.subarray(0, bytesRead);
+    if (isRiffWebp(header)) {
+      return "image/webp";
+    }
+    if (GIF(header)) {
+      return "image/gif";
+    }
+    if (AVIF(header)) {
+      return "image/avif";
+    }
+    return null;
   } finally {
     await handle.close();
   }

@@ -1,12 +1,16 @@
 import { createHash, randomUUID } from "node:crypto";
 import { createReadStream, createWriteStream } from "node:fs";
-import { mkdir, rm, unlink } from "node:fs/promises";
+import { mkdir, readFile, rm, unlink } from "node:fs/promises";
 import { dirname, join, sep } from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { fileURLToPath } from "node:url";
+import sharp from "sharp";
 
-import { validateFileSignature } from "@/utils/fileSignature";
+import {
+  detectPayloadReencodedFormat,
+  validateFileSignature,
+} from "@/utils/fileSignature";
 import {
   assertResolvesToPublicAddresses,
   assertSafeRemoteUrl,
@@ -339,3 +343,26 @@ export const sha256File = async (filePath: string): Promise<string> => {
 
 export const sha256Buffer = (data: Buffer | Uint8Array): string =>
   createHash("sha256").update(data).digest("hex");
+
+/**
+ * Checksum to compare against Payload's stored `checksum` field for
+ * duplicate detection. For gif/webp/avif, Payload always re-encodes the
+ * upload through sharp before saving it (see `detectPayloadReencodedFormat`),
+ * so hashing the raw downloaded bytes would never match what actually gets
+ * persisted — replicate that re-encode step here before hashing so the two
+ * checksums are computed over the same bytes.
+ */
+export const computeMediaChecksum = async (
+  filePath: string,
+): Promise<string> => {
+  const reencodedFormat = await detectPayloadReencodedFormat(filePath);
+  if (!reencodedFormat) {
+    return sha256File(filePath);
+  }
+
+  const original = await readFile(filePath);
+  const reencoded = await sharp(original, { animated: true })
+    .rotate()
+    .toBuffer();
+  return sha256Buffer(reencoded);
+};

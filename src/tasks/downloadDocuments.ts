@@ -8,9 +8,9 @@ import {
   normalizeMediaSourceUrl,
 } from "@/lib/mediaUrl";
 import {
+  computeMediaChecksum,
   downloadFile,
   removeDownloadedFile,
-  sha256File,
 } from "@/utils/files";
 import { getTaskLogger, withTaskTracing, type TaskInput } from "./utils";
 
@@ -410,7 +410,7 @@ export const DownloadDocuments: TaskConfig<"downloadDocuments"> = {
               filePath = await downloadFile(fileUrl, {
                 fileName: doc.title ?? undefined,
               });
-              const checksum = await sha256File(filePath);
+              const checksum = await computeMediaChecksum(filePath);
               const existingMedia = await findMediaByChecksum(
                 payload,
                 checksum,
