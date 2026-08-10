@@ -43,6 +43,45 @@ const PUBLISHED_REPORTS_QUERY = `
 const toErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
+// Thrown for any non-OK HTTP response from CheckMedia. Callers use `status`
+// to distinguish transient failures (429, 5xx) from permanent ones so a
+// rate limit doesn't get treated the same as a validation error.
+export class CheckMediaHttpError extends Error {
+  readonly status: number;
+  readonly retryAfterMs: number | null;
+
+  constructor(message: string, status: number, retryAfterMs: number | null) {
+    super(message);
+    this.name = "CheckMediaHttpError";
+    this.status = status;
+    this.retryAfterMs = retryAfterMs;
+  }
+}
+
+// Parses a `Retry-After` header per RFC 9110: either a number of seconds or
+// an HTTP-date. Returns null when absent or unparseable.
+const parseRetryAfterMs = (response: Response): number | null => {
+  const header = response.headers.get("retry-after");
+  if (!header) {
+    return null;
+  }
+
+  const seconds = Number(header);
+  if (Number.isFinite(seconds)) {
+    return Math.max(0, seconds * 1000);
+  }
+
+  const dateMs = Date.parse(header);
+  if (!Number.isNaN(dateMs)) {
+    return Math.max(0, dateMs - Date.now());
+  }
+
+  return null;
+};
+
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
 const previewResponseBody = (rawBody: string): string => {
   const normalized = rawBody.replace(/\s+/g, " ").trim();
 
@@ -90,8 +129,10 @@ const throwHttpErrorWithBody = async ({
   }
 
   const traceHeaders = getTraceHeaders(response);
-  throw new Error(
+  throw new CheckMediaHttpError(
     `[CheckMedia:${operation}] HTTP ${response.status} ${response.statusText}; traceHeaders=${traceHeaders}; responseBody=${bodyPreview}`,
+    response.status,
+    parseRetryAfterMs(response),
   );
 };
 
@@ -529,6 +570,14 @@ export const fetchPublishedReports = async ({
   return mapPublishedReports(json);
 };
 
+// Bounded inline retry for HTTP 429 only. CheckMedia's rate-limit window is
+// short (seconds), so it's worth waiting once or twice in-process before
+// giving up; anything longer than MAX_RATE_LIMIT_WAIT_MS is left to the next
+// scheduled task run instead of blocking this one.
+const MAX_RATE_LIMIT_RETRIES = 2;
+const DEFAULT_RATE_LIMIT_BACKOFF_MS = 2000;
+const MAX_RATE_LIMIT_WAIT_MS = 10_000;
+
 export const postRequest = async ({
   apiKey,
   teamId,
@@ -548,32 +597,44 @@ export const postRequest = async ({
   };
 
   try {
-    const response = await fetch(BASE_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Check-Token": apiKey,
-        "X-Check-Team": teamId,
-      },
-      body: JSON.stringify(requestBody),
-    });
+    for (let attempt = 0; ; attempt += 1) {
+      const response = await fetch(BASE_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Check-Token": apiKey,
+          "X-Check-Team": teamId,
+        },
+        body: JSON.stringify(requestBody),
+      });
 
-    if (!response.ok) {
+      if (response.ok) {
+        const result: CreateProjectMediaResponse = await response.json();
+
+        if (result.errors && result.errors.length > 0) {
+          throw new Error(
+            `[CheckMedia:postRequest.createProjectMedia] GraphQL errors: ${formatGraphQLErrorDetails(result.errors)}`,
+          );
+        }
+
+        return result;
+      }
+
+      if (response.status === 429 && attempt < MAX_RATE_LIMIT_RETRIES) {
+        const retryAfterMs = parseRetryAfterMs(response);
+        const waitMs = Math.min(
+          retryAfterMs ?? DEFAULT_RATE_LIMIT_BACKOFF_MS * (attempt + 1),
+          MAX_RATE_LIMIT_WAIT_MS,
+        );
+        await sleep(waitMs);
+        continue;
+      }
+
       await throwHttpErrorWithBody({
         response,
         operation: "postRequest.createProjectMedia",
       });
     }
-
-    const result: CreateProjectMediaResponse = await response.json();
-
-    if (result.errors && result.errors.length > 0) {
-      throw new Error(
-        `[CheckMedia:postRequest.createProjectMedia] GraphQL errors: ${formatGraphQLErrorDetails(result.errors)}`,
-      );
-    }
-
-    return result;
   } catch (error) {
     console.error("Error making request to CheckMedia:", error);
     throw error;
