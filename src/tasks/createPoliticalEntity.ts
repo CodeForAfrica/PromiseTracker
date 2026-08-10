@@ -8,9 +8,9 @@ import {
 } from "@/lib/airtable";
 import { TaskConfig } from "payload";
 import {
+  computeMediaChecksum,
   downloadFile,
   removeDownloadedFile,
-  sha256File,
 } from "@/utils/files";
 import { formatSlug } from "@/fields/slug/formatSlug";
 import type { Media } from "@/payload-types";
@@ -254,7 +254,7 @@ export const CreatePoliticalEntity: TaskConfig = {
       ): Promise<string> => {
         const filePath = await downloadFile(imageUrl, { fileName: alt });
         try {
-          const checksum = await sha256File(filePath);
+          const checksum = await computeMediaChecksum(filePath);
           const existingMedia = await findMediaByChecksum(payload, checksum);
 
           if (existingMedia) {

@@ -45,7 +45,8 @@ import { SelectionToUseField as SelectionToUseField_cdf7e044479f899a31f804427d56
 import { FieldsToExport as FieldsToExport_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
 import { CollectionField as CollectionField_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
 import { ExportPreview as ExportPreview_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
-import { ExportSaveButton as ExportSaveButton_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
+import { ExportDownloadButton as ExportDownloadButton_e4e9ab26ca06aed2422b0260db830bc4 } from '@/components/payload/ExportDownloadButton'
+import { ExportSaveButtonFixed as ExportSaveButtonFixed_fa0881cafe9c287f640a39f3d41a8f6d } from '@/components/payload/ExportSaveButton'
 import { ImportPreview as ImportPreview_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
 import { ImportSaveButton as ImportSaveButton_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
 import { MaskedApiKeyField as MaskedApiKeyField_6e265c33523b378578f5880a6fcfdc0f } from '@/globals/Settings/tabs/MaskedApiKeyField'
@@ -107,7 +108,8 @@ export const importMap = {
   "@payloadcms/plugin-import-export/rsc#FieldsToExport": FieldsToExport_cdf7e044479f899a31f804427d568b36,
   "@payloadcms/plugin-import-export/rsc#CollectionField": CollectionField_cdf7e044479f899a31f804427d568b36,
   "@payloadcms/plugin-import-export/rsc#ExportPreview": ExportPreview_cdf7e044479f899a31f804427d568b36,
-  "@payloadcms/plugin-import-export/rsc#ExportSaveButton": ExportSaveButton_cdf7e044479f899a31f804427d568b36,
+  "@/components/payload/ExportDownloadButton#ExportDownloadButton": ExportDownloadButton_e4e9ab26ca06aed2422b0260db830bc4,
+  "@/components/payload/ExportSaveButton#ExportSaveButtonFixed": ExportSaveButtonFixed_fa0881cafe9c287f640a39f3d41a8f6d,
   "@payloadcms/plugin-import-export/rsc#ImportPreview": ImportPreview_cdf7e044479f899a31f804427d568b36,
   "@payloadcms/plugin-import-export/rsc#ImportSaveButton": ImportSaveButton_cdf7e044479f899a31f804427d568b36,
   "@/globals/Settings/tabs/MaskedApiKeyField#MaskedApiKeyField": MaskedApiKeyField_6e265c33523b378578f5880a6fcfdc0f,
