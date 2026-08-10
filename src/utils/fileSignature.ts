@@ -28,6 +28,15 @@ const PNG = startsWith([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 const GIF = (header: Buffer) =>
   startsWith([0x47, 0x49, 0x46, 0x38, 0x37, 0x61])(header) ||
   startsWith([0x47, 0x49, 0x46, 0x38, 0x39, 0x61])(header);
+// Deliberately checks only the major brand, not the compatible-brands list —
+// this must match `file-type`'s own detection exactly (its ISO-BMFF branch
+// switches on `brandMajor` alone), since that's what determines the
+// `file.mimetype` Payload's `fileIsAnimatedType` check reencodes on. A file
+// with a generic major brand (e.g. "mif1") and "avif" only in compatible
+// brands is classified by file-type as image/heif, so Payload leaves it
+// un-reencoded too — checking compatible brands here would make this more
+// accurate than file-type and reintroduce the exact checksum mismatch this
+// fixes.
 const AVIF = (header: Buffer) =>
   startsWith([0x66, 0x74, 0x79, 0x70], 4)(header) && // "ftyp" box at offset 4
   (startsWith([0x61, 0x76, 0x69, 0x66], 8)(header) || // major brand "avif"
