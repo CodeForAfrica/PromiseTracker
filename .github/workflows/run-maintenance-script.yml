@@ -1,0 +1,71 @@
+name: Run maintenance script
+
+# Manually triggered one-off script runner. Runs a script from scripts/ inside
+# the migrator image (full source + Payload CLI + node_modules) against a
+# chosen environment's database — the same mechanism promote.yml uses to run
+# `payload migrate` during a release, reused here for one-off data fixes that
+# don't belong in a migration (see scripts/*.ts for examples).
+#
+# Defaults to a dry run: the script only writes data when "Apply changes" is
+# checked. Targeting "production" is gated by the `production` GitHub
+# environment's required reviewers, same as a real release.
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment (selects which database the script runs against)"
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+        required: true
+      script_path:
+        description: "Script path relative to repo root"
+        type: string
+        required: true
+        default: "scripts/clear-checkmedia-rate-limit-errors.ts"
+      apply:
+        description: "Apply changes (unchecked = dry run)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: "run-maintenance-script @ ${{ inputs.environment }}"
+  cancel-in-progress: false
+
+# Least-privilege default for GITHUB_TOKEN; the run authenticates to
+# DockerHub via dedicated secrets, not the workflow token.
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+    steps:
+      - name: Login to DockerHub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+      # Runs the migrator image built for the commit this workflow was
+      # dispatched against — trigger this from the same ref (branch or tag)
+      # that was actually deployed, so the script sees the code it was
+      # written for. Staging uses distinctly-named secrets (no GitHub
+      # Environment override configured for it); development and production
+      # share secret names but resolve to different values via their
+      # respective GitHub Environments.
+      - name: Run script against ${{ inputs.environment }}
+        env:
+          DATABASE_URI: ${{ inputs.environment == 'staging' && secrets.STAGING_DATABASE_URI || secrets.DATABASE_URI }}
+          PAYLOAD_SECRET: ${{ inputs.environment == 'staging' && secrets.STAGING_PAYLOAD_SECRET || secrets.PAYLOAD_SECRET }}
+        run: |
+          docker run --rm \
+            -e DATABASE_URI \
+            -e PAYLOAD_SECRET \
+            -e TIKA_ENABLED=0 \
+            "codeforafrica/promisetracker-v2-migrator:${{ github.sha }}" \
+            pnpm payload run "${{ inputs.script_path }}" ${{ inputs.apply && '-- --apply' || '' }}

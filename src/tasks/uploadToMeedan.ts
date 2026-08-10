@@ -1,5 +1,5 @@
 import { TaskConfig } from "payload";
-import { createFactCheckClaim } from "@/lib/meedan";
+import { CheckMediaHttpError, createFactCheckClaim } from "@/lib/meedan";
 import { markDocumentAsProcessed, updateDocumentStatus } from "@/lib/airtable";
 import {
   AiExtraction as AiExtractionDoc,
@@ -149,6 +149,28 @@ const resolveCheckMediaSourceUrl = ({
   );
 };
 
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
+// Spacing between successive CheckMedia upload calls so a large backlog
+// doesn't burst past CheckMedia's rate limit in the first place.
+const UPLOAD_REQUEST_DELAY_MS = Number(
+  process.env.MEEDAN_UPLOAD_REQUEST_DELAY_MS ?? 350,
+);
+
+// 429 (rate limited) and 5xx (CheckMedia-side errors) are treated as
+// transient: the extraction is left pending instead of being marked
+// `uploadError`, so it's retried automatically on the next run. Network
+// failures (fetch rejecting before a response is received) are transient
+// too. Everything else (4xx other than 429, GraphQL errors, bad source
+// URLs) is a genuine, deterministic failure that won't succeed on retry.
+const isRetryableUploadError = (error: unknown): boolean => {
+  if (error instanceof CheckMediaHttpError) {
+    return error.status === 429 || error.status >= 500;
+  }
+  return error instanceof TypeError;
+};
+
 const hasPendingExtractions = (doc: AiExtractionDoc): boolean =>
   (doc.extractions ?? []).some(
     (extraction) => !extraction?.checkMediaId && !extraction?.uploadError,
@@ -292,10 +314,13 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
       let hasNextPage = true;
       let uploadedExtractions = 0;
       let failedExtractions = 0;
+      let deferredExtractions = 0;
       let processedExtractionDocs = 0;
       let failedExtractionDocs = 0;
+      let hasAttemptedUpload = false;
+      let stopUploadingDueToRateLimit = false;
 
-      while (hasNextPage) {
+      while (hasNextPage && !stopUploadingDueToRateLimit) {
         const { docs: allExtractions, hasNextPage: nextPage } =
           await payload.find({
             collection: "ai-extractions",
@@ -305,6 +330,10 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
           });
 
         for (const doc of allExtractions) {
+          if (stopUploadingDueToRateLimit) {
+            break;
+          }
+
           const document = doc.document as Document;
           const documentId = document?.id ? String(document.id) : undefined;
 
@@ -415,9 +444,19 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
             }
             let docFailedExtractions = 0;
             let docUploadedExtractions = 0;
+            let docDeferredExtractions = 0;
 
             for (const extraction of extractionsToUpload) {
+              if (stopUploadingDueToRateLimit) {
+                break;
+              }
+
               try {
+                if (hasAttemptedUpload) {
+                  await sleep(UPLOAD_REQUEST_DELAY_MS);
+                }
+                hasAttemptedUpload = true;
+
                 logger.info({
                   message: "uploadToMeedan:: Uploading extraction to CheckMedia",
                   extractionDocId: doc.id,
@@ -543,12 +582,42 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
                   checkMediaURL,
                 });
               } catch (extractionError) {
-                failedExtractions += 1;
-                docFailedExtractions += 1;
                 const uploadErrorMessage =
                   extractionError instanceof Error
                     ? extractionError.message
                     : String(extractionError);
+
+                if (isRetryableUploadError(extractionError)) {
+                  deferredExtractions += 1;
+                  docDeferredExtractions += 1;
+
+                  const isRateLimited =
+                    extractionError instanceof CheckMediaHttpError &&
+                    extractionError.status === 429;
+
+                  logger.warn({
+                    message: isRateLimited
+                      ? "uploadToMeedan:: CheckMedia rate limit hit — leaving extraction pending and deferring remaining uploads to the next run"
+                      : "uploadToMeedan:: Upload failed with a transient error — left pending for retry on next run",
+                    extractionDocId: doc.id,
+                    extractionDocTitle: doc.title,
+                    extractionUniqueId: extraction.uniqueId,
+                    documentId,
+                    documentTitle: document?.title,
+                    documentAirtableID: document?.airtableID,
+                    error: uploadErrorMessage,
+                  });
+
+                  if (isRateLimited) {
+                    stopUploadingDueToRateLimit = true;
+                    break;
+                  }
+
+                  continue;
+                }
+
+                failedExtractions += 1;
+                docFailedExtractions += 1;
 
                 // Re-fetch before writing so we don't clobber checkMediaId or
                 // uploadError values written by earlier iterations in this loop.
@@ -599,6 +668,19 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
                 documentAirtableID: document?.airtableID,
                 uploadedExtractions: docUploadedExtractions,
                 failedExtractions: docFailedExtractions,
+                totalExtractionsToUpload: extractionsToUpload.length,
+              });
+            }
+
+            if (docDeferredExtractions > 0) {
+              logger.warn({
+                message: `uploadToMeedan:: ${docDeferredExtractions} out of ${doc.extractions?.length ?? 0} extraction(s) deferred due to a transient error — will retry on next run`,
+                extractionDocId: doc.id,
+                extractionDocTitle: doc.title,
+                documentId,
+                documentTitle: document?.title,
+                documentAirtableID: document?.airtableID,
+                deferredExtractions: docDeferredExtractions,
                 totalExtractionsToUpload: extractionsToUpload.length,
               });
             }
@@ -670,11 +752,15 @@ export const UploadToMeedan: TaskConfig<"uploadToMeedan"> = {
       }
 
       logger.info({
-        message: "uploadToMeedan:: Upload task completed",
+        message: stopUploadingDueToRateLimit
+          ? "uploadToMeedan:: Upload task stopped early after hitting CheckMedia's rate limit — remaining extractions will be retried on the next run"
+          : "uploadToMeedan:: Upload task completed",
         processedExtractionDocs,
         failedExtractionDocs,
         uploadedExtractions,
         failedExtractions,
+        deferredExtractions,
+        stoppedForRateLimit: stopUploadingDueToRateLimit,
       });
 
       return {
