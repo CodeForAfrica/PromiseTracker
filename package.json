@@ -45,7 +45,7 @@
     "@innovixx/payload-color-picker-field": "^2.0.2",
     "@mui/icons-material": "^7.3.2",
     "@mui/material": "^7.3.2",
-    "@mui/material-nextjs": "^7.3.2",
+    "@mui/material-nextjs": "^9.1.1",
     "@mui/utils": "^7.3.2",
     "@next/third-parties": "^15.5.3",
     "@payloadcms/db-mongodb": "3.86.0",
