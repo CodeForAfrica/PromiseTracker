@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useEffect } from "react";
 import * as Sentry from "@sentry/nextjs";
-import { Box, Button, Container, Typography } from "@mui/material";
+import { useEffect } from "react";
+
+import ErrorPage from "@/components/ErrorPage";
 
 export default function FrontendError({
   error,
@@ -16,30 +17,11 @@ export default function FrontendError({
   }, [error]);
 
   return (
-    <Container maxWidth="md">
-      <Box
-        sx={{
-          minHeight: "70vh",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          textAlign: "center",
-          gap: 2,
-          py: 8,
-        }}
-      >
-        <Typography variant="h4" component="h1">
-          Something went wrong
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          An unexpected error occurred while loading this page. Please try
-          again.
-        </Typography>
-        <Button onClick={reset} variant="contained" sx={{ mt: 2 }}>
-          Try again
-        </Button>
-      </Box>
-    </Container>
+    <ErrorPage
+      code="500"
+      title="This page could not load"
+      description="The problem may be temporary. Try loading the page again, or return home and continue from there."
+      retry={reset}
+    />
   );
 }

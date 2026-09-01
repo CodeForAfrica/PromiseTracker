@@ -370,7 +370,7 @@ export default async function PromiseDetailPage({
                       src={image.url}
                       alt={image.alt || titleText}
                       fill
-                      style={{ objectFit: "cover" }}
+                      style={{ objectFit: "contain" }}
                     />
                   </Box>
                 ) : null}

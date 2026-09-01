@@ -85,8 +85,9 @@ const KeyPromiseCard = ({
             backgroundImage: item.imageUrl
               ? `url(${item.imageUrl})`
               : undefined,
-            backgroundSize: "cover",
+            backgroundSize: "contain",
             backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
           }}
         />
       </Grid>
