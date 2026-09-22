@@ -17,8 +17,27 @@ trustPolicyExclude:
 # next declares sharp as an optional dependency at ^0.34.3, which pins it to the
 # vulnerable 0.34.x line (libvips CVEs, GHSA-f88m-g3jw-g9cj). Force the whole
 # tree onto the patched 0.35.x — the sharp API is compatible across 0.34→0.35.
+# 0.35.3 is itself vulnerable to the libheif flaws behind the next AVIF RCE
+# (GHSA-rgj7-g3m4-5g8c); next 15.5.24 fixed that by disabling AVIF optimization
+# rather than bumping sharp, and Payload runs every upload through sharp
+# directly, so hold the whole tree at the patched build.
+#
+# The rest are transitive-only advisories whose parents have not yet released
+# updated ranges. All are patch- or minor-level bumps within the major line the
+# tree already resolves, so they carry no API change. Drop each entry once the
+# parent's own range covers the patched version.
 overrides:
-  sharp: 0.35.3
+  sharp: '>=0.35.4'
+  # Both the 1.x and 5.x lines are affected; the 2.x copies are already patched.
+  brace-expansion@1: '>=1.1.18'   # GHSA-mh99-v99m-4gvg, GHSA-rgw5-rvv9-x895
+  brace-expansion@5: '>=5.0.9'    # same two advisories, 5.x line
+  fast-uri: '>=3.1.6'             # SSRF + host confusion, 5 advisories
+  js-yaml: '>=4.3.2'              # GHSA-5p4m-2wfm-xmqj, GHSA-2883-xcg3-v3hh
+  nanoid: '>=3.3.18'              # GHSA-2v37-7h3g-55p8
+  postcss: '>=8.5.23'             # GHSA-6g55-p6wh-862q, GHSA-r28c-9q8g-f849
+  svgo: '>=3.3.5'                 # GHSA-w27v-7q3p-w38r
+  sanitize-html: '>=2.17.7'
+  dompurify: '>=3.4.13'
 
 # Packages allowed to run install scripts
 allowBuilds:
