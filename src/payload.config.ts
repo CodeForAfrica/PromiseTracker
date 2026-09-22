@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 
 import { Users } from "@/collections/Users";
+import { superAdmins } from "@/access/roles";
 import { collections } from "@/collections";
 import { globals } from "@/globals";
 import { tasks } from "@/tasks";
@@ -40,6 +41,11 @@ if (!databaseUri) {
   throw new Error("DATABASE_URI is required");
 }
 
+// Payload 3.90 requires a trusted origin before it will fetch external files.
+// S3-backed collections run with disableLocalStorage (set by the cloud-storage
+// plugin), so Payload has to know its own origin to fetch its own files.
+const serverURL = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, "");
+
 // When running the verification pipeline (tests / E2E dev server), refuse to
 // boot against a shared or production-like database.
 if (process.env.PT_ASSERT_TEST_DB === "true") {
@@ -68,6 +74,7 @@ if (process.env.SMTP_HOST && process.env.SMTP_PASS) {
 const email = nodemailerAdapter(nodemailerAdapterArgs);
 
 export default buildConfig({
+  serverURL,
   admin: {
     user: Users.slug,
     importMap: {
@@ -79,6 +86,10 @@ export default buildConfig({
     limits: {
       fileSize: ONE_GIB_IN_BYTES,
     },
+    // Payload 3.90 caps the whole multipart request at 50MB by default, which
+    // would silently override the 1GiB fileSize limit above. Keep the two in
+    // sync so large uploads fail on fileSize (a clear error) or not at all.
+    requestSizeLimit: ONE_GIB_IN_BYTES,
     debug: !isProd,
     uploadTimeout: 300 * 1000,
   },
@@ -109,6 +120,16 @@ export default buildConfig({
       }
 
       defaultJobsCollection.admin.hidden = isProd;
+
+      // Payload 3.89 denies all generic CRUD on payload-jobs by default. The
+      // admin list view reads over REST, so without an explicit rule the
+      // debugging view above 403s for everyone. Read-only, super admins only:
+      // the cleanup task and job runners use overrideAccess and are unaffected.
+      defaultJobsCollection.access = {
+        ...defaultJobsCollection.access,
+        read: superAdmins,
+      };
+
       return defaultJobsCollection;
     },
     addParentToTaskLog: true,
