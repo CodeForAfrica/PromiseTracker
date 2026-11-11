@@ -7,6 +7,46 @@ import { buildSecurityHeaders } from "./src/lib/security/headers.mjs";
 
 const projectDir = path.dirname(fileURLToPath(import.meta.url));
 
+// Payload is configured with `serverURL`, so media URLs come back absolute
+// (`${NEXT_PUBLIC_APP_URL}/api/media/file/...`). next/image refuses to
+// optimize an absolute URL whose host is not allow-listed, so derive the
+// allow-list from the very env var the CMS builds those URLs from, and keep
+// it scoped to the media route rather than the whole origin.
+const buildMediaRemotePatterns = () => {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (!appUrl) {
+    return [];
+  }
+
+  let parsed;
+  try {
+    parsed = new URL(appUrl);
+  } catch {
+    console.warn(
+      `[next.config] Ignoring invalid NEXT_PUBLIC_APP_URL for images.remotePatterns: "${appUrl}"`,
+    );
+    return [];
+  }
+
+  const protocol = parsed.protocol.replace(/:$/, "");
+  if (protocol !== "http" && protocol !== "https") {
+    console.warn(
+      `[next.config] Ignoring non-HTTP NEXT_PUBLIC_APP_URL for images.remotePatterns: "${appUrl}"`,
+    );
+    return [];
+  }
+
+  return [
+    {
+      protocol,
+      hostname: parsed.hostname,
+      // Empty string means "default port for the protocol".
+      port: parsed.port,
+      pathname: "/api/media/**",
+    },
+  ];
+};
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Your Next.js config here
@@ -14,6 +54,9 @@ const nextConfig = {
     ignoreDuringBuilds: false,
   },
   output: "standalone",
+  images: {
+    remotePatterns: buildMediaRemotePatterns(),
+  },
   // Pin the standalone tracing root to this project so `.next/standalone/
   // server.js` lands at a deterministic path (matches the Dockerfile's
   // `COPY .next/standalone ./`). Without this, a parent directory holding
