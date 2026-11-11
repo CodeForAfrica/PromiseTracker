@@ -12,6 +12,42 @@ const tika = new AxApacheTika({
   url: process.env.AX_APACHE_TIKA_URL ?? "http://127.0.0.1:9998/",
 });
 
+/**
+ * Payload is configured with `serverURL`, so `media.url` comes back absolute
+ * (`https://host/api/media/file/x.pdf`); without a configured origin it stays
+ * relative (`/api/media/file/x.pdf`). Resolving instead of concatenating
+ * handles both — concatenation would turn the absolute form into
+ * `https://host/https://host/api/media/file/x.pdf`.
+ *
+ * `isSameOrigin` tells the caller whether the file really lives on the app's
+ * own origin, so the relaxed SSRF checks are only applied to our own host.
+ */
+export function resolveMediaUrl(
+  fileUrl: string,
+): { url: string; isSameOrigin: boolean } | null {
+  const rawAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+
+  let appOrigin: URL | undefined;
+  if (rawAppUrl) {
+    try {
+      appOrigin = new URL(rawAppUrl);
+    } catch {
+      appOrigin = undefined;
+    }
+  }
+
+  try {
+    const resolved = new URL(fileUrl, appOrigin);
+    return {
+      url: resolved.toString(),
+      isSameOrigin: Boolean(appOrigin) && resolved.origin === appOrigin?.origin,
+    };
+  } catch {
+    // A relative URL with no (or an unparseable) configured origin.
+    return null;
+  }
+}
+
 export function cleanText(text: string): string {
   return text
     .replace(/\n/g, " ")
@@ -151,7 +187,22 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
               });
               fileInput = filePath;
             } else if (file.url) {
-              const url = `${process.env.NEXT_PUBLIC_APP_URL}${file.url}`;
+              const resolved = resolveMediaUrl(file.url);
+
+              if (!resolved) {
+                logger.warn({
+                  message:
+                    "extractDocuments:: Cannot resolve file URL — skipping this file",
+                  id: doc.id,
+                  airtableID: doc.airtableID,
+                  title: doc.title,
+                  fileId: file.id,
+                  fileUrl: file.url,
+                });
+                continue;
+              }
+
+              const url = resolved.url;
               logger.info({
                 message: `extractDocuments:: File not found locally, downloading from remote storage`,
                 id: doc.id,
@@ -161,13 +212,16 @@ export const ExtractDocuments: TaskConfig<"extractDocuments"> = {
                 fileUrl: url,
               });
               try {
-                // This URL is built from the app's own configured origin and
-                // its own media path, so the SSRF address checks are relaxed
+                // Only our own origin gets the relaxed SSRF address checks
                 // (in development NEXT_PUBLIC_APP_URL is http://localhost).
-                tempFilePath = await downloadFile(url, {
-                  requireHttps: false,
-                  allowPrivateAddresses: true,
-                });
+                // Anything else — e.g. media served straight from a CDN — is
+                // downloaded under the strict defaults.
+                tempFilePath = await downloadFile(
+                  url,
+                  resolved.isSameOrigin
+                    ? { requireHttps: false, allowPrivateAddresses: true }
+                    : {},
+                );
                 fileInput = tempFilePath;
 
                 logger.info({
