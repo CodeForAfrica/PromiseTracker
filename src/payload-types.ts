@@ -244,7 +244,6 @@ export interface Media {
    * SHA-256 of the file contents, used to avoid duplicate downloads
    */
   checksum?: string | null;
-  _objectKey?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -1039,7 +1038,6 @@ export interface Export {
     | number
     | boolean
     | null;
-  _objectKey?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -1499,7 +1497,6 @@ export interface MediaSelect<T extends boolean = true> {
   alt?: T;
   externalUrl?: T;
   checksum?: T;
-  _objectKey?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
@@ -1976,7 +1973,6 @@ export interface ExportsSelect<T extends boolean = true> {
   fields?: T;
   collectionSlug?: T;
   where?: T;
-  _objectKey?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
