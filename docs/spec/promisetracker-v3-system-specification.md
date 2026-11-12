@@ -1,37 +1,37 @@
 # PromiseTracker v3 system specification
 
-Version 3.0, draft, 10 November 2026.
+Version 3.0, draft, 12 November 2026.
 
-This is the full specification for PromiseTracker v3. It covers what the system does, how it is
-built, and the technical detail a developer needs to build it. Each section opens with a short
-plain-language summary, so a reader who is not a developer can follow the design and skip the
-detail underneath.
+This is the full specification for PromiseTracker v3: what the system does, how it is built, and
+the detail a developer needs to build it. Each section opens with a short summary in plain
+language, so a reader who is not a developer can follow the design and skip the detail.
 
-A shorter companion document, the product specification, explains the same system without the
-technical detail.
+The product specification explains the same system without the technical detail.
 
 ## Contents
 
 1. Overview
 2. Key terms
 3. How the system is put together
-4. Plugins
+4. Plugins and ports
 5. Verification plugins
 6. Other plugins
 7. Data model
 8. Publishing rules
 9. The pipeline
-10. The public site
-11. APIs
-12. Security
-13. Errors and logging
-14. Testing
-15. Deployment and operations
-16. Performance
-17. Development workflow and delivery
-18. Design decisions
-19. Appendix A: items to confirm
-20. Appendix B: what v2 does today
+10. The UI layer
+11. Web addresses
+12. The API
+13. Security
+14. Errors and logging
+15. Testing
+16. Deployment and operations
+17. Performance
+18. Measures
+19. Development and delivery
+20. Decisions
+21. Appendix A: items to confirm
+22. Appendix B: what v2 does today
 
 The word CONFIRM marks a statement that someone must check against a running system before
 building on it. Appendix A lists every one.
@@ -40,30 +40,31 @@ building on it. Appendix A lists every one.
 
 ### 1.1 What the system does
 
-PromiseTracker records what politicians and public institutions promise, checks each promise
-against its source, and follows what happens to it over time. Editors bring in source documents.
-AI proposes candidate promises, and a person reviews every one. A fact-checker verifies each
-promise. Editors publish it and add dated updates as events unfold. The public reads the result
-on a website, and partners reuse it through embeds and a data API.
+PromiseTracker records what people in power promise and claim, checks each claim against its
+source, and follows what happens to it over time. Editors bring in source documents. AI proposes
+candidate claims and a person reviews every one. A fact-checker verifies each claim. Editors rate
+it, publish it, and add dated updates as events unfold. The public reads the result on a website.
+
+Visitors can send evidence and corrections, but an editor decides what changes the record. That
+is the difference from trackers that let politicians report on themselves or let the public vote.
 
 ### 1.2 What is new in v3
 
-Version 2 cannot run without two outside services, Airtable and Meedan Check. It has no record
-of how a promise's status changed, and its public site does not cache, paginate or search.
-Appendix B lists the evidence.
+Version 2 cannot run without Airtable and Meedan Check, has no record of how a status changed, and
+has a public site that does not cache, paginate or search. Appendix B lists the evidence.
 
-Version 3 changes five things.
+Version 3 changes these things:
 
-- **The core runs alone.** With nothing but a database and file storage, the system is a
-  complete product. Every outside service is optional.
-- **Outside services are plugins.** Verification, AI, document reading and data sources each sit
-  behind a fixed interface, so one can be swapped for another.
-- **One site serves every country.** A country is part of the web address, as in
-  `promisetracker.org/ke`, and a field on each record.
-- **Promises have a history.** Each promise carries dated updates with evidence, and its current
-  status comes from the latest one.
-- **One rule decides what is public.** Each record has a single publication setting, and hiding a
-  parent hides everything under it.
+- **The core runs alone,** on PostgreSQL and file storage. Every outside service is optional.
+- **Outside services are plugins** behind fixed interfaces, so one can be swapped for another.
+- **The public site is a replaceable layer.** It ships with the platform but reads everything
+  through a typed client.
+- **One site serves every country,** with the language and country in the web address.
+- **Claims have a history.** Each claim carries dated updates with evidence, and its current
+  rating comes from the latest one.
+- **Editors define the ratings.** Six ratings in three tiers ship as the default.
+- **Location is a way in.** Each country has its own lists of offices and areas, so a search for a
+  place returns everyone who represents it.
 
 Version 2 never launched, so there is no data to migrate.
 
@@ -71,520 +72,319 @@ Version 2 never launched, so there is no data to migrate.
 
 In scope:
 
-- Countries, actors, promises, updates, source documents, topics, statuses, citizen submissions
-  and media
+- Countries, languages, areas, offices, actors and their terms, claims of any type, updates,
+  ratings, documents, topics, themes, articles, citizen submissions and media
 - Ingestion from uploads, links and spreadsheets, with AI-assisted extraction and human review
-- Verification in the built-in review queue, in Superdesk or in Meedan Check
-- A public site with country pages, profiles, promise pages, lists, search and maps
-- Embeds, a read-only public API and CSV export
-- English and French
+- Verification in the built-in review queue or Meedan Check, and later Superdesk
+- A public site with country, actor, claim, area, topic, theme and search pages
+- A typed API that the public site uses, opened to outside users later
+- English and French at launch, with more languages added by editors
 
-Out of scope for v3. The design leaves room to add each later.
+Out of scope for now, with room left in the design:
 
 | Left out | How it can be added later |
 |---|---|
-| Editing rights per country | Each user already has a country list that the system does not yet enforce. Enforcing it needs no change to stored data |
-| A web address or theme per country | Routing reads the country from the path, so a domain-to-country map can sit in front of it |
-| Public user accounts and alerts | Submissions are anonymous today, with optional contact details |
-| Promise detection from news | A new source connector could feed it in |
-| Verification by the crowd | Citizens send evidence. A fact-checker decides |
-| A dedicated search engine | Search sits behind one module that can be replaced |
+| Editing rights per country | Each user already has a country list that is not yet enforced. Enforcing it changes no stored data |
+| A separate web address or theme per country | Routing reads the country from the path, and themes are tokens |
+| Public user accounts, alerts, petitions | Submissions are anonymous today |
+| Detecting claims in the news automatically | A new source connector could feed it |
+| Verification by the public | Citizens send evidence. A fact-checker decides |
+| A dedicated search engine | Search sits behind a port |
 
 ### 1.4 Technology
 
 | Layer | Choice |
 |---|---|
-| Web framework | Next.js with the App Router, React 19, TypeScript in strict mode |
-| Content management and admin | Payload CMS 3 |
-| Database | MongoDB |
+| Content management and admin | Payload 4, pinned to an exact beta until 4.0 is released |
+| Database | PostgreSQL, through Payload's Postgres adapter |
+| Web framework | Next.js 16.4 or later with the App Router, React 19 |
+| Language | TypeScript 6 in strict mode, Node 24.22.1 or later |
 | File storage | Any S3-compatible store |
 | Document reading | Apache Tika, self-hosted |
-| AI | Vercel AI SDK, behind the LLM provider interface |
+| AI | Vercel AI SDK, behind the LLM provider port |
 | Background jobs | Payload Jobs |
+| Styling of the public site | Tailwind CSS 4 with theme tokens |
 | Error tracking | Sentry |
-| Tests | Vitest for integration tests, Playwright for end-to-end tests |
-
-This is the same stack as v2. Version 3 adds no new infrastructure.
+| Tests | Vitest and Playwright |
+| Packaging | One Docker image |
+| Licence | MIT |
 
 ### 1.5 Rules the design must keep
 
-1. The system runs with no outside service. With only the core plugin enabled, a team can upload
-   documents, enter promises, verify, publish and track them. Automated tests run in this
-   configuration.
+1. The system runs with no outside service. With only the core plugin enabled, on Postgres and
+   file storage, a team can bring in documents, enter claims, verify, rate, publish and track
+   them. Automated tests run in this configuration.
 2. Nothing reaches the public without human review.
-3. Nobody types in a promise's current status. The system derives it from the latest published
+3. Nobody types in a claim's current rating. The system derives it from the latest published
    update.
-4. The server never fetches a web address a user supplied, with one audited exception described
-   in section 12.4.
-5. One field records whether a record should be public, and one computed field records whether
-   it is.
+4. The server never fetches a web address a user supplied, with one audited exception in section
+   13.4.
+5. One field records whether a record should be public. The system computes whether it is, for
+   each language.
 6. No sync, import or plugin deletes a record. A deletion upstream archives the record here.
+7. The public site never talks to Payload directly. It goes through the SDK.
 
 ## 2. Key terms
 
 | Term | Meaning |
 |---|---|
-| Actor | Anyone or anything that makes promises: a person, a party, an institution or a place |
-| Claim | A promise or other checkable statement. "Claim" is the name used in the data model, because the system also tracks policy pledges, budget commitments and public statements |
-| Claim update | A dated entry in a claim's history: what happened, the status as of that date, and the evidence |
-| Claim status | Where a claim stands, such as "in progress" or "kept". Editors define the list |
-| Verdict | The fact-checker's finding on whether the claim is accurately quoted and attributed: unverified, verified, false or misleading |
-| Candidate | A possible claim that AI found in a document, waiting for a person to accept or reject it |
+| Actor | A person, party or institution that makes claims |
+| Area | A place in a country's nested list of places, such as a county or constituency |
+| Office | A title from a country's list, such as Governor or MP |
+| Seat | An area plus an office, such as Nairobi County plus Governor |
+| Term | An actor's time in a seat, with start and end dates |
+| Claim | A promise or other checkable statement. A promise is the default claim type |
+| Claim type | A kind of claim, defined by editors. Each type uses one rating scale |
+| Rating scale | A named set of tiers and ratings. The default scale is "Delivery" |
+| Rating | Where a claim stands on its scale, such as In Progress |
+| Tier | A group of ratings shown where space is short, such as Promise kept |
+| Claim update | A dated entry in a claim's history: the new rating, what happened, and the evidence |
+| Verdict | The fact-checker's finding on whether the claim is accurately quoted and attributed. Separate from the rating |
 | Record status | The setting an editor controls on each record: ready, hold or archived |
-| Published status | Whether a record is live on the public site. The system computes it |
-| Plugin | A self-contained package that adds features to the system |
-| Port | A fixed interface that describes one job, such as "verify a claim" |
-| Adapter | A plugin's implementation of a port. The Superdesk adapter and the Check adapter both implement the verification port |
-| Kernel | The small base layer that defines the ports and loads the plugins |
-| Core | The plugin that holds the whole data model and a basic adapter for every port |
+| Published status | Whether a record is live in a given language. The system computes it |
+| Plugin | A self-contained package that adds features |
+| Port | A fixed interface for one job, such as "verify a claim" |
+| Adapter | A plugin's implementation of a port |
+| Kernel | The base layer that defines the ports and loads the plugins |
+| Core | The plugin that holds the data model and a basic adapter for every port |
+| SDK | The typed client the public site uses to read data |
 
 ## 3. How the system is put together
 
-In short: the system has three layers. A small kernel defines the interfaces. The core plugin
-holds everything PromiseTracker needs to work alone. Other plugins connect outside services and
-can be added or removed without changing the core.
+In short: a small kernel defines the interfaces. The core plugin holds everything PromiseTracker
+needs to work alone. Other plugins connect outside services. The public site sits on top and
+reads data only through the SDK.
 
-### 3.1 The three layers
+### 3.1 The layers
 
 ```
 +--------------------------------------------------------------+
-|                           KERNEL                             |
-|   port interfaces, plugin loader, start-up checks            |
+|  Public site (apps/site) and UI package                      |
+|  pages, sections, share images, theme                        |
 +--------------------------------------------------------------+
-                              ^
-                              |
+                  |  reads only through
+                  v
 +--------------------------------------------------------------+
-|                         plugin-core                          |
-|   data model, admin screens, public site                     |
-|   basic adapter for every port                               |
+|  SDK and contract                                            |
+|  typed client, page view models, response schemas            |
 +--------------------------------------------------------------+
-      ^           ^            ^            ^           ^
-      |           |            |            |           |
-+-----------+ +--------+ +-----------+ +---------+ +----------+
-| plugin-   | | plugin-| | plugin-   | | plugin- | | plugin-  |
-| superdesk | | check  | | ai        | | tika    | | airtable |
-+-----------+ +--------+ +-----------+ +---------+ +----------+
+                  |  local call or HTTP
+                  v
++--------------------------------------------------------------+
+|  KERNEL: ports, plugin loader, start-up checks               |
++--------------------------------------------------------------+
+|  plugin-core: data model, admin, API, basic adapters         |
++--------------------------------------------------------------+
+|  plugin-check  plugin-ai  plugin-tika  plugin-site  ...      |
++--------------------------------------------------------------+
+|  Payload 4  |  PostgreSQL  |  S3 storage                     |
++--------------------------------------------------------------+
 ```
 
-**The kernel** defines the five ports, loads plugins and checks the configuration at start-up.
-It knows nothing about promises or politicians.
+**The kernel** defines the ports, loads plugins and checks the configuration at start-up. It
+builds on Payload's `definePlugin` and adds what Payload lacks: ports, the rule that each required
+port has exactly one adapter, and field ownership.
 
-**The core plugin** owns every collection in the data model, the admin screens and the public
-site. It also ships a basic adapter for every port, which is why the system works with no other
-plugin enabled.
+**The core plugin** owns the data model, the admin screens and the API, and ships a basic adapter
+for every port.
 
-**Integration plugins** each connect one outside service. Every one depends on the core, adds
-its own optional fields to the core's records, and provides an adapter for one or more ports. A
-plugin never calls another plugin directly.
+**Integration plugins** each connect one outside service. Each depends on the core and never
+calls another plugin directly.
+
+**plugin-site** holds the settings that only the default public site uses: homepage and country
+picks, section overrides, explainer text, navigation and interface strings. A replacement site
+brings its own settings plugin, so the core stays free of UI concerns.
+
+**The public site** is described in section 10.
 
 ### 3.2 Why the core is a plugin too
 
 If the core were the application and plugins were bolted on, each integration would reach into
-the application's internals. That is how v2 ended up writing Airtable status messages from six
-different places. Making the core a plugin means it uses the same extension rules as everything
-else. If those rules are too weak for an integration, they are too weak for the core, and the
-problem shows up early.
+its internals. That is how v2 came to write Airtable status messages from six places. Making the
+core a plugin means it follows the same rules as everything else, and weak rules show up early.
 
 ### 3.3 Supported configurations
 
-An environment variable, `PT_PLUGINS`, lists the enabled plugins. Each row below is a supported
-set-up.
+The `PT_PLUGINS` environment variable lists the enabled plugins.
 
-| Enabled plugins | Ingestion | Document reading | Candidates | Verification |
+| Enabled plugins | Document reading | Candidates | Verification |
+|---|---|---|---|
+| core, site | Plain text and HTML | Entered by hand | Built-in review queue |
+| core, site, tika | Adds PDF, Word, Excel and more | Entered by hand | Built-in review queue |
+| core, site, tika, ai | Same | AI proposes, a person reviews | Built-in review queue |
+| core, site, tika, ai, check | Same | Same | Meedan Check. This is the version 1 set-up |
+| core, site, tika, ai, superdesk | Same | Same | Superdesk, in a later version |
+
+## 4. Plugins and ports
+
+In short: a port describes a job and an adapter does it. Start-up checks make sure every required
+job has exactly one adapter. Ownership rules make sure two systems never write the same field.
+
+### 4.1 The ports
+
+| Port | The job | Adapters that run | In core | Others |
 |---|---|---|---|---|
-| core | Upload, link, CSV and Excel import | Plain text and HTML | None. Editors enter claims by hand | Built-in review queue |
-| core, tika | Same | Adds PDF, Word, Excel, PowerPoint and more | None | Built-in review queue |
-| core, tika, ai | Same | Same | AI proposes, a person reviews | Built-in review queue |
-| core, tika, ai, superdesk | Same | Same | Same | Superdesk |
-| core, tika, ai, check | Same | Same | Same | Meedan Check |
-
-Adding `airtable` to any row adds Airtable as a source of documents and actors.
-
-## 4. Plugins
-
-In short: a port describes a job, and an adapter does it. The system has five ports. Start-up
-checks make sure every required job has exactly one adapter, and ownership rules make sure two
-systems never write the same field.
-
-### 4.1 The five ports
-
-| Port | The job | How many adapters run | Adapter in core | Other adapters |
-|---|---|---|---|---|
-| VerificationProvider | Where people verify claims | Exactly one | `native` | `superdesk`, `check` |
+| VerificationProvider | Where people verify claims | Exactly one | `native` | `check`, `superdesk` |
 | SourceConnector | Where content comes from | Any number. Upload is always on | `upload`, `url` | `airtable`, `sheets`, `feed` |
-| ContentExtractor | Turning a file into text | One or more, picked by file type | `plaintext` | `tika`, `ocr` |
+| ContentExtractor | Turning a file into text | One or more, by file type | `plaintext` | `tika`, `ocr` |
 | StructuredImporter | Turning spreadsheet rows into records | Any number | `csv`, `xlsx` | `sheets` |
-| LLMProvider | Which AI model proposes candidates | Many can be installed, one is selected | None | `google`, `openai`, `anthropic` and others |
+| LLMProvider | Which AI model proposes candidates | Many installed, one selected | None | `google`, `openai`, `anthropic` and others |
+| SearchProvider | Full-text and place search | Exactly one | `postgres` | A dedicated search engine |
+| NewsletterProvider | Newsletter sign-ups | Exactly one | `local`, which stores confirmed sign-ups | Mailing-list services |
+| AnalyticsProvider | Counting visits and searches | Exactly one | `none` | Privacy-respecting analytics tools |
+| CaptchaProvider | Stopping bots on public forms | Exactly one | `local`: a proof-of-work check, a hidden field and rate limits | Turnstile, hCaptcha |
 
-Ingestion uses three ports because the inputs differ. A spreadsheet of promises that a partner
-compiled maps straight to records and needs no AI. A 200-page manifesto needs text extraction,
-then AI, then review.
+Database, file storage, email and the admin's web framework are replaced through Payload's own
+adapters rather than ports.
 
-### 4.2 What each port must provide
+Ingestion uses three ports because the inputs differ. A spreadsheet of promises maps straight to
+records. A manifesto needs reading, then AI, then review.
 
-Every adapter also provides a `health` method that reports whether its service is reachable.
+### 4.2 What each port provides
 
-**VerificationProvider**
+Every adapter provides a `health` method that reports whether its service is reachable.
 
-| Method | Purpose |
+| Port | Methods |
 |---|---|
-| `submit(claim)` | Send a claim for verification. Returns the outside system's reference, if there is one |
-| `pull(since)` | Fetch verdicts that changed since a saved position. Used to catch anything a push missed |
-| `receive(payload, headers)` | Handle a push from the outside system. Optional |
+| VerificationProvider | `submit(claim)` sends a claim out and returns the outside reference. `pull(since)` fetches verdicts changed since a saved position. `receive(payload, headers)` handles a push, if the service sends them |
+| SourceConnector | `mode` is manual, pull or push. `list(since)` lists items waiting, for pull connectors. `fetch(item)` retrieves one |
+| ContentExtractor | `accepts` lists file types, most specific wins. `extract(content)` returns text, a page count and any metadata |
+| StructuredImporter | `accepts` lists file types. `inspect(content)` reads headings and sample rows without saving. `import(content, mapping)` creates or updates records |
+| LLMProvider | `models` lists the models. `generate(request)` returns structured output |
+| SearchProvider | `search(query, scope)` returns grouped results. `resolvePlace(text)` returns matching areas. `index(record)` keeps the index current |
+| NewsletterProvider | `subscribe(email, locale)` starts a confirmed sign-up. `unsubscribe(email)` |
+| AnalyticsProvider | `pageView(event)` and `searchEvent(event)`. Neither receives personal data |
+| CaptchaProvider | `challenge()` returns what the form shows. `verify(token, request)` returns pass or fail |
 
-**SourceConnector**
-
-| Method | Purpose |
-|---|---|
-| `mode` | One of `manual`, `pull` or `push` |
-| `list(since)` | For pull connectors, list items waiting to be brought in |
-| `fetch(item)` | Retrieve one item's content |
-
-**ContentExtractor**
-
-| Method | Purpose |
-|---|---|
-| `accepts` | The file types this extractor handles. The most specific match wins |
-| `extract(content)` | Return the text, a page count if known, and any metadata found |
-
-**StructuredImporter**
-
-| Method | Purpose |
-|---|---|
-| `accepts` | The file types this importer handles |
-| `inspect(content)` | Read the column headings and sample rows without saving anything |
-| `import(content, mapping)` | Create or update records using the column mapping |
-
-**LLMProvider**
-
-| Method | Purpose |
-|---|---|
-| `models` | The models this provider offers |
-| `generate(request)` | Run one request and return structured output |
-
-Each method also receives a context object holding the database handle, a logger, a cancel
-signal and the plugin's own settings. An adapter reads its configuration from that context. It
-never reads environment variables itself and never reads another plugin's settings.
+Each method receives a context object with the database handle, a logger, a cancel signal and the
+plugin's own settings. An adapter never reads environment variables itself and never reads another
+plugin's settings.
 
 ### 4.3 What a plugin declares
 
-A plugin is a function that returns a manifest. The kernel reads the manifest and does the
-wiring.
+A plugin is defined with Payload's `definePlugin`, with a slug and an order, and adds a manifest.
 
 | Manifest entry | Purpose |
 |---|---|
-| `id`, `version` | Identity |
-| `dependsOn` | Plugins that must load first |
-| `collections`, `globals` | Record types the plugin owns outright |
-| `extend` | Changes to record types another plugin owns, described in section 4.5 |
-| `provides` | The adapters it supplies, by port |
+| `slug`, `version`, `order` | Identity and load order |
+| `dependsOn` | Plugins that must be present |
+| `collections`, `globals` | Record types the plugin owns |
+| `extend` | Fields added to record types another plugin owns, section 4.5 |
+| `provides` | Adapters, by port |
 | `tasks`, `workflows` | Background jobs |
-| `routes` | The web routes it uses, described in section 4.7 |
-| `settings` | A settings group, added under the plugin's own name |
-| `requiredEnv` | Environment variables it needs, checked at start-up |
+| `routes` | Web routes it serves, section 4.7 |
+| `settings` | A settings group under the plugin's slug |
+| `widgets` | Admin dashboard cards |
+| `requiredEnv` | Environment variables it needs |
 
-Three environment variables select the configuration.
+Three environment variables select the set-up:
 
 ```bash
-PT_PLUGINS=core,tika,ai,superdesk
-PT_VERIFICATION=superdesk
+PT_PLUGINS=core,site,tika,ai,check
+PT_VERIFICATION=check
 PT_LLM_MODEL=google:gemini-2.5-pro
 ```
 
-The system reads these at start-up. Changing a plugin needs a restart, on purpose. A plugin
-changes the shape of records and the list of routes, and neither can change safely while the
-system is serving requests.
-
 ### 4.4 What happens at start-up
 
-1. Read `PT_PLUGINS` and load each manifest.
-2. Check that every dependency is present and sort the plugins into load order. A circular
-   dependency stops the start-up.
-3. For each port that needs exactly one adapter, find the selected one. If there are none, or
-   more than one, stop and name the candidates and the variable that chooses between them.
-4. Combine the record types, then apply each plugin's extensions in load order.
-5. Add each plugin's settings group.
-6. Check the required environment variables of enabled plugins.
-7. Register background jobs.
-8. Log the final configuration in one line: plugins, adapters and versions.
+1. Read `PT_PLUGINS` and load the manifests.
+2. Check dependencies and load order. A circular dependency stops start-up.
+3. For each port that needs exactly one adapter, find it. None, or more than one, stops start-up
+   with a message naming the candidates and the variable that chooses.
+4. Register every first-party plugin's record types and fields, enabled or not. See section 4.6.
+5. Wire hooks, routes, jobs and widgets for enabled plugins only.
+6. Check required environment variables and the Postgres extensions in section 16.2.
+7. Run each enabled plugin's own settings check, such as the Check plugin's status mapping.
+8. Log the final configuration in one line.
 
-A deployment with no way to verify claims is misconfigured, and it should fail when it is
-deployed, not when the first fact-checker opens a claim. Optional routes behave differently and
-are described in section 4.7.
+A deployment with nowhere to verify claims is broken, and it should fail when deployed, not when
+a fact-checker first opens a claim.
 
 ### 4.5 Ownership rules
 
-When a plugin takes over a piece of data, the system makes sure it is the only writer.
+1. Fields a plugin adds are always optional, so removing the plugin leaves valid records.
+2. A plugin may not change the type of a core field.
+3. A field a plugin owns is read-only in the admin. Only the plugin and a super-admin can write
+   it, and the system logs a super-admin override.
+4. A plugin's fields sit in a group named after it, such as `check.itemId`.
+5. A plugin never deletes a core record. It archives it.
 
-1. Fields that a plugin adds are always optional. A plugin may be removed after months of use,
-   and required fields would make every existing record invalid.
-2. A plugin may not change the type of a core field. It may change how the field appears and who
-   can edit it.
-3. A field that a plugin owns is read-only in the admin. Only the plugin and a super-admin can
-   write it, and the system logs a super-admin override.
-4. If a plugin owns the lifecycle of a record type, the admin hides the create and delete
-   buttons and shows a notice saying where the data comes from.
-5. A plugin's fields sit in a group named after the plugin, such as `superdesk.guid`. Two
-   plugins cannot collide, and removing a plugin removes one group.
-6. A plugin never deletes a core record. A deletion upstream sets the record to archived.
-
-When a plugin owns a job, the matching role in the admin loses it.
+When a plugin owns a job, the matching admin role loses it.
 
 | Plugin enabled | What it takes over | Effect in the admin |
 |---|---|---|
-| `plugin-superdesk` or `plugin-check` | The verdict on each claim | Reviewers can no longer set a verdict in the admin. They still review AI candidates there |
-| `plugin-airtable` | Intake of documents and actors | Contributors can no longer create those records in the admin |
+| `plugin-check` or `plugin-superdesk` | The verdict, verification date and rationale | Reviewers can no longer set a verdict. They still review AI candidates |
+| `plugin-airtable` | Intake of documents and actors | Contributors can no longer create those records |
 
-A verification plugin owns three fields on a claim: the verdict, the verification date and the
-rationale. The title, statement, topic, promisor and update history stay editable in
-PromiseTracker whichever plugin is active.
+### 4.6 Plugins and the database schema
 
-### 4.6 Rules for plugin authors
+With Postgres, every field is a column and every change needs a migration. Payload keeps one
+migration history per project. So the schema always includes the record types and fields of every
+first-party plugin, whether it is enabled or not. `PT_PLUGINS` decides behaviour, routes, ports
+and admin visibility, not the schema.
 
-1. Add only optional fields to another plugin's record types.
-2. Keep every added field inside a group named after the plugin.
-3. Read configuration from the context object.
-4. Put route handlers in the folder described in section 4.7, and make the enabled check the
-   first line of each.
-5. Archive, never delete.
-6. Keep the `health` method cheap enough to run on every health check.
-7. When the plugin is disabled, return the configuration exactly as it arrived.
+A disabled plugin's fields stay in the database, hidden from the admin and never written. A
+third-party plugin added by one deployment ships its own migrations.
 
 ### 4.7 Plugin routes
 
-The web framework builds its route list from files on disk, so a plugin cannot add a route while
-the system runs. Plugin routes therefore live in a fixed folder, one subfolder per plugin, and
-each plugin lists its routes in its manifest.
+The web framework builds its routes from files on disk, so plugin routes live in a fixed folder
+and are listed in each manifest.
 
 ```
 src/app/api/plugins/
-  superdesk/items/route.ts     POST  receives published items
-  superdesk/assets/route.ts    GET, POST  media exchange
-  check/webhook/route.ts       POST  receives report events
-  airtable/webhook/route.ts    POST  receives change notices
+  check/webhook/route.ts       POST  report events from Check
+  superdesk/items/route.ts     POST  published items from Superdesk
+  airtable/webhook/route.ts    POST  change notices from Airtable
 ```
 
-The first thing each handler does is check that its plugin is enabled. If it is not, the handler
-returns `503` and does nothing else. Tests read the route list from the manifest, so they cover
-every route without a hardcoded list.
+Each handler first checks that its plugin is enabled, and returns `503` if not. Tests read the
+route list from the manifests.
+
+### 4.8 Rules for plugin authors
+
+1. Add only optional fields, inside a group named after the plugin.
+2. Read configuration from the context object.
+3. Archive, never delete.
+4. Keep `health` cheap enough to run on every health check.
+5. When disabled, change no behaviour.
+6. Wrap any experimental Payload API, such as `definePlugin` or dashboard widgets, in the
+   kernel's own helper, so a change between Payload betas touches one place.
 
 ## 5. Verification plugins
 
-In short: a deployment verifies claims in one of three places. Each option sends a claim out for
-checking and brings back the same three fields: a verdict, a date and a rationale. The claim
-itself never leaves PromiseTracker.
+In short: a deployment verifies claims in one place. Each option sends a claim out and brings back
+the same three fields: a verdict, a date and a rationale. The claim itself never leaves
+PromiseTracker. Version 1 uses the built-in queue or Meedan Check.
 
 ### 5.1 Built-in review, in plugin-core
 
-A reviewer opens a claim in the admin and sees the statement, the source document with the quote
-highlighted, the promisor, and how the claim was found. They set the verdict and write a
-rationale. A saved view called "Awaiting verification" is the queue.
+A reviewer opens a claim and sees the statement, the source document with the quote highlighted,
+the actor, and how the claim was found. They set the verdict and write a rationale. A saved view
+called "Awaiting verification" is the queue. The adapter sends nothing out and fetches nothing.
 
-The adapter does nothing, by design. `submit` sends nothing out, `pull` returns nothing, and the
-verdict is an ordinary editable field.
+### 5.2 plugin-check, version 1
 
-### 5.2 plugin-superdesk
+Meedan Check is a fact-checking workspace with a claim type and a report workflow built in. The
+plugin owns the verdict, verification date and rationale, and adds a read-only `check` group: the
+item's id in Check, its link, the report state, and the time and result of the last sync.
 
-Superdesk is the newsroom production system from Sourcefabric. It has no built-in fact-check or
-claim type, so the plugin represents a claim as a normal Superdesk content item with a dedicated
-content profile and three custom vocabularies. The newsroom must set these up in its Superdesk
-before the plugin can run.
+**The API.** One GraphQL endpoint, `https://check-api.checkmedia.org/api/graphql`. Every request
+carries the `X-Check-Token` header with the workspace API key and the `X-Check-Team` header with
+the workspace id. Both values live in the plugin's settings, encrypted.
 
-The plugin owns the verdict, verification date and rationale on each claim. It adds a read-only
-`superdesk` group holding the item's `guid`, version, state, link, and the time and result of
-the last sync.
-
-#### Superdesk's three APIs
-
-| API | Address prefix | Access | Used for |
-|---|---|---|---|
-| Internal API | `/api` | Read and write | Creating claim items. This is the only API that can write |
-| Production API | `/prodapi/v1` | Read only | Reading items in any state, including unpublished |
-| Content API | Varies by installation | Read only | Reading published items |
-
-CONFIRM the Content API prefix. Installations differ: some serve `/capi/items` and others
-`/v1/items`. CONFIRM too that the Production API is running, because many installations leave it
-out.
-
-#### Signing in
-
-| API | How the plugin signs in |
-|---|---|
-| Internal API | It posts a service account's credentials to `/api/auth_db` and receives a session token. Sessions last 240 minutes by default, and the plugin signs in again when one expires |
-| Production API | It exchanges a client id and secret for a token at `/api/auth_server/token`. The token grants read access only |
-| Content API | It sends a subscriber token created in Superdesk |
-
-Superdesk's token service grants read access only. Creating items therefore needs a real
-Superdesk user account with the `archive` privilege. Limit that account to the fact-checking
-desk and give it a recognisable name, such as `promisetracker-bot`, so its edits are easy to
-spot in Superdesk's history.
-
-#### How a claim maps to a Superdesk item
-
-| PromiseTracker | Superdesk field | Notes |
-|---|---|---|
-| Claim identity | `guid` | Superdesk creates it. The plugin stores it as `superdesk.guid` |
-| Title | `headline` | |
-| Statement | `body_html` | The exact quote in a blockquote, with the source |
-| Summary | `abstract` | |
-| Claim type | `subject`, scheme `claim_type` | Custom vocabulary |
-| Topic | `subject`, scheme `claim_category` | Custom vocabulary |
-| Verdict | `subject`, scheme `verdict` | Custom vocabulary. CONFIRM the scheme id |
-| Rationale | `body_html` of the published fact-check | |
-| Claim id | `extra.promisetracker_id` | Carried so the plugin can match items back |
-| Claim link | `extra.promisetracker_url` | |
-| Language | `language` | |
-| Item kind | `profile` | A content profile such as `fact_check`. CONFIRM the id |
-
-The verdict is a vocabulary in `subject` because Superdesk can search `subject` values. Values
-stored under `extra` are not searchable unless the installation's search mapping is changed.
-Anything the plugin must search goes in `subject`, and anything it only carries goes in `extra`.
-
-CONFIRM the vocabulary ids and their codes, the content profile id, and the desk and stage ids.
-The plugin checks all of them at start-up and refuses to start if one is wrong.
-
-#### Sending a claim to Superdesk
-
-```http
-POST /api/archive
-Authorization: Basic <session token>
-Content-Type: application/json
-
-{
-  "type": "text",
-  "profile": "<fact_check profile id>",
-  "headline": "Ruto: 200 new health centres by 2027",
-  "body_html": "<blockquote>exact quote</blockquote>",
-  "language": "en",
-  "subject": [
-    { "qcode": "unverified", "scheme": "verdict" },
-    { "qcode": "campaign-promise", "scheme": "claim_type" },
-    { "qcode": "health", "scheme": "claim_category" }
-  ],
-  "extra": {
-    "promisetracker_id": "6745abc",
-    "promisetracker_url": "https://promisetracker.org/ke/promises/..."
-  },
-  "task": { "desk": "<desk id>", "stage": "<stage id>" }
-}
-```
-
-Superdesk assigns the `guid` and version and sets the item's state to `draft`.
-
-The `task` entry is required in practice. Without a desk and stage the item lands in the service
-account's private workspace, where no fact-checker will see it.
-
-The plugin posts to `/api/archive` and not to Superdesk's ingest route. An item that arrives
-through ingest gets a new `guid` when the newsroom picks it up, which breaks the link back to
-the claim.
-
-#### Receiving verdicts from Superdesk
-
-The plugin uses two paths and runs both.
-
-**Push.** The newsroom configures PromiseTracker as a Superdesk subscriber with an HTTP push
-destination. When a fact-checker publishes an item, Superdesk posts it to
-`/api/plugins/superdesk/items` and signs the request.
-
-```
-x-superdesk-signature: sha1=<HMAC-SHA1 of the body>
-```
-
-The handler checks the signature before it reads the body. HMAC-SHA1 is an old algorithm, but it
-is the one Superdesk uses, so the shared secret must be long and random. CONFIRM that HTTP push
-is available on the installation.
-
-**Poll.** Every 15 minutes a job asks the Content API for items that changed since the last
-check. A push can be lost during a deploy or a network fault, and the poll catches what the push
-missed.
-
-```http
-GET <content api prefix>/items
-  ?filter={"range":{"versioncreated":{"gte":"<last seen time>"}}}
-  &sort=[("versioncreated",1)]
-  &max_results=200
-```
-
-The Content API has limits that cause a quiet, incomplete sync if ignored.
-
-- Its date parameters accept whole days only, so the plugin filters on `versioncreated`.
-- With no date given it returns the last 7 days only. A backfill must walk through date ranges.
-- It sends no change markers, so the plugin tracks the latest `versioncreated` it has seen.
-- It rejects any parameter it does not recognise.
-- It returns 500 items per page by default and 1,000 at most.
-- A new item can take a moment to appear in results, so each poll overlaps the previous one by
-  10 minutes.
-- It shows a subscriber only the items published to it. If the subscriber is set up wrongly, the
-  API returns an empty list with a success code. The plugin treats three empty polls in a row as
-  a health warning.
-
-#### What each Superdesk state means
-
-Superdesk keeps one `guid` for an item through corrections and withdrawals, and raises the
-version each time. It never deletes.
-
-| Superdesk state | Effect on the claim |
-|---|---|
-| `draft`, `in_progress`, `submitted` | In review. No change |
-| `published`, `corrected` | Apply the verdict and rationale, and set the verification date |
-| `killed`, `recalled`, `takedown`, `unpublished` | Withdraw. Set the verdict to unverified, set the record to hold, and notify an editor |
-| `spiked` | Archive the claim |
-| `scheduled`, `being_corrected` | No change. Wait for the final state |
-
-The plugin ignores a version it has already processed and applies an item only when its version
-is higher than the stored one. Superdesk may deliver items out of order.
-
-The plugin both creates items and receives them. To avoid a loop, it matches every incoming item
-that carries a `promisetracker_id` to the existing claim and never creates a second one. It
-ignores items without that id.
-
-#### When Superdesk fails
-
-| Problem | What the plugin does |
-|---|---|
-| A profile, vocabulary, desk or stage id is wrong at start-up | Refuses to start and names the id |
-| The session expired | Signs in again, retries once, then fails the job |
-| A push has a bad signature | Returns `401`, logs it, and does not read the body |
-| A push refers to an unknown item | Returns `200` so Superdesk stops retrying, and notes the item for the next poll |
-| Superdesk is unreachable | Stops calling it for a while, queues claims locally, and reports a degraded state |
-
-When Superdesk is down, editors can still create, edit and publish claims. Only new verdicts
-stop arriving.
-
-### 5.3 plugin-check
-
-Meedan Check is a fact-checking workspace. Unlike Superdesk, it has a claim type and a report
-workflow built in, so the plugin needs no custom set-up beyond an API key and a list of
-statuses.
-
-The plugin owns the verdict, verification date and rationale on each claim. It adds a read-only
-`check` group holding the item's id in Check, its link, the report state, and the time and
-result of the last sync.
-
-#### The Check API
-
-Check has one GraphQL API at `https://check-api.checkmedia.org/api/graphql`. Every request
-carries two headers.
-
-| Header | Value |
-|---|---|
-| `X-Check-Token` | The workspace API key |
-| `X-Check-Team` | The workspace id |
-
-Both values live in the plugin's settings, encrypted.
-
-#### How a claim maps to a Check item
+**How a claim maps to a Check item.**
 
 | PromiseTracker | Check field | Notes |
 |---|---|---|
 | Statement | `quote` | The exact quote. Check creates an item of type `Claim` |
-| Title and summary | `set_claim_description` | Includes a link back to the claim in PromiseTracker |
+| Title and summary | `set_claim_description` | Includes a link back to the claim |
 | Topic, claim type, country | `set_tags` | |
 | Starting status | `set_status` | `undetermined` |
-| Claim identity | The returned item id | The plugin stores it as `check.itemId` and matches on it later |
-| Item link | The returned `full_url` | Stored as `check.itemUrl` so editors can open the item |
+| Claim identity | The returned item id | Stored as `check.itemId` and used for matching |
+| Item link | The returned `full_url` | Stored as `check.itemUrl` |
 
-#### Sending a claim to Check
+**Sending a claim.**
 
 ```graphql
 mutation createProjectMedia($input: CreateProjectMediaInput!) {
@@ -601,27 +401,20 @@ mutation createProjectMedia($input: CreateProjectMediaInput!) {
     "quote": "We will build 200 new health centres by 2027",
     "channel": { "main": 1 },
     "set_status": "undetermined",
-    "set_tags": ["health", "campaign-promise", "ke"],
-    "set_claim_description": "Ruto: 200 new health centres ..."
+    "set_tags": ["health", "promise", "ke"],
+    "set_claim_description": "Governor: 200 new health centres ..."
   }
 }
 ```
 
-#### Receiving verdicts from Check
+**Receiving verdicts.** The plugin uses a push and a poll.
 
-As with Superdesk, the plugin uses a push and a poll.
-
-**Push.** Check sends a webhook to `/api/plugins/check/webhook` when something changes in the
-workspace. The request carries a shared secret in its `Authorization` header, and the handler
-compares it before reading the body. The plugin acts on one kind of event, a report change,
-which Check labels `report_design`. It acknowledges every other event with `200` and ignores it.
-
-A report event carries the report's state. When the state is `published`, the plugin reads the
-item's status from Check and applies the verdict. When the state is `paused`, the fact-checker
-has withdrawn the report, and the plugin withdraws the verdict.
-
-**Poll.** Every 15 minutes a job searches Check for items with a published report and
-reconciles them, 100 per page.
+- Push: Check posts to `/api/plugins/check/webhook`. The request carries a shared secret in its
+  `Authorization` header, which the handler checks before reading the body. The plugin acts only
+  on report events, which Check labels `report_design`, and acknowledges all others with `200`.
+  A report state of `published` applies the verdict. A state of `paused` withdraws it.
+- Poll: every 15 minutes a job searches Check for items with a published report, 100 per page,
+  and reconciles them. A push can be lost during a deploy, and the poll catches it.
 
 ```graphql
 query PublishedReports($query: String!) {
@@ -633,946 +426,872 @@ query PublishedReports($query: String!) {
 
 The `query` variable is `{"report_status": ["published"]}`.
 
-#### How Check statuses become verdicts
+**From Check status to verdict.** Each workspace defines its own statuses, so the plugin's
+settings map each one to a verdict. At start-up it reads the workspace's statuses and refuses to
+start if one is unmapped.
 
-Each Check workspace defines its own status list, so the plugin's settings hold a mapping from
-Check status to verdict. At start-up the plugin reads the workspace's statuses and checks that
-every one is mapped.
-
-| Check status, default workspace | Verdict in PromiseTracker |
+| Check status, default workspace | Verdict |
 |---|---|
 | `verified` | verified |
 | `false` | false |
-| `undetermined`, `in_progress` | unverified |
-| `not_applicable` | unverified |
-| A custom status | Whatever the mapping says. An unmapped status leaves the verdict unverified and flags the claim for an editor |
+| `undetermined`, `in_progress`, `not_applicable` | unverified |
 
-| Report state in Check | Effect on the claim |
+| Report state | Effect on the claim |
 |---|---|
-| No report, or report not published | In review. No change |
-| `published` | Apply the mapped verdict, copy the report text as the rationale, and set the verification date |
-| `paused` | Withdraw. Set the verdict to unverified, set the record to hold, and notify an editor |
+| None, or not published | In review. No change |
+| `published` | Apply the mapped verdict, copy the report text as the rationale, set the date |
+| `paused` | Set the verdict to unverified, set the claim to hold, notify an editor |
 
-CONFIRM the workspace id, the API key's permissions, the workspace's status list, and that the
-workspace can send webhooks to an outside address.
-
-#### When Check fails
+**When Check fails.**
 
 | Problem | What the plugin does |
 |---|---|
-| A workspace status has no mapping at start-up | Refuses to start and names the status |
-| Check answers `429`, too many requests | Waits for the time given in the `Retry-After` header, then retries |
-| A webhook has a wrong secret | Returns `401`, logs it, and does not read the body |
-| The same webhook arrives twice | Recognises it by a fingerprint of the body and returns the first answer again |
-| A webhook refers to an unknown item | Returns `200` and notes the item for the next poll |
-| Check is unreachable | Stops calling it for a while, queues claims locally, and reports a degraded state |
+| An unmapped status at start-up | Refuses to start and names the status |
+| `429`, too many requests | Waits for the `Retry-After` time, then retries |
+| A wrong webhook secret | Returns `401` without reading the body |
+| The same webhook twice | Matches a fingerprint of the body and returns the first answer |
+| A webhook for an unknown item | Returns `200` and leaves the item for the next poll |
+| Check unreachable | Pauses calls, queues claims locally, reports a degraded state |
 
-Version 2 kept published promises inside Check and rebuilt them from Check's reports. Version 3
-keeps the claim in PromiseTracker and takes only the verdict from Check, so a Check outage or a
-change in Check's data never removes a claim.
+The v2 Check client in `src/lib/meedan.ts` and the duplicate detection in
+`src/app/api/meedan-sync/route.ts` are the starting point for this plugin.
+
+### 5.3 plugin-superdesk, later version
+
+Superdesk is Sourcefabric's newsroom system. It has no claim type, so the plugin represents a
+claim as a content item with a dedicated content profile and three custom vocabularies, which the
+newsroom must set up first.
+
+| Topic | Design |
+|---|---|
+| Writing | Posts new items to the internal API at `/api/archive`, signed in as a service account with the `archive` privilege, into a named desk and stage. Not to the ingest route, which changes the item's `guid` |
+| Claim fields | Title to `headline`, statement to `body_html`, summary to `abstract`. Claim type, topic and verdict as `subject` entries with their own schemes, because Superdesk can search those. The claim id and link in `extra` |
+| Reading | An HTTP push from a Superdesk subscriber, signed with HMAC-SHA1 in the `x-superdesk-signature` header, plus a 15-minute poll of the Content API filtered on `versioncreated` |
+| States | `published` and `corrected` apply the verdict. `killed`, `recalled`, `takedown` and `unpublished` withdraw it. `spiked` archives the claim |
+| Duplicates | Applies an item only if its version is higher than the stored one |
+| Known traps | The Content API's address prefix differs between installations. Its date parameters take whole days only and default to the last 7 days. It returns an empty list, not an error, if the subscriber matches no product |
+
+Appendix A lists the instance details to confirm before this plugin is built.
 
 ## 6. Other plugins
 
 ### 6.1 plugin-ai
 
-This plugin finds candidate claims in documents. It provides an LLM provider adapter for each AI
-vendor the deployment has configured, and it owns the extraction records and the review queue
-screen.
-
-A deployment selects one model, such as `google:gemini-2.5-pro`, and stores the vendor's API key
-in the encrypted settings. Other vendors can be installed alongside it and selected later
-without code changes. The provider list and credential checks come from v2, which already
-supports fourteen vendors.
-
-The plugin runs a small test request at start-up and on each health check. If the account has
-run out of credit, the health check reports a degraded state. Without that check, the first sign
-would be a pile of failed documents.
-
-With this plugin disabled, documents stop after text extraction and editors enter claims by
-hand.
+Finds candidate claims in documents. It provides an LLM provider adapter for each configured AI
+vendor, and owns the extraction records and the candidate review screen. A deployment selects one
+model and stores the vendor's key in encrypted settings. A small test request at start-up and on
+each health check reports exhausted credit as a degraded state. The provider list and credential
+checks come from v2's `src/lib/ai/providerCatalog.ts` and `providerRegistry.ts`.
 
 ### 6.2 plugin-tika
 
-This plugin reads complex file formats. It sends a file to a self-hosted Apache Tika server and
-gets back the text. Tika reads PDF, Word, Excel, PowerPoint, OpenDocument, RTF, EPUB and several
-hundred other formats.
+Sends files to a self-hosted Apache Tika server and gets back the text. Tika reads PDF, Word,
+Excel, PowerPoint, OpenDocument, RTF, EPUB and several hundred other formats. Requests time out
+after two minutes. Tika counts toward the health check only when this plugin is enabled.
 
-Requests time out after two minutes. Tika counts toward the health check only when this plugin
-is enabled, and the public site never depends on it.
+### 6.3 plugin-site
 
-### 6.3 plugin-airtable
+Holds the settings for the default public site, described in section 10.6. It has no port.
 
-This plugin lets a team keep feeding documents and actors in from Airtable. It is an option for
-teams that want it. With the plugin enabled, Airtable supplies records, and the plugin may own
-their fields. The work queue and the processing status stay in PromiseTracker and remain visible
-in the admin.
+### 6.4 plugin-airtable, later version
 
-For most teams a one-off spreadsheet import, described in section 9.6, is simpler than a
-standing sync.
+Lets a team feed documents and actors in from Airtable. The work queue and processing status stay
+in PromiseTracker. For most teams, a one-off spreadsheet import is simpler.
+
+### 6.5 Default adapters for the new ports
+
+| Port | Default adapter | Behaviour |
+|---|---|---|
+| SearchProvider | `postgres` | Full-text search with ranking, accent-insensitive and typo-tolerant matching, and place lookups, described in section 16.2 |
+| NewsletterProvider | `local` | Stores sign-ups in the database and sends a confirmation email. Nothing is subscribed until confirmed |
+| AnalyticsProvider | `none` | Sends nothing. Searches with no results are still logged locally, section 18 |
+| CaptchaProvider | `local` | A proof-of-work check in the browser, a hidden trap field and rate limits. No outside service |
 
 ## 7. Data model
 
-In short: a country contains actors and documents. Documents produce claims. Each claim belongs
-to an actor and a topic, and collects dated updates. Citizens send submissions, which moderators
-can turn into updates.
+In short: a country has languages, areas and offices. Actors hold seats for a term. Actors make
+claims, which come from documents, carry ratings from a rating scale, and collect dated updates.
+Editors add topics, themes and articles around them.
 
 ```
-Country
-  |-- Actor (person, party, institution or place)
-  |     '-- makes Claims
-  |-- Document --> Extraction --> candidates
-  |                                  | accepted
-  |                                  v
-  '------------------------------- Claim --> Claim updates
-                                     |            ^
-                                     |-- Topic    | promoted
-                                     '-- Status   Submission
+Country --+-- Language
+          +-- Area (nested) ----+
+          +-- Office ------------+-- Seat --- Term --- Actor
+          |                                             |
+          +-- Document --> Extraction --> candidates    | makes
+          |                                  | accepted v
+          +------------------------------------------ Claim --> Claim updates
+                                                        |           ^
+              Claim type --> Rating scale --> Ratings --+           | promoted
+              Topic, Theme, Article ---------------------+       Submission
 ```
 
-The core plugin owns every record type below unless a heading says otherwise. Each record also
-has creation and update timestamps, which the tables leave out. "Localized" means the field
-holds a value per language.
+All records live in PostgreSQL, with UUIDs as ids. Payload keeps a version history and records who
+created and last changed each record, as described in section 8.5. The tables below leave out
+those fields and the timestamps. "Localized" means the field holds a value per language. A date
+marked "partial" stores a precision of year, month or day, because many claims are only known to
+the month, as in "August 2022".
 
-### 7.1 Country
+### 7.1 Languages and countries
 
-A country is a section of the site and a label on records. All countries share one site, one
-database and one set of users.
-
-| Field | Type | Notes |
-|---|---|---|
-| `code` | Text | Two-letter ISO code in lower case, such as `ke`. Unique. Used in web addresses |
-| `alpha3` | Text | Three-letter ISO code, for data exchange |
-| `name`, `officialName` | Text | Localized |
-| `flag` | Media | |
-| `defaultLocale` | `en` or `fr` | |
-| `locales` | List | The languages this country publishes in |
-| `geo` | Geo group | Centre point and outline, described in section 7.11 |
-| `about` | Rich text | Localized. Shown on the country page |
-| `branding` | Group | Accent colour and header image |
-| `recordStatus` | ready, hold, archived | Starts as hold |
-
-Setting a country to hold or archived hides every actor, claim and document under it.
-
-### 7.2 Actor
-
-One record type covers four kinds of actor. A person, a party, a ministry and a county can all
-make promises, and keeping them together means one list answers "who makes promises here".
-
-| Field | Type | Notes |
-|---|---|---|
-| `country` | Country | Required |
-| `kind` | person, party, institution, place | Required |
-| `name` | Text | Required |
-| `shortName` | Text | Such as "UDA" or "MoH" |
-| `slug` | Text | The name as it appears in web addresses. Unique within a country and kind |
-| `parent` | Actor | For nesting, such as ward inside constituency inside county |
-| `image` | Media | |
-| `description` | Rich text | Localized |
-| `links` | List | Official site and social accounts |
-| `geo` | Geo group | Section 7.11 |
-| `recordStatus` | ready, hold, archived | Starts as hold |
-
-Each kind has extra fields.
-
-| Kind | Extra fields |
-|---|---|
-| Person | Honorific, gender, date of birth, place of origin, and a list of offices |
-| Party | Abbreviation, founding date, colours, leader |
-| Institution | Type, such as ministry, agency, county government or commission. Jurisdiction, head, founding date |
-| Place | Type, such as region, county, constituency or ward. Administrative level, population, and an external boundary code |
-
-A person's offices are a list, so the record keeps their whole career.
-
-| Office field | Notes |
-|---|---|
-| `title` | Such as "Governor" |
-| `institution` | The institution they serve in |
-| `jurisdiction` | The place they govern |
-| `party` | Their party while in this office |
-| `from`, `to` | Dates. `to` is empty while they hold the office |
-| `isCurrent` | Stored so lists can filter on it quickly |
-
-A person's place of origin and the place they govern are separate fields, because they often
-differ.
-
-### 7.3 Claim
-
-| Field | Type | Notes |
-|---|---|---|
-| `country` | Country | Required |
-| `type` | campaign-promise, policy-pledge, budget-commitment, public-statement | Starts as campaign-promise |
-| `title` | Text | Required. Localized. The headline |
-| `slug` | Text | Unique within a country |
-| `statement` | Text | Required. The exact words, never paraphrased and never translated |
-| `summary` | Rich text | Localized. Editorial context |
-| `promisor` | Actor | Required. Who made the claim |
-| `coPromisors` | Actors | Such as the party alongside the candidate |
-| `jurisdiction` | Actor of kind place | Where the claim applies, if narrower than the country |
-| `category` | Topic | Required |
-| `source` | Document | Empty for a claim entered by hand |
-| `sourceLocator` | Group | Page, or timestamp for audio and video |
-| `sourceUrl` | Text | Shown as a link. The server never fetches it |
-| `madeOn` | Date | When the claim was made |
-| `targetDate` | Date | The deadline the claim set for itself, if any |
-| `language` | `en` or `fr` | |
-| `currentStatus` | Claim status | Read-only. Taken from the latest published update |
-| `statusAsOf` | Date | Read-only |
-| `updateCount` | Number | Read-only |
-| `verification.verdict` | unverified, verified, false, misleading | Starts as unverified |
-| `verification.verifiedAt` | Date | |
-| `verification.verifiedBy` | User or text | A user, or an outside reviewer's name |
-| `verification.rationale` | Rich text | |
-| `verification.report` | Media | A published fact-check |
-| `extraction` | Extraction | Set when AI found the claim |
-| `confidence` | Number, 0 to 1 | From the AI |
-| `enteredBy` | ai, manual, import | |
-| `recordStatus` | ready, hold, archived | Starts as hold |
-
-The system keeps every past version of a claim, so an editor can see what a page said on any
-date and can prepare a correction without taking the page down.
-
-### 7.4 Claim status
-
-Editors define the list of statuses in the admin.
-
-| Field | Type | Notes |
-|---|---|---|
-| `slug` | Text | Unique and stable, such as `kept` |
-| `label` | Text | Required. Localized |
-| `description` | Text | Required. Localized. Explains the status to the public |
-| `group` | not-started, in-progress, kept, broken, inconclusive | Required |
-| `color`, `textColor` | Hex colour | For chips and charts |
-| `order` | Number | Display order |
-
-Every scorecard, chart and filter reads `group`. A team can define as many statuses as it wants,
-and each one falls into one of the five groups. Statuses are shared across countries, so
-countries can be compared.
-
-### 7.5 Claim update
-
-| Field | Type | Notes |
-|---|---|---|
-| `claim` | Claim | Required |
-| `date` | Date | Required. When the event happened, which may be long before it was recorded |
-| `status` | Claim status | Required. The status as of that date |
-| `title` | Text | Localized |
-| `narrative` | Rich text | Required. Localized. What happened and how we know |
-| `evidence` | List | At least one item when the status changes |
-| `author` | User | |
-| `attribution` | Text | Credit for a citizen, with their consent |
-| `sourceType` | editorial, citizen-submission, import | |
-| `submission` | Submission | Set when a moderator promoted a submission |
-| `recordStatus` | ready, hold, archived | Starts as hold |
-
-Each evidence item has a label, a kind, and one of a link, a document, a media file or a quote,
-plus the publisher and date. The server never fetches evidence links.
-
-Whenever a published update is added, changed or removed, the system recalculates three fields
-on the claim. `currentStatus` becomes the status of the latest published update by date.
-`statusAsOf` becomes that update's date. `updateCount` becomes the number of published updates.
-A claim with no published update shows as "not yet assessed".
-
-### 7.6 Topic
-
-The data model calls this record type `categories`.
-
-| Field | Type | Notes |
-|---|---|---|
-| `slug` | Text | Unique |
-| `name` | Text | Required. Localized |
-| `description` | Text | Localized |
-| `icon`, `color` | | |
-| `parent` | Topic | One level of nesting only |
-| `order` | Number | |
-
-Topics are shared across countries.
-
-### 7.7 Document
-
-| Field | Type | Notes |
-|---|---|---|
-| `country` | Country | Required |
-| `title` | Text | Required |
-| `actors` | Actors | Who the document is by or about |
-| `type` | manifesto, speech, budget, policy, report, news, dataset, other | |
-| `language` | `en` or `fr` | |
-| `publishedOn`, `publisher` | | |
-| `file` | Media | The stored file |
-| `sourceUrl` | Text | Shown as a link. Fetched only by the link connector, section 9.2 |
-| `connector` | Text | Which connector brought it in |
-| `mimeType` | Text | The file type the system detected |
-| `processing.status` | See section 9.4 | The document's place in the pipeline |
-| `processing.message` | Text | The last error or notice, shown in the admin |
-| `processing.retryCount` | Number | How many times the pipeline has retried it |
-| `text` | Text | The extracted text |
-| `pageCount` | Number | |
-| `recordStatus` | ready, hold, archived | Starts as ready |
-
-Documents are not public. Claim pages link to them as evidence, but only signed-in users can
-list them.
-
-### 7.8 Submission
-
-| Field | Type | Notes |
-|---|---|---|
-| `claim` | Claim | Empty when someone reports a missing promise |
-| `kind` | update, correction, new-claim | |
-| `body` | Text | Required |
-| `evidenceUrl` | Text | Shown as a link. Never fetched |
-| `attachment` | Media | |
-| `submitterName`, `submitterEmail` | Text | Optional |
-| `consentToAttribute` | Yes or no | Starts as no |
-| `status` | new, accepted, rejected, spam | Starts as new |
-| `moderatorNote`, `moderatedBy`, `moderatedAt` | | |
-| `claimUpdate` | Claim update | Set when promoted |
-| `ipHash` | Text | A scrambled form of the sender's address, for spotting abuse |
-
-Anyone can create a submission. Only signed-in users can read one, and the public site never
-shows one.
-
-### 7.9 Extraction, owned by plugin-ai
-
-An extraction is the record of one AI run over one document.
+**Languages**
 
 | Field | Notes |
 |---|---|
-| `document` | Required |
-| `model` | Such as `google:gemini-2.5-pro` |
-| `promptVersion` | So a change in results can be traced to a change in the prompt |
-| `status` | pending, completed, failed, partial |
-| `tokensUsed`, `durationMs` | |
-| `candidates` | The list of candidates found |
+| `code` | Such as `en`, `fr`, `ar` |
+| `name` | Localized |
+| `direction` | Left to right or right to left |
+| `enabled` | Editors add and enable languages without a code change |
 
-| Candidate field | Notes |
-|---|---|
-| `summary` | The proposed title |
-| `quotes` | Exact passages, each confirmed to appear in the document |
-| `category` | The topic the AI suggested, as text |
-| `confidence` | |
-| `decision` | pending, accepted, rejected |
-| `claim` | Set when accepted |
-| `rejectedReason`, `reviewedBy`, `reviewedAt` | |
-
-Running AI on a document again creates a new extraction and keeps the old ones, so earlier
-decisions survive.
-
-### 7.10 Supporting record types
-
-| Record type | Purpose |
-|---|---|
-| Media | Uploaded files. Each stores a checksum, so the same file is stored once |
-| Users | Name, roles, and a country list that v3 does not enforce |
-| Pages | Editorial pages. A page with no country is site-wide, such as `/about`. A page with a country belongs to it, such as `/ke/about` |
-| Partners | Name, description, logo, link |
-| Import jobs | One per spreadsheet import, holding the column mapping, the preview and the result |
-| Workflow locks | Stop a scheduled job from running twice at once |
-
-Two settings records exist. **Site settings** hold the site title, logos, navigation and footer.
-**Settings** hold feature switches and each plugin's credentials. Only super-admins can read or
-change Settings, and the system encrypts every credential in it.
-
-Credentials live in the database because they differ per deployment and change without a new
-release. Environment variables choose which plugins run. The database holds what they need to
-run.
-
-### 7.11 Geo group
-
-Countries and actors share one group of map fields.
+**Countries**
 
 | Field | Notes |
 |---|---|
-| `centroid` | Latitude and longitude |
-| `bounds` | North, south, east and west limits |
-| `boundary` | An uploaded GeoJSON file with the outline |
-| `boundarySource`, `boundaryLicense` | Required when an outline is present |
-| `externalCode` | The outline's id in its source dataset |
+| `code` | Two-letter ISO code in lower case. Unique. Used in web addresses |
+| `name` | Localized |
+| `region` | For grouping countries once there are many |
+| `languages`, `defaultLanguage` | The languages this country publishes in |
+| `rootArea` | The area that stands for the whole country, which national offices such as President belong to |
+| `about` | Localized |
+| `recordStatus` | ready, hold, archived. Starts as hold |
 
-The system stores outlines as uploaded files and does not fetch them from a mapping service.
-Boundary datasets carry licence terms and rarely change, and a live dependency would break the
-map whenever the provider changed its terms. CONFIRM the step that simplifies large outlines
-before the public site serves them.
+### 7.2 Areas, offices and seats
 
-### 7.12 Languages
+**Areas** are nested with Payload's hierarchy feature, which manages parent links and blocks
+circular ones.
 
-Content exists in English and French. Names, titles, summaries, narratives, status labels and
-topic names are localized. Slugs, codes, dates and the claim statement are not. A statement is
-an exact quote, and a translation of it would be a different statement.
+| Field | Notes |
+|---|---|
+| `country` | Required |
+| `name` | Localized |
+| `slug` | Unique within the country, and must not match a national office slug or a reserved word, section 11 |
+| `type` | Country, region, county, constituency, ward, city or other |
+| `parent` | The area it sits in |
+| `page` | Automatic, always or never. Automatic means the area gets a page when it holds two or more seats |
+| `geo` | Centre point, bounds, and an uploaded GeoJSON outline with its source and licence |
+| `externalCode` | Its id in an outside boundary dataset |
+| `formerSlugs` | For redirects, section 11.2 |
 
-### 7.13 Indexes
+**Offices** are each country's list of titles.
+
+| Field | Notes |
+|---|---|
+| `country` | Required |
+| `name`, `shortName` | Localized, such as "Member of Parliament" and "MP" |
+| `slug` | Used in seat addresses, such as `governor` |
+| `areaType` | The type of area the office answers for. Empty for offices with no area, such as party-list members |
+| `holdersPerSeat` | Usually one. More for multi-member seats |
+| `order` | Display order, highest office first |
+
+A **seat** is an area plus an office. It is not stored separately. The system finds a seat's
+holders by looking for current terms with that area and office.
+
+### 7.3 Actors and terms
+
+**Actors**
+
+| Field | Notes |
+|---|---|
+| `country` | Required |
+| `kind` | person, party or institution |
+| `name`, `shortName` | |
+| `slug` | Unique within the country, across all kinds |
+| `formerSlugs` | For redirects |
+| `image`, `imageCredit` | |
+| `biography` | Localized |
+| `keyClaim`, `keyClaimNote` | The claim editors pick as most important, and why. Localized note |
+| `links` | Official site and social accounts |
+| `recordStatus` | Starts as hold |
+
+People also have an honorific and gender. Institutions have a type, such as ministry or agency.
+
+**Terms**
+
+| Field | Notes |
+|---|---|
+| `actor` | Required |
+| `office`, `area` | The seat. `area` is empty for offices with no area |
+| `party` | The actor's party during this term |
+| `electedOn`, `startsOn`, `endsOn` | `endsOn` is empty while in office |
+| `stage` | Computed: candidate before `startsOn`, current during the term, past after `endsOn` |
+| `closingSummary` | Localized. Written when the term ends |
+| `successor` | The actor who took the seat next |
+
+An actor whose only terms are at the candidate stage is never public. An actor with no current
+term and at least one past term shows as an archived record.
+
+### 7.4 Claim types and rating scales
+
+**Claim types**
+
+| Field | Notes |
+|---|---|
+| `name` | Localized, such as "Promise" |
+| `slug` | |
+| `ratingScale` | The scale this type uses |
+| `hasDeadline` | Whether claims of this type usually have a deadline |
+
+A new installation has one claim type, Promise, using the Delivery scale. Editors add others, such
+as policy pledge, budget commitment or public statement, each with a suitable scale.
+
+**Rating scales** contain their tiers and ratings.
+
+| Field | Notes |
+|---|---|
+| `name` | Localized, such as "Delivery" |
+| `tiers` | Each with a label, colour and order |
+| `ratings` | Each with the fields below |
+| `bestValue`, `worstValue` | For structured data, section 10.7 |
+
+| Rating field | Notes |
+|---|---|
+| `slug` | Stable, such as `in-progress` |
+| `label` | Localized. Editable at any time |
+| `definition` | Localized. Editable for wording only. Every change is kept in the version history |
+| `tier` | The tier it belongs to |
+| `colour`, `textColour` | The admin checks contrast against WCAG AA |
+| `value` | A number on the scale, for structured data |
+| `needsDeadline` | A claim with this rating must have a deadline |
+| `isStarting` | The rating every new claim begins with |
+| `retired` | A retired rating cannot be given to new claims. A rating in use cannot be deleted |
+
+The default Delivery scale:
+
+| Tier | Rating | Needs a deadline |
+|---|---|---|
+| Promise kept | Completed | No |
+| Promise kept | In Progress | No |
+| Uncertain | Unstarted, the starting rating | No |
+| Uncertain | Inconclusive | No |
+| Promise not kept | Behind Schedule | Yes |
+| Promise not kept | Stalled | Yes |
+
+If the line between two ratings has to move, the affected claims are re-rated through normal
+claim updates. Retiring a rating lists the claims that carry it so editors can re-rate them.
+
+### 7.5 Claims
+
+| Field | Notes |
+|---|---|
+| `country` | Required |
+| `type` | Claim type. Starts as Promise |
+| `title` | Localized. The headline |
+| `slug` | Unique within the country |
+| `statement` | The exact words. Never paraphrased, never translated |
+| `summary` | Localized. Editorial context |
+| `actor` | Required. Who made the claim |
+| `coActors` | Such as the party alongside the candidate |
+| `term` | The term it belongs to, if any |
+| `area` | Where it applies, if narrower than the actor's seat |
+| `topic` | Required to publish |
+| `tags` | Payload tags, free-form |
+| `source`, `sourceLocator` | The source document and page. A source document or at least one piece of evidence is required to publish |
+| `sourceUrl` | Shown as a link. Never fetched by the server |
+| `saidAt`, `saidOn` | Where and when it was said. `saidOn` is a partial date |
+| `deadline`, `deadlineText` | A partial date, and the written form such as "End of term" |
+| `currentRating`, `ratedOn` | Read-only. From the latest published update |
+| `lastReviewedAt` | Read-only. Set by an update or by confirming the rating, section 8.4 |
+| `updateCount` | Read-only |
+| `verification` | Verdict (unverified, verified, false, misleading), date, who verified it, rationale, and any published report |
+| `extraction`, `confidence`, `enteredBy` | How the claim was found: AI, by hand or by import |
+| `image`, `imageCredit` | |
+| `recordStatus` | Starts as hold |
+
+### 7.6 Claim updates and evidence
+
+**Claim updates**
+
+| Field | Notes |
+|---|---|
+| `claim` | Required |
+| `date` | Partial date. When the event happened, which may be long before it was recorded |
+| `rating` | The rating as of that date |
+| `kind` | first rating, change, or correction of our own earlier mistake |
+| `title`, `narrative` | Localized. What happened and how we know |
+| `evidence` | At least one item when the rating changes |
+| `attribution` | Credit for a citizen, with consent |
+| `submission` | Set when a moderator promoted a submission |
+| `recordStatus` | Starts as hold |
+
+**Evidence**
+
+| Field | Notes |
+|---|---|
+| `kind` | Document, dataset, social post or article |
+| `title`, `publisher`, `date` | |
+| `link` or `file` | Links are shown, never fetched |
+| `finding` | Localized. One line saying what the evidence shows |
+| `thumbnail` | |
+
+When a published update is added, changed or removed, the system sets the claim's
+`currentRating`, `ratedOn`, `lastReviewedAt` and `updateCount` from its published updates.
+
+### 7.7 Editorial content
+
+| Record type | Fields |
+|---|---|
+| Topics | Name, slug, description, colour, and one level of nesting through Payload's hierarchy. Shared across countries |
+| Themes | Title, introduction, image, a hand-picked list of claims, and the countries it covers |
+| Articles | Title, standfirst, body, image, date, what it is about (a claim, an actor or a country), byline, and a switch to hide the byline. No byline is a normal state |
+| Pages | Editor-made pages such as FAQ and resources, nested with hierarchy. A page can instead be a marked link to a sister site |
+| Partners | Name, logo, link, countries |
+| Sister tools | Name, description, link, for "Other tools from PesaCheck" |
+
+### 7.8 Documents and extractions
+
+**Documents** hold source material: country, title, actors, type, language, publisher, date, the
+stored file, the source link (shown only), the connector that brought it in, the detected file
+type, the extracted text, and a processing status (section 9.4) with its message and retry count.
+Documents are not public. Claim pages link to them as evidence.
+
+**Extractions**, owned by plugin-ai, record one AI run over one document: the model, the prompt
+version, the status, tokens used, and the candidates. Each candidate has a summary, exact quotes,
+a suggested topic, a confidence, and a decision of pending, accepted or rejected with the reviewer
+and reason. Running AI again creates a new extraction and keeps the old ones.
+
+### 7.9 Submissions, sign-ups and logs
+
+| Record type | Fields |
+|---|---|
+| Submissions | Claim, kind (new evidence, correction, or "this has changed"), text, location, files, evidence link (never fetched), optional name and contact, consent to be credited, status (new, accepted, rejected, spam), moderator and note, a scrambled form of the sender's network address |
+| Newsletter sign-ups | Email, language, confirmed or not, confirmation date. Used by the `local` newsletter adapter only |
+| Rating reviews | Claim, reviewer, date, and whether the rating was confirmed or changed |
+| Search log | Query, language, country, number of results. Nothing about the person |
+
+### 7.10 Users, media and settings
+
+**Users** have a name, roles (section 13.2) and a country list that version 1 does not enforce.
+
+**Media** uses Payload 4 uploads: the original file is kept, crops and focal points are stored,
+image sizes are made on request, and every file has a credit field. Files are matched by checksum,
+so the same file is stored once.
+
+**Settings**, a global, holds feature switches, the counts-not-percentages threshold (20 by
+default), and each plugin's credentials. Only super-admins can read it, and every credential is
+encrypted. Environment variables choose which plugins run. The database holds what they need.
+
+### 7.11 Indexes and search columns
 
 | Record type | Indexes |
 |---|---|
-| Countries | `code` unique |
-| Actors | Country, kind and slug together, unique. Country, kind and record status. Parent. Current office |
-| Claims | Country and published status. Promisor and published status. Country and topic. Country and current status. Country and slug, unique. Verdict. Full-text on title, statement and summary |
+| Areas | Country and slug, unique. Parent |
+| Actors | Country and slug, unique. Kind |
+| Terms | Actor. Office and area. End date |
+| Claims | Country and slug, unique. Actor. Topic. Current rating. Deadline. Last reviewed |
 | Claim updates | Claim and date, newest first |
-| Documents | Processing status and last attempt time. Country |
-| Extractions | Document. Candidate decision |
+| Documents | Processing status and last attempt |
 | Submissions | Status. Claim |
-| Media | Checksum |
+
+Claims, actors, areas and topics each have a full-text search column per language, and actor and
+area names have a trigram index for misspellings. Section 16.2 covers the Postgres extensions.
 
 ## 8. Publishing rules
 
 In short: an editor sets each record to ready, hold or archived. The system works out what is
-live. A record is live only when it is ready, everything above it is ready, and, for a claim,
-it is verified.
+live, for each language. A claim is live only when it is ready, everything above it is ready, it
+is verified, it has a source and a topic, and it has the fields it needs in that language.
 
 ### 8.1 Two fields
 
-`recordStatus` is what the editor wants.
+`recordStatus` is what the editor wants: ready, hold or archived. It is one value per record.
 
-| Value | Meaning |
+The published status is what the system computes, for each language. A record is published in a
+language when:
+
+- its own record status is ready
+- every record above it is ready
+- its required localized fields exist in that language
+- for a claim, its verdict is verified, it has a topic, it has a source document or evidence, and
+  it has a deadline if its rating needs one
+
+| Record | Records above it |
 |---|---|
-| ready | Fit to publish |
-| hold | Not ready, or withdrawn for now |
-| archived | Retired. Kept for audit and never shown |
+| Country | None |
+| Area | Its country |
+| Actor | Its country. An actor also needs a current or past term |
+| Document | Its country |
+| Claim | Its country, its actor, and its source document if it has one |
+| Claim update | Its claim, and everything above the claim |
+| Article | What it is about |
 
-`_status` is what the system computed: `published` or `draft`. Nobody sets it directly.
-
-```
-A record is published when all of these are true:
-  - its own recordStatus is ready
-  - the recordStatus of every record above it is ready
-  - for a claim, its verdict is verified
-Otherwise it is a draft.
-```
-
-| Record | Records above it that must be ready | Extra condition |
-|---|---|---|
-| Country | None | |
-| Actor | Its country | |
-| Document | Its country | |
-| Claim | Its country, its promisor, and its source document if it has one | Verdict is verified |
-| Claim update | Its country, promisor and claim | |
-| Submission | Never published | |
-
-A claim's source document sits above it because the document is the evidence. If a manifesto
-turns out to be fake, setting it to hold removes every claim drawn from it.
+A claim's source document sits above it because the document is the evidence. Setting a fake
+manifesto to hold removes every claim drawn from it.
 
 Two fields are needed because one switch cannot say "this claim is fine, but its source is under
-review". With two, the editor's choice on each record survives. A claim that an editor held on
-its own stays held when its country is released. A claim that was hidden only because its
-country was held comes back.
+review". With two, a claim an editor held on its own stays held when its country is released, and
+a claim hidden only because of its country comes back.
+
+Payload 4 publishes the language being edited. "Publish all languages" is a separate action.
 
 ### 8.2 The cascade
 
-When an editor changes a record's `recordStatus`:
+When an editor changes a record's status:
 
-1. The system recomputes that record's `_status` before the save finishes.
-2. A background job walks every record under it and recomputes each one.
-3. When the job ends, the public site's cached pages for those records are refreshed, as
-   described in section 16.3.
+1. The system recomputes that record's published status in every language before the save ends.
+2. A background job recomputes every record under it, in batches, inside database transactions.
+3. When the job ends, the site's cached pages for those records are refreshed.
 
-Because `_status` is always correct in the database, the public site asks one simple question
-of every list: is `_status` published? It never has to check parents.
+The public site asks one question of every list: is this record published in this language? It
+never checks parents.
 
-A country with 5,000 claims and 20,000 updates is recomputed in one job that writes in batches.
-The job can be run again safely and picks up where it stopped if interrupted.
+### 8.3 A language that is missing
 
-Changing a record's status never triggers AI extraction or verification again.
+If a visitor asks for a record in a language it is not published in, the API answers with a "not
+available in this language" response that names the languages it is published in. The site shows
+a short notice with a link. English text never appears on a French page.
 
-### 8.3 Deletion
+### 8.4 Reviewing a rating
 
-The system never deletes a record as a side effect. When a record disappears from a connected
-system, the matching record here is archived. Only an editor or super-admin can delete, by hand,
-one record at a time. A document with reviewed candidates, verified claims and a published
-history represents work that cannot be redone.
+Every claim shows when its rating was last reviewed. An editor who checks a claim and finds
+nothing new uses "Confirm rating", which records a rating review and moves `lastReviewedAt` without
+adding a public update. A change of rating goes through a normal claim update, which also moves
+the date. A dashboard widget lists the claims not reviewed for the longest time.
 
-### 8.4 Audit trail
+### 8.5 History and authorship
 
-| Event | Where it is recorded |
+Payload keeps a version history of every record type except users, and stamps each record with
+who created and last changed it. This is internal history. The public history of a claim is its
+claim updates.
+
+Version history and the created-by and changed-by fields are readable by signed-in users only.
+Showing them publicly would reveal which staff member edited a claim, which would undo the
+protection of an optional byline.
+
+### 8.6 Deletion
+
+No sync, import or plugin deletes a record. A deletion upstream archives the record here. An editor
+can delete a record by hand, and it goes to Payload's trash first, from which it can be restored.
+
+### 8.7 Audit trail
+
+| Event | Recorded in |
 |---|---|
-| A change of record status | Version history, and a log entry with the user and the old and new value |
-| A change of verdict | Version history, with who verified it and when |
-| A candidate accepted or rejected | On the candidate, with the reviewer, time and reason |
-| A submission moderated | On the submission, with the moderator, time and note |
+| Any change to a record | Version history, with who made it |
+| A change of record status | Version history and a log entry with the old and new value |
+| A verdict | The claim's verification fields |
+| A rating confirmed | Rating reviews |
+| A candidate accepted or rejected | The candidate |
+| A submission moderated | The submission |
 | A super-admin overriding a plugin's field | A warning in the log with the old and new value |
-| A plugin sync | The plugin's own group on the record, with the time, result and any error |
 
 ## 9. The pipeline
 
 In short: content enters through a connector. Files are read into text, AI proposes candidates,
-and a reviewer accepts or rejects them. Spreadsheets skip those steps and become records
-directly. Either way the result is a claim, which is then verified and published.
+and a reviewer accepts or rejects them. Spreadsheets skip those steps and become records directly.
+Either way the result is a claim, which is verified, rated and published.
 
 ### 9.1 The two paths
 
 ```
-            upload / link / airtable / sheets
+            upload / link / spreadsheet import
                           |
               +-----------+-----------+
               |                       |
         a document               a spreadsheet
-     (PDF, Word, HTML)          (CSV, Excel)
               |                       |
-              v                       v
        read into text          map the columns
               |                       |
-              v                       v
       AI proposes candidates   preview, then commit
               |                       |
-              v                       |
        a person reviews               |
-              |                       |
               +-----------+-----------+
                           v
-                       CLAIM
+                CLAIM, on hold, unverified
                           v
-                    verification
+          verification: built-in or Check
                           v
-                 editor marks ready
+            first rating, editor marks ready
                           v
                        PUBLIC
 ```
 
 ### 9.2 Connectors
 
-| Connector | In plugin | How it works |
+| Connector | Plugin | How it works |
 |---|---|---|
-| `upload` | core | An editor uploads a file in the admin |
-| `url` | core | An editor pastes a link, and the server fetches the file through the safeguards in section 12.4 |
-| `airtable` | airtable | A scheduled job reads new rows from a base |
-| `sheets` | sheets | Reads a Google Sheet as a spreadsheet source. Planned |
-| `feed` | feed | Watches a publisher's RSS feed. Planned |
+| `upload` | core | An editor uploads a file |
+| `url` | core | An editor pastes a link and the server fetches it through the safeguards in section 13.4 |
+| `airtable` | airtable, later | A scheduled job reads new rows |
 
-The link connector is the only place where the server fetches an address a user typed. An editor
-asked for that address, the fetch passes every safeguard, and the system stores the file so it
-never fetches the address again.
+The link connector is the only place where the server fetches an address a user typed. It stores
+the file, so it never fetches the address again.
 
 ### 9.3 Reading files
 
-The system does not trust the file type a connector reports. It checks the first bytes of the
-file, then the type the web server declared, then the file extension. If these disagree, the
-document fails with a message saying why.
+The system checks a file's first bytes, then the declared type, then the extension. If they
+disagree, the document fails with a message saying why.
 
-| Extractor | In plugin | Reads |
+| Extractor | Plugin | Reads |
 |---|---|---|
 | `plaintext` | core | Plain text, Markdown, and HTML with the page furniture removed |
 | `tika` | tika | PDF, Word, Excel, PowerPoint, OpenDocument, RTF, EPUB and more |
-| `ocr` | ocr | Scanned PDFs and images. Planned |
 
-An extractor returns clean text in a standard Unicode form, a page count if it knows one, and
-any title, author and date it found, which the editor can accept. It keeps every character.
-Version 2 strips all accented characters, which damages every French document.
+An extractor returns text in a standard Unicode form and keeps every character. Version 2 strips
+accented characters, which damages every French document.
 
-A spreadsheet can be a document to read, such as a budget table, or a dataset whose rows are
-claims. The editor chooses at upload. CSV files default to the dataset path and Excel files to
-the document path.
+A spreadsheet can be a document to read or a list of records. The editor chooses at upload. CSV
+defaults to records, Excel to a document.
 
 ### 9.4 Processing status
 
-Each document carries one status that says where it is. This field is also the work queue.
+Each document has one status, which is also the work queue:
 
 ```
-pending > fetching > fetched > extracting > extracted
-        > analysing > analysed > completed
-
+pending > fetching > fetched > extracting > extracted > analysing > analysed > completed
 Spreadsheet path:  pending > imported > completed
 From any state:    failed, or needs-review
 ```
 
-Every job writes the status before it starts and when it finishes. The admin list shows the
-status and any error message, so the person who uploaded a file can see what happened to it.
+Every job writes the status before and after its work, with any error message, so the person who
+uploaded a file can see what happened.
 
 ### 9.5 AI extraction and review
 
-The method is the one v2 uses, which works well.
+1. The text is split into overlapping sections. Each goes to the selected model, which returns
+   candidates with a topic, a summary and exact quotes. The instructions ask for specific
+   commitments, forbid merging two into one, and require quotes in the document's own language.
+2. Duplicates are removed, then every candidate whose quote does not appear word for word in the
+   document is discarded. This stops the AI from inventing claims.
+3. A second pass splits compound commitments and writes titles. The quote check runs again.
+4. The result is one extraction whose candidates all start as pending.
 
-1. **First pass.** The system splits the text into overlapping sections and sends each to the
-   selected model. The model returns candidates, each with a topic, a summary and exact quotes.
-   The instructions ask for specific commitments about the future, forbid merging two
-   commitments into one, and require quotes in the document's own language.
-2. **Quote check.** The system removes duplicates, then discards every candidate whose quote
-   does not appear word for word in the document. This check stops the AI from inventing claims.
-   It must survive any future rewrite.
-3. **Second pass.** The model splits compound commitments into single ones and writes titles.
-   The quote check runs again.
-4. **Save.** The result is one extraction record whose candidates all start as pending.
-
-A reviewer then works through the candidates for a document. Each shows its title, topic,
-confidence, and its quotes highlighted in the source text. The reviewer accepts it, edits and
-accepts it, or rejects it with a reason. Accepting creates a claim that is on hold and
-unverified.
-
-Three parts of the v2 implementation are dropped: the fourteen-vendor settings screen, replaced
-by installing only the vendors in use. The per-document cost budget, replaced by a token limit
-and a time limit. And the separate export table, replaced by exporting straight from the claims.
+A reviewer sees each candidate with its quotes highlighted in the source, and accepts, edits and
+accepts, or rejects it with a reason. Accepting creates a claim on hold and unverified.
 
 ### 9.6 Spreadsheet import
 
-1. **Inspect.** The importer reads the column headings and the first rows.
-2. **Map.** The editor matches columns to fields. The system saves the mapping for reuse.
-3. **Preview.** The import runs without saving and reports how many rows it would create, update
-   and skip, and which rows have errors.
-4. **Commit.** The editor confirms, and the system saves.
+1. Inspect: read the headings and the first rows.
+2. Map: match columns to fields. The mapping is saved for reuse.
+3. Preview: run without saving, and report rows to create, update and skip, with errors by row.
+4. Commit.
 
-An import can create claims, actors, claim updates and documents. Each has a natural key, such
-as country and slug for a claim, so importing the same file twice updates records instead of
-duplicating them. A row that names an actor or topic the system cannot find is reported as an
-error.
+An import can create areas, offices, actors, terms, claims, claim updates and documents, which is
+also how a country's lists of offices and areas are first loaded. Each record type has a natural
+key, such as country and slug, so importing the same file twice updates records instead of
+duplicating them.
 
-### 9.7 From claim to published
-
-1. A claim starts on hold and unverified, however it was created.
-2. The active verification plugin produces a verdict, as described in section 5.
-3. An editor sets the claim to ready.
-4. The claim goes live when the conditions in section 8.1 hold.
-5. Editors add updates over time, and the latest published update sets the current status.
-
-Verification and publishing are separate steps on purpose. A verified claim with an unfinished
-summary should not be live.
-
-Claims with a verdict of false or misleading are never published and never deleted. They show
-where the AI or a source went wrong.
-
-### 9.8 Handling failures
-
-**Retries**
+### 9.7 Handling failures
 
 | Error | Retries | Then |
 |---|---|---|
-| Network timeout | 3, with growing waits | Move to the next item |
-| Too many requests | Yes, after the wait the service asks for | Put the item back in the queue |
-| Service unavailable | 3 | Skip. The next scheduled run retries |
-| Invalid data | None | Mark the item failed with the reason |
+| Network timeout | 3, with growing waits | Next item |
+| Too many requests | After the wait the service asks for | Back in the queue |
+| Service unavailable | 3 | The next scheduled run retries |
+| Invalid data | None | Mark failed with the reason |
 | Sign-in or permission error | None | Fail and alert |
-| Server error | 2 | Move to the next item |
 
-Waits start at one second, double each time, and stop growing at 30 seconds.
+Waits start at one second, double each time, and stop at 30 seconds. File fetches time out after
+5 minutes, text extraction and each AI call after 2 minutes, and a document's whole AI stage after
+20 minutes.
 
-**Time limits**
+Payload 4 handles crashed workers. Each running job holds a lease, and if its worker dies, another
+worker picks the job up when the lease runs out. Concurrency keys stop two workers running the
+same document, and limit calls to each AI provider.
 
-| Operation | Limit |
-|---|---|
-| Fetching a file | 5 minutes |
-| Reading a file into text | 2 minutes |
-| One AI request | 2 minutes |
-| All AI work on one document | 20 minutes |
-| One call to a verification service | 1 minute |
+After 5 failures in a row, the system stops calling an outside service for 60 seconds, then tries
+3 test requests before resuming. Developers call this a circuit breaker.
 
-**Stuck documents.** A restart or a hung service can leave a document in a working state. A job
-runs every 5 minutes and looks for documents that have sat too long: 10 minutes in fetching, 5
-in extracting, 25 in analysing. It restarts the stage and adds one to the retry count. After 5
-retries it marks the document failed.
+### 9.8 Background jobs
 
-**Pausing a failing service.** After 5 failures in a row, the system stops calling a service for
-60 seconds, then tries 3 test requests before resuming. Developers know this pattern as a
-circuit breaker.
-
-**Avoiding duplicates.** Incoming webhooks carry an id or a body fingerprint, and the system
-ignores one it has already processed. Record creation relies on unique indexes in the database.
-Files are matched by checksum. Scheduled jobs take a lock, so a second run skips.
-
-### 9.9 Background jobs
-
-| Job | In plugin | Runs when |
+| Job | Plugin | Runs when |
 |---|---|---|
-| `pullSource` | Each pull connector | On a schedule |
-| `fetchDocument` | core | A document is created with a link to fetch |
+| `fetchDocument` | core | A document is created with a link |
 | `extractText` | core | A document reaches fetched |
 | `extractCandidates` | ai | A document reaches extracted |
 | `runImport` | core | An editor commits an import |
-| `submitForVerification` | The verification plugin | A claim is created |
-| `pullVerdicts` | The verification plugin | Every 15 minutes |
-| `recomputeClaimStatus` | core | A claim update changes |
+| `submitForVerification` | check | A claim is created |
+| `pullVerdicts` | check | Every 15 minutes |
+| `recomputeClaim` | core | A claim update changes |
 | `cascadeStatus` | core | A record status changes |
-| `sweepStuck` | core | Every 5 minutes |
+| `refreshCounts` | core | After a cascade or a rating change |
 | `cleanupJobs` | core | Hourly |
 
-## 10. The public site
+## 10. The UI layer
 
-In short: one site serves every country. Each page type has a clear web address. Pages are
-built once and reused until their content changes, so the site stays fast under heavy traffic.
+In short: the public site is a set of pages built from sections. Each section is a component that
+receives data through props and decides whether it has anything to show. The site gets its data
+only from the SDK, so any section, page or the whole site can be replaced.
 
-### 10.1 Web addresses
+### 10.1 Packages
 
-```
-/                               Home, with a country selector
-/about, /methodology            Site-wide pages
-
-/{cc}                           Country page
-/{cc}/politicians               List of people
-/{cc}/politicians/{slug}        A person's profile
-/{cc}/parties                   List of parties
-/{cc}/parties/{slug}            A party's profile
-/{cc}/institutions              List of institutions
-/{cc}/institutions/{slug}       An institution's profile
-/{cc}/places                    List of places
-/{cc}/places/{slug}             A place's profile
-/{cc}/promises                  All claims, filtered and paged
-/{cc}/promises/{slug}           A claim page
-/{cc}/search                    Search results
-/{cc}/{pageSlug}                A country's editorial page
-```
-
-`{cc}` is the country's two-letter code, such as `ke`, `za` or `ng`.
-
-Each kind of actor has its own segment, so a slug only has to be unique within its country and
-kind. `/ke/politicians/nairobi` and `/ke/places/nairobi` can both exist. Editorial pages cannot
-use the reserved words: `politicians`, `parties`, `institutions`, `places`, `promises`,
-`search`, `api`, `embed`, `feed`.
-
-The server works out the country once per request from a cached list and hands it to every part
-of the page. An unknown country code returns a "not found" page.
-
-### 10.2 Pages
-
-**Claim page.** In order:
-
-1. Status, claim type, topic, the date the claim was made and its deadline, if it set one
-2. The exact quote, with the promisor's name and a link to the source document and page
-3. The editorial summary
-4. The timeline, showing every published update with its date, status, account and evidence
-5. The verdict, who verified it and when, and the rationale
-6. A map, when the claim applies to a place that has map data
-7. Share buttons and a "submit an update" form
-8. Related claims by the same actor on the same topic
-
-**Actor profile.** A scorecard comes first, showing the total number of claims and the share in
-each status group. A person's profile then shows their offices and party. The list of claims
-follows, with filters. A map shows where a person is from and where they govern.
-
-**Country page.** A map of the country, headline numbers, featured actors, recently updated
-claims, and links into each list.
-
-### 10.3 Lists and filters
-
-- The server returns 24 claims per page.
-- Filters cover status group, topic, actor, claim type and date range.
-- The count beside each filter option comes from the database.
-- The filter state is part of the web address, as in `?status=kept&category=health&page=2`, so
-  a filtered view can be shared and bookmarked.
-- Lists sort by latest update, deadline or status.
-
-### 10.4 Search
-
-- MongoDB full-text indexes cover claim titles, statements and summaries, and actor names and
-  descriptions. Titles and names weigh more.
-- Search covers one country by default, with an option to search all.
-- Results are grouped into claims, people, parties, institutions and places.
-- Results have a web address, `/{cc}/search?q=`, so they can be linked.
-- All search code sits in one module, so a move to a dedicated search engine changes one place.
-
-CONFIRM the volume at which MongoDB full-text search stops being adequate.
-
-### 10.5 Being found
-
-| Feature | How |
-|---|---|
-| Sitemaps | An index at `/sitemap.xml` with one sitemap per country |
-| `robots.txt` | Generated, and points to the sitemap index |
-| Canonical addresses | Every page declares its one official address |
-| Share images | Generated for each claim and actor |
-| Fact-check markup | Every verified claim page carries ClaimReview data |
-| Profile markup | Actor pages carry Person, Organization or Place data |
-| Feeds | Each country has an RSS feed of new and updated claims |
-
-ClaimReview is the standard format for fact-checks from schema.org. Search engines read it to
-show fact-check results, and other fact-checking tools exchange it.
-
-```json
-{
-  "@context": "https://schema.org",
-  "@type": "ClaimReview",
-  "url": "https://promisetracker.org/ke/promises/...",
-  "claimReviewed": "We will build 200 new health centres by 2027",
-  "itemReviewed": {
-    "@type": "Claim",
-    "author": { "@type": "Person", "name": "William Ruto" },
-    "datePublished": "2022-06-30"
-  },
-  "author": { "@type": "Organization", "name": "PromiseTracker" },
-  "reviewRating": {
-    "@type": "Rating",
-    "ratingValue": 2,
-    "bestRating": 5,
-    "worstRating": 1,
-    "alternateName": "In progress"
-  }
-}
-```
-
-The rating number comes from the status group, and `alternateName` is the status label.
-
-### 10.6 Maps
-
-A map draws from the geo group on the country, the place, or the place a promisor governs. It
-shows the outline if one exists. If not, it shows a marker at the centre point. If there is no
-map data, the page shows no map.
-
-Maps load after the rest of the page and below the first screen, so they never slow the page
-down. CONFIRM the map tile provider and its licence for commercial and embedded use, and the
-source of boundary data and its attribution rules.
-
-### 10.7 Languages and accessibility
-
-Each country publishes in English, French or both. The site has a visible language switch,
-remembers the choice, and tells search engines about each language version of a page. Every
-label in the interface is translated.
-
-| Requirement | Standard |
-|---|---|
-| Colour contrast | WCAG AA, including every status colour. The admin warns an editor who picks a status colour that fails |
-| Keyboard | Every filter, timeline control and map control works without a mouse |
-| Screen readers | The timeline is a real ordered list |
-
-## 11. APIs
-
-In short: the public can read published data through a documented API and embed cards in other
-sites. Connected systems reach the plugins through a small set of protected routes.
-
-### 11.1 Public read API
-
-```
-GET /api/public/v1/countries
-GET /api/public/v1/{cc}/actors?kind=person&page=1
-GET /api/public/v1/{cc}/claims?status=kept&category=health
-GET /api/public/v1/{cc}/claims/{slug}
-GET /api/public/v1/{cc}/claims/{slug}/updates
-```
-
-- No sign-in. Requests are limited per address and cached.
-- It returns published records only, using the same rule as the site.
-- Its response format is documented and stable. It is separate from the internal format, so
-  internal changes do not break people who use it.
-- A machine-readable description is at `/api/public/v1/openapi.json`.
-- A setting switches it on and off.
-
-Claims and their updates can also be exported as CSV, using the same filters.
-
-### 11.2 Embeds
-
-```
-GET /embed/claim/{id}            One claim, with status and last update
-GET /embed/scorecard/{actorId}   An actor's status breakdown
-GET /embed/list?...              A filtered list of claims
-GET /api/oembed?url=...          Lets a CMS turn a pasted link into a card
-```
-
-Embeds are the only pages other sites may place in a frame. They set no cookies, need no
-sign-in and track nothing. Each links back to the full page. A setting switches them on and off.
-
-### 11.3 Core routes
-
-| Route | Purpose |
-|---|---|
-| `GET /api/health` | Full report on every enabled service and plugin |
-| `GET /api/health/ready` | Database and file storage only. Used to decide whether to send traffic |
-| `POST /api/submissions` | Creates a citizen submission. Rate limited, with a captcha |
-| `GET /sitemap.xml` | Sitemap index |
-| `GET /{cc}/feed.xml` | A country's RSS feed |
-
-### 11.4 Plugin routes
-
-Each route returns `503` when its plugin is disabled.
-
-| Route | Protection | Purpose |
+| Package | Holds | May import |
 |---|---|---|
-| `POST /api/plugins/superdesk/items` | Signature over the body | Receives published Superdesk items |
-| `GET, POST /api/plugins/superdesk/assets` | Signature over the body | Media for those items |
-| `POST /api/plugins/check/webhook` | Shared secret in the `Authorization` header | Receives Check report events |
-| `POST /api/plugins/airtable/webhook` | Shared secret | Receives Airtable change notices |
+| `@promisetracker/contract` | A schema for every API response, written with Zod. TypeScript types and the OpenAPI document are generated from it | Nothing from the platform |
+| `@promisetracker/sdk` | A typed client, and page view builders such as `getClaimView` | The contract |
+| `@promisetracker/ui` | The redesign's components: atoms, cards and sections. Props only | The contract's types |
+| `apps/site` | Routes, page templates, share images | The SDK and the UI package. Never Payload |
 
-Each handler returns `401` for a bad signature or secret without reading the body. It returns
-`200` for an item it does not recognise, so the sender stops retrying, and leaves the item for
-the next poll.
+A lint rule enforces the last column.
 
-## 12. Security
+The SDK has two transports. The local transport calls Payload in the same process with no network
+hop, and is used while the site and the platform run in one deployment. The HTTP transport calls
+the API, and lets the site run anywhere. Switching between them is a one-line change.
 
-In short: the public site needs no sign-in and exposes published data only. Everything else is
-behind roles. The server does not fetch addresses that users type, files are checked before they
-are stored, and credentials are encrypted.
+### 10.2 Pages and sections
 
-### 12.1 Who can reach what
+A page template is an ordered list of sections. Each section is registered with an id, a
+component, and a rule for when it shows. A deployment can swap a section for its own component,
+reorder sections, or replace a page.
+
+| Page | Sections |
+|---|---|
+| Home | What this is. A real claim with its rating and sources. In focus, a theme. How a rating is decided. What we have tracked. Choose a country. Who we work with. Other tools from PesaCheck |
+| Country | In focus. Country snapshot. Who is delivering. Officials. Parties. Past administrations |
+| Actor | Who this is. Key claim. Record so far. Claim list. Latest changes. Latest analysis. Closing summary for past actors |
+| Claim | The claim, with who, where, when and by when. Rating and last reviewed date. How the rating changed. Evidence. Analysis. Submit an update |
+| Area | The office holders who answer for it, with combined figures and a note that the figure adds several people's claims |
+| Topic, theme | Claims on the subject, with figures by country |
+| Search | Places with their representatives, then actors, claims and topics |
+| Others | Officials list, rating history, submit an update, methodology, editor pages |
+
+Every page also has the header (name, a one-line description, search, and the "verified by"
+mark), a short explanation of the site collapsed by default, and the footer.
+
+### 10.3 When a section shows
+
+A section with nothing to show is left out. It is never shown empty, greyed out, or as a zero.
+The API returns the counts each rule needs, and editors can force any section on or off through
+plugin-site.
+
+| Section | Shows when | Otherwise |
+|---|---|---|
+| Who is delivering | Two or more current office holders | Left out. The country page leads with the one office holder |
+| Officials | Two or more current office holders | Left out |
+| Choose a country | Two or more countries | A single link to the one country |
+| In focus, home | A theme spanning two or more countries | A theme within the one country, or left out |
+| Past administrations | At least one ended term | Left out |
+| Closing summary | The term has ended | Left out |
+| Latest analysis | At least one published article | Left out |
+
+### 10.4 Counts, not percentages
+
+Below the threshold in Settings, 20 claims by default, figures are shown as counts, "1 of 3
+completed", rather than percentages. The API returns which form to use with every set of figures,
+so pages, share images and embeds agree.
+
+### 10.5 Languages, accessibility and weight
+
+- Interface text comes from a dictionary in plugin-site. Editors can add a language and translate
+  the interface without a code change.
+- Layouts use logical CSS properties, so right-to-left languages such as Arabic work.
+- Ratings are never shown by colour alone. Contrast meets WCAG AA, including every rating colour.
+- The timeline is a real ordered list, and every control works with a keyboard.
+- Pages are built for phones on slow, paid data first. Images must earn their place.
+
+### 10.6 Settings in plugin-site
+
+| Setting | Purpose |
+|---|---|
+| Homepage picks | The featured claim, the In focus theme, the featured area |
+| Country picks | The In focus actors and claims |
+| Section overrides | Force a section on or off |
+| Explainer | The one-line description and the longer collapsed explanation |
+| Navigation and footer | Links, partners, sister tools |
+| Interface strings | Per language |
+| Theme | Colour, type and spacing tokens |
+
+### 10.7 Share images and structured data
+
+Each page type has its own share image, made from its real content: the home figures, a country's
+headline figure, an actor's record and one claim, a claim and its rating. They follow the counts
+rule.
+
+Every verified claim page carries ClaimReview data from schema.org, which search engines read to
+show fact-checks. The rating's `value` and its scale's best and worst values become the rating
+number. Actor pages carry Person or Organization data.
+
+## 11. Web addresses
+
+### 11.1 Pages
+
+The language comes first, then the country. Addresses are lower case with no trailing slash.
+`e` marks an actor and `p` a claim, for every kind and type, which keeps shared links short.
+
+| Page | Address | Example |
+|---|---|---|
+| Home | `/{lang}` | `/en` |
+| Country | `/{lang}/{cc}` | `/en/ke` |
+| Officials list | `/{lang}/{cc}/officials` | `/en/ke/officials?office=governor&sort=kept` |
+| Actor | `/{lang}/{cc}/e/{actor}` | `/en/ke/e/achieng-wekesa` |
+| Claim | `/{lang}/{cc}/p/{claim}` | `/en/ke/p/kibra-housing` |
+| Rating history | `/{lang}/{cc}/p/{claim}/history` | `/en/ke/p/kibra-housing/history` |
+| Submit an update | `/{lang}/{cc}/p/{claim}/update` | `/en/ke/p/kibra-housing/update?kind=correction` |
+| Area | `/{lang}/{cc}/{area}` | `/en/ke/nairobi-county` |
+| Seat | `/{lang}/{cc}/{area}/{office}` | `/en/ke/nairobi-county/governor` |
+| National seat | `/{lang}/{cc}/{office}` | `/en/ke/president` |
+| Article | `/{lang}/{cc}/a/{article}` | `/en/ke/a/why-the-housing-money-stopped` |
+| Topic | `/{lang}/topics/{topic}` | `/en/topics/health?country=ke` |
+| Theme | `/{lang}/themes/{theme}` | `/en/themes/water-and-sanitation` |
+| Search | `/{lang}/search` | `/en/search?q=nairobi` |
+| Methodology | `/{lang}/methodology` | `/en/methodology` |
+| Editor pages | `/{lang}/{page}`, nested | `/en/about`, `/en/resources/guides` |
+
+### 11.2 How addresses behave
+
+- **An actor's address never changes.** A past office holder keeps it, and it shows the archived
+  record.
+- **A seat address follows the seat.** It sends a temporary redirect to whoever holds the seat
+  today. A seat with several holders lists them.
+- **An area address with one seat redirects** to that seat's holder. An area with several seats
+  shows its page if it has one, and otherwise lists its seats.
+- **One namespace per country.** The segment after `/{cc}/` can be an area, a national office or
+  a reserved word, so these must not collide. The reserved words are `officials`, `e`, `p`, `a`,
+  `search` and `feed.xml`.
+- **A renamed slug keeps working.** The old slug sends a permanent redirect to the new one.
+- **`/` chooses a language,** the visitor's preferred enabled language, otherwise English.
+- **The language switch keeps the page.** Slugs are not translated, so only the language changes.
+- **A missing translation shows a notice,** section 8.3.
+
+### 11.3 Machine addresses
+
+| Purpose | Address |
+|---|---|
+| Share images | `opengraph-image` under each page |
+| Country feed | `/{lang}/{cc}/feed.xml` |
+| Sitemaps | `/sitemap.xml`, one child per language and country |
+| Robots | `/robots.txt` |
+| API | `/api/v1/...` |
+| Health | `/api/health`, `/api/health/ready` |
+| Plugin routes | `/api/plugins/{plugin}/...` |
+| Admin | `/admin` |
+| Embeds, version 2 | `/embed/{lang}/{cc}/p/{claim}`, `/embed/{lang}/{cc}/e/{actor}` |
+| oEmbed, version 2 | `/api/oembed?url=` |
+
+Payload's own REST and GraphQL routes stay available to the admin and signed-in users. The site
+never calls them.
+
+## 12. The API
+
+In short: a read-only API, versioned, that returns published content only, in one language at a
+time. The public site uses it from day one. Outside users get access in version 2.
+
+### 12.1 Endpoints
+
+| Endpoint | Returns |
+|---|---|
+| `GET /api/v1/site` | Languages, rating scales, thresholds, homepage picks, overall figures |
+| `GET /api/v1/countries` | Countries with headline figures |
+| `GET /api/v1/countries/{cc}` | One country, its figures, picks, parties and section counts |
+| `GET /api/v1/countries/{cc}/offices` | The country's offices |
+| `GET /api/v1/countries/{cc}/areas?parent=` | Areas, one level at a time |
+| `GET /api/v1/countries/{cc}/areas/{area}` | An area, its seats and holders, combined figures |
+| `GET /api/v1/countries/{cc}/seats/{area}/{office}` | The current holders of a seat |
+| `GET /api/v1/countries/{cc}/actors` | Actors, filtered by kind, stage, office, area or party, and sorted |
+| `GET /api/v1/countries/{cc}/actors/{slug}` | An actor, their terms, record, key claim, recent changes, closing summary |
+| `GET /api/v1/countries/{cc}/claims` | Claims, filtered by actor, type, topic, rating, tier or deadline, and sorted |
+| `GET /api/v1/countries/{cc}/claims/{slug}` | A claim, its rating, evidence, articles and citation text |
+| `GET /api/v1/countries/{cc}/claims/{slug}/history` | The rating history |
+| `GET /api/v1/topics`, `/topics/{slug}` | Topics, with figures by country |
+| `GET /api/v1/themes/{slug}` | A theme and its claims |
+| `GET /api/v1/articles?about=` | Articles about a claim, actor or country |
+| `GET /api/v1/search?q=&country=` | Areas with their representatives, then actors, claims and topics |
+| `GET /api/v1/redirects?path=` | Where a former slug or a seat address leads |
+| `POST /api/v1/submissions` | A citizen submission |
+| `POST /api/v1/subscriptions` | A newsletter sign-up |
+
+### 12.2 Rules every endpoint follows
+
+- A `locale` parameter is required. A record not published in that language returns the
+  "not available" response in section 8.3.
+- Lists use cursor pagination and return a total.
+- Rating figures always have the same shape: counts by rating, counts by tier, the total, and
+  whether to show counts or percentages.
+- Addresses use country and slug. Records carry UUIDs.
+- Responses carry `Cache-Control` and `ETag`. Publishing refreshes the cache.
+- Read routes skip authentication, which Payload 4 allows per endpoint.
+- Created-by, changed-by and version fields never appear.
+- The two POST routes need a captcha pass and are rate limited.
+- The OpenAPI description is at `/api/v1/openapi.json`.
+
+## 13. Security
+
+In short: the public site needs no sign-in and shows published data only. Everything else is
+behind roles. The server does not fetch addresses users type, files are checked before they are
+stored, credentials are encrypted, and staff identities stay private.
+
+### 13.1 Who can reach what
 
 | Area | Protection |
 |---|---|
-| Public site, public API, embeds | None |
-| Admin | Signed-in session |
+| Public site and API read routes | None |
+| Public forms | Captcha and rate limits |
+| Admin | Signed-in session, with Payload 4 refresh tokens |
 | Plugin routes | A shared secret or signature per route |
+| AI assistant access through Payload's MCP plugin | Signed in through its built-in OAuth server, limited to the user's own permissions. Never public |
 
-### 12.2 Roles
+Payload 4 enforces access rules in server-side calls by default. Code that must bypass them, such
+as jobs and seeding, says so explicitly.
+
+### 13.2 Roles
 
 A user can hold more than one role.
 
 | Role | Purpose |
 |---|---|
-| super-admin | Full access. Manages users, settings, credentials, statuses and topics |
-| editor | Decides what is public. Controls record status everywhere and owns the claim timeline |
+| super-admin | Full access. Users, settings, credentials, rating scales, offices and areas |
+| editor | Decides what is public. Rates claims, owns claim updates, sets picks |
 | contributor | Adds actors, documents and draft claims. Cannot publish |
-| reviewer | Reviews AI candidates and sets verdicts. Loses the verdict when a verification plugin is enabled |
+| reviewer | Reviews AI candidates and sets verdicts. Loses the verdict when a verification plugin is on |
 | moderator | Handles submissions and can turn one into a claim update |
 | viewer | Read-only |
 
 | Action | super-admin | editor | contributor | reviewer | moderator |
 |---|---|---|---|---|---|
-| Create or edit countries | Yes | Yes | | | |
-| Create or edit actors and documents | Yes | Yes | Yes | | |
+| Manage countries, languages, offices, areas | Yes | | | | |
+| Manage rating scales and claim types | Yes | | | | |
+| Create or edit actors, terms, documents | Yes | Yes | Yes | | |
 | Create claims by hand | Yes | Yes | Yes | | |
 | Accept or reject AI candidates | Yes | Yes | | Yes | |
 | Set a verdict | Yes | Yes | | Yes | |
-| Create or edit claim updates | Yes | Yes | | | From a submission |
-| Set record status | Any | Any | Hold only | On claims | |
+| Rate a claim, add or confirm updates | Yes | Yes | | | From a submission |
+| Set record status | Any | Any | Hold only | | |
 | Moderate submissions | Yes | Yes | | | Yes |
-| Delete a record | Yes | Yes | | | |
+| Edit picks, themes, articles, pages | Yes | Yes | | | |
+| Delete a record, to the trash | Yes | Yes | | | |
 | Override a plugin's field | Yes, logged | | | | |
-| Manage users and settings | Yes | | | | |
 
-Every role can read every record. A viewer can do nothing else.
+Version 1 does not limit editing by country. Every record already carries its country, so adding
+the limit in version 2 is a filter in the access rules. It must be in place before an outside
+newsroom gets an account.
 
-Version 3 does not limit editing by country. Any user with a write role can edit any country's
-records. Adding the limit later needs a filter in the access rules and no change to stored data,
-because every record already carries its country. It must be in place before an outside newsroom
-gets an account.
+### 13.3 Checking input
 
-### 12.3 Checking input
+All outside data is checked against a schema before use: webhooks, API responses, spreadsheet
+rows and form submissions. A webhook handler checks the signature or secret before reading the
+body, then checks for a repeated delivery, then the shape, and only then writes.
 
-The system checks all outside data against a defined shape before using it. That covers
-webhooks, API responses, spreadsheet rows and form submissions.
-
-A webhook handler works in a fixed order:
-
-1. Check the signature or secret, before reading the body.
-2. Check whether this delivery was already processed.
-3. Check the shape of the content.
-4. Only then write to the database.
-
-### 12.4 Fetching outside addresses
+### 13.4 Fetching outside addresses
 
 A server that fetches any address a user types can be tricked into reaching private systems.
 This attack is called server-side request forgery, or SSRF.
 
-By default the server fetches nothing a user typed. Source links, evidence links and submission
-links are stored and shown, and never fetched.
-
-The link connector is the one exception, and it applies these safeguards, all taken from v2:
+By default the server fetches nothing a user typed. Source, evidence and submission links are
+stored and shown, never fetched. The link connector is the one exception, and it applies these
+safeguards, all from v2's `src/utils/ssrf.ts` and `src/utils/files.ts`:
 
 - HTTPS only.
-- Before connecting, the server looks up the address and refuses any private, local or reserved
-  network address, including cloud metadata addresses.
-- The server follows redirects itself, checks each hop the same way, and limits the number of
-  hops.
-- Time limits apply to each hop and to the whole fetch.
-- A size limit applies, checked from the declared size and again while downloading.
+- The address is looked up first, and any private, local, reserved or cloud metadata address is
+  refused.
+- Redirects are followed one at a time, each checked the same way, up to a limit.
+- Time limits per hop and in total, and a size limit checked from the declared size and again
+  while downloading.
 - The file type must match the file's first bytes. SVG files are refused.
 
-One small risk remains. A hostile server could change its address in the moment between the
-check and the connection. The hosting environment's outbound network rules cover that case.
+### 13.5 Uploads and content
 
-### 12.5 Uploads
+- The extension, the declared type and the first bytes must agree.
+- Each kind of file has a size limit, and each client a rate limit and a daily volume limit.
+- Extracted text and outside HTML are reduced to a short list of safe tags before storage.
+- No visitor's network address is stored. Submissions keep a scrambled form of it, enough to spot
+  repeated abuse and not enough to identify anyone.
 
-- The file extension, the declared type and the file's first bytes must all agree.
-- Each kind of file has a size limit.
-- Each client has a rate limit and a daily volume limit.
-- The system stores each file by its checksum, so identical uploads are stored once.
+### 13.6 Staff privacy
 
-### 12.6 Cleaning content
+Version history and the created-by and changed-by fields are readable by signed-in users only, and
+never appear in the API. Article bylines are optional, and no byline is a normal state. In some
+countries naming the person who wrote a piece puts them at risk.
 
-The system strips extracted text and outside HTML down to a short list of safe tags before
-storing it. It never stores a visitor's network address. Submissions keep a scrambled form of
-the address, which is enough to spot repeated abuse and cannot identify a person.
-
-### 12.7 Credentials
+### 13.7 Credentials
 
 | Credential | Where it lives | Replaced |
 |---|---|---|
@@ -1581,44 +1300,37 @@ the address, which is enough to spot repeated abuse and cannot identify a person
 | Plugin API keys and tokens | Settings, encrypted | When a staff member with access leaves |
 | Webhook secrets | Environment | Every 6 months |
 
-The encrypted settings field comes from v2. It encrypts on save, shows a mask in the admin, and
-keeps the stored value when someone saves the form without retyping it.
+The encrypted settings field from v2, `src/fields/encryptedSecret.ts`, encrypts on save, shows a
+mask in the admin, and keeps the stored value when a form is saved without retyping it. Logs never
+contain keys, tokens, passwords, email addresses or network addresses.
 
-The system never writes keys, tokens, passwords, submitter email addresses or network addresses
-to its logs.
+### 13.8 Browser security
 
-### 12.8 Browser security policy
+No other site may place PromiseTracker's pages in a frame. Embed routes, in version 2, are the
+one exception, and they carry no cookies, sign-in or state.
 
-The site tells browsers that no other site may place its pages in a frame. Embed routes are the
-one exception. This keeps the admin and the main site from being wrapped inside a hostile page,
-while partners can still embed cards.
+### 13.9 Personal data
 
-### 12.9 Protecting public routes
+Kenya's Data Protection Act and its equivalents in the other launch countries apply to submitter
+details, newsletter sign-ups and analytics.
 
-| Route | Protection |
-|---|---|
-| Submission form | Captcha, rate limit per address, a hidden trap field for bots |
-| Public API | Rate limit per address, caching, a page size limit |
-| Search | A limit on query length, rate limit |
-| Plugin routes | Secret or signature, rate limit, duplicate detection |
-
-### 12.10 How long data is kept
+- A privacy notice explains what is collected and why.
+- Newsletter sign-ups are confirmed by email before use.
+- Analytics, when enabled, sets no cookies and stores nothing that identifies a person.
+- Submitter contact details are deleted on request and never published without consent.
 
 | Data | Kept for |
 |---|---|
 | Claims, updates, actors, documents | Indefinitely. Archived, never removed automatically |
 | Raw AI responses | 90 days. Candidates and decisions are kept |
 | Rejected and spam submissions | 180 days |
-| Submitter contact details | Until the submitter asks for removal. Never published without consent |
+| Search log | 12 months |
 | Failed background jobs | 7 days |
 
-## 13. Errors and logging
+## 14. Errors and logging
 
-In short: every error has a code, says which record it concerns, and says whether retrying can
-help. Problems an editor can fix appear in the admin. Problems only a developer can fix go to
-the error tracker.
-
-### 13.1 Error types
+Every error has a stable code, the ids of the records involved, and a flag saying whether a retry
+can help. Retry logic reads the flag.
 
 | Error type | Raised when | Retried |
 |---|---|---|
@@ -1626,98 +1338,88 @@ the error tracker.
 | PortResolutionError | A port has no adapter, or more than one | No. The system does not start |
 | ExternalServiceError | An outside service fails or times out | Depends on the response |
 | ExtractionError | Reading a file or running AI fails | Yes, within the retry budget |
-| ValidationError | Incoming data has the wrong shape | No |
-| OwnershipError | Something tries to write a field a plugin owns | No |
+| ValidationError | Data has the wrong shape, or a claim fails a publishing check | No |
+| OwnershipError | Something writes a field a plugin owns | No |
 
-Each error carries a stable code, the ids of the records involved, and a flag saying whether a
-retry can help. Retry logic reads that flag.
+Logs are structured, and carry the level, message, time, source, and the ids needed to follow one
+document through the pipeline. Successes are logged as well as failures. Entries go to the console
+and to Sentry.
 
-### 13.2 Logs
+A problem an editor can fix shows in the admin on the record: a file that cannot be read, a claim
+that fails a publishing check, a spreadsheet row with an unknown actor. A problem only a developer
+can fix goes to Sentry.
 
-Every log entry is structured and carries the level, message, time, source, and the ids needed
-to follow one document through the pipeline: document, claim, country, job and plugin. Slow
-operations record how long they took.
-
-The system logs successes as well as failures, because a drop in successes is often the first
-sign of trouble. Entries go to the console and to Sentry.
-
-### 13.3 Where a problem shows up
-
-| Problem | Where it appears | Who fixes it |
-|---|---|---|
-| A document cannot be read | On the document, with the reason. The uploader gets an email | The uploader replaces the file or link |
-| AI finds no usable candidates | The document is marked needs-review | An editor reads it and enters claims by hand |
-| A verification service is down | Health check shows degraded | No one. The poll catches up when it returns |
-| A spreadsheet row names an unknown actor | In the import preview, by row number | The editor fixes the sheet or adds the actor |
-| The start-up configuration is wrong | The system refuses to start and lists every problem | A developer |
-
-### 13.4 Notifications to staff
-
-| Event | Email sent |
+| Event | Email |
 |---|---|
-| A record is archived, or brought back from the archive | Yes |
-| A country is set to hold | Yes. It hides everything under it and is easy to do by accident |
-| An actor or document is set to hold | No. It is routine |
+| A record is archived or restored | Yes |
+| A country is set to hold | Yes |
 | A document fails after all retries | Yes, to the uploader |
-| New submissions arrive | A daily digest to moderators |
+| New submissions | A daily digest to moderators |
 
-## 14. Testing
+## 15. Testing
 
-| Kind | Share of tests | Covers |
+| Kind | Share | Covers |
 |---|---|---|
-| Unit | About 80% | Single functions: the publishing rule, slugs, the quote check, column mapping, retry timing |
-| Integration | About 15% | Jobs with outside services simulated, routes, access rules, the cascade, plugin loading |
-| End to end | About 5% | A document from upload to public page. A submission from form to timeline |
+| Unit | About 80% | The publishing rule, slugs, the quote check, column mapping, partial dates, the counts rule, section visibility rules |
+| Integration | About 15% | Jobs with outside services simulated, routes, access rules, the cascade, plugin loading, the API contract |
+| End to end | About 5% | A document from upload to public page. A submission from form to timeline. A seat redirect after a term ends |
 
-Coverage targets are 70% overall, 85% for the pipeline, publishing rules and plugin loading, and
-90% for utilities.
+Coverage targets are 70% overall and 85% for the pipeline, publishing rules and plugin loading.
 
-Two rules are specific to this design.
+Rules specific to this design:
 
-1. Each plugin is tested switched on and switched off. Switched off, it must leave the
-   configuration exactly as it found it.
-2. The core is tested alone, with no credentials for any outside service. If those tests need an
-   API key, the first rule in section 1.5 is broken and the build fails.
+1. Each plugin is tested switched on and off. Switched off, it changes no behaviour.
+2. The core is tested alone, with no credentials. If those tests need an API key, rule 1 in
+   section 1.5 is broken and the build fails.
+3. The API responses are checked against the contract package.
+4. The site builds without importing Payload.
+5. The v2 security tests carry over and must keep passing.
 
-The security tests from v2 carry over unchanged and must keep passing.
+## 16. Deployment and operations
 
-## 15. Deployment and operations
+### 16.1 The Docker image
 
-### 15.1 Start-up checks
+One Docker image holds the whole application.
 
-Before it serves any request, the system checks that:
+| Process | Command | Runs |
+|---|---|---|
+| Web | The default | The public site, the admin and the API |
+| Worker | The same image with the worker command | Background jobs |
 
-1. The core environment variables are present.
-2. The plugin list loads, with every dependency met.
-3. Each port that needs one adapter has exactly one.
-4. Each enabled plugin has its required variables.
-5. The database and file storage respond.
-6. Each enabled plugin's own settings are valid. The Superdesk plugin checks its ids against the
-   live Superdesk, and the Check plugin checks its status mapping against the live workspace.
+Postgres and file storage are outside the image. Tika runs in its own container when its plugin
+is enabled. A Compose file brings up the image, a worker, Postgres, a local S3-compatible store
+and Tika, so anyone can run the whole stack on one machine.
 
-If anything fails, the system prints every problem and exits.
+New versions roll out without downtime. An instance receives traffic only after its readiness
+check passes. Database migrations run before the new version serves traffic.
 
-### 15.2 How it is deployed
+### 16.2 PostgreSQL
 
-- One application container. Tika runs in a second container when its plugin is enabled.
-- The database and file storage are managed services outside the container.
-- New versions roll out without downtime. A new instance receives traffic only after its
-  readiness check passes.
-- A release is rolled back if the error rate stays above 10% for 5 minutes, if a main function
-  breaks, or if data is damaged.
+- Every schema change goes through a migration, created with `payload migrate:create` and
+  committed. CI fails if the configuration and the committed migrations disagree.
+- Two extensions are required, and start-up checks that both are installed:
+  - `unaccent`, so "Senegal" finds "Sénégal". Payload ships an operator for it.
+  - `pg_trgm`, so a misspelt name still matches.
+- Full-text search uses a column per language with a GIN index.
+- "Who represents this place" walks the area tree up and down in one recursive query.
+- Rating counts by actor, area, topic and country are grouped queries, cached and refreshed after
+  a cascade or a rating change.
+- The cascade runs inside transactions.
+- Read replicas can be added for heavy traffic. The Postgres adapter supports them.
+- PostGIS is optional. It would add "find my area from my location" later.
 
-### 15.3 Health checks
+CONFIRM that the chosen managed Postgres provider offers both required extensions.
 
-`/api/health` reports the enabled plugins, the adapter chosen for each port, and the state and
-response time of each service. A plugin that is not enabled does not appear.
+### 16.3 Health checks
+
+`/api/health` reports the enabled plugins, the adapter for each port, and the state of each
+service. `/api/health/ready` checks only the database and file storage. If Tika, the AI provider
+or Check is down, the pipeline slows or pauses and the public site keeps serving.
 
 ```json
 {
   "status": "healthy",
-  "plugins": {
-    "enabled": ["core", "tika", "ai", "check"],
-    "ports": { "verification": "check" }
-  },
+  "plugins": { "enabled": ["core", "site", "tika", "ai", "check"] },
   "services": {
     "database": { "healthy": true, "latencyMs": 4 },
     "storage":  { "healthy": true, "latencyMs": 22 },
@@ -1728,240 +1430,252 @@ response time of each service. A plugin that is not enabled does not appear.
 }
 ```
 
-`/api/health/ready` checks the database and file storage only. If Tika, the AI provider or the
-verification service is down, the pipeline slows or pauses, and the public site keeps serving.
-
-### 15.4 Alerts
+### 16.4 Alerts and dashboards
 
 | Condition | Goes to |
 |---|---|
-| Pipeline success rate below 90% for 15 minutes | Team chat |
+| Pipeline success below 90% for 15 minutes | Team chat |
 | A service unhealthy for more than 5 minutes | On-call |
 | Error rate above 5% for 10 minutes | Team chat |
 | A rise in rejected webhooks | Team chat |
-| Three empty verification polls in a row | Team chat |
 | AI account out of credit | Team chat |
 
-### 15.5 Backups
+Admin dashboard widgets, from Payload 4, show editors the review queue, claims waiting for
+verification, claims not reviewed for longest, waiting submissions, claims that fail a publishing
+check, and searches that found nothing.
 
-The database is backed up in full every day and backups are kept for 30 days. File storage keeps
-earlier versions of each file and copies them to a second region. The targets are recovery
-within 4 hours, losing at most 24 hours of data. The team tests a restore every quarter.
+### 16.5 Backups
 
-### 15.6 Setting up a new deployment
+The managed database keeps point-in-time recovery, so at most a few minutes of data can be lost,
+plus a daily full backup kept for 30 days. File storage keeps earlier versions of each file in a
+second region. The target is recovery within 4 hours. The team tests a restore every quarter.
 
-A new deployment needs a few records before any claim can exist. They must be created in this
-order.
+### 16.6 A new installation
 
-| Order | Record | Why it comes first | Minimum |
-|---|---|---|---|
-| 1 | Claim statuses | Every update needs one, and every scorecard reads its group | A full list, each with a group |
-| 2 | Topics | Every claim needs one | 8 to 15 |
-| 3 | Countries | Web addresses start with the country | One |
-| 4 | Users | Roles control every later step | One super-admin and one editor |
-| 5 | Site settings | Navigation and footer | Enough to show a page |
-| 6 | Actors | Every claim needs a promisor | The actors being tracked |
+Migrations create the default Promise claim type and the Delivery rating scale. Then, in order:
 
-The status groups deserve care. Nothing supplies a default, and a status in the wrong group
-makes every scorecard wrong without any error appearing.
+| Order | What | Minimum |
+|---|---|---|
+| 1 | Languages | English and French |
+| 2 | A country | One |
+| 3 | Its areas and offices, usually by spreadsheet import | The levels you will track |
+| 4 | Topics | 8 to 15 |
+| 5 | Users | One super-admin and one editor |
+| 6 | plugin-site settings | Enough to show a page |
+| 7 | Actors and their terms | The people you will track |
 
-## 16. Performance
+## 17. Performance
 
-### 16.1 Speed targets
-
-| Operation | Target |
+| Measure | Target |
 |---|---|
-| A cached country or claim page | Under 100 ms at the server |
-| Public API | Under 300 ms for 95% of requests |
-| Health check | Under 100 ms |
+| A cached page at the server | Under 100 ms |
+| An API response | Under 300 ms for 95% of requests |
 | Main content visible on a 4G phone | Under 2.5 seconds |
-| Page ready to use | Under 3 seconds |
-| Reading a file into text | Under 2 minutes |
-| AI work on one document | Under 3 minutes typically |
+| JavaScript on a claim page | Under 150 KB compressed |
 | A document through the whole pipeline | Under 15 minutes for 95% of documents |
 
-A claim page sends less than 150 KB of compressed JavaScript, not counting the map.
-
-### 16.2 Growth targets
-
-| | Phase 1 | Phase 2 | Phase 3 and later |
+| Growth | Version 1 | Version 2 | Later |
 |---|---|---|---|
-| Countries | 5 | 20 | 50 or more |
+| Countries | 4 | 20 | 50 or more |
 | Actors | 200 | 2,000 | 10,000 |
 | Claims | 2,000 | 25,000 | 150,000 |
-| Claim updates | 5,000 | 75,000 | 500,000 |
-| Documents | 500 | 10,000 | 50,000 |
-| Visitors per month | 20,000 | 200,000 | 1,000,000 |
+| Monthly visitors | 20,000 | 200,000 | 1,000,000 |
 
-| Kind of growth | What handles it |
-|---|---|
-| More countries | A country is one record. Adding one needs no deployment |
-| Traffic spikes | Cached pages, pages built ahead of time for published records, and a public site with no outside dependency |
-| More claims | Paging and filtering in the database, an index behind every list, and a cascade that writes in batches |
-| More staff | One work queue, a review queue with a decision per candidate, record locking in the admin, and separate roles for adding and publishing |
-
-### 16.3 Caching
-
-The site builds a page once and serves the stored copy until the content behind it changes. Each
-stored page carries tags, and a change refreshes the pages with the matching tag.
+Pages for published records are built ahead of time and cached with tags, using Next.js 16 cache
+components. A change refreshes only the pages tagged with the changed records.
 
 | Tag | Refreshed when |
 |---|---|
-| `country:{code}` | The country changes |
+| `country:{code}` | The country or its figures change |
+| `area:{id}` | The area or its office holders change |
 | `actor:{id}` | The actor, or a claim naming it, changes |
 | `claim:{id}` | The claim or one of its updates changes |
-| `claims:{country}` | A claim in that country is published or withdrawn |
-| `statuses`, `categories` | The list changes |
-| `settings` | Site settings change |
+| `ratings` | A rating scale changes |
+| `site` | Site settings or picks change |
 
-Pages for published records are built ahead of time. Less-visited pages are built on first visit
-and then stored. The cascade job in section 8.2 triggers the refresh, so a change is live within
-seconds. Media files are cached by browsers for a year, since a changed file gets a new address.
+## 18. Measures
 
-## 17. Development workflow and delivery
+These come from the product definition. Each has a number that would make us change something.
 
-### 17.1 Working on the code
+| Measure | Source | Why |
+|---|---|---|
+| Time since each claim was last reviewed | Rating reviews and updates | If half the record has not been looked at in a year, the site is stale. Reported to the team monthly |
+| Searches that found nothing | The search log | Tests whether location search works, and lists missing places |
+| Submissions received, and how many changed the record | Submissions | Few coming in means the form is invisible. Many with no changes means noise or a backlog |
+| First visits by page type | The analytics port | Tests whether most visitors arrive from shared links |
+| Links from news sites | Checked by hand each quarter | Whether journalists use it |
+| Before launch: every published claim has a source and a topic, and every claim with a "needs a deadline" rating has one | Publishing checks | These are enforced, so the check is that nothing is waiting on them |
 
-`main` is the production branch. Work happens on a branch and merges through a pull request.
-Commit messages follow the Conventional Commits format.
+## 19. Development and delivery
+
+### 19.1 Repository
+
+A new monorepo, managed with pnpm workspaces.
+
+```
+apps/
+  site/               public site: routes, page templates, share images
+  cms/                Payload config and admin, mounted in the same Next.js app at launch
+packages/
+  kernel/             ports, plugin loader, start-up checks
+  contract/           API schemas
+  sdk/                typed client and page view builders
+  ui/                 components from the redesign
+plugins/
+  core/  site/  check/  ai/  tika/  superdesk/  airtable/
+docker/
+  Dockerfile  compose.yaml
+```
+
+The redesign repository's components move into `packages/ui`, and its routes into `apps/site`.
+Named modules from v2 carry over, listed in Appendix B.
+
+### 19.2 Working on the code
 
 | Task | Command |
 |---|---|
 | Install | `pnpm i` |
 | Run locally | `pnpm dev` |
-| Build | `pnpm build` |
-| Check code style | `pnpm lint` |
-| Integration tests | `pnpm test:int` |
-| End-to-end tests | `pnpm test:e2e` |
-| Regenerate types | `pnpm generate:all` |
-| Start Tika locally | `docker compose up -d` |
+| Start Postgres, storage and Tika | `docker compose up -d` |
+| Create a migration | `pnpm payload migrate:create` |
+| Lint and format | `pnpm lint` |
+| Tests | `pnpm test` |
+| Build the image | `docker build -f docker/Dockerfile .` |
 
-Automated checks run the linter and both test suites with only the core plugin enabled and no
-credentials.
+`main` is the production branch. Work happens on branches and merges by pull request, with
+Conventional Commits messages. CI runs the linter, the migration check and the tests against a
+Postgres service, with only the core plugins enabled and no credentials.
 
-### 17.2 Delivery phases
+Payload 4 is pinned to an exact beta. Each beta upgrade gets its own branch, runs Payload's
+codemods, and passes the full test suite before merging.
 
-| Phase | What is built | Done when |
+### 19.3 Versions
+
+| Version | What is built | Done when |
 |---|---|---|
-| 1. Core | Kernel and plugin loading. The data model. Publishing rules and roles. Upload, link and spreadsheet import. Plain text reading. Built-in verification. The public site with caching, lists, search and fact-check markup. Submissions and moderation | A non-developer sets up a country, enters an actor and a claim, adds three dated updates, publishes, and sees the timeline on the public page, with no API key configured |
-| 2. Scale and assist | Editing rights per country. plugin-tika. plugin-ai with one vendor and the review queue. Maps. Embeds, the public API and CSV export. The language switch | A 200-page PDF produces reviewed claims, and an editor limited to one country cannot edit another |
-| 3. Newsroom | plugin-superdesk and plugin-check, each with its push route, poll and start-up checks | A verdict published in Superdesk or Check appears on the claim, and a withdrawn one takes the claim down |
+| 1 | Everything v2 does, on the new platform, with the new design. Kernel and plugins. The data model. Publishing rules. Upload, link and spreadsheet import. plugin-tika, plugin-ai and the candidate review. Verification in the built-in queue and plugin-check. Ratings, history and rating reviews. Submissions and the newsletter. The public site with search, share images and structured data. The API, used by the site. The Docker image | A Kenyan editor imports the offices and areas, adds an actor, extracts claims from a PDF, verifies one in Check, rates it, publishes it in English and French, and finds it by searching for the county, with no Airtable anywhere |
+| 2 | Editing rights per country. Embeds and oEmbed. The API opened to outside users. Maps | An editor limited to one country cannot edit another |
+| Later | plugin-superdesk. plugin-airtable. Automatic share image refresh. Petitions | Each one is planned when it is picked up |
 
-Editing rights per country come first in phase 2, because an outside newsroom cannot safely have
-an account without them.
+## 20. Decisions
 
-## 18. Design decisions
+### 20.1 Register
 
-**Why is the core a plugin?** So that it follows the same extension rules as every integration.
-If the rules are too weak for Superdesk, the core feels it too, and the gap is found early. It
-also keeps integrations out of the core's internals.
+| # | Decision |
+|---|---|
+| D1 | Verification happens in one place per deployment: the built-in queue, Meedan Check or Superdesk |
+| D2 | The system tracks claims of every type. Promise is the default type |
+| D3 | Plugins and ports. Nine ports, plus Payload's own adapters for the database, storage and email |
+| D4 | The core runs on Postgres and file storage alone |
+| D5 | A plugin's fields are read-only in the admin to everyone but the plugin |
+| D6 | The Check plugin is fully specified and built in version 1 |
+| D7 | Claims have a public, dated history, with corrections marked |
+| D8 | AI extraction stays, simplified, with the quote check |
+| D9 | Citizen input is native and moderated |
+| D10 | No multi-tenancy. Country is part of the address and a field |
+| D11 | Caching, paging, search and structured data are duties of the UI layer, which the API makes possible |
+| D12 | v3 is a new codebase in a new monorepo, reusing named v2 modules |
+| D13 | The core is a plugin |
+| D14 | Actors are people, parties and institutions |
+| D15 | Replaced by D36 |
+| D16 | No editing rights per country in version 1. First in version 2 |
+| D17 | Geodata lives on areas. Maps come in version 2 |
+| D18 | Ingestion splits into connectors, extractors and importers |
+| D19 | PostgreSQL |
+| D20 | Payload 4 with all its new features, pinned until 4.0 |
+| D21 | The PesaCheck product definition is a source of requirements alongside these decisions |
+| D22 | Editors define ratings in rating scales. The six ratings in three tiers are the default |
+| D23 | Places are areas in a nested list, not actors |
+| D24 | Page structure belongs to the UI layer |
+| D25 | The public site reads data only through a typed SDK and contract |
+| D26 | The site and the platform run as one deployment at launch |
+| D27 | The API is used by the site first and opened to outside users in version 2 |
+| D28 | No live reader counter until real analytics exist |
+| D29 | The database schema always includes every first-party plugin |
+| D30 | A missing translation shows a notice and a link, never the other language's text |
+| D31 | Embeds come in version 2 |
+| D32 | A self-hosted captcha by default |
+| D33 | MIT licence |
+| D34 | Shipped as one Docker image |
+| D35 | Version 1 matches what v2 does today, with verification in the built-in queue or Check |
+| D36 | Short address letters: `/e/` for actors, `/p/` for claims |
 
-**Why must the system run with no outside service?** A system that needs two outside services
-cannot be tested automatically, cannot be handed to a new developer without accounts, and stops
-when either vendor changes its terms. Testing the stand-alone configuration on every change
-keeps it working.
+### 20.2 Why
 
-**Why refuse to start when a port has no adapter?** A missing optional feature can fail quietly.
-A missing required one cannot. A deployment with nowhere to verify claims is broken, and the
-person deploying it should be the one who finds out.
+**Why Payload?** It is the only option we compared that is MIT licensed, runs on Postgres in
+TypeScript, includes drafts, version history, per-language publishing, row-level access rules, a
+job queue and a plugin system for free, and runs inside the same Next.js app as the site. Strapi
+keeps version history and audit logs on paid plans. Directus's licence is free only for small
+organisations. Wagtail would mean a move to Python. Keystone has no drafts.
 
-**Why are a plugin's fields read-only in the admin?** If two systems can write one field, they
-will disagree. Making the field read-only keeps the value visible while leaving one writer.
+**Why Payload 4 rather than 3?** Hierarchy for areas, crash-safe jobs, authorship, dashboard
+widgets and per-language publishing all replace code we would otherwise write. The cost is that
+there is no route back to version 3.
 
-**Why are a plugin's added fields optional?** A plugin can be removed. Optional fields let the
-remaining records stay valid.
+**Why must the core run alone?** A system that needs outside services cannot be tested
+automatically, cannot be handed to a new developer, and stops when a vendor changes its terms.
 
-**Why choose plugins with environment variables?** Plugins change the shape of records and the
-list of routes, and both are fixed when the system starts. A database setting would be read too
-late.
+**Why refuse to start when a port has no adapter?** A deployment with nowhere to verify claims is
+broken, and whoever deploys it should find out first.
 
-**Why keep credentials in the database?** They differ per deployment and change without a
-release. The encrypted settings field already protects them.
+**Why keep every plugin's fields in the schema?** Postgres needs a migration for every column.
+One schema means one migration history, and turning a plugin on never needs a database change.
 
-**Why both a push and a poll for verdicts?** A push is fast and can be lost. A poll is slow and
-cannot. Together they give a quick result in the normal case and a correct one in every case.
+**Why editor-defined ratings?** New claim types need their own scales. A public statement is
+accurate or not, never "kept".
 
-**Why a country in the address and not a separate site?** A separate site per country means a
-separate address, certificate and cache for each, and makes cross-country pages impossible. One
-site with the country in the path avoids all of that and still labels every record.
+**Why derive a claim's rating?** A stored rating can drift from the evidence. A derived one
+always matches the latest update.
 
-**Why a segment per kind of actor?** Without it, a slug would have to be unique across people,
-parties, institutions and places, and the server would have to search all four to find a page.
-
-**Why one record type for all actors?** They all make promises. Four record types would mean
-four sets of pages and a combined query for every list.
-
-**Why derive a claim's current status?** A stored status can drift from the evidence. A derived
-one always matches the latest update, its date and its sources.
-
-**Why two publishing fields?** One switch cannot hold both "the editor wants this public" and
-"its parent is withdrawn". Two fields keep the editor's choice intact while the parent is hidden.
+**Why publish per language?** A translation is often finished later than the original. Half a
+French page in English is a fault, not a convenience.
 
 **Why does a source document sit above its claims?** The document is the evidence. Withdrawing a
 fake manifesto should take one action.
 
-**Why check quotes against the source?** An AI model can produce a convincing promise that
-nobody made. One text search removes that risk.
-
-**Why three ingestion ports?** A spreadsheet of promises and a manifesto need different handling.
-One needs column mapping, the other needs reading, AI and review.
+**Why check quotes against the source?** An AI model can produce a convincing promise that nobody
+made. One text search removes that risk.
 
 **Why keep the claim in PromiseTracker when verifying elsewhere?** Version 2 kept promises in
-Check and rebuilt them from its reports, so any change in Check could remove a promise. Sending
-only a copy out and taking only the verdict back means no outside system can do that.
+Check and rebuilt them from its reports, so a change in Check could remove one. Taking only the
+verdict back means no outside system can.
 
-**Why store map outlines?** They rarely change, they carry licence terms, and a live map-data
-service is one more thing that can change under us.
+**Why seat addresses?** People know where they live, not who represents them. A seat address is
+a stable link to "the governor of Nairobi", whoever that is.
 
-**Why Payload, MongoDB and Tika?** Payload supplies the admin, typed records, background jobs
-and a plugin system that supports the ownership rules. MongoDB suits a model that is still
-changing and is the database Payload supports best. Tika is free, self-hosted and reads most
-formats.
+**Why an SDK between the site and the platform?** It lets the site run in the same process at
+launch and on its own later, and lets a partner replace any part of the site without touching
+the platform.
 
-## 19. Appendix A: items to confirm
+## 21. Appendix A: items to confirm
 
-### Superdesk
+### Meedan Check, version 1
 
-1. The Content API address prefix, and whether the Content API is switched on. Section 5.2
-2. Whether the Production API is running. Section 5.2
-3. The content profile id for fact-check items, and whether one exists yet. Section 5.2
-4. The vocabulary ids and codes for verdict, claim type and topic. Section 5.2
-5. The desk and stage ids for the fact-checking desk. Section 5.2
-6. A service account with the `archive` privilege, agreed with the newsroom. Section 5.2
-7. Whether HTTP push is available, and whether PromiseTracker can be added as a subscriber.
-   Section 5.2
-8. The Superdesk version in use. Its published change log stops in 2022. Section 5.2
-9. Whether `extra` fields are searchable on this installation. Section 5.2
+1. The workspace's status list, and the verdict each maps to.
+2. That the workspace can send webhooks to an outside address, and which events it sends.
+3. The report state names, `published` and `paused`, in the current Check version.
 
-### Meedan Check
+### Infrastructure
 
-10. The workspace id, and an API key with permission to create items and read reports.
-    Section 5.3
-11. The workspace's status list, and the verdict each status maps to. Section 5.3
-12. Whether the workspace can send webhooks to an outside address, and which events it sends.
-    Section 5.3
-13. The report state names, `published` and `paused`, in the current Check version. Section 5.3
+4. A managed Postgres provider that offers `unaccent` and `pg_trgm`.
+5. Where the Docker image runs.
+6. The email provider for notifications and newsletter confirmations.
+7. Editor sign-in: passwords only, or single sign-on with Code for Africa accounts, and whether
+   super-admins need a second factor.
+8. The analytics tool, if any, for version 1.
+9. The volume at which Postgres full-text search stops being enough.
 
-### Statuses and topics
+### Superdesk, later
 
-14. The verdict list. The current four answer "is this true". A promise tracker more often asks
-    "did they say it" and "did they do it". Decide before setting up Superdesk vocabularies or
-    the Check mapping. Section 7.3
-15. The claim status list and the group for each status. Section 15.6
-16. The topic list. Section 15.6
-17. Whether the four claim types are right, and whether any needs its own fields. Section 7.3
+10. The Content API prefix, whether the Production API runs, the content profile, the vocabulary
+    and desk ids, a service account, whether HTTP push is available, and the Superdesk version.
 
-### Maps and search
+### Maps, version 2
 
-18. The map tile provider and its licence. Section 10.6
-19. The boundary data source and its attribution rules. Section 10.6
-20. The step that simplifies large outlines. Section 7.11
-21. The volume at which MongoDB full-text search stops being adequate. Section 10.4
+11. The map tile provider and its licence, and the source of boundary data and its attribution
+    rules.
 
-## 20. Appendix B: what v2 does today
-
-This appendix records the v2 behaviour that v3 replaces, with the place in the v2 code where
-each can be seen, and the v2 code that v3 keeps.
+## 22. Appendix B: what v2 does today
 
 ### Problems v3 fixes
 
@@ -1976,7 +1690,6 @@ each can be seen, and the v2 code that v3 keeps.
 | Three publishing conventions | Two yes-or-no fields and one free-text field, `promises.publishStatus` |
 | Tenant isolation is not enforced | `userHasAccessToAllTenants: () => true` in `src/plugins/index.ts` |
 | Accented characters are removed | `cleanText` in `src/tasks/extractDocuments.ts` |
-| Pages cannot be embedded | `frame-ancestors 'self'` in `src/lib/security/headers.mjs`, with no exception |
 
 ### Code v3 keeps
 
@@ -1986,8 +1699,17 @@ each can be seen, and the v2 code that v3 keeps.
 | File type checking | `src/utils/fileSignature.ts` |
 | The AI quote check | `src/tasks/extractPromises.ts` |
 | The AI vendor list | `src/lib/ai/providerCatalog.ts`, `src/lib/ai/providerRegistry.ts` |
-| The Check API client, as the base for plugin-check | `src/lib/meedan.ts` |
+| The Check API client | `src/lib/meedan.ts` |
 | Webhook duplicate detection | `src/app/api/meedan-sync/route.ts` |
 | The encrypted settings field | `src/fields/encryptedSecret.ts` |
-| The scheduled job lock | `src/lib/workflowLocks.ts` |
 | The security tests | `tests/int/` |
+
+The scheduled job lock in `src/lib/workflowLocks.ts` is no longer needed, because Payload 4's job
+concurrency keys do the same job.
+
+### From the redesign
+
+The redesign repository, `CodeForAfrica/promisetracker_redesign`, supplies the components, page
+layouts, the counts-not-percentages rule, the archived official layout, the rating history page,
+the update form and the share images. Its data, now in static files, moves behind the SDK, and
+its hardcoded ratings come from the rating scales instead.

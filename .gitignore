@@ -57,3 +57,7 @@ script.js
 old
 script2.ts
 countries.json
+
+# Working documents. Specifications live in docs/spec, nothing else at the root.
+/*.pdf
+docs/spec/promisetracker-v3-revision-proposal.md

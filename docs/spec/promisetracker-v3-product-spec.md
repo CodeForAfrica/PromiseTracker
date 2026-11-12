@@ -1,32 +1,34 @@
 # PromiseTracker v3 product specification
 
-Draft for team review, 10 November 2026.
+Draft for team review, 12 November 2026.
 
-This document explains how PromiseTracker v3 will work, in plain terms. The technical detail
-lives in the full system specification, linked at the end.
+This document explains how PromiseTracker v3 will work, in plain terms. The technical detail is in
+the full system specification, linked at the end.
 
 ## What PromiseTracker is
 
-PromiseTracker records what politicians and public institutions promise, checks each promise
-against its source, and follows what happens to it over time. The public gets one place to see
-who promised what, whether it happened, and the evidence either way.
+PromiseTracker records what people in power promise and claim, checks each claim against its
+source, and follows what happens to it over time. The public gets one place to see who said what,
+whether it happened, and the evidence either way.
+
+Visitors can send in evidence, corrections and updates, but an editor always decides what changes
+the record. Some newer trackers let politicians report on themselves or let the public vote. Ours
+keeps a newsroom in the loop, and that is the reason to trust a rating here.
 
 ## Why we are rebuilding it
 
 The current version runs, but it has four problems we cannot patch.
 
-It depends on two outside services. Source documents and politician lists live in Airtable, and
-published promises live in Meedan Check. If either service is unavailable, changes its pricing
-or changes its product, PromiseTracker stops working.
+It depends on outside services. Source documents and politician lists live in Airtable. If
+Airtable is unavailable or changes its terms, PromiseTracker stops working.
 
-It does not track anything. A promise has a status, but no record of how that status changed.
-The timeline on a promise page is empty.
+It does not track anything over time. A promise has a status, but no record of how that status
+changed.
 
-The public site will not cope with real traffic. Every page is built from scratch on every
-visit, the promise list loads everything at once, and the search box does nothing.
+The public site will not cope with real traffic. Pages are rebuilt on every visit, the promise
+list loads everything at once, and the search box does nothing.
 
-The country setup is confusing. Each country runs as a separate mini-site on its own web
-address, which makes it hard to manage and impossible to compare countries.
+The country setup is confusing. Each country runs as a separate mini-site on its own web address.
 
 The product has not launched yet, so we can fix all four without moving any data.
 
@@ -36,203 +38,226 @@ The simplest way to understand v3 is to follow one promise through it.
 
 ### 1. Set up a country
 
-An administrator adds a country by entering its name and code. The country gets its own section
-of the site straight away, at an address like `promisetracker.org/ke`. Nobody needs to deploy
-anything or call a developer.
+An administrator adds a country, its languages, its list of offices, such as President, Governor,
+Senator and MP, and its list of areas, such as counties and constituencies. These lists can be
+imported from a spreadsheet. Editors pick from them and never type a title or a place by hand,
+which keeps filters and comparisons clean.
 
-All countries share one site. That is the biggest structural change from the current version,
-and it is what makes cross-country comparison possible later.
+All countries share one site. A country is part of the web address, as in
+`promisetracker.org/en/ke`.
 
-### 2. Add the people and institutions
+### 2. Add the people and organisations
 
-Editors add the actors whose promises we track. There are four kinds:
+Editors add the actors whose claims we track. There are three kinds:
 
-- **People**, such as a president, governor or minister
-- **Parties**
-- **Institutions**, such as a ministry or a county government
-- **Places**, such as a county or a constituency
+- **People**, such as a president, a governor or an MP
+- **Parties**, where people vote for a party rather than a person
+- **Institutions**, such as a ministry, if an editor decides to track one
 
-Any of the four can make promises. A manifesto belongs to a party, a budget commitment belongs
-to a ministry, and a campaign pledge belongs to a person.
+Each person has a record of the offices they hold or have held, with dates. That record decides
+whether they are in office now or have left office. A candidate's promises can be collected during
+a campaign, but the candidate stays off the public site until they win, take office, and an
+editor judges there is enough verified material.
 
-A person's record keeps their full history of offices, so when a governor becomes a cabinet
-secretary we keep both. The current version can hold only one position and loses the rest.
-
-Each actor gets a clear address by kind, such as `/ke/politicians/william-ruto` or
-`/ke/places/nairobi`.
+When a term ends, the person's page becomes an archived record with a closing summary. Their old
+web address keeps working.
 
 ### 3. Bring in the source material
 
-Promises come from documents: manifestos, speeches, budgets, policy papers. Editors can bring
-them in three ways.
+Claims come from documents: manifestos, speeches, budgets, policy papers. Editors can bring them in
+three ways.
 
 - Upload a file. PDF, Word, Excel, PowerPoint and most other formats work.
 - Paste a link, and the system fetches the document.
 - Import a spreadsheet. If a partner has already compiled a list of promises, each row becomes a
-  promise directly. The editor matches the columns, previews the result, and confirms before
+  claim directly. The editor matches the columns, previews the result, and confirms before
   anything is saved.
 
-Every document shows where it is in the process, whether waiting, being read, ready for review
-or failed, along with the reason if something went wrong. Today that feedback only exists as
-notes written into Airtable.
+Every document shows where it is in the process, along with the reason if something went wrong.
 
-### 4. Find the promises
+### 4. Find the claims
 
-Reading a 200-page manifesto for promises is slow. AI does the first pass. It reads the document
-and proposes candidate promises, each with the exact quote it found.
+Reading a 200-page manifesto is slow, so AI does the first pass. It reads the document and
+proposes candidate claims, each with the exact quote it found.
 
-Two rules keep this honest. The system discards any candidate whose quote does not appear word
-for word in the document, so the AI cannot invent a promise. And a person reviews every
-candidate before it goes further. The reviewer sees the quote highlighted in the original text
-and accepts, edits or rejects it.
+Two rules keep this honest. The system throws away any candidate whose quote does not appear word
+for word in the document, so the AI cannot invent a claim. And a person reviews every candidate
+before it goes further.
 
-AI is optional. A team that prefers to work without it can enter promises by hand, and nothing
-else changes.
+AI is optional. A team can enter claims by hand instead, and nothing else changes.
 
 ### 5. Verify
 
-Every accepted promise goes to a fact-checker, who confirms it is accurately quoted and
-attributed. This can happen in one of three places:
+Every accepted claim goes to a fact-checker, who confirms it is accurately quoted and attributed.
+This happens in one of three places:
 
-- Inside PromiseTracker itself, using a built-in review queue. This needs no other system.
-- In Superdesk, for newsrooms that already work there. The promise appears in the fact-checking
-  desk, and the verdict flows back to PromiseTracker when it is published.
-- In Meedan Check, for teams that fact-check there. The promise appears in the Check workspace,
-  and the verdict flows back when the fact-checker publishes the report.
+- Inside PromiseTracker, in a built-in review queue. This needs no other system.
+- In Meedan Check, for teams that fact-check there. The claim appears in the Check workspace, and
+  the verdict comes back when the fact-checker publishes the report.
+- In Superdesk, for newsrooms that work there. This comes in a later version.
 
-A deployment uses one of the three at a time, and the rest of the process is the same whichever
-one it is.
+A deployment uses one of them at a time. A claim that fails verification is never published, but
+we keep it on record, because a pattern of failures tells us something about the source or the AI.
 
-A promise that fails verification is never published. We keep it on record, because a pattern of
-failures tells us something about the source or about the AI.
+### 6. Rate it
 
-### 6. Publish
+A rating says how a claim is doing. Editors define the ratings, so the system can grow with new
+kinds of claims. Every new installation starts with six ratings for promises, grouped into three
+tiers:
 
-Verification and publishing are separate steps. A promise can be verified but still waiting on a
-written summary, and it should not go live half-finished.
+| Tier | Ratings |
+|---|---|
+| Promise kept | Completed, In Progress |
+| Uncertain | Unstarted, Inconclusive |
+| Promise not kept | Behind Schedule, Stalled |
 
-Each record has one setting an editor controls: ready, on hold, or archived. A promise appears on
-the public site only when it is verified, marked ready, and everything above it is ready too.
-That last part matters. Putting a country, a politician or a source document on hold hides every
-promise underneath it within seconds. Releasing it brings them back, except for any that an
-editor had held individually.
+Every promise starts as Unstarted. A promise needs a deadline before it can be rated Behind
+Schedule or Stalled, because both mean behind its own timeline.
 
-If a manifesto turns out to be fake, one action removes every promise that came from it.
+Labels can be renamed at any time. A rating's definition can only be reworded, not moved. If the
+line between two ratings has to move, the affected claims are re-rated, and the change shows in
+their history.
 
-The system deletes nothing on its own. Archived records stay available for audit.
+### 7. Publish
 
-### 7. Track what happens
+Verification and publishing are separate steps. A verified claim with an unfinished summary
+should not go live.
 
-This is the feature the product is named for, and the current version does not have it.
+Each record has one setting an editor controls: ready, on hold, or archived. A claim appears on the
+site only when it is verified, it has a source and a topic, it is marked ready, and everything
+above it is ready too. Putting a country, a person or a source document on hold hides every claim
+under it within seconds.
 
-When something happens to a promise, an editor adds an update with four parts: the date it
-happened, the status as of that date, a short account of what happened, and the evidence. A
-status might be "in progress", "kept" or "broken".
+Each language is published separately. A claim can be live in English while its French
+translation is still being written. A French visitor sees a short "not yet available in French"
+note with a link to the English version. English text never appears on a French page.
 
-Nobody types in a promise's current status. The system takes it from the most recent published
-update. The status, its date and its evidence therefore always agree, and the public page shows
-the full history as a timeline.
+The system never deletes anything on its own. Archived records stay available for audit.
 
-### 8. Hear from citizens
+### 8. Track what happens
 
-Each promise page has a form where anyone can send an update, a correction or a promise we
-missed. Submissions go into a moderation queue and are never shown publicly as they arrive. When
-a moderator accepts one, it becomes a proper update on the timeline, credited to the contributor
-if they agreed to that.
+This is what makes it a tracker. When something happens, an editor adds an update: the date, the
+new rating, a short account, and the evidence. If we got something wrong earlier, the update is
+marked as a correction, so readers can see we did not quietly change our minds.
+
+Nobody types in a claim's current rating. The system takes it from the latest published update.
+Each claim also shows the date it was last reviewed. When an editor checks a claim and nothing has
+changed, they confirm the rating, which moves that date without adding an update.
+
+### 9. Hear from citizens
+
+Each claim page has a form for new evidence, a correction, or a note that something has changed.
+Submissions go into a moderation queue and are never shown publicly as they arrive. When a
+moderator accepts one, it becomes an update on the timeline, credited to the sender if they agreed
+to that.
 
 ## What the public sees
 
-**A country page** with a map, headline numbers and the politicians and institutions being
-tracked.
+**A homepage** that explains PromiseTracker to someone who has never heard of it, using one real
+promise with its rating and sources. It also shows a theme chosen by editors, the overall figures,
+and the countries we cover.
 
-**A profile page** for each politician, party, institution or place. It opens with a scorecard
-showing how many promises are kept, in progress, broken or not started, followed by the full
-list. For a person it shows their offices and where they are from.
+**A country page** with the headline figure, editors' picks, a comparison of current office
+holders, the list of officials, and past administrations.
 
-**A promise page** with the exact quote, a link to the source, the current status, the full
-timeline with evidence, who verified it and when, and a map where the promise applies to a
-specific place.
+**A page for each person, party or institution**, opening with what they are responsible for and
+the one claim editors consider most important. Then their record, their full list of claims, and
+recent changes.
 
-**Lists that stay usable.** Promise lists are paginated and can be filtered by status, topic, person
-and date. A filtered view has its own address, so it can be shared or bookmarked.
+**A page for each claim** with the exact quote, where and when it was said, the deadline, the
+rating and when it was last reviewed, the history of ratings, the evidence, and any analysis.
 
-**Search that works**, across promises, people, parties, institutions and places.
+**Area pages** for places that hold several office holders, such as a county.
 
-**English and French**, with a visible language switch.
+**Topic and theme pages** that gather claims on one subject, often across countries.
 
-The site is built to stay fast under election-day traffic and to be found by search engines.
-Verified promises carry the standard fact-check markup that Google and others read.
+**Search that starts with place.** Typing "Nairobi" returns everyone who represents people there,
+from the president down to the local MP. Search also finds names, claims and topics.
+
+The site is built for phones and slow, expensive data. It works in English and French from the
+start, editors can add languages, and the layout supports right-to-left languages such as Arabic.
+
+Two rules keep the site honest when there is little data. A section with nothing to show is left
+out rather than shown empty. Small numbers are shown as counts, "1 of 3 completed", rather than
+percentages that would overstate a thin record.
+
+## Web addresses
+
+Every address starts with the language and the country.
+
+| Page | Example |
+|---|---|
+| Country | `/en/ke` |
+| Person, party or institution | `/en/ke/e/achieng-wekesa` |
+| Claim | `/en/ke/p/kibra-housing` |
+| Area | `/en/ke/nairobi-county` |
+| Seat | `/en/ke/nairobi-county/governor` |
+| Topic | `/en/topics/health` |
+| Search | `/en/search?q=nairobi` |
+
+A person's address never changes, even after they leave office. A seat's address always leads to
+whoever holds that seat today, so after an election `/en/ke/nairobi-county/governor` leads to the
+new governor.
 
 ## Sharing the work
 
-Three things let the content travel beyond our own site.
-
-- **Embeds.** A partner newsroom can place a promise card or a politician's scorecard inside its
-  own article.
-- **A public data feed** for journalists and researchers, covering published content only.
-- **Spreadsheet export** of promises and their updates.
+- **Share previews.** Each page has its own preview image built from its real content, such as a
+  claim and its rating, so a shared link shows what it is about.
+- **A citation button** on every claim, for journalists.
+- **A newsletter sign-up.**
+- **Embeds** that let a partner newsroom place a claim card in its own article. These come in a
+  later version.
 
 ## Who does what
 
 | Role | What they do |
 |---|---|
-| Contributor | Adds documents, actors and draft promises. Cannot publish |
-| Reviewer | Reviews AI candidates and verifies promises |
-| Editor | Decides what goes public and owns the promise timeline |
+| Contributor | Adds documents, people and draft claims. Cannot publish |
+| Reviewer | Reviews AI candidates and verifies claims |
+| Editor | Decides what goes public, rates claims and owns their history |
 | Moderator | Handles citizen submissions |
-| Administrator | Manages users, settings and connections to other systems |
+| Administrator | Manages users, settings, ratings, lists of offices and areas, and connections to other systems |
 
-One person can hold several roles.
+One person can hold several roles. Editors also choose the featured claims, themes and key claims
+without asking a developer.
 
 ## It runs on its own
 
-The core of v3 is a complete product with no outside service attached. A team can upload
-documents, enter promises, publish and track them using PromiseTracker alone. Verification can
-happen there too, in the built-in review queue, so a team with no newsroom system loses nothing.
+The core of v3 is a complete product. It needs only a database and file storage. A team can bring
+in documents, enter, verify, rate, publish and track claims with nothing else attached.
 
-Everything else is an optional add-on that can be switched on, replaced or removed without
-touching the core:
+Everything else is an optional add-on that can be switched on, replaced or removed:
 
-- Superdesk or Meedan Check, for teams that prefer to verify in the tool they already use
-- An AI provider, for finding candidate promises. We can change provider without rebuilding
-  anything
+- Meedan Check or Superdesk, for verification in the tool a team already uses
+- An AI provider, for finding candidate claims
 - A document reader for PDF, Word and other complex formats
-- Airtable, for any team that still wants to feed documents in from it
+- A newsletter service and a privacy-respecting analytics tool
 
-## What v3 leaves out
+The public website is replaceable too. It ships with the platform, but it reads everything through
+a documented interface, so a partner can restyle it, swap a single section, or build their own.
 
-We chose not to build these now. The design keeps the door open for each.
+## What we leave out for now
 
-- Separate permissions per country. Any editor can edit any country at launch. This must change
-  before a partner newsroom gets an account, and it is first on the list for the second phase.
-- A separate web address or visual theme per country
-- Accounts for members of the public, such as following a promise or getting alerts
-- Automatic detection of promises from news coverage
-- Verification by the crowd. Citizens send evidence, and a fact-checker decides.
+- Superdesk verification
+- Separate editing rights per country. Any editor can edit any country at first. This must change
+  before a partner newsroom gets an account
+- Embeds, maps, and opening the data interface to outside developers
+- Accounts for members of the public, petitions, and automatic featuring of officials
 
 ## How we will roll it out
 
-**Phase 1, the core.** Countries, actors, promises, updates and the timeline. Document upload,
-spreadsheet import, built-in verification, citizen submissions, and the public site with search.
-At the end of this phase PromiseTracker is usable with no outside service.
+**Version 1** does what the current PromiseTracker does, on the new platform, with the new design.
+That means document upload and import, AI candidate finding, verification in PromiseTracker or
+Meedan Check, ratings and history, citizen submissions, and the public site with search and share
+previews.
 
-**Phase 2, scale and assist.** Reading PDF and Word documents, AI candidate finding, maps,
-embeds, the public data feed, export, and per-country permissions.
+**Version 2** adds editing rights per country, embeds, maps, and the public data interface.
 
-**Phase 3, the newsroom.** Verification in Superdesk or Meedan Check. This comes last because
-it depends on setting up the newsroom's own system, and nothing before it should wait on that.
-
-## What we need before launch
-
-- An agreed list of promise statuses, each placed in one of five groups: not started, in
-  progress, kept, broken, inconclusive. Every scorecard depends on this.
-- An agreed list of topics, around 8 to 15.
-- The first country, and the politicians we will track in it.
-- For phase 3, someone with administrator access to our Superdesk or Check workspace.
+**Later** brings Superdesk verification and the features listed above.
 
 ## The full specification
 
-The full system specification covers the data model, the Superdesk connection, security, testing
-and operations. It is in the project repository on the `ft/v3-specification` branch:
+The full system specification covers the data model, the plugins, the interface, security and
+operations. It is in the project repository on the `ft/v3-specification` branch:
 
 https://github.com/CodeForAfrica/PromiseTracker/blob/ft/v3-specification/docs/spec/promisetracker-v3-system-specification.md
