@@ -258,6 +258,6 @@ previews.
 ## The full specification
 
 The full system specification covers the data model, the plugins, the interface, security and
-operations. It is in the project repository on the `ft/v3-specification` branch:
+operations. It is in the project repository:
 
-https://github.com/CodeForAfrica/PromiseTracker/blob/ft/v3-specification/docs/spec/promisetracker-v3-system-specification.md
+https://github.com/CodeForAfrica/PromiseTracker/blob/main/docs/spec/promisetracker-v3-system-specification.md

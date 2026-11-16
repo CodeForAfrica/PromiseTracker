@@ -800,7 +800,7 @@ so the same file is stored once.
 default), and each plugin's credentials. Only super-admins can read it, and every credential is
 encrypted. Environment variables choose which plugins run. The database holds what they need.
 
-### 7.11 Indexes and search columns
+### 7.11 Indexes and search
 
 | Record type | Indexes |
 |---|---|
@@ -1397,6 +1397,8 @@ can fix goes to Sentry.
 | A document fails after all retries | Yes, to the uploader |
 | New submissions | A daily digest to moderators |
 
+Emails go through Payload's email adapter. Until a provider is chosen, they go to the log.
+
 ## 15. Testing
 
 | Kind | Share | Covers |
@@ -1551,7 +1553,7 @@ These come from the product definition. Each has a number that would make us cha
 | Time since each claim was last reviewed | Rating reviews and updates | If half the record has not been looked at in a year, the site is stale. Reported to the team monthly |
 | Searches that found nothing | The search log | Tests whether location search works, and lists missing places |
 | Submissions received, and how many changed the record | Submissions | Few coming in means the form is invisible. Many with no changes means noise or a backlog |
-| First visits by page type | The analytics port | Tests whether most visitors arrive from shared links |
+| First visits by page type | The analytics port, from the production launch | Tests whether most visitors arrive from shared links |
 | Links from news sites | Checked by hand each quarter | Whether journalists use it |
 | Before launch: every published claim has a source and a topic, and every claim with a "needs a deadline" rating has one | Publishing checks | These are enforced, so the check is that nothing is waiting on them |
 
