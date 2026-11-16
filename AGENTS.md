@@ -2,6 +2,7 @@
 
 PromiseTracker v3. The system specification in `docs/spec/promisetracker-v3-system-specification.md`
 is the source of truth for behaviour. Work is tracked as issues in the "v3: version 1" milestone.
+Issue #672 gives the build order and the owner of each issue.
 
 ## Layout
 
