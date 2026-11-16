@@ -231,7 +231,7 @@ Everything else is an optional add-on that can be switched on, replaced or remov
 - Meedan Check or Superdesk, for verification in the tool a team already uses
 - An AI provider, for finding candidate claims
 - A document reader for PDF, Word and other complex formats
-- A newsletter service and a privacy-respecting analytics tool
+- A newsletter service and an analytics tool
 
 The public website is replaceable too. It ships with the platform, but it reads everything through
 a documented interface, so a partner can restyle it, swap a single section, or build their own.
