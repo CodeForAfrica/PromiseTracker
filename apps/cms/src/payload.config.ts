@@ -35,6 +35,8 @@ export default buildConfig({
     pool: { connectionString: databaseUrl() },
   }),
   editor: lexicalEditor(),
+  // Guests read through /api/v1 only, and nothing here uses GraphQL (D46).
+  graphQL: { disable: true },
   jobs: {
     // Safe with several worker replicas: Payload 4 claims each job with a
     // processing token and lease before running it, so no two workers run the

@@ -38,8 +38,8 @@ The simplest way to understand v3 is to follow one promise through it.
 
 ### 1. Set up a country
 
-An administrator adds a country, its languages, its list of offices, such as President, Governor,
-Senator and MP, and its list of areas, such as counties and constituencies. These lists can be
+An administrator adds a country, chooses its languages, its list of offices, such as President,
+Governor, Senator and MP, and its list of areas, such as counties and constituencies. These lists can be
 imported from a spreadsheet. Editors pick from them and never type a title or a place by hand,
 which keeps filters and comparisons clean.
 
@@ -175,7 +175,8 @@ rating and when it was last reviewed, the history of ratings, the evidence, and 
 from the president down to the local MP. Search also finds names, claims and topics.
 
 The site is built for phones and slow, expensive data. It works in English and French from the
-start, editors can add languages, and the layout supports right-to-left languages such as Arabic.
+start, more languages can be switched on, and the layout supports right-to-left languages such as
+Arabic.
 
 Two rules keep the site honest when there is little data. A section with nothing to show is left
 out rather than shown empty. Small numbers are shown as counts, "1 of 3 completed", rather than
