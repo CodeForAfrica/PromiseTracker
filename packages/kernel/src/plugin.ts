@@ -137,7 +137,15 @@ function withoutFieldHooks(fields: readonly Field[]): Field[] {
  * hidden in the admin, closed to every request that checks access, and
  * without hooks or custom endpoints, which do not check access.
  */
-function disableCollection(collection: CollectionConfig): CollectionConfig {
+function disableCollection(slug: string, collection: CollectionConfig): CollectionConfig {
+  // Payload serves sign-in and file routes for these outside the access rules
+  // set below, so the collection cannot be closed safely.
+  if (collection.auth || collection.upload) {
+    throw new KernelError(
+      `Plugin "${slug}" owns "${collection.slug}", which has sign-in or uploads. ` +
+        'Payload serves those outside access rules, so this plugin cannot be disabled. Enable it in PT_PLUGINS.',
+    )
+  }
   const { hooks: _hooks, ...rest } = collection
   return {
     ...rest,
@@ -217,8 +225,13 @@ function extendCollections(
   manifest: PluginManifest,
   enabled: boolean,
 ): CollectionConfig[] {
+  // Entries for the same record type share one group.
+  const byTarget = new Map<string, Field[]>()
+  for (const { collection, fields } of manifest.extend ?? []) {
+    byTarget.set(collection, [...(byTarget.get(collection) ?? []), ...fields])
+  }
   const result = [...collections]
-  for (const { collection: target, fields } of manifest.extend ?? []) {
+  for (const [target, fields] of byTarget) {
     const index = result.findIndex((c) => c.slug === target)
     const existing = result[index]
     if (!existing) {
@@ -301,7 +314,7 @@ function addSettings(globals: readonly GlobalConfig[], manifest: PluginManifest,
 export function applyManifest(config: Config, manifest: PluginManifest, enabled: boolean): Config {
   const { slug } = manifest
   const ownCollections = (manifest.collections ?? []).map((c) =>
-    enabled ? c : disableCollection(c),
+    enabled ? c : disableCollection(slug, c),
   )
   const ownGlobals = (manifest.globals ?? []).map((g) => (enabled ? g : disableGlobal(g)))
   const tasks = (manifest.tasks ?? []).map((t) => (enabled ? t : disableTask(slug, t)))

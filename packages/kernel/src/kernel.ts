@@ -98,6 +98,23 @@ function checkDependencies(
   }
   for (const m of manifests) visit(m.slug, [])
 
+  // A plugin that adds fields to another plugin's record type depends on it,
+  // or its fields could sit on a hidden, closed record type.
+  const owners = new Map(
+    manifests.flatMap((m) => (m.collections ?? []).map((c) => [c.slug, m.slug])),
+  )
+  for (const m of manifests) {
+    for (const { collection } of m.extend ?? []) {
+      const owner = owners.get(collection)
+      if (owner && owner !== m.slug && !(m.dependsOn ?? []).includes(owner)) {
+        throw new KernelError(
+          `Plugin "${m.slug}" adds fields to "${collection}", which plugin "${owner}" owns. ` +
+            `Add "${owner}" to its dependsOn.`,
+        )
+      }
+    }
+  }
+
   for (const m of manifests) {
     for (const dep of m.dependsOn ?? []) {
       const target = bySlug.get(dep)
@@ -221,10 +238,14 @@ export function createKernel(options: KernelOptions): Kernel {
       defaultsFrom,
       env.verification,
     ),
-    sourceConnector: candidates('sourceConnector', manifests, enabledSet).map((c) => c.adapter),
-    contentExtractor: candidates('contentExtractor', manifests, enabledSet).map((c) => c.adapter),
-    structuredImporter: candidates('structuredImporter', manifests, enabledSet).map(
-      (c) => c.adapter,
+    sourceConnector: Object.freeze(
+      candidates('sourceConnector', manifests, enabledSet).map((c) => c.adapter),
+    ),
+    contentExtractor: Object.freeze(
+      candidates('contentExtractor', manifests, enabledSet).map((c) => c.adapter),
+    ),
+    structuredImporter: Object.freeze(
+      candidates('structuredImporter', manifests, enabledSet).map((c) => c.adapter),
     ),
     llm: pickLlm(candidates('llm', manifests, enabledSet), env.llmModel),
     search: pickOne('search', candidates('search', manifests, enabledSet), defaultsFrom, undefined),
@@ -309,6 +330,8 @@ export function createKernel(options: KernelOptions): Kernel {
   })
 
   const onInit = async (payload: Payload): Promise<void> => {
+    // Unlike the three selecting variables, plugin variables are checked here,
+    // at init, so a missing one fails start-up rather than the build.
     const processEnv = options.env ?? process.env
     const missing = manifests
       .filter((m) => enabledSet.has(m.slug))

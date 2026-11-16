@@ -539,3 +539,55 @@ describe('review follow-ups', () => {
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('no AI plugin is enabled'))
   })
 })
+
+describe('second review follow-ups', () => {
+  it('refuses to disable a plugin that owns a sign-in or upload collection', () => {
+    const owner: PluginManifest = {
+      slug: 'accounts',
+      version: '0.0.0',
+      order: 50,
+      collections: [{ slug: 'members', auth: true, fields: [] }],
+    }
+    expect(() => applyManifest(baseConfig(), owner, false)).toThrow(/cannot be disabled/)
+    expect(() => applyManifest(baseConfig(), owner, true)).not.toThrow()
+  })
+
+  it('merges two extend entries for one collection into one group', () => {
+    const twice: PluginManifest = {
+      slug: 'twice',
+      version: '0.0.0',
+      order: 50,
+      extend: [
+        { collection: 'users', fields: [{ name: 'a', type: 'text' }] },
+        { collection: 'users', fields: [{ name: 'b', type: 'text' }] },
+      ],
+    }
+    const users = collection(applyManifest(baseConfig(), twice, true), 'users')
+    const group = fieldNamed(users.fields, 'twice')
+    expect('fields' in group ? group.fields.map((f) => ('name' in f ? f.name : '')) : []).toEqual([
+      'a',
+      'b',
+    ])
+  })
+
+  it("stops when a plugin extends a collection whose owner isn't in its dependsOn", () => {
+    const owner = plugin({ slug: 'owner', collections: [{ slug: 'things', fields: [] }] })
+    const extender = plugin({
+      slug: 'extender',
+      order: 60,
+      extend: [{ collection: 'things', fields: [{ name: 'x', type: 'text' }] }],
+    })
+    expect(() => kernelWith([owner, extender])).toThrow('Add "owner" to its dependsOn.')
+    const fixed = plugin({
+      slug: 'extender',
+      order: 60,
+      dependsOn: ['core', 'owner'],
+      extend: [{ collection: 'things', fields: [{ name: 'x', type: 'text' }] }],
+    })
+    expect(() => kernelWith([owner, fixed])).not.toThrow()
+  })
+
+  it('freezes the adapter lists', () => {
+    expect(Object.isFrozen(kernelWith([]).adapters.contentExtractor)).toBe(true)
+  })
+})
