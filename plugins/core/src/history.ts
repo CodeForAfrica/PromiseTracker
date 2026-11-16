@@ -18,8 +18,17 @@ const named = (fields: readonly Field[], name: string): boolean =>
  */
 function withPrivateAuthorship(fields: readonly Field[], authorship: Authorship): Field[] {
   const read = { access: { read: signedIn } }
+  // A plugin may define these fields itself, to relabel or show them. Its
+  // version keeps everything but the read rule, which is always this one.
+  const closed = fields.map((field): Field => {
+    if (!('name' in field) || (field.name !== 'createdBy' && field.name !== 'updatedBy')) {
+      return field
+    }
+    const own = field as Field & { access?: Record<string, unknown> }
+    return { ...own, access: { ...own.access, read: signedIn } } as Field
+  })
   return [
-    ...fields,
+    ...closed,
     ...(tracks(authorship, 'createdBy') && !named(fields, 'createdBy')
       ? [createCreatedByField({ overrides: read })]
       : []),

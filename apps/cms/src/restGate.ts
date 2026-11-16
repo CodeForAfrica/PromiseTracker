@@ -37,6 +37,9 @@ export function guestMayCall(method: string, path: string): boolean {
  * Payload treats a POST carrying one of these headers as a GET, which its
  * admin uses for long queries. The gate must judge the request as Payload
  * will handle it, or a guest could dress a GET up as an allowed POST.
+ *
+ * The comparison with `GET` is exact, as Payload's own is (`handleEndpoints`).
+ * Check it still matches when upgrading Payload.
  */
 const METHOD_OVERRIDE_HEADERS = ['X-Payload-HTTP-Method-Override', 'X-HTTP-Method-Override']
 

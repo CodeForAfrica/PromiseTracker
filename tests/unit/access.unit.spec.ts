@@ -127,6 +127,10 @@ describe('the users collection', () => {
     expect(call(['viewer'], 'u1')).toBe(true)
     expect(call(['editor'], 'u2')).toBe(false)
     expect(call(['super-admin'], 'u2')).toBe(true)
+    // The id may arrive as a number or as text from an address.
+    expect(update?.({ req: { user: { id: 7, roles: ['viewer'] } }, id: '7' } as never)).toBe(true)
+    expect(update?.({ req: { user: null }, id: 'u1' } as never)).toBe(false)
+    expect(update?.({ req: { user: { id: 'u1', roles: ['viewer'] } } } as never)).toBe(false)
   })
 
   it('closes creating and deleting users to everyone but a super-admin', () => {
@@ -143,6 +147,18 @@ describe('private history', () => {
       { slug: 'open', access: { read: () => true }, fields: [{ name: 'title', type: 'text' }] },
       { slug: 'untracked', authorship: false, fields: [] },
       { slug: 'half', authorship: { updatedBy: false }, fields: [] },
+      {
+        slug: 'own',
+        fields: [
+          {
+            name: 'createdBy',
+            type: 'relationship',
+            relationTo: 'users',
+            label: 'Author',
+            access: { read: () => true, update: () => false },
+          },
+        ],
+      },
     ],
     globals: [{ slug: 'site', access: { read: () => true }, fields: [] }],
   } as unknown as Config)
@@ -172,6 +188,16 @@ describe('private history', () => {
         expect(field?.access?.read?.(as('viewer'))).toBe(true)
       }
     }
+  })
+
+  it("closes a plugin's own created-by field too, and keeps the rest of it", () => {
+    const field = collection('own').fields.find((f) => 'name' in f && f.name === 'createdBy') as
+      | (Field & { label?: string; access?: { read?: typeof signedIn; update?: () => boolean } })
+      | undefined
+    expect(field?.label).toBe('Author')
+    expect(field?.access?.read?.(guest)).toBe(false)
+    expect(field?.access?.update?.()).toBe(false)
+    expect(names(collection('own').fields)).toEqual(['createdBy', 'updatedBy'])
   })
 
   it('adds nothing where authorship is switched off', () => {

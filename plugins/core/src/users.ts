@@ -13,6 +13,10 @@ const LAST_SUPER_ADMIN =
  * Whether any super-admin would be left without this user. Without one, nobody
  * could manage users, and the first-admin set-up only runs on an empty
  * database, so the way back would be the database itself.
+ *
+ * This counts, then lets the change through, so it is not a lock: two
+ * super-admins removing each other in the same instant could both pass. It
+ * stops the mistake, which is one person acting alone.
  */
 async function anotherSuperAdminExists(req: PayloadRequest, id: unknown): Promise<boolean> {
   const { totalDocs } = await req.payload.count({
@@ -49,7 +53,10 @@ export const Users: CollectionConfig = {
     create: can.manageUsers,
     // A user changes their own name and password. A super-admin changes anyone's,
     // which is also how a password is reset until email works (D40).
-    update: ({ req, id }) => can.manageUsers({ req }) || (Boolean(id) && req.user?.id === id),
+    // Ids are compared as text, so this holds whatever type the id arrives as.
+    update: ({ req, id }) =>
+      can.manageUsers({ req }) ||
+      (id !== undefined && req.user !== null && String(req.user.id) === String(id)),
     delete: can.manageUsers,
     unlock: can.manageUsers,
   },
