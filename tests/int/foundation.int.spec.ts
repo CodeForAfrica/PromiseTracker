@@ -31,6 +31,8 @@ describe('foundation', () => {
     expect(health.services.database?.healthy).toBe(true)
     expect(health.services.storage?.healthy).toBe(true)
     expect(health.plugins.enabled).toEqual(expect.arrayContaining(['core', 'site']))
+    expect(health.ports.verification).toEqual(['native'])
+    expect(health.ports.search).toEqual(['payload-search'])
   })
 
   it('uses UUID ids', async () => {

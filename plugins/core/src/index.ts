@@ -1,4 +1,15 @@
-import type { CollectionConfig, Config, Plugin } from 'payload'
+import { definePromiseTrackerPlugin } from '@promisetracker/kernel'
+import type { CollectionConfig } from 'payload'
+
+import {
+  localCaptcha,
+  localNewsletter,
+  nativeVerification,
+  noAnalytics,
+  payloadSearch,
+  plaintextExtractor,
+  uploadConnector,
+} from './adapters'
 
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -15,12 +26,23 @@ export const Media: CollectionConfig = {
 }
 
 /**
- * plugin-core: the data model and admin. This first version holds the users
- * and media collections. The rest of the data model comes in later issues.
+ * plugin-core: the data model, the admin and a default adapter for every port
+ * that needs one, so PromiseTracker runs with nothing else enabled.
  */
-export function corePlugin(): Plugin {
-  return (config: Config): Config => ({
-    ...config,
-    collections: [...(config.collections ?? []), Users, Media],
-  })
-}
+export const corePlugin = definePromiseTrackerPlugin({
+  slug: 'core',
+  version: '0.1.0',
+  order: 0,
+  collections: [Users, Media],
+  provides: {
+    verification: [nativeVerification],
+    sourceConnector: [uploadConnector],
+    contentExtractor: [plaintextExtractor],
+    search: [payloadSearch],
+    newsletter: [localNewsletter],
+    analytics: [noAnalytics],
+    captcha: [localCaptcha],
+  },
+})
+
+export * from './adapters'

@@ -3,11 +3,11 @@ import { fileURLToPath } from 'node:url'
 
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
-import { corePlugin } from '@promisetracker/plugin-core'
-import { sitePlugin } from '@promisetracker/plugin-site'
 import { buildConfig } from 'payload'
 
 import { databaseUrl } from './env'
+import { assertExtensions } from './extensions'
+import { kernel } from './kernel'
 import { migrations } from './migrations'
 import { storageAdapters } from './storage'
 
@@ -41,7 +41,13 @@ export default buildConfig({
     // same job.
     autoRun: role === 'worker' ? [{ cron: '* * * * *', allQueues: true }] : [],
   },
-  plugins: [corePlugin(), sitePlugin()],
+  // Start-up checks that need a running Payload (section 4.4). Payload applies
+  // pending migrations before this, and migration commands skip it.
+  onInit: async (payload) => {
+    await assertExtensions()
+    await kernel.onInit(payload)
+  },
+  plugins: [...kernel.payloadPlugins],
   secret: process.env.PAYLOAD_SECRET ?? '',
   storage: storageAdapters(),
   telemetry: false,
