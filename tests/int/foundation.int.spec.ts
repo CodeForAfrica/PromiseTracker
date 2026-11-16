@@ -16,7 +16,7 @@ describe('foundation', () => {
     await payload.destroy()
   })
 
-  it('reads a value stored in Postgres through the SDK', async () => {
+  it('reads a value stored in Postgres through the SDK, anonymously, with access rules on', async () => {
     const payload = await getPayload()
     const tagline = `Tracked on ${new Date().toISOString()}`
     // Tests write as the system, without a signed-in user.

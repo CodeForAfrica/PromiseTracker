@@ -8,7 +8,7 @@
  * route group.
  *
  * This folder and `src/app/(payload)` are the only places in the site allowed
- * to import the platform. The lint rule in `eslint.config.mjs` enforces it.
+ * to import the platform. The `noRestrictedImports` rule in `biome.json` enforces it.
  */
 import 'server-only'
 

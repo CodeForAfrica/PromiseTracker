@@ -12,3 +12,16 @@ export function databaseUrl(env: NodeJS.ProcessEnv = process.env): string {
   const port = env.PT_POSTGRES_PORT ?? '5432'
   return `postgres://${user}:${password}@localhost:${port}/${db}`
 }
+
+/**
+ * Fails at start-up, with the names of what is missing, rather than later with
+ * a vaguer error from Payload or the database driver.
+ */
+export function assertRuntimeEnv(env: NodeJS.ProcessEnv = process.env): void {
+  const missing: string[] = []
+  if (!env.PAYLOAD_SECRET) missing.push('PAYLOAD_SECRET')
+  if (env.NODE_ENV === 'production' && !env.DATABASE_URL) missing.push('DATABASE_URL')
+  if (missing.length > 0) {
+    throw new Error(`Missing settings: ${missing.join(', ')}. See .env.example.`)
+  }
+}

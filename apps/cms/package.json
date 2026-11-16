@@ -25,10 +25,12 @@
     "@promisetracker/plugin-site": "workspace:*",
     "@promisetracker/sdk": "workspace:*",
     "graphql": "catalog:",
-    "payload": "catalog:"
+    "payload": "catalog:",
+    "pg": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "@types/pg": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:"
   }

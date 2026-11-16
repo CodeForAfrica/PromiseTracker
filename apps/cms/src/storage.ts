@@ -18,6 +18,8 @@ function readS3Env(env = process.env): S3Env | null {
   const bucket = env.S3_BUCKET?.trim()
   if (!bucket) return null
   const endpoint = env.S3_ENDPOINT?.trim()
+  const accessKeyId = env.S3_ACCESS_KEY_ID?.trim()
+  const secretAccessKey = env.S3_SECRET_ACCESS_KEY?.trim()
   return {
     bucket,
     config: {
@@ -26,10 +28,9 @@ function readS3Env(env = process.env): S3Env | null {
       forcePathStyle: env.S3_FORCE_PATH_STYLE
         ? env.S3_FORCE_PATH_STYLE === 'true'
         : Boolean(endpoint),
-      credentials: {
-        accessKeyId: env.S3_ACCESS_KEY_ID ?? '',
-        secretAccessKey: env.S3_SECRET_ACCESS_KEY ?? '',
-      },
+      // Without both keys, the AWS SDK falls back to its own credential chain,
+      // such as an IAM role, instead of signing with empty keys.
+      ...(accessKeyId && secretAccessKey ? { credentials: { accessKeyId, secretAccessKey } } : {}),
     },
   }
 }
