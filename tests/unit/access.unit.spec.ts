@@ -235,6 +235,12 @@ describe('what a guest may call on the REST routes', () => {
     expect(guestMayCall('GET', '/media/file/photo.jpg')).toBe(true)
   })
 
+  it('ignores trailing slashes, however many', () => {
+    expect(guestMayCall('POST', '/users/login/')).toBe(true)
+    expect(guestMayCall('GET', `/users${'/'.repeat(50_000)}`)).toBe(false)
+    expect(guestMayCall('GET', '/')).toBe(false)
+  })
+
   it('refuses everything else, registering included', () => {
     for (const [method, path] of [
       ['POST', '/users/first-register'],

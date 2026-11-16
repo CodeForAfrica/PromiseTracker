@@ -23,7 +23,11 @@ const GUEST_ROUTES: readonly { method: string; path: RegExp }[] = [
 const API_PREFIX = '/api'
 
 export function guestMayCall(method: string, path: string): boolean {
-  const clean = path.length > 1 ? path.replace(/\/+$/, '') : path
+  // Trailing slashes are dropped without a regular expression, which a long
+  // run of slashes from a hostile caller could slow down.
+  let end = path.length
+  while (end > 1 && path[end - 1] === '/') end -= 1
+  const clean = path.slice(0, end)
   return GUEST_ROUTES.some((route) => route.method === method && route.path.test(clean))
 }
 
