@@ -3,10 +3,13 @@ import { fileURLToPath } from 'node:url'
 
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
+import { defineFinalPlugin } from '@promisetracker/kernel'
+import { privateHistory } from '@promisetracker/plugin-core'
 import { buildConfig } from 'payload'
 
 import { databaseUrl } from './env'
 import { assertExtensions } from './extensions'
+import { ensureFirstAdmin } from './firstAdmin'
 import { kernel } from './kernel'
 import { migrations } from './migrations'
 import { storageAdapters } from './storage'
@@ -48,8 +51,10 @@ export default buildConfig({
   onInit: async (payload) => {
     await assertExtensions()
     await kernel.onInit(payload)
+    await ensureFirstAdmin(payload)
   },
-  plugins: [...kernel.payloadPlugins],
+  // privateHistory runs after every plugin, so it covers all their record types.
+  plugins: [...kernel.payloadPlugins, defineFinalPlugin('private-history', privateHistory)],
   secret: process.env.PAYLOAD_SECRET ?? '',
   storage: storageAdapters(),
   telemetry: false,

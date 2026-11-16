@@ -223,6 +223,11 @@ export interface UserAuthOperations {
 export interface User {
   id: string;
   name?: string | null;
+  roles: ('super-admin' | 'editor' | 'contributor' | 'reviewer' | 'moderator' | 'viewer')[];
+  /**
+   * Two-letter country codes this user works on, such as ke. Not enforced in version 1.
+   */
+  countries?: string[] | null;
   createdBy?: {
     relationTo: 'users';
     value: string | User;
@@ -271,8 +276,6 @@ export interface User {
 export interface Media {
   id: string;
   alt: string;
-  prefix?: string | null;
-  _objectKey?: string | null;
   createdBy?: {
     relationTo: 'users';
     value: string | User;
@@ -281,6 +284,8 @@ export interface Media {
     relationTo: 'users';
     value: string | User;
   } | null;
+  prefix?: string | null;
+  _objectKey?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -408,6 +413,8 @@ export interface PayloadLlmInstruction {
  */
 export interface UsersSelect<T extends boolean = true> {
   name?: T;
+  roles?: T;
+  countries?: T;
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;
@@ -439,10 +446,10 @@ export interface UsersSelect<T extends boolean = true> {
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
-  prefix?: T;
-  _objectKey?: T;
   createdBy?: T;
   updatedBy?: T;
+  prefix?: T;
+  _objectKey?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;

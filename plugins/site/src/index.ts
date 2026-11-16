@@ -1,9 +1,11 @@
 import { definePromiseTrackerPlugin } from '@promisetracker/kernel'
+import { can } from '@promisetracker/plugin-core'
 import type { GlobalConfig } from 'payload'
 
 export const Site: GlobalConfig = {
   slug: 'site',
-  access: { read: () => true },
+  // The site's name and tagline are public. Editors change them.
+  access: { read: () => true, update: can.editEditorial },
   fields: [
     { name: 'name', type: 'text', required: true, defaultValue: 'PromiseTracker' },
     { name: 'tagline', type: 'text' },

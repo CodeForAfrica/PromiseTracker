@@ -17,6 +17,7 @@
     "typescript": "catalog:"
   },
   "dependencies": {
-    "@promisetracker/kernel": "workspace:*"
+    "@promisetracker/kernel": "workspace:*",
+    "@promisetracker/plugin-core": "workspace:*"
   }
 }

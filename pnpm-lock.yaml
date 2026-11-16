@@ -318,6 +318,9 @@ importers:
       '@promisetracker/kernel':
         specifier: workspace:*
         version: link:../../packages/kernel
+      '@promisetracker/plugin-core':
+        specifier: workspace:*
+        version: link:../core
     devDependencies:
       payload:
         specifier: 'catalog:'

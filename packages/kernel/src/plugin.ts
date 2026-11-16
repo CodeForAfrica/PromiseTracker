@@ -486,6 +486,23 @@ export function applyManifest(config: Config, manifest: PluginManifest, enabled:
   return next
 }
 
+/** Later than any plugin's own order. */
+const LAST = 1_000_000
+
+/**
+ * A rule applied to the whole config after every plugin has added its record
+ * types, such as "version history is for signed-in users". Payload runs
+ * plugins by `order`, not by their place in the list, so a plain function
+ * placed last would still run before plugins with a higher order.
+ */
+export function defineFinalPlugin(slug: string, apply: (config: Config) => Config): Plugin {
+  return definePlugin({
+    slug: `promisetracker-${slug}`,
+    order: LAST,
+    plugin: ({ config }) => apply(config),
+  })()
+}
+
 /**
  * Defines a PromiseTracker plugin: Payload's `definePlugin`, plus the manifest
  * in section 4.3. The kernel decides whether it is enabled.
