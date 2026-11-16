@@ -120,7 +120,10 @@ docker run -p 3000:3000 -e DATABASE_URL=postgres://user:pass@db-host:5432/promis
 docker run -e DATABASE_URL=... -e PAYLOAD_SECRET=... codeforafrica/promisetracker-v3 worker
 ```
 
-Both apply pending migrations when they start, before they take traffic. Set `S3_*` the same way
+Both apply pending migrations when they start, before they take traffic. Replicas take turns,
+so only one migrates. Each waits up to five minutes for the others, which
+`PT_STARTUP_LOCK_TIMEOUT_SECONDS` changes. Workers can be scaled, since Payload claims each job
+before running it. Set `S3_*` the same way
 to store files in S3. `docker/compose.yaml` shows a full set of variables.
 
 ## Licence

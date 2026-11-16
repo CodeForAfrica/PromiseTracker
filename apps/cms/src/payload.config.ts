@@ -36,6 +36,9 @@ export default buildConfig({
   }),
   editor: lexicalEditor(),
   jobs: {
+    // Safe with several worker replicas: Payload 4 claims each job with a
+    // processing token and lease before running it, so no two workers run the
+    // same job.
     autoRun: role === 'worker' ? [{ cron: '* * * * *', allQueues: true }] : [],
   },
   plugins: [corePlugin(), sitePlugin()],

@@ -36,6 +36,8 @@ services:
     ports: ["${PT_APP_PORT:-3000}:3000"]
 
   worker:
+    # Can be scaled: Payload claims each job before running it, so replicas
+    # never run the same job twice.
     <<: *app
     command: worker
     depends_on:
