@@ -3,11 +3,12 @@
  * the system specification).
  */
 export type { Env, KernelEnv } from './env'
-export { DEFAULT_PLUGINS, readEnabledPlugins, readKernelEnv } from './env'
+export { DEFAULT_PLUGINS, readEnabledPlugins, readKernelEnv, readLocales } from './env'
 export { KernelError } from './errors'
-export type { Kernel, KernelOptions, ResolvedAdapters } from './kernel'
+export type { Kernel, KernelOptions, LocaleSpec, ResolvedAdapters } from './kernel'
 export { createKernel } from './kernel'
 export type { HttpMethod, PluginManifest, PluginRoute, PromiseTrackerPlugin } from './plugin'
-export { applyManifest, definePromiseTrackerPlugin, isSuperAdmin, SETTINGS_GLOBAL } from './plugin'
+export { applyManifest, definePromiseTrackerPlugin, isSuperAdmin } from './plugin'
 export * from './ports'
 export { pluginRoute } from './routes'
+export { forgetSettings, readSettings, SETTINGS_GLOBAL, SETTINGS_TTL_MS } from './settings'

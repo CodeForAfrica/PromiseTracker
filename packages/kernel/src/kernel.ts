@@ -4,7 +4,6 @@ import type { Env, KernelEnv } from './env'
 import { readKernelEnv } from './env'
 import { KernelError } from './errors'
 import type { PluginManifest, PromiseTrackerPlugin } from './plugin'
-import { SETTINGS_GLOBAL } from './plugin'
 import type {
   AdapterContext,
   AnalyticsProvider,
@@ -20,6 +19,7 @@ import type {
   VerificationProvider,
 } from './ports'
 import { PORTS } from './ports'
+import { readSettings } from './settings'
 
 /** The adapters that run, one entry per port (section 4.1). */
 export interface ResolvedAdapters {
@@ -34,8 +34,20 @@ export interface ResolvedAdapters {
   captcha: CaptchaProvider
 }
 
+/** A language the Payload config registers (section 7.1). */
+export interface LocaleSpec {
+  /** Lower case, such as `en` or `fr`. */
+  code: string
+  label: string
+  /** Written right to left, as Arabic is. */
+  rtl?: boolean
+}
+
 export interface Kernel {
   readonly env: KernelEnv
+  /** The locales in use: the default, then those PT_LOCALES names, in registered order. */
+  readonly locales: readonly LocaleSpec[]
+  readonly defaultLocale: string
   /** Enabled plugin slugs, in load order. */
   readonly enabled: readonly string[]
   readonly adapters: ResolvedAdapters
@@ -60,9 +72,14 @@ export interface KernelOptions {
   env?: Env
   /** The plugin whose adapters are defaults. */
   defaultsFrom?: string
+  /**
+   * Every locale the Payload config registers. The database stores this list,
+   * so PT_LOCALES can only choose from it (D45). Defaults to English alone.
+   */
+  locales?: readonly LocaleSpec[]
+  /** Always in use, whatever PT_LOCALES says. Defaults to `en`. */
+  defaultLocale?: string
 }
-
-type GlobalSlugParam = Parameters<Payload['findGlobal']>[0]['slug']
 
 type Candidate<P extends PortName> = { plugin: string; adapter: PortAdapters[P] }
 
@@ -111,6 +128,36 @@ function checkDependencies(
           `Plugin "${m.slug}" adds fields to "${collection}", which plugin "${owner}" owns. ` +
             `Add "${owner}" to its dependsOn.`,
         )
+      }
+    }
+  }
+
+  for (const m of manifests) {
+    for (const { collection } of m.takesOver ?? []) {
+      const owner = owners.get(collection)
+      if (owner && owner !== m.slug && !(m.dependsOn ?? []).includes(owner)) {
+        throw new KernelError(
+          `Plugin "${m.slug}" takes over fields on "${collection}", which plugin "${owner}" owns. ` +
+            `Add "${owner}" to its dependsOn.`,
+        )
+      }
+    }
+  }
+
+  // Two enabled plugins cannot both write one field.
+  const takenBy = new Map<string, string>()
+  for (const m of manifests) {
+    if (!enabled.has(m.slug)) continue
+    for (const { collection, fields } of m.takesOver ?? []) {
+      for (const path of fields) {
+        const key = `${collection}.${path}`
+        const other = takenBy.get(key)
+        if (other) {
+          throw new KernelError(
+            `Plugins "${other}" and "${m.slug}" both take over "${key}". Remove one from PT_PLUGINS.`,
+          )
+        }
+        takenBy.set(key, m.slug)
       }
     }
   }
@@ -210,6 +257,34 @@ function pickLlm(
   return { adapter: match.adapter, model: modelName }
 }
 
+/** The locales in use: the default and those PT_LOCALES names, in registered order. */
+function pickLocales(
+  registered: readonly LocaleSpec[],
+  defaultLocale: string,
+  chosen: readonly string[],
+): { locales: readonly LocaleSpec[]; defaultLocale: string } {
+  const codes = registered.map((l) => l.code)
+  if (!codes.includes(defaultLocale)) {
+    throw new KernelError(
+      `The default locale "${defaultLocale}" is not registered. Registered locales: ${list(codes)}.`,
+    )
+  }
+  const unknown = chosen.filter((code) => !codes.includes(code))
+  if (unknown.length > 0) {
+    throw new KernelError(
+      `PT_LOCALES names locales that are not registered: ${list(unknown)}. ` +
+        `Registered locales: ${list(codes)}. Registering another needs a code change and a migration.`,
+    )
+  }
+  const inUse = registered.filter((l) => l.code === defaultLocale || chosen.includes(l.code))
+  // The default comes first, as the site and the admin expect.
+  const ordered = [
+    ...inUse.filter((l) => l.code === defaultLocale),
+    ...inUse.filter((l) => l.code !== defaultLocale),
+  ]
+  return { locales: Object.freeze(ordered), defaultLocale }
+}
+
 export function createKernel(options: KernelOptions): Kernel {
   const env = readKernelEnv(options.env)
   const defaultsFrom = options.defaultsFrom ?? 'core'
@@ -230,6 +305,11 @@ export function createKernel(options: KernelOptions): Kernel {
   }
   const enabledSet = new Set(env.plugins)
   checkDependencies(manifests, enabledSet)
+  const { locales, defaultLocale } = pickLocales(
+    options.locales ?? [{ code: 'en', label: 'English' }],
+    options.defaultLocale ?? 'en',
+    env.locales,
+  )
 
   const adapters: ResolvedAdapters = Object.freeze({
     verification: pickOne(
@@ -301,23 +381,16 @@ export function createKernel(options: KernelOptions): Kernel {
     const portList = Object.entries(ports())
       .map(([port, ids]) => `${port}=${ids.length ? ids.join('+') : 'none'}`)
       .join(' ')
-    return `PromiseTracker plugins=${enabled.join(',')} ${portList}`
+    const localeList = locales.map((l) => l.code).join(',')
+    return `PromiseTracker plugins=${enabled.join(',')} locales=${localeList} ${portList}`
   }
 
   const settingsFor = async (
     payload: Payload,
     slug: string,
   ): Promise<Readonly<Record<string, unknown>>> => {
-    // The settings global exists only once a plugin declares settings.
-    const globalSlugs: readonly string[] = payload.config.globals.map((g) => g.slug)
-    if (!globalSlugs.includes(SETTINGS_GLOBAL)) return {}
-    // The kernel cannot see the app's generated global names, so it names this
-    // one through Payload's own parameter type. Settings hold credentials, and
-    // the kernel reads them as the system.
-    const settings = await payload.findGlobal({
-      slug: SETTINGS_GLOBAL as GlobalSlugParam,
-      overrideAccess: true,
-    })
+    // Read once and reused, so an adapter call does not cost a database read.
+    const settings = await readSettings(payload)
     const own: unknown = Reflect.get(settings, slug)
     return own && typeof own === 'object' ? (own as Record<string, unknown>) : {}
   }
@@ -357,6 +430,8 @@ export function createKernel(options: KernelOptions): Kernel {
 
   return Object.freeze({
     env,
+    locales,
+    defaultLocale,
     enabled: Object.freeze(enabled),
     adapters,
     payloadPlugins: Object.freeze(payloadPlugins),

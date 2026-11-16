@@ -1,17 +1,25 @@
 import type {
+  ImportRow,
   LLMProvider,
+  LLMResult,
   PluginManifest,
   SearchProvider,
+  StructuredImporter,
+  VerdictUpdate,
   VerificationProvider,
 } from '@promisetracker/kernel'
 import {
   applyManifest,
   createKernel,
   definePromiseTrackerPlugin,
+  forgetSettings,
   KernelError,
   pluginRoute,
   readEnabledPlugins,
   readKernelEnv,
+  readLocales,
+  readSettings,
+  SETTINGS_TTL_MS,
 } from '@promisetracker/kernel'
 import { corePlugin } from '@promisetracker/plugin-core'
 import { sitePlugin } from '@promisetracker/plugin-site'
@@ -64,12 +72,17 @@ describe('reading the environment', () => {
     ])
   })
 
-  it('reads the three selecting variables once, into a frozen object', () => {
-    const env = readKernelEnv({ PT_VERIFICATION: ' check ', PT_LLM_MODEL: 'google:gemini' })
+  it('reads the four selecting variables once, into a frozen object', () => {
+    const env = readKernelEnv({
+      PT_VERIFICATION: ' check ',
+      PT_LLM_MODEL: 'google:gemini',
+      PT_LOCALES: 'en, FR,fr',
+    })
     expect(env).toEqual({
       plugins: ['core', 'site'],
       verification: 'check',
       llmModel: 'google:gemini',
+      locales: ['en', 'fr'],
     })
     expect(Object.isFrozen(env)).toBe(true)
   })
@@ -589,5 +602,287 @@ describe('second review follow-ups', () => {
 
   it('freezes the adapter lists', () => {
     expect(Object.isFrozen(kernelWith([]).adapters.contentExtractor)).toBe(true)
+  })
+})
+
+describe('November review changes (#665)', () => {
+  describe('locales', () => {
+    const registered = [
+      { code: 'en', label: 'English' },
+      { code: 'fr', label: 'Français' },
+      { code: 'ar', label: 'العربية', rtl: true },
+    ]
+    const withLocales = (env: Record<string, string> = {}) =>
+      createKernel({ plugins: [corePlugin, sitePlugin], locales: registered, env })
+
+    it('reads PT_LOCALES in lower case, without repeats', () => {
+      expect(readLocales({ PT_LOCALES: ' FR , ar,fr ' })).toEqual(['fr', 'ar'])
+      expect(readLocales({})).toEqual([])
+    })
+
+    it('uses only English when PT_LOCALES is unset', () => {
+      const kernel = withLocales()
+      expect(kernel.locales.map((l) => l.code)).toEqual(['en'])
+      expect(kernel.defaultLocale).toBe('en')
+    })
+
+    it('keeps the default locale on and first, whatever PT_LOCALES says', () => {
+      expect(withLocales({ PT_LOCALES: 'ar,fr' }).locales.map((l) => l.code)).toEqual([
+        'en',
+        'fr',
+        'ar',
+      ])
+    })
+
+    it('stops on a locale that is not registered and lists the registered ones', () => {
+      expect(() => withLocales({ PT_LOCALES: 'en,sw' })).toThrow(
+        /PT_LOCALES names locales that are not registered: "sw"\. Registered locales: "en", "fr", "ar"/,
+      )
+    })
+
+    it('stops when the default locale is not registered', () => {
+      expect(() =>
+        createKernel({
+          plugins: [corePlugin, sitePlugin],
+          locales: registered,
+          defaultLocale: 'pt',
+        }),
+      ).toThrow('The default locale "pt" is not registered')
+    })
+
+    it('names the locales in the summary line', () => {
+      expect(withLocales({ PT_LOCALES: 'fr' }).summary()).toContain('locales=en,fr')
+    })
+  })
+
+  describe('taking over core fields', () => {
+    const claims: CollectionConfig = {
+      slug: 'claims',
+      fields: [
+        { name: 'title', type: 'text' },
+        {
+          type: 'row',
+          fields: [
+            {
+              name: 'verification',
+              type: 'group',
+              fields: [
+                { name: 'verdict', type: 'text', access: { read: () => true } },
+                { name: 'rationale', type: 'textarea' },
+              ],
+            },
+          ],
+        },
+      ],
+    }
+    const config = (): Config => ({ ...baseConfig(), collections: [claims] })
+    const checker: PluginManifest = {
+      slug: 'checker',
+      version: '0.0.0',
+      order: 50,
+      takesOver: [{ collection: 'claims', fields: ['verification.verdict'] }],
+    }
+    const verdictIn = (c: Config): Field => {
+      const row = collection(c, 'claims').fields.find((f) => f.type === 'row')
+      const group = fieldNamed(row && 'fields' in row ? row.fields : [], 'verification')
+      return fieldNamed('fields' in group ? group.fields : [], 'verdict')
+    }
+    const superAdmin = { id: 'u1', roles: ['super-admin'] }
+
+    it('makes the field read-only to everyone but a super-admin while enabled', () => {
+      const verdict = verdictIn(applyManifest(config(), checker, true))
+      expect(verdict).toMatchObject({ admin: { readOnly: true } })
+      const access = 'access' in verdict ? verdict.access : undefined
+      expect(access?.update?.({ req: { user: { roles: ['reviewer'] } } } as never)).toBe(false)
+      expect(access?.update?.({ req: { user: superAdmin } } as never)).toBe(true)
+      // The field's other rules stay.
+      expect(access?.read).toBeTypeOf('function')
+    })
+
+    it('leaves other fields and a disabled plugin alone', () => {
+      const on = applyManifest(config(), checker, true)
+      const row = collection(on, 'claims').fields.find((f) => f.type === 'row')
+      const group = fieldNamed(row && 'fields' in row ? row.fields : [], 'verification')
+      expect(fieldNamed('fields' in group ? group.fields : [], 'rationale')).not.toHaveProperty(
+        'admin',
+      )
+      expect(verdictIn(applyManifest(config(), checker, false))).not.toHaveProperty('admin')
+    })
+
+    it("logs a super-admin's change by field name, without the values", () => {
+      const verdict = verdictIn(applyManifest(config(), checker, true))
+      const hook = 'hooks' in verdict ? verdict.hooks?.beforeChange?.[0] : undefined
+      const run = (user: unknown) => {
+        const warn = vi.fn()
+        hook?.({
+          req: { user, payload: { logger: { warn } } },
+          value: 'new-value',
+          previousValue: 'old-value',
+          collection: { slug: 'claims' },
+          originalDoc: { id: 'c1' },
+        } as never)
+        return warn
+      }
+      const warn = run(superAdmin)
+      expect(warn).toHaveBeenCalledOnce()
+      const entry = JSON.stringify(warn.mock.calls[0])
+      expect(entry).toContain('verification.verdict')
+      expect(entry).not.toContain('value')
+      expect(run({ roles: ['editor'] })).not.toHaveBeenCalled()
+    })
+
+    it('stops on a path that does not exist, even while the plugin is disabled', () => {
+      const typo = { ...checker, takesOver: [{ collection: 'claims', fields: ['verification.x'] }] }
+      for (const enabled of [true, false]) {
+        expect(() => applyManifest(config(), typo, enabled)).toThrow(
+          'takes over "claims.verification.x", which does not exist',
+        )
+      }
+    })
+
+    it('stops when the record type is not defined yet', () => {
+      expect(() => applyManifest(baseConfig(), checker, true)).toThrow(
+        'takes over fields on "claims", which no earlier plugin defines',
+      )
+    })
+
+    const owner = definePromiseTrackerPlugin({
+      slug: 'owner',
+      version: '0.0.0',
+      order: 20,
+      dependsOn: ['core'],
+      collections: [claims],
+    })
+    const taker = (slug: string, dependsOn: string[] = ['core', 'owner']) =>
+      plugin({
+        slug,
+        dependsOn,
+        takesOver: [{ collection: 'claims', fields: ['verification.verdict'] }],
+      })
+
+    it("stops when the record type's owner is not in dependsOn", () => {
+      expect(() => kernelWith([owner, taker('check', ['core'])])).toThrow(
+        'Plugin "check" takes over fields on "claims", which plugin "owner" owns. Add "owner" to its dependsOn.',
+      )
+    })
+
+    it('stops when two enabled plugins take over one field', () => {
+      const both = [owner, taker('check'), taker('superdesk')]
+      expect(() => kernelWith(both, enabling('owner', 'check', 'superdesk'))).toThrow(
+        'Plugins "check" and "superdesk" both take over "claims.verification.verdict"',
+      )
+      expect(() => kernelWith(both, enabling('owner', 'check'))).not.toThrow()
+    })
+  })
+
+  describe('plugin settings', () => {
+    const fake = (doc: unknown = { check: { apiKey: 'k' } }) => {
+      const findGlobal = vi.fn(async () => doc)
+      const payload = { config: { globals: [{ slug: 'settings' }] }, findGlobal }
+      return { payload: payload as unknown as Payload, findGlobal }
+    }
+
+    it('are read once and reused', async () => {
+      const { payload, findGlobal } = fake()
+      await readSettings(payload, 1_000)
+      await expect(readSettings(payload, 2_000)).resolves.toEqual({ check: { apiKey: 'k' } })
+      expect(findGlobal).toHaveBeenCalledOnce()
+    })
+
+    it('are read again after a save in this process', async () => {
+      const { payload, findGlobal } = fake()
+      await readSettings(payload, 1_000)
+      forgetSettings(payload)
+      await readSettings(payload, 1_001)
+      expect(findGlobal).toHaveBeenCalledTimes(2)
+    })
+
+    it('are read again once they are old, for a save made in another process', async () => {
+      const { payload, findGlobal } = fake()
+      await readSettings(payload, 1_000)
+      await readSettings(payload, 1_000 + SETTINGS_TTL_MS)
+      expect(findGlobal).toHaveBeenCalledTimes(2)
+    })
+
+    it('do not keep a failed read', async () => {
+      const findGlobal = vi
+        .fn<() => Promise<unknown>>()
+        .mockRejectedValueOnce(new Error('database down'))
+        .mockResolvedValueOnce({ check: {} })
+      const payload = { config: { globals: [{ slug: 'settings' }] }, findGlobal }
+      await expect(readSettings(payload as unknown as Payload, 1_000)).rejects.toThrow('down')
+      await expect(readSettings(payload as unknown as Payload, 1_001)).resolves.toEqual({
+        check: {},
+      })
+    })
+
+    it('are empty, with no read, when no plugin declares settings', async () => {
+      const findGlobal = vi.fn()
+      const payload = { config: { globals: [] }, findGlobal }
+      await expect(readSettings(payload as unknown as Payload)).resolves.toEqual({})
+      expect(findGlobal).not.toHaveBeenCalled()
+    })
+
+    it('are forgotten when the settings global is saved', () => {
+      const on = applyManifest(baseConfig(), fullManifest, true)
+      const settings = on.globals?.find((g) => g.slug === 'settings')
+      expect(settings?.hooks?.afterChange).toHaveLength(1)
+    })
+
+    it("reach an adapter's context as that plugin's own group", async () => {
+      const { payload, findGlobal } = fake({ check: { apiKey: 'k' }, ai: { apiKey: 'other' } })
+      Object.assign(payload, { logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } })
+      const kernel = kernelWith([])
+      await expect(kernel.context(payload, 'check')).resolves.toMatchObject({
+        settings: { apiKey: 'k' },
+      })
+      await kernel.context(payload, 'check')
+      expect(findGlobal).toHaveBeenCalledOnce()
+    })
+  })
+
+  describe('port shapes', () => {
+    it('carries a misleading verdict, a report link and a withdrawn report', () => {
+      const update: VerdictUpdate = {
+        externalId: 'item-1',
+        verdict: 'misleading',
+        reportUrl: 'https://example.org/report',
+        withdrawn: true,
+      }
+      expect(update.verdict).toBe('misleading')
+    })
+
+    it('returns the tokens an AI call used', async () => {
+      const result: LLMResult = { output: {}, usage: { inputTokens: 10, outputTokens: 4 } }
+      const provider: LLMProvider = { ...llm('stub'), generate: async () => result }
+      const ctx = await kernelWith([]).context(
+        { config: { globals: [] }, logger: {} } as unknown as Payload,
+        'ai',
+      )
+      const request = { model: 'm', system: '', prompt: '', outputSchema: {} }
+      await expect(provider.generate(request, ctx)).resolves.toEqual(result)
+    })
+
+    it('lets an importer read rows, and nothing else', async () => {
+      const importer: StructuredImporter = {
+        id: 'csv',
+        accepts: ['text/csv'],
+        health: healthy,
+        inspect: async () => ({ headings: ['name'], sampleRows: [['Nairobi']] }),
+        rows: async function* () {
+          yield { row: 1, values: ['Nairobi'] }
+          yield { row: 2, values: ['Mombasa'] }
+        },
+      }
+      const content = { filename: 'a.csv', mimeType: 'text/csv', data: new Uint8Array() }
+      const ctx = await kernelWith([]).context(
+        { config: { globals: [] }, logger: {} } as unknown as Payload,
+        'core',
+      )
+      const read: ImportRow[] = []
+      for await (const row of importer.rows(content, ctx)) read.push(row)
+      expect(read.map((r) => r.row)).toEqual([1, 2])
+      expect(importer).not.toHaveProperty('import')
+    })
   })
 })
