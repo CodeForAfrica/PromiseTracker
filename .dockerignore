@@ -1,34 +1,13 @@
-# Exclude version control and dependency directories
+**/node_modules
+**/.next
+**/media
 .git
-.gitignore
-node_modules
-.next
-out
-build
-coverage
-temp
-old
-# Ignore local env and config overrides
-.env*
-.env.local
+.env
 .env.*
-
-# OS / editor files
-.DS_Store
-.idea
-
-# Test artifacts
-playwright-report
-blob-report
-test-results
-
-# vscode
-.vscode
-
-# Misc
-script.js
-documents
-media
+!.env.example
+docs
 old
 temp
-tests
+playwright-report
+test-results
+*.pdf

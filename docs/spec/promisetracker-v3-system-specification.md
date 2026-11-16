@@ -97,7 +97,7 @@ Out of scope for now, with room left in the design:
 | Content management and admin | Payload 4, pinned to an exact beta until 4.0 is released |
 | Database | PostgreSQL, through Payload's Postgres adapter |
 | Web framework | Next.js 16.4 or later with the App Router, React 19 |
-| Language | TypeScript 6 in strict mode, Node 24.22.1 or later |
+| Language | TypeScript 6 in strict mode with erasable syntax only, Node 24.22.3 or later |
 | File storage | Any S3-compatible store. RustFS in development |
 | Email | Not chosen yet. Brevo is the likely choice. Until then, emails go to the log |
 | Analytics | None until the production launch, then Google Analytics |
@@ -1062,7 +1062,7 @@ only from the SDK, so any section, page or the whole site can be replaced.
 | `@promisetracker/ui` | The redesign's components: atoms, cards and sections. Props only | The contract's types |
 | `apps/site` | Routes, page templates, share images | The SDK and the UI package. Never Payload |
 
-A lint rule enforces the last column.
+A Biome lint rule enforces the last column.
 
 The SDK has two transports. The local transport calls Payload in the same process with no network
 hop, and is used while the site and the platform run in one deployment. The HTTP transport calls
@@ -1590,15 +1590,24 @@ Named modules from v2 carry over, listed in Appendix B.
 |---|---|
 | Install | `pnpm i` |
 | Run locally | `pnpm dev` |
-| Start Postgres, storage and Tika | `docker compose up -d` |
+| Start Postgres, storage and Tika | `pnpm services` |
 | Create a migration | `pnpm payload migrate:create` |
-| Lint and format | `pnpm lint` |
+| Lint and format | `pnpm lint`, `pnpm format` |
 | Tests | `pnpm test` |
 | Build the image | `docker build -f docker/Dockerfile .` |
 
 `main` is the production branch. Work happens on branches and merges by pull request, with
 Conventional Commits messages. CI runs the linter, the migration check and the tests against a
 Postgres service, with only the core plugins enabled and no credentials.
+
+Biome lints and formats. Lefthook runs Biome, the type check and the unit tests before each commit,
+and the migration check and integration tests before each push. TypeScript is strict, bans `any`,
+and allows only syntax Node can strip: no enums, namespaces or parameter properties. Code uses
+Payload's generated types rather than writing its own. Every dependency version lives in one pnpm
+catalog.
+
+The root `.env` and `.env.local` serve the app, the Payload CLI, the tests and the Compose file. Compose
+host ports come from it with defaults, so a port already taken on a machine can be moved there.
 
 Payload 4 is pinned to an exact beta. Each beta upgrade gets its own branch, runs Payload's
 codemods, and passes the full test suite before merging.

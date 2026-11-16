@@ -1,0 +1,133 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!**/.next",
+      "!**/media",
+      "!**/payload-types.ts",
+      "!**/migrations/*.json",
+      "!apps/site/src/app/(payload)/admin/importMap.js",
+      "!apps/site/next-env.d.ts",
+      "!docs/spec"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "semicolons": "asNeeded",
+      "trailingCommas": "all"
+    }
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "domains": {
+      "next": "recommended",
+      "react": "recommended",
+      "test": "recommended"
+    },
+    "rules": {
+      "preset": "recommended",
+      "suspicious": {
+        "noExplicitAny": "error"
+      },
+      "style": {
+        "noNonNullAssertion": "error",
+        "useImportType": {
+          "level": "error",
+          "options": {
+            "style": "separatedType"
+          }
+        },
+        "useExportType": "error",
+        "noEnum": "error",
+        "noNamespace": "error",
+        "noParameterProperties": "error"
+      },
+      "correctness": {
+        "noUnusedImports": "error",
+        "noUnusedVariables": "error"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": [
+        "apps/site/src/**",
+        "!apps/site/src/app/(payload)/**",
+        "!apps/site/src/platform/**",
+        "!apps/site/src/instrumentation.ts"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "payload": "The site reads data through @promisetracker/sdk, never Payload.",
+                  "@payload-config": "The site reads data through @promisetracker/sdk, never Payload.",
+                  "@promisetracker/cms": "Only src/platform and src/app/(payload) may import the platform."
+                },
+                "patterns": [
+                  {
+                    "group": [
+                      "payload/**",
+                      "@payloadcms/**",
+                      "@promisetracker/cms/**",
+                      "@promisetracker/plugin-*",
+                      "@promisetracker/plugin-*/**",
+                      "**/apps/cms/**",
+                      "**/cms/src/**",
+                      "**/plugins/**"
+                    ],
+                    "message": "The site reads data through @promisetracker/sdk. Only src/platform and src/app/(payload) may import the platform."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/site/src/app/(payload)/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useImportType": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/cms/src/migrations/**"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUnusedFunctionParameters": "off"
+          }
+        }
+      }
+    }
+  ]
+}

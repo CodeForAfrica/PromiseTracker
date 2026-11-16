@@ -1,64 +1,66 @@
-# Repository Guidelines
+# Repository guidelines
 
-## Project Structure & Module Organization
+PromiseTracker v3. The system specification in `docs/spec/promisetracker-v3-system-specification.md`
+is the source of truth for behaviour. Work is tracked as issues in the "v3: version 1" milestone.
 
-- Source: `src/` (Next.js + Payload CMS)
-  - App routes: `src/app/` (frontend and admin payload segments)
-  - CMS: `src/collections/`, `src/globals/`, `src/blocks/`, `src/fields/`
-  - Utilities & libs: `src/utils/`, `src/lib/`, `src/types/`
-  - Jobs & workflows: `src/tasks/`, `src/workflows/`
-  - Config: `src/payload.config.ts`, `next.config.mjs`
-- Tests: `tests/int` (Vitest) and `tests/e2e` (Playwright)
-- Assets/media: `media/`
+## Layout
 
-## Build, Test, and Development Commands
+- `apps/site`: the Next.js app. Public routes in `src/app/(site)`. Payload's admin, its REST and
+  GraphQL routes, `/api/v1` and `/api/health` in `src/app/(payload)`.
+- `apps/cms`: the Payload config, migrations, generated types, `/api/v1` handlers and health checks.
+- `packages/kernel`, `packages/contract`, `packages/sdk`, `packages/ui`: see the README.
+- `plugins/*`: Payload plugins. Each adds its collections, globals and fields to the config.
+- `tests/unit`, `tests/int`, `tests/e2e`: Vitest unit and integration tests, and Playwright tests.
 
-- Install: `pnpm i`
-- Dev server: `pnpm dev` (Next.js + Payload; use `.env` or `.env.local`)
-- Clean dev cache: `pnpm devsafe`
-- Build: `pnpm build`; Start: `pnpm start`
-- Lint: `pnpm lint`
-- Tests (all): `pnpm test` → runs `test:int` and `test:e2e`
-- Int tests: `pnpm test:int` (Vitest, JSDOM)
-- E2E tests: `pnpm test:e2e` (Playwright, auto-starts dev server)
-- Payload types/import map: `pnpm generate:all`
-- Airtable typings: `pnpm generate:airtable` (requires `AIRTABLE_*` envs)
-- Optional: Start Apache Tika for document processing: `docker compose up -d`
+## Commands
 
-## Coding Style & Naming Conventions
+- Install: `pnpm install`. Services: `pnpm services`. Dev: `pnpm dev`.
+- Lint: `pnpm lint`. Format: `pnpm format`. Types: `pnpm typecheck`.
+- Tests: `pnpm test:unit`, `pnpm test:int` and `pnpm test:e2e`. The last two need Postgres.
+- Migrations: `pnpm payload migrate:create <name>`, then `pnpm migrate:check`.
+- After changing collections or fields: `pnpm generate`, then create a migration.
 
-- Language: TypeScript (`.ts`, `.tsx`), 2-space indent.
-- Framework: Next.js App Router; React components in `src/components/` use PascalCase.
-- Component library: MUI (Material UI v7) with Emotion; prefer MUI components and theming for UI, extending with custom components in `src/components/` as needed.
-- Linting: ESLint (`eslint.config.mjs`, Next + TS rules); Formatting: Prettier defaults.
-- Paths: Prefer TS path aliases (see `tsconfig.json`).
+## Rules
 
-## MUI Grid (v7)
+- **The site never imports Payload.** Site code reads data through `@promisetracker/sdk`. Only
+  `apps/site/src/platform` and `apps/site/src/app/(payload)` may import the platform. Biome
+  enforces this, and `tests/unit/boundary.unit.spec.ts` proves the rule works.
+- **Strict TypeScript.** No `any`, no non-null assertions, `noUncheckedIndexedAccess` and
+  `exactOptionalPropertyTypes` are on.
+- **Erasable syntax only**, so Node can strip types. No enums, namespaces or parameter
+  properties. Use `as const` objects or union types instead. Import types with `import type`.
+- **Use Payload's generated types.** Collections, globals and their documents are typed in
+  `apps/cms/src/payload-types.ts`. Do not write a second type for the same shape. Derive from the
+  generated one with `Pick`, `Omit` or an intersection when you need something narrower or wider.
+  The Zod schemas in `@promisetracker/contract` describe the public API, which the site uses. Map
+  generated types to them in one typed function, as `apps/cms/src/api/v1.ts` does.
+- **Every schema change has a committed migration.** `push` is off, in development too.
+- **Access rules apply by default.** Code that passes `overrideAccess: true` says why in a
+  comment.
+- **One version per dependency.** Versions live in the `catalog` in `pnpm-workspace.yaml`, and
+  every `package.json` refers to them with `catalog:`. Add a dependency with
+  `pnpm add <name>@catalog:` after adding it to the catalog.
+- Next.js 16 ships its own docs in `apps/site/node_modules/next/dist/docs/`. Read them before
+  relying on remembered APIs.
 
-- Docs: https://mui.com/material-ui/llms.txt
-- Use the new, stable Grid (formerly Grid v2 in MUI 6).
-  - Import: `import Grid from '@mui/material/Grid'`
-  - No `item` prop; child Grids are items by default. Use `container` on parent Grids.
-  - Breakpoints: use `size` and `offset` objects — not `xs|sm|md|lg|xl` props.
-    - Example: `<Grid size={{ xs: 12, md: 6 }} />`
-    - Offset: `<Grid offset={{ md: 1 }} />`
-  - Spacing: prefer `rowSpacing` and `columnSpacing` for responsive control.
-- Do NOT use `Grid2` imports. If you must use the legacy API, it lives at `@mui/material/GridLegacy`.
+## Style
 
-## Testing Guidelines
+- Biome formats and lints: two spaces, single quotes, no semicolons, 100 columns.
+- Components in PascalCase. Files that hold one component are named after it.
+- Comments say why, not what.
 
-- Frameworks: Vitest (integration) and Playwright (e2e).
-- Naming: `tests/int/**/*.int.spec.ts`, `tests/e2e/**/*.e2e.spec.ts`.
-- Run locally before PR: `pnpm test:int && pnpm test:e2e`.
-- Write tests for new collections, fields, and critical flows.
+## Commits and pull requests
 
-## Commit & Pull Request Guidelines
+- Conventional Commits: `feat(scope): ...`, `fix(scope): ...`, `docs: ...`, `build(deps): ...`.
+- Lefthook runs Biome, the type check and the unit tests before each commit, and the migration
+  check and integration tests before each push.
+- Pull requests link their issue, list environment or config changes, note migrations, and include
+  screenshots for UI changes.
 
-- Commit style follows Conventional Commits seen in history: `feat(...)`, `fix(...)`, `refactor(...)`, `build(deps)`, etc.
-- PRs: clear description, link issues, include screenshots for UI, list env/config changes, and note any migrations.
-- CI hygiene: ensure `pnpm lint` and all tests pass; update docs when behavior changes.
+## Configuration
 
-## Security & Configuration Tips
-
-- Env files: `.env.example` documents required keys (Airtable, CheckDesk, Gemini). Do not commit secrets.
-- Engines: Node `^18.20.2 || >=20.9.0`, PNPM `^9 || ^10`.
+- The root `.env` and `.env.local` serve the site, the Payload CLI, the tests and Compose, with
+  `.env.local` winning. Run Compose through `pnpm services` or `scripts/compose.mjs` so it reads
+  them. `.env.example` documents every key. Never commit secrets.
+- Host ports for Compose services are set in `.env` (`PT_POSTGRES_PORT` and so on).
+  `DATABASE_URL` and `S3_ENDPOINT` are built from them.

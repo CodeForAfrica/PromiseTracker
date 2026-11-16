@@ -1,0 +1,22 @@
+# Git hooks. Installed by `pnpm install` through the `prepare` script.
+# Skip once in an emergency with LEFTHOOK=0 git commit ...
+
+pre-commit:
+  parallel: true
+  jobs:
+    - name: format and lint
+      glob: "*.{js,jsx,ts,tsx,mjs,cjs,json,jsonc,css}"
+      run: pnpm exec biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
+      stage_fixed: true
+    - name: typecheck
+      run: pnpm typecheck
+    - name: unit tests
+      run: pnpm test:unit
+
+pre-push:
+  jobs:
+    # These need Postgres. Start it with: docker compose -f docker/compose.yaml up -d
+    - name: migrations match the config
+      run: pnpm migrate:check
+    - name: integration tests
+      run: pnpm test:int

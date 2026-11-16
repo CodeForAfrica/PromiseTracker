@@ -1,60 +1,38 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Dependencies
+node_modules/
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
-.yarn/install-state.gz
+# Next.js and build output
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
 
-/.idea/*
-!/.idea/runConfigurations
+# Uploaded files when no S3 bucket is set
+media/
 
-# testing
-/coverage
+# Tests
+coverage/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
 
-# next.js
-/.next/
-/out/
+# Environment. Only .env.example is committed.
+.env
+.env.*
+!.env.example
 
-# production
-/build
-
-# misc
+# Editors and OS
 .DS_Store
+.idea/*
+!.idea/runConfigurations
 *.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# local env files
-.env*.local
-
-# vercel
 .vercel
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-
-.env
-
-/media
-media2
-
-# Playwright
-node_modules/
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
+# Local scratch files
 temp
-# Sentry Config File
-.env.sentry-build-plugin
-
-script.js
 old
+script.js
 script2.ts
 countries.json
 

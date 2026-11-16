@@ -1,0 +1,37 @@
+{
+  "name": "@promisetracker/cms",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./config": "./src/payload.config.ts",
+    "./env": "./src/env.ts"
+  },
+  "scripts": {
+    "payload": "payload",
+    "generate": "payload generate:types && payload generate:importmap",
+    "migrate:check": "node scripts/migrate-check.mjs",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "catalog:",
+    "@payloadcms/db-postgres": "catalog:",
+    "@payloadcms/richtext-lexical": "catalog:",
+    "@payloadcms/storage-s3": "catalog:",
+    "@promisetracker/contract": "workspace:*",
+    "@promisetracker/kernel": "workspace:*",
+    "@promisetracker/plugin-core": "workspace:*",
+    "@promisetracker/plugin-site": "workspace:*",
+    "@promisetracker/sdk": "workspace:*",
+    "graphql": "catalog:",
+    "payload": "catalog:",
+    "pg": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/pg": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}
