@@ -14,6 +14,7 @@ import { definePlugin } from 'payload'
 
 import { KernelError } from './errors'
 import type { AdapterContext, PortAdapters, PortName } from './ports'
+import { forgetSettings, SETTINGS_GLOBAL } from './settings'
 
 type JobsConfig = NonNullable<Config['jobs']>
 type TaskConfig = NonNullable<JobsConfig['tasks']>[number]
@@ -45,6 +46,13 @@ export interface PluginManifest {
    * after this plugin, must be optional, and are read-only in the admin.
    */
   extend?: readonly { collection: string; fields: readonly Field[] }[]
+  /**
+   * Fields on another plugin's record type that this plugin writes while it is
+   * enabled, as dotted paths such as `verification.verdict` (section 4.5).
+   * They become read-only in the admin to everyone but a super-admin. The
+   * fields stay where they are, so disabling the plugin hands them back.
+   */
+  takesOver?: readonly { collection: string; fields: readonly string[] }[]
   /** Adapters, by port. */
   provides?: { readonly [P in PortName]?: readonly PortAdapters[P][] }
   tasks?: readonly TaskConfig[]
@@ -64,8 +72,6 @@ export interface PromiseTrackerPlugin {
   /** The Payload plugin, built for whether this plugin is enabled. */
   toPayloadPlugin(enabled: boolean): Plugin
 }
-
-export const SETTINGS_GLOBAL = 'settings'
 
 /** Super-admins arrive with roles in V1-05. Until then nobody passes. */
 export const isSuperAdmin = (user: PayloadRequest['user']): boolean => {
@@ -253,6 +259,129 @@ function extendCollections(
   return result
 }
 
+/** Logs a super-admin's change to one field a plugin has taken over. */
+const logTakenOverChange =
+  (slug: string, path: string): FieldHook =>
+  ({ req, value, previousValue, collection, originalDoc }) => {
+    if (!isSuperAdmin(req.user)) return value
+    if (JSON.stringify(value) !== JSON.stringify(previousValue)) {
+      req.payload.logger.warn({
+        msg: `Super-admin override of a field taken over by plugin "${slug}"`,
+        collection: collection?.slug,
+        id: originalDoc?.id,
+        user: req.user?.id,
+        fields: [path],
+      })
+    }
+    return value
+  }
+
+type Guarded = {
+  access?: Record<string, unknown>
+  admin?: Record<string, unknown>
+  hooks?: { beforeChange?: FieldHook[] }
+}
+
+/** A core field as it is while a plugin has taken it over. Its other rules stay. */
+function takenOver(slug: string, path: string, field: Field): Field {
+  const current = field as Field & Guarded
+  return {
+    ...current,
+    access: { ...current.access, update: superAdminOnly },
+    admin: { ...current.admin, readOnly: true },
+    hooks: {
+      ...current.hooks,
+      beforeChange: [...(current.hooks?.beforeChange ?? []), logTakenOverChange(slug, path)],
+    },
+  } as Field
+}
+
+/**
+ * Replaces the field at a dotted path, or returns `undefined` when there is
+ * none. A group or a named tab is one step of the path. Rows, collapsibles and
+ * unnamed tabs hold fields without adding a step. Fields inside arrays and
+ * blocks cannot be named this way.
+ */
+function replaceAtPath(
+  fields: readonly Field[],
+  path: readonly string[],
+  replace: (field: Field) => Field,
+): Field[] | undefined {
+  const [head, ...rest] = path
+  if (head === undefined) return undefined
+  let found = false
+  const next = fields.map((field): Field => {
+    if (found) return field
+    if (field.type === 'tabs') {
+      const tabs = field.tabs.map((tab) => {
+        if (found) return tab
+        const named = 'name' in tab && typeof tab.name === 'string'
+        if (named && tab.name !== head) return tab
+        const replaced = replaceAtPath(tab.fields, named ? rest : path, replace)
+        if (!replaced) return tab
+        found = true
+        return { ...tab, fields: replaced }
+      })
+      return found ? ({ ...field, tabs } as Field) : field
+    }
+    if ('name' in field && typeof field.name === 'string') {
+      if (field.name !== head) return field
+      if (rest.length === 0) {
+        found = true
+        return replace(field)
+      }
+      if (field.type !== 'group') return field
+      const replaced = replaceAtPath(field.fields, rest, replace)
+      if (!replaced) return field
+      found = true
+      return { ...field, fields: replaced } as Field
+    }
+    if ('fields' in field && Array.isArray(field.fields)) {
+      const replaced = replaceAtPath(field.fields, path, replace)
+      if (!replaced) return field
+      found = true
+      return { ...field, fields: replaced } as Field
+    }
+    return field
+  })
+  return found ? next : undefined
+}
+
+/**
+ * Applies `takesOver`. A path that names nothing stops start-up whether or not
+ * the plugin is enabled, so a typo shows up before the plugin is switched on.
+ */
+function takeOverFields(
+  collections: readonly CollectionConfig[],
+  manifest: PluginManifest,
+  enabled: boolean,
+): CollectionConfig[] {
+  const result = [...collections]
+  for (const { collection, fields } of manifest.takesOver ?? []) {
+    const index = result.findIndex((c) => c.slug === collection)
+    let target = result[index]
+    if (!target) {
+      throw new KernelError(
+        `Plugin "${manifest.slug}" takes over fields on "${collection}", which no earlier plugin defines. ` +
+          'Load the plugin that owns it first.',
+      )
+    }
+    for (const path of fields) {
+      const replaced = replaceAtPath(target.fields, path.split('.'), (field) =>
+        takenOver(manifest.slug, path, field),
+      )
+      if (!replaced) {
+        throw new KernelError(
+          `Plugin "${manifest.slug}" takes over "${collection}.${path}", which does not exist.`,
+        )
+      }
+      target = { ...target, fields: replaced }
+    }
+    if (enabled) result[index] = target
+  }
+  return result
+}
+
 /**
  * A disabled plugin's tasks stay registered, because Payload builds the jobs
  * table from task names, but they refuse to run, have no schedule, and fail
@@ -301,6 +430,15 @@ function addSettings(globals: readonly GlobalConfig[], manifest: PluginManifest,
           read: ({ req }) => isSuperAdmin(req.user),
           update: ({ req }) => isSuperAdmin(req.user),
         },
+        // The kernel reuses the settings it read. A save here makes it read again.
+        hooks: {
+          afterChange: [
+            ({ doc, req }) => {
+              forgetSettings(req.payload)
+              return doc
+            },
+          ],
+        },
         fields: [group],
       } satisfies GlobalConfig,
     ]
@@ -322,8 +460,8 @@ export function applyManifest(config: Config, manifest: PluginManifest, enabled:
 
   const next: Config = {
     ...config,
-    collections: extendCollections(
-      [...(config.collections ?? []), ...ownCollections],
+    collections: takeOverFields(
+      extendCollections([...(config.collections ?? []), ...ownCollections], manifest, enabled),
       manifest,
       enabled,
     ),

@@ -41,7 +41,8 @@ export interface SourceContent {
 
 // Verification
 
-export type Verdict = 'verified' | 'false' | 'unverified'
+/** The fact-checker's finding (section 7.5). Only `verified` claims are published. */
+export type Verdict = 'verified' | 'false' | 'misleading' | 'unverified'
 
 export interface ClaimForVerification {
   id: string
@@ -57,6 +58,14 @@ export interface VerdictUpdate {
   verdict: Verdict
   rationale?: string
   verifiedAt?: string
+  /** The published report, when the outside system has one. */
+  reportUrl?: string
+  /**
+   * The outside system took back a verdict it had published, as when a Check
+   * report is paused. The core then holds the claim and tells an editor, which
+   * a claim that is simply not verified yet does not need.
+   */
+  withdrawn?: boolean
 }
 
 export interface VerificationProvider extends Adapter {
@@ -100,19 +109,27 @@ export interface ContentExtractor extends Adapter {
   ): Promise<{ text: string; pageCount: number | null; metadata: Record<string, unknown> }>
 }
 
+/** One row of a spreadsheet, with its number in the file for error messages. */
+export interface ImportRow {
+  /** Counted from 1, where 1 is the first row after the headings. */
+  row: number
+  /** One value per heading, in the headings' order. */
+  values: readonly string[]
+}
+
+/**
+ * Reads a spreadsheet. It never saves anything: the core maps rows to records,
+ * previews and commits, once for every file format (section 9.6, D49).
+ */
 export interface StructuredImporter extends Adapter {
   readonly accepts: readonly string[]
-  /** Reads headings and sample rows without saving anything. */
+  /** Reads headings and sample rows. */
   inspect(
     content: SourceContent,
     ctx: AdapterContext,
   ): Promise<{ headings: string[]; sampleRows: string[][] }>
-  /** Creates or updates records, mapping each record field to a column heading. */
-  import(
-    content: SourceContent,
-    mapping: Readonly<Record<string, string>>,
-    ctx: AdapterContext,
-  ): Promise<{ created: number; updated: number; errors: { row: number; message: string }[] }>
+  /** Every row after the headings, in order. */
+  rows(content: SourceContent, ctx: AdapterContext): AsyncIterable<ImportRow>
 }
 
 // AI
@@ -125,9 +142,16 @@ export interface LLMRequest {
   outputSchema: Readonly<Record<string, unknown>>
 }
 
+export interface LLMResult {
+  /** The structured output. The caller validates it against the schema it sent. */
+  output: unknown
+  /** Tokens used, which extractions record (section 7.8). */
+  usage: { inputTokens: number; outputTokens: number }
+}
+
 export interface LLMProvider extends Adapter {
   readonly models: readonly string[]
-  generate(request: LLMRequest, ctx: AdapterContext): Promise<unknown>
+  generate(request: LLMRequest, ctx: AdapterContext): Promise<LLMResult>
 }
 
 // Public site

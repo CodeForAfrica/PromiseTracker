@@ -812,6 +812,9 @@ so the same file is stored once.
 default), and each plugin's credentials. Only super-admins can read it, and every credential is
 encrypted. Environment variables choose which plugins run. The database holds what they need.
 
+The kernel reads the settings once and reuses them, so an adapter call costs no database read. A
+change takes effect at once in the process that saved it, and within 30 seconds in the others.
+
 ### 7.11 Indexes and search
 
 | Record type | Indexes |
