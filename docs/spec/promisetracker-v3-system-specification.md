@@ -33,8 +33,7 @@ The product specification explains the same system without the technical detail.
 21. Appendix A: items to confirm
 22. Appendix B: what v2 does today
 
-The word CONFIRM marks a statement that someone must check against a running system before
-building on it. Appendix A lists every one.
+Appendix A lists the details still to be settled, and when each is needed.
 
 ## 1. Overview
 
@@ -99,14 +98,16 @@ Out of scope for now, with room left in the design:
 | Database | PostgreSQL, through Payload's Postgres adapter |
 | Web framework | Next.js 16.4 or later with the App Router, React 19 |
 | Language | TypeScript 6 in strict mode, Node 24.22.1 or later |
-| File storage | Any S3-compatible store |
+| File storage | Any S3-compatible store. RustFS in development |
+| Email | Not chosen yet. Brevo is the likely choice. Until then, emails go to the log |
+| Analytics | None until the production launch, then Google Analytics |
 | Document reading | Apache Tika, self-hosted |
 | AI | Vercel AI SDK, behind the LLM provider port |
 | Background jobs | Payload Jobs |
 | Styling of the public site | Tailwind CSS 4 with theme tokens |
 | Error tracking | Sentry |
 | Tests | Vitest and Playwright |
-| Packaging | One Docker image |
+| Packaging | One Docker image, published to Docker Hub as `codeforafrica/promisetracker-v3` |
 | Licence | MIT |
 
 ### 1.5 Rules the design must keep
@@ -229,9 +230,9 @@ job has exactly one adapter. Ownership rules make sure two systems never write t
 | ContentExtractor | Turning a file into text | One or more, by file type | `plaintext` | `tika`, `ocr` |
 | StructuredImporter | Turning spreadsheet rows into records | Any number | `csv`, `xlsx` | `sheets` |
 | LLMProvider | Which AI model proposes candidates | Many installed, one selected | None | `google`, `openai`, `anthropic` and others |
-| SearchProvider | Full-text and place search | Exactly one | `postgres` | A dedicated search engine |
+| SearchProvider | Full-text and place search | Exactly one | `payload-search`, on Payload's search plugin | A dedicated search engine |
 | NewsletterProvider | Newsletter sign-ups | Exactly one | `local`, which stores confirmed sign-ups | Mailing-list services |
-| AnalyticsProvider | Counting visits and searches | Exactly one | `none` | Privacy-respecting analytics tools |
+| AnalyticsProvider | Counting visits and searches | Exactly one | `none` | `google-analytics`, after the production launch |
 | CaptchaProvider | Stopping bots on public forms | Exactly one | `local`: a proof-of-work check, a hidden field and rate limits | Turnstile, hCaptcha |
 
 Database, file storage, email and the admin's web framework are replaced through Payload's own
@@ -416,6 +417,35 @@ mutation createProjectMedia($input: CreateProjectMediaInput!) {
 - Poll: every 15 minutes a job searches Check for items with a published report, 100 per page,
   and reconciles them. A push can be lost during a deploy, and the poll catches it.
 
+The webhook body is the one v2 already handles. The fields the plugin reads:
+
+```json
+{
+  "data": { "id": "annotation id" },
+  "object": {
+    "annotation_type": "report_design",
+    "annotated_type": "ProjectMedia",
+    "annotated_id": 12345,
+    "data": {
+      "state": "published",
+      "options": {
+        "title": "...",
+        "description": "...",
+        "published_article_url": "..."
+      }
+    }
+  }
+}
+```
+
+The item id is the base64 of `ProjectMedia/` followed by `annotated_id`. This is the same id that
+`createProjectMedia` returns, so it matches `check.itemId` directly. The body carries more fields
+than these. Check's source and wiki describe them, and the plugin's author reads them when
+building it:
+
+- https://github.com/meedan/check
+- https://github.com/meedan/check/wiki
+
 ```graphql
 query PublishedReports($query: String!) {
   search(query: $query) {
@@ -426,9 +456,9 @@ query PublishedReports($query: String!) {
 
 The `query` variable is `{"report_status": ["published"]}`.
 
-**From Check status to verdict.** Each workspace defines its own statuses, so the plugin's
-settings map each one to a verdict. At start-up it reads the workspace's statuses and refuses to
-start if one is unmapped.
+**From Check status to verdict.** Statuses are managed in Check, and each workspace defines its
+own. The plugin never creates or changes them. Its settings map each status to a verdict. At
+start-up it reads the workspace's statuses and refuses to start if one is unmapped.
 
 | Check status, default workspace | Verdict |
 |---|---|
@@ -440,7 +470,7 @@ start if one is unmapped.
 |---|---|
 | None, or not published | In review. No change |
 | `published` | Apply the mapped verdict, copy the report text as the rationale, set the date |
-| `paused` | Set the verdict to unverified, set the claim to hold, notify an editor |
+| `paused` | Set the verdict to unverified, set the claim to hold, notify an editor. Check sends `paused` when a report is unpublished |
 
 **When Check fails.**
 
@@ -502,7 +532,7 @@ in PromiseTracker. For most teams, a one-off spreadsheet import is simpler.
 
 | Port | Default adapter | Behaviour |
 |---|---|---|
-| SearchProvider | `postgres` | Full-text search with ranking, accent-insensitive and typo-tolerant matching, and place lookups, described in section 16.2 |
+| SearchProvider | `payload-search` | Payload's search plugin, with accent-insensitive and typo-tolerant matching and place lookups, described in section 7.11 |
 | NewsletterProvider | `local` | Stores sign-ups in the database and sends a confirmation email. Nothing is subscribed until confirmed |
 | AnalyticsProvider | `none` | Sends nothing. Searches with no results are still logged locally, section 18 |
 | CaptchaProvider | `local` | A proof-of-work check in the browser, a hidden trap field and rate limits. No outside service |
@@ -770,7 +800,7 @@ so the same file is stored once.
 default), and each plugin's credentials. Only super-admins can read it, and every credential is
 encrypted. Environment variables choose which plugins run. The database holds what they need.
 
-### 7.11 Indexes and search columns
+### 7.11 Indexes and search
 
 | Record type | Indexes |
 |---|---|
@@ -782,8 +812,19 @@ encrypted. Environment variables choose which plugins run. The database holds wh
 | Documents | Processing status and last attempt |
 | Submissions | Status. Claim |
 
-Claims, actors, areas and topics each have a full-text search column per language, and actor and
-area names have a trigram index for misspellings. Section 16.2 covers the Postgres extensions.
+Search uses Payload's search plugin, `@payloadcms/plugin-search`. It keeps a `search` collection
+in step with claims, actors, areas and topics:
+
+- Each record gets one search entry per language. The title is localized.
+- A record is indexed in a language only when it is published in that language. The plugin's
+  `skipSync` applies the publishing rules in section 8, and a record that leaves the public site
+  leaves the index.
+- Priorities put areas and actors above claims, so a place search lists who represents it first.
+- `beforeSync` adds the country, the kind of record and its link, so results need no second
+  query.
+- The search title has a trigram index for misspellings, and queries use `unaccent`. Section
+  16.2 covers the Postgres extensions.
+- An administrator can rebuild the index from the admin with the plugin's reindex action.
 
 ## 8. Publishing rules
 
@@ -1215,7 +1256,7 @@ stored, credentials are encrypted, and staff identities stay private.
 |---|---|
 | Public site and API read routes | None |
 | Public forms | Captcha and rate limits |
-| Admin | Signed-in session, with Payload 4 refresh tokens |
+| Admin | Payload's default sign-in, email and password, with Payload 4 refresh tokens |
 | Plugin routes | A shared secret or signature per route |
 | AI assistant access through Payload's MCP plugin | Signed in through its built-in OAuth server, limited to the user's own permissions. Never public |
 
@@ -1316,7 +1357,7 @@ details, newsletter sign-ups and analytics.
 
 - A privacy notice explains what is collected and why.
 - Newsletter sign-ups are confirmed by email before use.
-- Analytics, when enabled, sets no cookies and stores nothing that identifies a person.
+- Analytics is off until the production launch.
 - Submitter contact details are deleted on request and never published without consent.
 
 | Data | Kept for |
@@ -1356,6 +1397,8 @@ can fix goes to Sentry.
 | A document fails after all retries | Yes, to the uploader |
 | New submissions | A daily digest to moderators |
 
+Emails go through Payload's email adapter. Until a provider is chosen, they go to the log.
+
 ## 15. Testing
 
 | Kind | Share | Covers |
@@ -1387,8 +1430,14 @@ One Docker image holds the whole application.
 | Worker | The same image with the worker command | Background jobs |
 
 Postgres and file storage are outside the image. Tika runs in its own container when its plugin
-is enabled. A Compose file brings up the image, a worker, Postgres, a local S3-compatible store
-and Tika, so anyone can run the whole stack on one machine.
+is enabled. A Compose file brings up the image, a worker, Postgres, RustFS as the S3-compatible
+store, and Tika, so anyone can run the whole stack on one machine.
+
+Until the production launch, every environment runs on Docker, the database included.
+Production may move the database to a managed host.
+
+Images are published to Docker Hub as `codeforafrica/promisetracker-v3`, following v2's
+`codeforafrica/promisetracker-v2`.
 
 New versions roll out without downtime. An instance receives traffic only after its readiness
 check passes. Database migrations run before the new version serves traffic.
@@ -1400,7 +1449,7 @@ check passes. Database migrations run before the new version serves traffic.
 - Two extensions are required, and start-up checks that both are installed:
   - `unaccent`, so "Senegal" finds "Sénégal". Payload ships an operator for it.
   - `pg_trgm`, so a misspelt name still matches.
-- Full-text search uses a column per language with a GIN index.
+- Search runs on Payload's search plugin, section 7.11.
 - "Who represents this place" walks the area tree up and down in one recursive query.
 - Rating counts by actor, area, topic and country are grouped queries, cached and refreshed after
   a cascade or a rating change.
@@ -1408,7 +1457,8 @@ check passes. Database migrations run before the new version serves traffic.
 - Read replicas can be added for heavy traffic. The Postgres adapter supports them.
 - PostGIS is optional. It would add "find my area from my location" later.
 
-CONFIRM that the chosen managed Postgres provider offers both required extensions.
+Until production, Postgres runs from the official Docker image, which includes both extensions.
+A managed host for production must offer both, plus point-in-time recovery.
 
 ### 16.3 Health checks
 
@@ -1446,9 +1496,10 @@ check, and searches that found nothing.
 
 ### 16.5 Backups
 
-The managed database keeps point-in-time recovery, so at most a few minutes of data can be lost,
-plus a daily full backup kept for 30 days. File storage keeps earlier versions of each file in a
-second region. The target is recovery within 4 hours. The team tests a restore every quarter.
+These targets apply from the production launch. The database keeps point-in-time recovery, so at
+most a few minutes of data can be lost, plus a daily full backup kept for 30 days. File storage
+keeps earlier versions of each file in a second region. The target is recovery within 4 hours.
+The team tests a restore every quarter.
 
 ### 16.6 A new installation
 
@@ -1502,7 +1553,7 @@ These come from the product definition. Each has a number that would make us cha
 | Time since each claim was last reviewed | Rating reviews and updates | If half the record has not been looked at in a year, the site is stale. Reported to the team monthly |
 | Searches that found nothing | The search log | Tests whether location search works, and lists missing places |
 | Submissions received, and how many changed the record | Submissions | Few coming in means the form is invisible. Many with no changes means noise or a backlog |
-| First visits by page type | The analytics port | Tests whether most visitors arrive from shared links |
+| First visits by page type | The analytics port, from the production launch | Tests whether most visitors arrive from shared links |
 | Links from news sites | Checked by hand each quarter | Whether journalists use it |
 | Before launch: every published claim has a source and a topic, and every claim with a "needs a deadline" rating has one | Publishing checks | These are enforced, so the check is that nothing is waiting on them |
 
@@ -1603,6 +1654,13 @@ codemods, and passes the full test suite before merging.
 | D35 | Version 1 matches what v2 does today, with verification in the built-in queue or Check |
 | D36 | Short address letters: `/e/` for actors, `/p/` for claims |
 | D37 | v3 lives in this repository and replaces v2 on `main`. v2 is kept on a branch and a tag |
+| D38 | Until production, everything runs on Docker: the app, the worker, Postgres, RustFS and Tika. Production may use a managed database |
+| D39 | Images go to Docker Hub as `codeforafrica/promisetracker-v3` |
+| D40 | Email is deferred. Brevo is the likely provider |
+| D41 | Google Analytics, switched on after the production launch |
+| D42 | Check statuses are managed in Check. The plugin maps them and starts from v2's webhook handling |
+| D43 | Editors sign in with Payload's default email and password authentication |
+| D44 | Search uses Payload's search plugin |
 
 ### 20.2 Why
 
@@ -1653,31 +1711,23 @@ the platform.
 
 ## 21. Appendix A: items to confirm
 
-### Meedan Check, version 1
+### Before the production launch
 
-1. The workspace's status list, and the verdict each maps to.
-2. That the workspace can send webhooks to an outside address, and which events it sends.
-3. The report state names, `published` and `paused`, in the current Check version.
-
-### Infrastructure
-
-4. A managed Postgres provider that offers `unaccent` and `pg_trgm`.
-5. Where the Docker image runs.
-6. The email provider for notifications and newsletter confirmations.
-7. Editor sign-in: passwords only, or single sign-on with Code for Africa accounts, and whether
-   super-admins need a second factor.
-8. The analytics tool, if any, for version 1.
-9. The volume at which Postgres full-text search stops being enough.
+1. The production host for the image and the worker.
+2. Whether the database moves to a managed host. If it does, the host must offer `unaccent`,
+   `pg_trgm` and point-in-time recovery.
+3. The production S3-compatible store, with a second region for copies.
+4. The email provider. Brevo is the likely choice.
 
 ### Superdesk, later
 
-10. The Content API prefix, whether the Production API runs, the content profile, the vocabulary
-    and desk ids, a service account, whether HTTP push is available, and the Superdesk version.
+5. The Content API prefix, whether the Production API runs, the content profile, the vocabulary
+   and desk ids, a service account, whether HTTP push is available, and the Superdesk version.
 
 ### Maps, version 2
 
-11. The map tile provider and its licence, and the source of boundary data and its attribution
-    rules.
+6. The map tile provider and its licence, and the source of boundary data and its attribution
+   rules.
 
 ## 22. Appendix B: what v2 does today
 
