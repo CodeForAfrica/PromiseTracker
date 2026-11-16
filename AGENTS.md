@@ -69,20 +69,20 @@ Issue #672 gives the build order and the owner of each issue.
 
 Where things are:
 
-| What | Where |
-|---|---|
-| Ports, the plugin helper, start-up checks | `packages/kernel/src` |
-| Record types and default adapters | `plugins/core/src` |
-| Settings for the default public site | `plugins/site/src` |
-| Payload config, migrations, generated types | `apps/cms/src` |
-| `/api/v1` handlers | `apps/cms/src/api/v1.ts` |
-| Public API response schemas | `packages/contract/src` |
-| The typed client the site uses | `packages/sdk/src` |
-| Components, props only | `packages/ui/src` |
-| Public pages | `apps/site/src/app/(site)` |
+| What                                             | Where                         |
+| ------------------------------------------------ | ----------------------------- |
+| Ports, the plugin helper, start-up checks        | `packages/kernel/src`         |
+| Record types and default adapters                | `plugins/core/src`            |
+| Settings for the default public site             | `plugins/site/src`            |
+| Payload config, migrations, generated types      | `apps/cms/src`                |
+| `/api/v1` handlers                               | `apps/cms/src/api/v1.ts`      |
+| Public API response schemas                      | `packages/contract/src`       |
+| The typed client the site uses                   | `packages/sdk/src`            |
+| Components, props only                           | `packages/ui/src`             |
+| Public pages                                     | `apps/site/src/app/(site)`    |
 | Admin, REST, `/api/v1`, health and plugin routes | `apps/site/src/app/(payload)` |
-| Registered languages | `apps/cms/src/locales.ts` |
-| Every environment key | `.env.example` |
+| Registered languages                             | `apps/cms/src/locales.ts`     |
+| Every environment key                            | `.env.example`                |
 
 A new plugin is a package in `plugins/`. It is also added to `firstPartyPlugins` in
 `apps/cms/src/kernel.ts`, to `transpilePackages` in `apps/site/next.config.ts`, and to the `COPY`
