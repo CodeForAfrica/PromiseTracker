@@ -401,3 +401,141 @@ describe('plugin routes', () => {
     expect((await route(new Request('http://x/api/plugins/check/webhook'))).status).toBe(200)
   })
 })
+
+describe('review follow-ups', () => {
+  const extendWith = (fields: Field[]): PluginManifest => ({
+    slug: 'ext',
+    version: '0.0.0',
+    order: 50,
+    extend: [{ collection: 'users', fields }],
+  })
+
+  it('refuses a required field nested in a group, a tab or a block', () => {
+    const nested: Field[][] = [
+      [{ name: 'g', type: 'group', fields: [{ name: 'deep', type: 'text', required: true }] }],
+      [
+        {
+          type: 'tabs',
+          tabs: [{ label: 'T', fields: [{ name: 'deep', type: 'text', required: true }] }],
+        },
+      ],
+      [
+        {
+          name: 'b',
+          type: 'blocks',
+          blocks: [{ slug: 'blk', fields: [{ name: 'deep', type: 'text', required: true }] }],
+        },
+      ],
+    ]
+    for (const fields of nested) {
+      expect(() => applyManifest(baseConfig(), extendWith(fields), true)).toThrow(/deep/)
+    }
+  })
+
+  it('refuses an array that needs rows', () => {
+    const fields: Field[] = [
+      { name: 'list', type: 'array', minRows: 1, fields: [{ name: 'x', type: 'text' }] },
+    ]
+    expect(() => applyManifest(baseConfig(), extendWith(fields), true)).toThrow(/list/)
+  })
+
+  const blockHook = vi.fn(({ value }: { value?: unknown }) => value)
+  const withBlocks: PluginManifest = {
+    slug: 'blocky',
+    version: '0.0.0',
+    order: 50,
+    collections: [
+      {
+        slug: 'blocky-items',
+        endpoints: [{ path: '/custom', method: 'get', handler: async () => Response.json({}) }],
+        fields: [
+          {
+            name: 'content',
+            type: 'blocks',
+            blocks: [
+              {
+                slug: 'para',
+                fields: [{ name: 'text', type: 'text', hooks: { beforeChange: [blockHook] } }],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    tasks: [
+      {
+        slug: 'blocky-task',
+        handler: async () => ({ output: {} }),
+        retries: 5,
+        onFail: async () => {},
+      },
+    ],
+  }
+
+  it('strips hooks inside blocks of a disabled plugin', () => {
+    const off = collection(applyManifest(baseConfig(), withBlocks, false), 'blocky-items')
+    const content = fieldNamed(off.fields, 'content')
+    expect(JSON.stringify(content)).not.toContain('hooks')
+    const on = collection(applyManifest(baseConfig(), withBlocks, true), 'blocky-items')
+    expect(JSON.stringify(fieldNamed(on.fields, 'content'))).toContain('hooks')
+  })
+
+  it("removes a disabled plugin's custom endpoints, which skip access rules", () => {
+    expect(
+      collection(applyManifest(baseConfig(), withBlocks, false), 'blocky-items').endpoints,
+    ).toEqual([])
+    expect(
+      collection(applyManifest(baseConfig(), withBlocks, true), 'blocky-items').endpoints,
+    ).toHaveLength(1)
+  })
+
+  it('makes a disabled task fail once, without retries or callbacks', () => {
+    const offTask = applyManifest(baseConfig(), withBlocks, false).jobs?.tasks?.[0]
+    expect(offTask?.retries).toBe(0)
+    expect(offTask).not.toHaveProperty('onFail')
+  })
+
+  it("closes a disabled plugin's added fields to everyone, super-admins included", () => {
+    const off = applyManifest(baseConfig(), fullManifest, false)
+    const group = fieldNamed(collection(off, 'users').fields, 'full')
+    const update = 'access' in group ? group.access?.update : undefined
+    const superAdmin = { id: 'u1', roles: ['super-admin'] }
+    expect(update?.({ req: { user: superAdmin } } as never)).toBe(false)
+  })
+
+  describe('override logging', () => {
+    const on = applyManifest(baseConfig(), fullManifest, true)
+    const group = fieldNamed(collection(on, 'users').fields, 'full')
+    const hook = 'hooks' in group ? group.hooks?.beforeChange?.[0] : undefined
+    const run = (user: unknown) => {
+      const warn = vi.fn()
+      hook?.({
+        req: { user, payload: { logger: { warn } } },
+        value: { externalId: 'new-secret' },
+        previousValue: { externalId: 'old-secret' },
+        collection: { slug: 'users' },
+        originalDoc: { id: 'doc1' },
+      } as never)
+      return warn
+    }
+
+    it('logs a super-admin change by field name, without the values', () => {
+      const warn = run({ id: 'u1', roles: ['super-admin'] })
+      expect(warn).toHaveBeenCalledOnce()
+      const entry = JSON.stringify(warn.mock.calls[0])
+      expect(entry).toContain('externalId')
+      expect(entry).not.toContain('secret')
+    })
+
+    it('does not log writes by anyone else', () => {
+      expect(run({ id: 'u2', roles: ['editor'] })).not.toHaveBeenCalled()
+    })
+  })
+
+  it('warns at start-up when PT_LLM_MODEL is set with no AI plugin', async () => {
+    const warn = vi.fn()
+    const payload = { logger: { info: vi.fn(), warn, error: vi.fn() }, config: { globals: [] } }
+    await kernelWith([], { PT_LLM_MODEL: 'google:gemini' }).onInit(payload as unknown as Payload)
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('no AI plugin is enabled'))
+  })
+})

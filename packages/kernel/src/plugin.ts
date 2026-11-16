@@ -76,22 +76,57 @@ export const isSuperAdmin = (user: PayloadRequest['user']): boolean => {
 const deny = () => false
 const superAdminOnly: FieldAccess = ({ req }) => isSuperAdmin(req.user)
 
-/** A field may be marked required only where Payload's field type allows it. */
-const isRequired = (field: Field): boolean => 'required' in field && field.required === true
+/** Fields nested inside a field: in groups, rows, arrays, collapsibles, tabs and blocks. */
+function childFields(field: Field): Field[] {
+  if (field.type === 'tabs') return field.tabs.flatMap((tab) => tab.fields)
+  if (field.type === 'blocks') {
+    return (field.blocks ?? []).flatMap((block) => (typeof block === 'string' ? [] : block.fields))
+  }
+  return 'fields' in field && Array.isArray(field.fields) ? field.fields : []
+}
 
-/** Drops field-level hooks, recursing into fields that hold other fields. */
+/**
+ * Names of fields that make a record invalid when the plugin is removed:
+ * required fields, and arrays with a minimum number of rows. Checked at every
+ * depth (section 4.5, rule 1).
+ */
+function nonOptionalFields(fields: readonly Field[]): string[] {
+  return fields.flatMap((field) => {
+    const name = 'name' in field ? field.name : field.type
+    const required = 'required' in field && field.required === true
+    const minRows = 'minRows' in field && typeof field.minRows === 'number' && field.minRows > 0
+    const own = required || minRows ? [name] : []
+    return [...own, ...nonOptionalFields(childFields(field))]
+  })
+}
+
+/**
+ * Drops field-level hooks at every depth. Blocks referenced by slug
+ * (`blockReferences`) live in the config's shared blocks, which belong to no
+ * one plugin, so they are left alone.
+ */
 function withoutFieldHooks(fields: readonly Field[]): Field[] {
   return fields.map((field): Field => {
     const { hooks: _hooks, ...rest } = field as Field & { hooks?: unknown }
     const stripped = rest as Field
-    if ('fields' in stripped && Array.isArray(stripped.fields)) {
-      return { ...stripped, fields: withoutFieldHooks(stripped.fields) } as Field
-    }
     if (stripped.type === 'tabs') {
       return {
         ...stripped,
         tabs: stripped.tabs.map((tab) => ({ ...tab, fields: withoutFieldHooks(tab.fields) })),
       }
+    }
+    if (stripped.type === 'blocks') {
+      return {
+        ...stripped,
+        blocks: (stripped.blocks ?? []).map((block) => {
+          // A block named by slug is a shared block (see above).
+          if (typeof block === 'string') return block
+          return { ...block, fields: withoutFieldHooks(block.fields) }
+        }),
+      }
+    }
+    if ('fields' in stripped && Array.isArray(stripped.fields)) {
+      return { ...stripped, fields: withoutFieldHooks(stripped.fields) } as Field
     }
     return stripped
   })
@@ -100,7 +135,7 @@ function withoutFieldHooks(fields: readonly Field[]): Field[] {
 /**
  * A disabled plugin's record types stay in the schema (D29) but do nothing:
  * hidden in the admin, closed to every request that checks access, and
- * without hooks.
+ * without hooks or custom endpoints, which do not check access.
  */
 function disableCollection(collection: CollectionConfig): CollectionConfig {
   const { hooks: _hooks, ...rest } = collection
@@ -108,6 +143,7 @@ function disableCollection(collection: CollectionConfig): CollectionConfig {
     ...rest,
     admin: { ...collection.admin, hidden: true },
     access: { read: deny, create: deny, update: deny, delete: deny },
+    endpoints: [],
     fields: withoutFieldHooks(collection.fields),
   }
 }
@@ -118,22 +154,39 @@ function disableGlobal(global: GlobalConfig): GlobalConfig {
     ...rest,
     admin: { ...global.admin, hidden: true },
     access: { read: deny, update: deny },
+    endpoints: [],
     fields: withoutFieldHooks(global.fields),
   }
 }
 
-/** Logs a super-admin's change to a field a plugin owns (section 4.5, rule 3). */
+const changedKeys = (value: unknown, previous: unknown): string[] => {
+  const record = (v: unknown): Record<string, unknown> =>
+    v && typeof v === 'object' ? (v as Record<string, unknown>) : {}
+  const next = record(value)
+  const prev = record(previous)
+  return [...new Set([...Object.keys(next), ...Object.keys(prev)])].filter(
+    (key) => JSON.stringify(next[key]) !== JSON.stringify(prev[key]),
+  )
+}
+
+/**
+ * Logs a super-admin's change to fields a plugin owns (section 4.5, rule 3).
+ * It records which fields changed, not their values, which may be sensitive.
+ * Plugins write through the Local API with access rules off, so their own
+ * writes are not overrides even when a user is attached to the request.
+ */
 const logOverride =
   (slug: string): FieldHook =>
   ({ req, value, previousValue, collection, originalDoc }) => {
-    if (req.user && JSON.stringify(value) !== JSON.stringify(previousValue)) {
+    if (!isSuperAdmin(req.user)) return value
+    const changed = changedKeys(value, previousValue)
+    if (changed.length > 0) {
       req.payload.logger.warn({
-        msg: `Super-admin override of a field owned by plugin "${slug}"`,
+        msg: `Super-admin override of fields owned by plugin "${slug}"`,
         collection: collection?.slug,
         id: originalDoc?.id,
-        user: req.user.id,
-        old: previousValue,
-        new: value,
+        user: req.user?.id,
+        fields: changed,
       })
     }
     return value
@@ -141,18 +194,19 @@ const logOverride =
 
 /** The group that holds one plugin's fields on another plugin's record type. */
 function ownedGroup(slug: string, fields: readonly Field[], enabled: boolean): Field {
-  const required = fields.filter(isRequired)
-  if (required.length > 0) {
-    const names = required.map((f) => ('name' in f ? f.name : f.type)).join(', ')
+  const nonOptional = nonOptionalFields(fields)
+  if (nonOptional.length > 0) {
     throw new KernelError(
-      `Plugin "${slug}" adds required fields (${names}). Fields a plugin adds must be optional.`,
+      `Plugin "${slug}" adds fields that are required or need rows (${nonOptional.join(', ')}). ` +
+        'Fields a plugin adds must be optional.',
     )
   }
   return {
     name: slug,
     type: 'group',
     fields: enabled ? [...fields] : withoutFieldHooks(fields),
-    access: { update: superAdminOnly },
+    // A disabled plugin's fields are never written, by anyone (D29).
+    access: { update: enabled ? superAdminOnly : deny },
     admin: enabled ? { readOnly: true } : { readOnly: true, condition: () => false },
     hooks: enabled ? { beforeChange: [logOverride(slug)] } : {},
   }
@@ -188,12 +242,14 @@ function extendCollections(
 
 /**
  * A disabled plugin's tasks stay registered, because Payload builds the jobs
- * table from task names, but they refuse to run and have no schedule.
+ * table from task names, but they refuse to run, have no schedule, and fail
+ * once rather than retrying a job queued before the plugin was disabled.
  */
 function disableTask(slug: string, task: TaskConfig): TaskConfig {
-  const { schedule: _schedule, ...rest } = task
+  const { schedule: _schedule, onFail: _onFail, onSuccess: _onSuccess, ...rest } = task
   return {
     ...rest,
+    retries: 0,
     handler: () => {
       throw new KernelError(`Task "${task.slug}" belongs to plugin "${slug}", which is disabled.`)
     },
@@ -204,6 +260,7 @@ function disableWorkflow(slug: string, workflow: WorkflowConfig): WorkflowConfig
   const { schedule: _schedule, ...rest } = workflow
   return {
     ...rest,
+    retries: 0,
     handler: () => {
       throw new KernelError(
         `Workflow "${workflow.slug}" belongs to plugin "${slug}", which is disabled.`,

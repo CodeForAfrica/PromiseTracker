@@ -214,7 +214,7 @@ export function createKernel(options: KernelOptions): Kernel {
   const enabledSet = new Set(env.plugins)
   checkDependencies(manifests, enabledSet)
 
-  const adapters: ResolvedAdapters = {
+  const adapters: ResolvedAdapters = Object.freeze({
     verification: pickOne(
       'verification',
       candidates('verification', manifests, enabledSet),
@@ -246,12 +246,20 @@ export function createKernel(options: KernelOptions): Kernel {
       defaultsFrom,
       undefined,
     ),
-  }
+  })
   if (adapters.contentExtractor.length === 0) {
     throw new KernelError(`No plugin provides a ${PORTS.contentExtractor.name}.`)
   }
 
   const enabled = manifests.filter((m) => enabledSet.has(m.slug)).map((m) => m.slug)
+
+  // Not fatal, but worth saying at start-up.
+  const warnings: string[] = []
+  if (env.llmModel && adapters.llm === null) {
+    warnings.push(
+      `PT_LLM_MODEL is set to "${env.llmModel}", but no AI plugin is enabled, so it is ignored.`,
+    )
+  }
   const payloadPlugins = options.plugins.map((p) =>
     p.toPayloadPlugin(enabledSet.has(p.manifest.slug)),
   )
@@ -306,6 +314,7 @@ export function createKernel(options: KernelOptions): Kernel {
       .filter((m) => enabledSet.has(m.slug))
       .flatMap((m) =>
         (m.requiredEnv ?? [])
+          // An empty value counts as missing.
           .filter((name) => !processEnv[name])
           .map((name) => `${name} (${m.slug})`),
       )
@@ -319,6 +328,7 @@ export function createKernel(options: KernelOptions): Kernel {
         await m.checkSettings(await context(payload, m.slug))
       }
     }
+    for (const warning of warnings) payload.logger.warn(warning)
     payload.logger.info(summary())
   }
 
