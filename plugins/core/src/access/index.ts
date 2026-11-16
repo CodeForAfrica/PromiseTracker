@@ -12,54 +12,79 @@ import { hasRole } from '../roles'
  */
 export type Rule = (args: { req: PayloadRequest }) => boolean
 
-const anyOf =
-  (...roles: readonly Role[]): Rule =>
-  ({ req }) =>
-    hasRole(req.user, ...roles)
-
 /** Any signed-in user, whatever their role. A viewer can read and nothing more. */
 export const signedIn: Rule = ({ req }) => Boolean(req.user)
 
-/** One entry per row of the matrix. */
-export const can = {
+/** The matrix: one entry per row, with the roles that may. */
+const MATRIX = {
   /** Manage countries, offices and areas. */
-  manageStructure: anyOf('super-admin'),
+  manageStructure: ['super-admin'],
   /** Manage rating scales and claim types. */
-  manageRatings: anyOf('super-admin'),
+  manageRatings: ['super-admin'],
   /** Manage users, settings and credentials. */
-  manageUsers: anyOf('super-admin'),
+  manageUsers: ['super-admin'],
   /** Create or edit actors, terms and documents. */
-  editRecords: anyOf('super-admin', 'editor', 'contributor'),
+  editRecords: ['super-admin', 'editor', 'contributor'],
   /** Create claims by hand. */
-  createClaims: anyOf('super-admin', 'editor', 'contributor'),
+  createClaims: ['super-admin', 'editor', 'contributor'],
   /** Accept or reject AI candidates. */
-  reviewCandidates: anyOf('super-admin', 'editor', 'reviewer'),
+  reviewCandidates: ['super-admin', 'editor', 'reviewer'],
   /** Set a verdict. A verification plugin takes this over (section 4.5). */
-  setVerdict: anyOf('super-admin', 'editor', 'reviewer'),
+  setVerdict: ['super-admin', 'editor', 'reviewer'],
   /** Rate a claim, and add or confirm updates. */
-  rateClaims: anyOf('super-admin', 'editor'),
+  rateClaims: ['super-admin', 'editor'],
   /** Turn a submission into a claim update, which is how a moderator rates. */
-  promoteSubmissions: anyOf('super-admin', 'editor', 'moderator'),
+  promoteSubmissions: ['super-admin', 'editor', 'moderator'],
   /** Set a record to ready, hold or archived. */
-  setAnyRecordStatus: anyOf('super-admin', 'editor'),
+  setAnyRecordStatus: ['super-admin', 'editor'],
   /** Set a record to hold, and nothing else. */
-  holdRecords: anyOf('super-admin', 'editor', 'contributor'),
+  holdRecords: ['super-admin', 'editor', 'contributor'],
   /** Moderate submissions. */
-  moderateSubmissions: anyOf('super-admin', 'editor', 'moderator'),
+  moderateSubmissions: ['super-admin', 'editor', 'moderator'],
   /** Edit picks, themes, articles and pages. */
-  editEditorial: anyOf('super-admin', 'editor'),
+  editEditorial: ['super-admin', 'editor'],
   /** Delete a record, to the trash. */
-  deleteRecords: anyOf('super-admin', 'editor'),
+  deleteRecords: ['super-admin', 'editor'],
   /** Override a field a plugin owns. The kernel logs it. */
-  overridePluginFields: anyOf('super-admin'),
-} as const satisfies Record<string, Rule>
+  overridePluginFields: ['super-admin'],
+} as const satisfies Record<string, readonly Role[]>
+
+export type Permission = keyof typeof MATRIX
+
+/** Whether a user may do something, for code that has a user and no request. */
+export function userCan(user: PayloadRequest['user'], permission: Permission): boolean {
+  return hasRole(user, ...MATRIX[permission])
+}
+
+const rule =
+  (permission: Permission): Rule =>
+  ({ req }) =>
+    userCan(req.user, permission)
+
+/** The matrix as access rules: `can.editRecords`, `can.setVerdict` and so on. */
+export const can = {
+  manageStructure: rule('manageStructure'),
+  manageRatings: rule('manageRatings'),
+  manageUsers: rule('manageUsers'),
+  editRecords: rule('editRecords'),
+  createClaims: rule('createClaims'),
+  reviewCandidates: rule('reviewCandidates'),
+  setVerdict: rule('setVerdict'),
+  rateClaims: rule('rateClaims'),
+  promoteSubmissions: rule('promoteSubmissions'),
+  setAnyRecordStatus: rule('setAnyRecordStatus'),
+  holdRecords: rule('holdRecords'),
+  moderateSubmissions: rule('moderateSubmissions'),
+  editEditorial: rule('editEditorial'),
+  deleteRecords: rule('deleteRecords'),
+  overridePluginFields: rule('overridePluginFields'),
+} as const satisfies Record<Permission, Rule>
 
 export type RecordStatus = 'ready' | 'hold' | 'archived'
 
 /** Whether a user may set this record status. A contributor may only hold. */
 export function maySetRecordStatus(user: PayloadRequest['user'], status: RecordStatus): boolean {
-  const req = { user } as PayloadRequest
-  return can.setAnyRecordStatus({ req }) || (status === 'hold' && can.holdRecords({ req }))
+  return userCan(user, 'setAnyRecordStatus') || (status === 'hold' && userCan(user, 'holdRecords'))
 }
 
 type CollectionAccess = NonNullable<CollectionConfig['access']>

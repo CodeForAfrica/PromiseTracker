@@ -1,9 +1,29 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig, PayloadRequest } from 'payload'
+import { APIError } from 'payload'
 
 import { can, signedIn } from './access'
-import { ROLES } from './roles'
+import { ROLES, rolesIn } from './roles'
 
 const COUNTRY_CODE = /^[a-z]{2}$/
+
+const LAST_SUPER_ADMIN =
+  'This is the last super-admin. Make another user a super-admin first, or nobody could manage users.'
+
+/**
+ * Whether any super-admin would be left without this user. Without one, nobody
+ * could manage users, and the first-admin set-up only runs on an empty
+ * database, so the way back would be the database itself.
+ */
+async function anotherSuperAdminExists(req: PayloadRequest, id: unknown): Promise<boolean> {
+  const { totalDocs } = await req.payload.count({
+    collection: 'users',
+    where: { and: [{ roles: { in: ['super-admin'] } }, { id: { not_equals: id } }] },
+    // A count of other users' roles, whoever is asking. No record is returned.
+    overrideAccess: true,
+    req,
+  })
+  return totalDocs > 0
+}
 
 /**
  * Editors sign in with Payload's email and password (D43). Nobody registers:
@@ -33,6 +53,36 @@ export const Users: CollectionConfig = {
     delete: can.manageUsers,
     unlock: can.manageUsers,
   },
+  hooks: {
+    beforeChange: [
+      async ({ data, originalDoc, operation, req }) => {
+        const losesRole =
+          operation === 'update' &&
+          rolesIn(originalDoc).includes('super-admin') &&
+          Array.isArray(data.roles) &&
+          !data.roles.includes('super-admin')
+        if (losesRole && !(await anotherSuperAdminExists(req, originalDoc.id))) {
+          throw new APIError(LAST_SUPER_ADMIN, 400)
+        }
+        return data
+      },
+    ],
+    beforeDelete: [
+      async ({ id, req }) => {
+        const user = await req.payload.findByID({
+          collection: 'users',
+          id,
+          depth: 0,
+          // Reads only the roles of the user being deleted, to apply the rule below.
+          overrideAccess: true,
+          req,
+        })
+        if (rolesIn(user).includes('super-admin') && !(await anotherSuperAdminExists(req, id))) {
+          throw new APIError(LAST_SUPER_ADMIN, 400)
+        }
+      },
+    ],
+  },
   fields: [
     { name: 'name', type: 'text' },
     {
@@ -42,9 +92,9 @@ export const Users: CollectionConfig = {
       required: true,
       defaultValue: ['viewer'],
       options: ROLES.map((role) => ({ label: role, value: role })),
-      // In the token, so access rules read roles without a database read.
-      saveToJWT: true,
       // Only a super-admin hands out roles. Without this a user could promote themselves.
+      // Payload loads the user from the database on every request, so a change
+      // of roles takes effect on that user's next request, not at their next sign-in.
       access: { create: can.manageUsers, update: can.manageUsers },
     },
     {

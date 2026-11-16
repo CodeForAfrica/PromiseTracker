@@ -11,7 +11,7 @@ export { assertRuntimeEnv, databaseUrl } from './env'
 export { ensureFirstAdmin } from './firstAdmin'
 export { getPayload } from './getPayload'
 export { firstPartyPlugins, kernel } from './kernel'
-export { gateRest, guestMayCall } from './restGate'
+export { effectiveMethod, gateRest, guestMayCall } from './restGate'
 export { startPayload } from './startup'
 
 const HEALTH_CACHE_MS = 5_000

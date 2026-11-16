@@ -143,6 +143,28 @@ describe('users, roles and access', () => {
       ).rejects.toThrow()
     })
 
+    it('lets a super-admin be demoted or deleted while another one remains', async () => {
+      // The "last super-admin" rule counts the others in the database. Here there
+      // are others, so both changes go through.
+      const second = await make(['super-admin'], 'second-admin')
+      const demoted = await payload.update({
+        collection: 'users',
+        id: second.id,
+        data: { roles: ['viewer'] },
+        user: user('super-admin'),
+        overrideAccess: false,
+      })
+      expect(demoted.roles).toEqual(['viewer'])
+
+      const third = await make(['super-admin'], 'third-admin')
+      await payload.delete({
+        collection: 'users',
+        id: third.id,
+        user: user('super-admin'),
+        overrideAccess: false,
+      })
+    })
+
     it('lets only a super-admin delete a user', async () => {
       const target = await make(['viewer'], 'removed')
       await expect(
@@ -172,6 +194,26 @@ describe('users, roles and access', () => {
       expect(session.user?.roles).toEqual(['editor'])
       expect(session.token).toBeTypeOf('string')
       expect(session).toHaveProperty('refreshToken')
+    })
+
+    it('applies a change of roles on the next request, not at the next sign-in', async () => {
+      const target = await make(['editor'], 'demoted')
+      const { token } = await payload.login({
+        collection: 'users',
+        data: { email: target.email, password },
+      })
+      const whoAmI = () => payload.auth({ headers: new Headers({ Authorization: `JWT ${token}` }) })
+      expect((await whoAmI()).user?.roles).toEqual(['editor'])
+
+      await payload.update({
+        collection: 'users',
+        id: target.id,
+        data: { roles: ['viewer'] },
+        user: user('super-admin'),
+        overrideAccess: false,
+      })
+      // The same token, issued while the user was an editor.
+      expect((await whoAmI()).user?.roles).toEqual(['viewer'])
     })
 
     it('locks the account after five wrong passwords', async () => {

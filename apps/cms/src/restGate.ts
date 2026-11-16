@@ -16,7 +16,9 @@ const GUEST_ROUTES: readonly { method: string; path: RegExp }[] = [
   { method: 'GET', path: /^\/users\/me$/ },
   { method: 'POST', path: /^\/users\/forgot-password$/ },
   { method: 'POST', path: /^\/users\/reset-password$/ },
-  // Actor photos and article images. The media record type allows guests to read.
+  // Actor photos and article images. The gate only lets the request through.
+  // Payload still applies the media record type's read rule, so making media
+  // private there closes these files too.
   { method: 'GET', path: /^\/media\/file\/[^/]+$/ },
 ]
 
@@ -31,6 +33,20 @@ export function guestMayCall(method: string, path: string): boolean {
   return GUEST_ROUTES.some((route) => route.method === method && route.path.test(clean))
 }
 
+/**
+ * Payload treats a POST carrying one of these headers as a GET, which its
+ * admin uses for long queries. The gate must judge the request as Payload
+ * will handle it, or a guest could dress a GET up as an allowed POST.
+ */
+const METHOD_OVERRIDE_HEADERS = ['X-Payload-HTTP-Method-Override', 'X-HTTP-Method-Override']
+
+export function effectiveMethod(request: Pick<Request, 'method' | 'headers'>): string {
+  const method = request.method.toUpperCase()
+  const overridden =
+    method === 'POST' && METHOD_OVERRIDE_HEADERS.some((name) => request.headers.get(name) === 'GET')
+  return overridden ? 'GET' : method
+}
+
 type Handler<TArgs extends unknown[]> = (
   request: Request,
   ...args: TArgs
@@ -42,7 +58,7 @@ export function gateRest<TArgs extends unknown[]>(handler: Handler<TArgs>): Hand
     const { pathname } = new URL(request.url)
     const path = pathname.startsWith(API_PREFIX) ? pathname.slice(API_PREFIX.length) : pathname
     // A browser's preflight request carries no sign-in, and reads nothing.
-    if (request.method === 'OPTIONS' || guestMayCall(request.method, path)) {
+    if (request.method === 'OPTIONS' || guestMayCall(effectiveMethod(request), path)) {
       return handler(request, ...args)
     }
     const payload = await getPayload()

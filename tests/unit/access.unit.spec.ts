@@ -1,4 +1,7 @@
-import { ensureFirstAdmin, guestMayCall } from '@promisetracker/cms'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+
+import { effectiveMethod, ensureFirstAdmin, guestMayCall } from '@promisetracker/cms'
 import type { Role } from '@promisetracker/plugin-core'
 import {
   access,
@@ -10,6 +13,7 @@ import {
   rolesOf,
   signedIn,
   Users,
+  userCan,
 } from '@promisetracker/plugin-core'
 import type { Config, Field, Payload, PayloadRequest } from 'payload'
 import { describe, expect, it, vi } from 'vitest'
@@ -258,6 +262,103 @@ describe('what a guest may call on the REST routes', () => {
       ['GET', '/'],
     ] as const) {
       expect(guestMayCall(method, path), `${method} ${path}`).toBe(false)
+    }
+  })
+})
+
+describe('the last super-admin', () => {
+  const superAdmin = { id: 'u1', roles: ['super-admin'] }
+  const req = (others: number) =>
+    ({
+      payload: {
+        count: vi.fn(async () => ({ totalDocs: others })),
+        findByID: vi.fn(async () => superAdmin),
+      },
+    }) as never
+  const beforeChange = Users.hooks?.beforeChange?.[0]
+  const beforeDelete = Users.hooks?.beforeDelete?.[0]
+  const demote = (others: number, roles: unknown = ['editor']) =>
+    beforeChange?.({
+      data: { roles },
+      originalDoc: superAdmin,
+      operation: 'update',
+      req: req(others),
+    } as never)
+
+  it('cannot lose the role', async () => {
+    await expect(demote(0)).rejects.toThrow('last super-admin')
+  })
+
+  it('can lose the role once there is another', async () => {
+    await expect(demote(1)).resolves.toEqual({ roles: ['editor'] })
+  })
+
+  it('can change other things about themselves', async () => {
+    await expect(demote(0, ['super-admin', 'editor'])).resolves.toBeDefined()
+    await expect(
+      beforeChange?.({
+        data: { name: 'New name' },
+        originalDoc: superAdmin,
+        operation: 'update',
+        req: req(0),
+      } as never),
+    ).resolves.toBeDefined()
+  })
+
+  it('cannot be deleted, by themselves or anyone', async () => {
+    await expect(beforeDelete?.({ id: 'u1', req: req(0) } as never)).rejects.toThrow(
+      'last super-admin',
+    )
+    await expect(beforeDelete?.({ id: 'u1', req: req(1) } as never)).resolves.toBeUndefined()
+  })
+})
+
+describe('permissions without a request', () => {
+  it('answers for a user directly', () => {
+    expect(userCan({ roles: ['reviewer'] } as never, 'setVerdict')).toBe(true)
+    expect(userCan({ roles: ['reviewer'] } as never, 'rateClaims')).toBe(false)
+    expect(userCan(null, 'setVerdict')).toBe(false)
+  })
+})
+
+describe('the method a request is judged by', () => {
+  const request = (method: string, headers: Record<string, string> = {}) =>
+    effectiveMethod({ method, headers: new Headers(headers) })
+
+  it('is GET for a POST that Payload will handle as a GET', () => {
+    expect(request('POST', { 'X-Payload-HTTP-Method-Override': 'GET' })).toBe('GET')
+    expect(request('POST', { 'x-http-method-override': 'GET' })).toBe('GET')
+  })
+
+  it('is the request method otherwise', () => {
+    expect(request('POST')).toBe('POST')
+    expect(request('post')).toBe('POST')
+    expect(request('GET', { 'X-Payload-HTTP-Method-Override': 'GET' })).toBe('GET')
+    expect(request('POST', { 'X-Payload-HTTP-Method-Override': 'DELETE' })).toBe('POST')
+  })
+
+  it('so a guest cannot dress a read up as an allowed POST', () => {
+    const method = request('POST', { 'X-Payload-HTTP-Method-Override': 'GET' })
+    expect(guestMayCall(method, '/users/login')).toBe(false)
+    expect(guestMayCall(method, '/users/forgot-password')).toBe(false)
+  })
+})
+
+describe("Payload's REST route file", () => {
+  // Payload generated this file, and an upgrade may generate it again. If the
+  // gate is lost, every REST route opens to guests, so this fails first.
+  const file = readFileSync(
+    path.resolve(import.meta.dirname, '../../apps/site/src/app/(payload)/api/[...slug]/route.ts'),
+    'utf8',
+  )
+  const handlers = [...file.matchAll(/^export const (\w+) = (.*)$/gm)]
+
+  it('wraps every handler in the guest gate', () => {
+    expect(handlers.map((m) => m[1]).sort()).toEqual(
+      ['DELETE', 'GET', 'OPTIONS', 'PATCH', 'POST', 'PUT'].sort(),
+    )
+    for (const [, name, value] of handlers) {
+      expect(value, name).toMatch(/^gateRest\(REST_\w+\(config\)\)$/)
     }
   })
 })

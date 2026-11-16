@@ -66,6 +66,28 @@ test.describe("Payload's REST routes are closed to guests", () => {
     expect(JSON.stringify(await login.json())).not.toContain(refused)
   })
 
+  test('a guest cannot dress a read up as an allowed POST', async ({ request }) => {
+    for (const header of ['X-Payload-HTTP-Method-Override', 'X-HTTP-Method-Override']) {
+      const res = await request.post('/api/users/login', { headers: { [header]: 'GET' } })
+      expect(res.status(), header).toBe(401)
+      expect((await res.json()).errors[0].message).toBe(refused)
+    }
+  })
+
+  test('a guest reaches nothing through an oddly written address', async ({ request }) => {
+    for (const path of [
+      '/api//users',
+      '/api/Users',
+      '/api/%75sers',
+      '/api/users/',
+      '/api/users/.',
+    ]) {
+      const res = await request.get(path)
+      expect([401, 404], path).toContain(res.status())
+      expect(JSON.stringify(await res.json().catch(() => ({}))), path).not.toContain('"docs"')
+    }
+  })
+
   test('the public API still answers guests', async ({ request }) => {
     expect((await request.get('/api/v1/site')).ok()).toBe(true)
   })
