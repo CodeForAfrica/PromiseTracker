@@ -8,7 +8,12 @@ export { KernelError } from './errors'
 export type { Kernel, KernelOptions, LocaleSpec, ResolvedAdapters } from './kernel'
 export { createKernel } from './kernel'
 export type { HttpMethod, PluginManifest, PluginRoute, PromiseTrackerPlugin } from './plugin'
-export { applyManifest, definePromiseTrackerPlugin, isSuperAdmin } from './plugin'
+export {
+  applyManifest,
+  defineFinalPlugin,
+  definePromiseTrackerPlugin,
+  isSuperAdmin,
+} from './plugin'
 export * from './ports'
 export { pluginRoute } from './routes'
 export { forgetSettings, readSettings, SETTINGS_GLOBAL, SETTINGS_TTL_MS } from './settings'

@@ -1,6 +1,6 @@
 import { definePromiseTrackerPlugin } from '@promisetracker/kernel'
 import type { CollectionConfig } from 'payload'
-
+import { can } from './access'
 import {
   localCaptcha,
   localNewsletter,
@@ -10,17 +10,18 @@ import {
   plaintextExtractor,
   uploadConnector,
 } from './adapters'
-
-export const Users: CollectionConfig = {
-  slug: 'users',
-  admin: { useAsTitle: 'email' },
-  auth: true,
-  fields: [{ name: 'name', type: 'text' }],
-}
+import { Users } from './users'
 
 export const Media: CollectionConfig = {
   slug: 'media',
-  access: { read: () => true },
+  access: {
+    // Media is public: actor photos and article images. Source documents are
+    // a separate record type and are not.
+    read: () => true,
+    create: can.editRecords,
+    update: can.editRecords,
+    delete: can.deleteRecords,
+  },
   fields: [{ name: 'alt', type: 'text', required: true }],
   upload: true,
 }
@@ -45,4 +46,8 @@ export const corePlugin = definePromiseTrackerPlugin({
   },
 })
 
+export * from './access'
 export * from './adapters'
+export { privateHistory } from './history'
+export * from './roles'
+export { Users } from './users'

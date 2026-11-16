@@ -19,6 +19,8 @@ x-app: &app
   environment:
     DATABASE_URL: postgres://${PT_POSTGRES_USER:-promisetracker}:${PT_POSTGRES_PASSWORD:-promisetracker}@postgres:5432/${PT_POSTGRES_DB:-promisetracker}
     PAYLOAD_SECRET: ${PAYLOAD_SECRET:-}
+    PT_ADMIN_EMAIL: ${PT_ADMIN_EMAIL:-}
+    PT_ADMIN_PASSWORD: ${PT_ADMIN_PASSWORD:-}
     S3_BUCKET: ${S3_BUCKET:-promisetracker}
     S3_ENDPOINT: http://storage:9000
     S3_REGION: ${S3_REGION:-us-east-1}

@@ -11,6 +11,7 @@ import type {
 import {
   applyManifest,
   createKernel,
+  defineFinalPlugin,
   definePromiseTrackerPlugin,
   forgetSettings,
   KernelError,
@@ -884,5 +885,15 @@ describe('November review changes (#665)', () => {
       expect(read.map((r) => r.row)).toEqual([1, 2])
       expect(importer).not.toHaveProperty('import')
     })
+  })
+})
+
+describe('a rule for the whole config', () => {
+  it('runs after every plugin, whatever its place in the list', () => {
+    const rule = defineFinalPlugin('rule', (config) => config)
+    const orders = kernelWith([plugin({ slug: 'late', order: 9_000 })]).payloadPlugins.map(
+      (p) => (p as { order?: number }).order ?? 0,
+    )
+    expect((rule as { order?: number }).order).toBeGreaterThan(Math.max(...orders))
   })
 })

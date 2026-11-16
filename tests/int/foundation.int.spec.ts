@@ -39,7 +39,11 @@ describe('foundation', () => {
     const payload = await getPayload()
     const user = await payload.create({
       collection: 'users',
-      data: { email: `test-${crypto.randomUUID()}@example.org`, password: crypto.randomUUID() },
+      data: {
+        email: `test-${crypto.randomUUID()}@example.org`,
+        password: crypto.randomUUID(),
+        roles: ['viewer'],
+      },
       overrideAccess: true,
     })
     expect(user.id).toMatch(/^[0-9a-f-]{36}$/)
