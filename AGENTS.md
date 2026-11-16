@@ -44,6 +44,50 @@ Issue #672 gives the build order and the owner of each issue.
 - Next.js 16 ships its own docs in `apps/site/node_modules/next/dist/docs/`. Read them before
   relying on remembered APIs.
 
+## Working on an issue
+
+1. Find the issue. Issue #672 lists every issue in build order, with its owner. Work only on
+   issues assigned to the person you are working for, and only on ones labelled `status: ready`.
+2. Read the issue's "Start here" section. It names the specification sections to read, where the
+   code goes, what already exists, and any v2 code to reuse. Read v2 code with
+   `git show v2-final:<path>`. v2 is not in the working tree.
+3. Read those specification sections before writing code. If the issue and the specification
+   disagree, the specification wins. Say so in the pull request.
+4. Branch from `main`: `feat/v3-<short-name>`, or `docs/...`, `fix/...`, `chore/...`.
+5. Build only what the acceptance criteria ask for. Each criterion needs a test, or a line in the
+   pull request saying how it was checked.
+6. After changing collections or fields: `pnpm generate`, then `pnpm payload migrate:create <name>`,
+   then `pnpm migrate:check`.
+7. Before opening the pull request: `pnpm lint`, `pnpm typecheck` and `pnpm test`. The last needs
+   `pnpm services` running.
+8. The pull request says `Closes #<issue>` and follows the format of #663 and #664: what it does,
+   decisions made while building, environment and config changes, migrations, how to test.
+9. A decision that changes behaviour also goes in the specification's decision register, section
+   20.1, with the PDFs rebuilt.
+10. After the merge, look at the issue's "Unblocks" section. Move each issue listed there to
+    `status: ready` if nothing else open blocks it.
+
+Where things are:
+
+| What | Where |
+|---|---|
+| Ports, the plugin helper, start-up checks | `packages/kernel/src` |
+| Record types and default adapters | `plugins/core/src` |
+| Settings for the default public site | `plugins/site/src` |
+| Payload config, migrations, generated types | `apps/cms/src` |
+| `/api/v1` handlers | `apps/cms/src/api/v1.ts` |
+| Public API response schemas | `packages/contract/src` |
+| The typed client the site uses | `packages/sdk/src` |
+| Components, props only | `packages/ui/src` |
+| Public pages | `apps/site/src/app/(site)` |
+| Admin, REST, `/api/v1`, health and plugin routes | `apps/site/src/app/(payload)` |
+| Registered languages | `apps/cms/src/locales.ts` |
+| Every environment key | `.env.example` |
+
+A new plugin is a package in `plugins/`. It is also added to `firstPartyPlugins` in
+`apps/cms/src/kernel.ts`, to `transpilePackages` in `apps/site/next.config.ts`, and to the `COPY`
+lines for `package.json` files in `docker/Dockerfile`.
+
 ## Style
 
 - Biome formats and lints: two spaces, single quotes, no semicolons, 100 columns.
