@@ -77,7 +77,7 @@ In scope:
 - Verification in the built-in review queue or Meedan Check, and later Superdesk
 - A public site with country, actor, claim, area, topic, theme and search pages
 - A typed API that the public site uses, opened to outside users later
-- English and French at launch, with more languages added by editors
+- English and French at launch. More languages are switched on through configuration
 
 Out of scope for now, with room left in the design:
 
@@ -228,7 +228,7 @@ job has exactly one adapter. Ownership rules make sure two systems never write t
 | VerificationProvider | Where people verify claims | Exactly one | `native` | `check`, `superdesk` |
 | SourceConnector | Where content comes from | Any number. Upload is always on | `upload`, `url` | `airtable`, `sheets`, `feed` |
 | ContentExtractor | Turning a file into text | One or more, by file type | `plaintext` | `tika`, `ocr` |
-| StructuredImporter | Turning spreadsheet rows into records | Any number | `csv`, `xlsx` | `sheets` |
+| StructuredImporter | Reading the rows of a spreadsheet, which the core turns into records | Any number | `csv`, `xlsx` | `sheets` |
 | LLMProvider | Which AI model proposes candidates | Many installed, one selected | None | `google`, `openai`, `anthropic` and others |
 | SearchProvider | Full-text and place search | Exactly one | `payload-search`, on Payload's search plugin | A dedicated search engine |
 | NewsletterProvider | Newsletter sign-ups | Exactly one | `local`, which stores confirmed sign-ups | Mailing-list services |
@@ -247,11 +247,11 @@ Every adapter provides a `health` method that reports whether its service is rea
 
 | Port | Methods |
 |---|---|
-| VerificationProvider | `submit(claim)` sends a claim out and returns the outside reference. `pull(since)` fetches verdicts changed since a saved position. `receive(payload, headers)` handles a push, if the service sends them |
+| VerificationProvider | `submit(claim)` sends a claim out and returns the outside reference. `pull(since)` fetches verdicts changed since a saved position. `receive(payload, headers)` handles a push, if the service sends them. Each verdict update carries the verdict, the rationale, the date, a link to any published report, and a flag for a report that was withdrawn |
 | SourceConnector | `mode` is manual, pull or push. `list(since)` lists items waiting, for pull connectors. `fetch(item)` retrieves one |
 | ContentExtractor | `accepts` lists file types, most specific wins. `extract(content)` returns text, a page count and any metadata |
-| StructuredImporter | `accepts` lists file types. `inspect(content)` reads headings and sample rows without saving. `import(content, mapping)` creates or updates records |
-| LLMProvider | `models` lists the models. `generate(request)` returns structured output |
+| StructuredImporter | `accepts` lists file types. `inspect(content)` reads headings and sample rows. `rows(content)` returns every row. The importer only reads the file. The core maps rows to records, previews and saves, section 9.6 |
+| LLMProvider | `models` lists the models. `generate(request)` returns structured output and the number of tokens used |
 | SearchProvider | `search(query, scope)` returns grouped results. `resolvePlace(text)` returns matching areas. `index(record)` keeps the index current |
 | NewsletterProvider | `subscribe(email, locale)` starts a confirmed sign-up. `unsubscribe(email)` |
 | AnalyticsProvider | `pageView(event)` and `searchEvent(event)`. Neither receives personal data |
@@ -271,6 +271,7 @@ A plugin is defined with Payload's `definePlugin`, with a slug and an order, and
 | `dependsOn` | Plugins that must be present |
 | `collections`, `globals` | Record types the plugin owns |
 | `extend` | Fields added to record types another plugin owns, section 4.5 |
+| `takesOver` | Core fields the plugin writes while it is enabled, section 4.5 |
 | `provides` | Adapters, by port |
 | `tasks`, `workflows` | Background jobs |
 | `routes` | Web routes it serves, section 4.7 |
@@ -278,13 +279,16 @@ A plugin is defined with Payload's `definePlugin`, with a slug and an order, and
 | `widgets` | Admin dashboard cards |
 | `requiredEnv` | Environment variables it needs |
 
-Three environment variables select the set-up:
+Four environment variables select the set-up:
 
 ```bash
 PT_PLUGINS=core,site,tika,ai,check
 PT_VERIFICATION=check
 PT_LLM_MODEL=google:gemini-2.5-pro
+PT_LOCALES=en,fr
 ```
+
+Section 7.1 describes `PT_LOCALES`.
 
 ### 4.4 What happens at start-up
 
@@ -297,7 +301,8 @@ PT_LLM_MODEL=google:gemini-2.5-pro
    variable that chooses, which is `PT_PLUGINS` for ports without their own variable.
 4. Register every first-party plugin's record types and fields, enabled or not. See section 4.6.
 5. Wire hooks, routes, jobs and widgets for enabled plugins only.
-6. Check required environment variables and the Postgres extensions in section 16.2.
+6. Check required environment variables, that `PT_LOCALES` names only registered locales, and
+   the Postgres extensions in section 16.2.
 7. Run each enabled plugin's own settings check, such as the Check plugin's status mapping.
 8. Log the final configuration in one line.
 
@@ -319,6 +324,9 @@ When a plugin owns a job, the matching admin role loses it.
 |---|---|---|
 | `plugin-check` or `plugin-superdesk` | The verdict, verification date and rationale | Reviewers can no longer set a verdict. They still review AI candidates |
 | `plugin-airtable` | Intake of documents and actors | Contributors can no longer create those records |
+
+A plugin lists the core fields it takes over in `takesOver`. While the plugin is enabled, the
+kernel makes those fields read-only in the admin to everyone but a super-admin, as in rule 3.
 
 ### 4.6 Plugins and the database schema
 
@@ -567,14 +575,15 @@ the month, as in "August 2022".
 
 ### 7.1 Languages and countries
 
-**Languages**
+**Languages** use Payload's localization. They are not records, and editors do not add them.
 
-| Field | Notes |
-|---|---|
-| `code` | Such as `en`, `fr`, `ar` |
-| `name` | Localized |
-| `direction` | Left to right or right to left |
-| `enabled` | Editors add and enable languages without a code change |
+- The Payload config registers a fixed list of locales, each with a code, a name and a text
+  direction. The list starts with English, French, Portuguese, Arabic and Swahili.
+- `PT_LOCALES` chooses which registered locales a deployment uses, such as `en,fr`. The admin
+  and the public site show only those. When it is unset, only English is used.
+- English, `en`, is the default locale and is always on.
+- The database stores the registered list, so `PT_LOCALES` never changes the schema. Adding a
+  locale to the registered list is a code change with a migration.
 
 **Countries**
 
@@ -583,7 +592,7 @@ the month, as in "August 2022".
 | `code` | Two-letter ISO code in lower case. Unique. Used in web addresses |
 | `name` | Localized |
 | `region` | For grouping countries once there are many |
-| `languages`, `defaultLanguage` | The languages this country publishes in |
+| `languages`, `defaultLanguage` | The languages this country publishes in, chosen from the enabled locales |
 | `rootArea` | The area that stands for the whole country, which national offices such as President belong to |
 | `about` | Localized |
 | `recordStatus` | ready, hold, archived. Starts as hold |
@@ -867,13 +876,24 @@ a claim hidden only because of its country comes back.
 
 Payload 4 publishes the language being edited. "Publish all languages" is a separate action.
 
+Payload keeps its own draft or published state for each language. It answers one question:
+is this language's text finished? A record's required localized fields count as existing in a
+language once the record is published in that language in Payload. The record status and the
+rules above still decide whether the record is live.
+
+Every public record type has the record status and the computed status from the day it is
+built. One shared query helper answers "published in this language", and every public query
+uses it. The parents table and the cascade build on that helper.
+
 ### 8.2 The cascade
 
 When an editor changes a record's status:
 
 1. The system recomputes that record's published status in every language before the save ends.
 2. A background job recomputes every record under it, in batches, inside database transactions.
-3. When the job ends, the site's cached pages for those records are refreshed.
+   The save starts the job at once. It does not wait for the worker's next poll, so held
+   content leaves the site within seconds.
+3. Each batch refreshes the site's cached pages for its records as it finishes, section 17.
 
 The public site asks one question of every list: is this record published in this language? It
 never checks parents.
@@ -1009,6 +1029,9 @@ accepts, or rejects it with a reason. Accepting creates a claim on hold and unve
 3. Preview: run without saving, and report rows to create, update and skip, with errors by row.
 4. Commit.
 
+The importer adapter only reads the file. The core does the mapping, the preview and the commit
+once, for every file format.
+
 An import can create areas, offices, actors, terms, claims, claim updates and documents, which is
 also how a country's lists of offices and areas are first loaded. Each record type has a natural
 key, such as country and slug, so importing the same file twice updates records instead of
@@ -1049,6 +1072,9 @@ After 5 failures in a row, the system stops calling an outside service for 60 se
 | `cascadeStatus` | core | A record status changes |
 | `refreshCounts` | core | After a cascade or a rating change |
 | `cleanupJobs` | core | Hourly |
+
+The stages of one document run as one workflow, so each stage starts when the last one ends
+instead of waiting for the worker's next poll.
 
 ## 10. The UI layer
 
@@ -1115,8 +1141,8 @@ so pages, share images and embeds agree.
 
 ### 10.5 Languages, accessibility and weight
 
-- Interface text comes from a dictionary in plugin-site. Editors can add a language and translate
-  the interface without a code change.
+- Interface text comes from a dictionary in plugin-site. Editors translate the interface into
+  any enabled language without a code change.
 - Layouts use logical CSS properties, so right-to-left languages such as Arabic work.
 - Ratings are never shown by colour alone. Contrast meets WCAG AA, including every rating colour.
 - The timeline is a real ordered list, and every control works with a keyboard.
@@ -1180,7 +1206,10 @@ The language comes first, then the country. Addresses are lower case with no tra
   shows its page if it has one, and otherwise lists its seats.
 - **One namespace per country.** The segment after `/{cc}/` can be an area, a national office or
   a reserved word, so these must not collide. The reserved words are `officials`, `e`, `p`, `a`,
-  `search` and `feed.xml`.
+  `search`, `feed.xml` and `opengraph-image`.
+- **One namespace per language.** The segment after `/{lang}/` can be a country code, an editor
+  page or a reserved word. An editor page's slug must not be two letters long, and must not be
+  `topics`, `themes`, `search` or `opengraph-image`.
 - **A renamed slug keeps working.** The old slug sends a permanent redirect to the new one.
 - **`/` chooses a language,** the visitor's preferred enabled language, otherwise English.
 - **The language switch keeps the page.** Slugs are not translated, so only the language changes.
@@ -1197,12 +1226,14 @@ The language comes first, then the country. Addresses are lower case with no tra
 | API | `/api/v1/...` |
 | Health | `/api/health`, `/api/health/ready` |
 | Plugin routes | `/api/plugins/{plugin}/...` |
+| Cache refresh, internal | `/api/internal/revalidate` |
 | Admin | `/admin` |
 | Embeds, version 2 | `/embed/{lang}/{cc}/p/{claim}`, `/embed/{lang}/{cc}/e/{actor}` |
 | oEmbed, version 2 | `/api/oembed?url=` |
 
-Payload's own REST and GraphQL routes stay available to the admin and signed-in users. The site
-never calls them.
+Payload's GraphQL API is switched off. Payload's REST routes serve the admin and signed-in users
+only, with the exceptions in section 13.1. The site never calls them, apart from loading public
+media files.
 
 ## 12. The API
 
@@ -1257,7 +1288,9 @@ stored, credentials are encrypted, and staff identities stay private.
 
 | Area | Protection |
 |---|---|
-| Public site and API read routes | None |
+| Public site and API read routes | None. They return only the fields in the contract |
+| Payload's REST routes | Signed-in users only. An anonymous request is refused, except on the routes the sign-in page needs, password reset, and the files of public media such as actor photos |
+| Payload's GraphQL API | Switched off |
 | Public forms | Captcha and rate limits |
 | Admin | Payload's default sign-in, email and password, with Payload 4 refresh tokens |
 | Plugin routes | A shared secret or signature per route |
@@ -1265,6 +1298,14 @@ stored, credentials are encrypted, and staff identities stay private.
 
 Payload 4 enforces access rules in server-side calls by default. Code that must bypass them, such
 as jobs and seeding, says so explicitly.
+
+Guests see only what the public API returns. Access rules also limit an anonymous read to
+published records, so the two layers back each other up. Internal data never reaches a guest:
+authorship, who verified a claim, AI confidence, processing details and plugin fields.
+
+The first super-admin is created at first start from two environment variables, an email and a
+password. Nobody can register through the admin. Password reset needs email, so until a provider
+is chosen (D40) a super-admin resets passwords in the admin.
 
 ### 13.2 Roles
 
@@ -1281,7 +1322,7 @@ A user can hold more than one role.
 
 | Action | super-admin | editor | contributor | reviewer | moderator |
 |---|---|---|---|---|---|
-| Manage countries, languages, offices, areas | Yes | | | | |
+| Manage countries, offices, areas | Yes | | | | |
 | Manage rating scales and claim types | Yes | | | | |
 | Create or edit actors, terms, documents | Yes | Yes | Yes | | |
 | Create claims by hand | Yes | Yes | Yes | | |
@@ -1420,6 +1461,8 @@ Rules specific to this design:
 3. The API responses are checked against the contract package.
 4. The site builds without importing Payload.
 5. The v2 security tests carry over and must keep passing.
+6. Integration and browser tests use their own database, never the development one.
+7. CI starts the built Docker image with Compose and runs the browser tests against it.
 
 ## 16. Deployment and operations
 
@@ -1438,6 +1481,12 @@ store, and Tika, so anyone can run the whole stack on one machine.
 
 Until the production launch, every environment runs on Docker, the database included.
 Production may move the database to a managed host.
+
+Version 1 runs one web process. Cached pages live in that process, section 17. Running more
+than one needs a shared cache first.
+
+A staging environment runs the image built from `main` from the first public page onward, so
+editors can review each piece as it lands.
 
 Images are published to Docker Hub as `codeforafrica/promisetracker-v3`, following v2's
 `codeforafrica/promisetracker-v2`.
@@ -1499,10 +1548,11 @@ check, and searches that found nothing.
 
 ### 16.5 Backups
 
-These targets apply from the production launch. The database keeps point-in-time recovery, so at
-most a few minutes of data can be lost, plus a daily full backup kept for 30 days. File storage
-keeps earlier versions of each file in a second region. The target is recovery within 4 hours.
-The team tests a restore every quarter.
+These targets apply from the production launch. Before that, any environment that holds real
+editorial data, staging included, has a daily database backup. In production the database keeps
+point-in-time recovery, so at most a few minutes of data can be lost, plus a daily full backup
+kept for 30 days. File storage keeps earlier versions of each file in a second region. The
+target is recovery within 4 hours. The team tests a restore every quarter.
 
 ### 16.6 A new installation
 
@@ -1510,7 +1560,7 @@ Migrations create the default Promise claim type and the Delivery rating scale. 
 
 | Order | What | Minimum |
 |---|---|---|
-| 1 | Languages | English and French |
+| 1 | Languages, through `PT_LOCALES` | English and French |
 | 2 | A country | One |
 | 3 | Its areas and offices, usually by spreadsheet import | The levels you will track |
 | 4 | Topics | 8 to 15 |
@@ -1546,6 +1596,11 @@ components. A change refreshes only the pages tagged with the changed records.
 | `claim:{id}` | The claim or one of its updates changes |
 | `ratings` | A rating scale changes |
 | `site` | Site settings or picks change |
+
+A change refreshes its tags at once, as part of the same save. A change made by a background job
+in the worker calls an internal route on the web process, which refreshes the tags there. The
+call is signed with the application secret, so it needs no setting of its own. There is no
+shared cache service.
 
 ## 18. Measures
 
@@ -1601,7 +1656,8 @@ Named modules from v2 carry over, listed in Appendix B.
 
 `main` is the production branch. Work happens on branches and merges by pull request, with
 Conventional Commits messages. CI runs the linter, the migration check and the tests against a
-Postgres service, with only the core plugins enabled and no credentials.
+Postgres service, with only the core plugins enabled and no credentials. It then builds the
+Docker image, starts it with Compose and runs the browser tests against it.
 
 Biome lints and formats. Lefthook runs Biome, the type check and the unit tests before each commit,
 and the migration check and integration tests before each push. TypeScript is strict, bans `any`,
@@ -1673,6 +1729,11 @@ codemods, and passes the full test suite before merging.
 | D42 | Check statuses are managed in Check. The plugin maps them and starts from v2's webhook handling |
 | D43 | Editors sign in with Payload's default email and password authentication |
 | D44 | Search uses Payload's search plugin |
+| D45 | Languages come from Payload's localization. Locales are registered in code and switched on with `PT_LOCALES`. English is the default. Editors do not add languages |
+| D46 | Payload's GraphQL API is off, and its REST routes are for signed-in users. Guests get only the fields in the public API |
+| D47 | Cached pages are refreshed as soon as a record changes. No shared cache service. Version 1 runs one web process |
+| D48 | The first super-admin is created from environment variables. D43 stands |
+| D49 | Spreadsheet importers only read files. The core maps, previews and saves |
 
 ### 20.2 Why
 
@@ -1730,16 +1791,24 @@ the platform.
    `pg_trgm` and point-in-time recovery.
 3. The production S3-compatible store, with a second region for copies.
 4. The email provider. Brevo is the likely choice.
+5. Whether Payload 4.0 has been released. If it is still in beta, the team decides whether to
+   launch on the pinned beta.
+6. The staging host, needed as soon as the first public page exists.
 
 ### Superdesk, later
 
-5. The Content API prefix, whether the Production API runs, the content profile, the vocabulary
+7. The Content API prefix, whether the Production API runs, the content profile, the vocabulary
    and desk ids, a service account, whether HTTP push is available, and the Superdesk version.
 
 ### Maps, version 2
 
-6. The map tile provider and its licence, and the source of boundary data and its attribution
+8. The map tile provider and its licence, and the source of boundary data and its attribution
    rules.
+
+### Google Analytics, after launch
+
+9. How visits to cached pages are counted, since the server does not see them, and the consent
+   notice Google Analytics needs under the laws in section 13.9.
 
 ## 22. Appendix B: what v2 does today
 
