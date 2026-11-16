@@ -1,3 +1,14 @@
+> [!IMPORTANT]
+> **PromiseTracker v3 is under construction in this repository.** It replaces v2 on `main`, runs
+> on PostgreSQL and Payload 4, and no longer needs Airtable.
+>
+> - Read the [product specification](docs/spec/promisetracker-v3-product-spec.md) and the
+>   [system specification](docs/spec/promisetracker-v3-system-specification.md).
+> - The work is tracked in the [v3: version 1 milestone](https://github.com/CodeForAfrica/PromiseTracker/milestone/1).
+> - v2 is kept on the [`v2` branch](https://github.com/CodeForAfrica/PromiseTracker/tree/v2) and the
+>   [`v2-final` tag](https://github.com/CodeForAfrica/PromiseTracker/tree/v2-final). The instructions
+>   below describe v2 until v3's code lands.
+
 **PromiseTracker**, is a tool to help journalists and civil society watchdogs more easily track campaign promises and other political / government pledges, using official evidence / data, as well as crowdsourced information, with a transparent and defensible methodology, to help inject accountability and honesty into the often cavalier way that promises are made to citizens to win their support for elections, policies, contracts ... but are then seldom honoured.
 
 ### Requirements
