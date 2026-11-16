@@ -1510,7 +1510,10 @@ These come from the product definition. Each has a number that would make us cha
 
 ### 19.1 Repository
 
-A new monorepo, managed with pnpm workspaces.
+A monorepo, managed with pnpm workspaces, in this repository, `CodeForAfrica/PromiseTracker`. It
+replaces v2 on `main`. Before v3 lands, v2 is kept on a `v2` branch and tagged `v2-final`, so its
+history, issues and links stay. The repository's Vercel project, which builds v2, is changed or
+removed, since v3 ships as a Docker image.
 
 ```
 apps/
@@ -1574,7 +1577,7 @@ codemods, and passes the full test suite before merging.
 | D9 | Citizen input is native and moderated |
 | D10 | No multi-tenancy. Country is part of the address and a field |
 | D11 | Caching, paging, search and structured data are duties of the UI layer, which the API makes possible |
-| D12 | v3 is a new codebase in a new monorepo, reusing named v2 modules |
+| D12 | v3 is a new codebase, reusing named v2 modules |
 | D13 | The core is a plugin |
 | D14 | Actors are people, parties and institutions |
 | D15 | Replaced by D36 |
@@ -1599,6 +1602,7 @@ codemods, and passes the full test suite before merging.
 | D34 | Shipped as one Docker image |
 | D35 | Version 1 matches what v2 does today, with verification in the built-in queue or Check |
 | D36 | Short address letters: `/e/` for actors, `/p/` for claims |
+| D37 | v3 lives in this repository and replaces v2 on `main`. v2 is kept on a branch and a tag |
 
 ### 20.2 Why
 
