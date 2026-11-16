@@ -1,7 +1,7 @@
 import type { Health, ServiceHealth } from '@promisetracker/contract'
-import { readEnabledPlugins } from '@promisetracker/kernel'
 import type { Payload } from 'payload'
 
+import { kernel } from './kernel'
 import { checkStorage } from './storage'
 
 async function timed(check: () => Promise<{ kind: string }>): Promise<ServiceHealth> {
@@ -38,7 +38,8 @@ export async function getHealth(getPayload: () => Promise<Payload>): Promise<Hea
   const required = [database, storage]
   return {
     status: required.every((s) => s.healthy) ? 'healthy' : 'unhealthy',
-    plugins: { enabled: readEnabledPlugins() },
+    plugins: { enabled: [...kernel.enabled] },
+    ports: kernel.ports(),
     services: { database, storage },
   }
 }

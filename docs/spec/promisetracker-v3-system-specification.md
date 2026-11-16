@@ -290,8 +290,11 @@ PT_LLM_MODEL=google:gemini-2.5-pro
 
 1. Read `PT_PLUGINS` and load the manifests.
 2. Check dependencies and load order. A circular dependency stops start-up.
-3. For each port that needs exactly one adapter, find it. None, or more than one, stops start-up
-   with a message naming the candidates and the variable that chooses.
+3. For each port that needs exactly one adapter, find it. Core's adapter is the default and gives
+   way to a single adapter from another enabled plugin. `PT_VERIFICATION` chooses between
+   verification adapters, and `PT_LLM_MODEL` chooses the AI provider and model. None, or more
+   than one with nothing to choose, stops start-up with a message naming the candidates and the
+   variable that chooses, which is `PT_PLUGINS` for ports without their own variable.
 4. Register every first-party plugin's record types and fields, enabled or not. See section 4.6.
 5. Wire hooks, routes, jobs and widgets for enabled plugins only.
 6. Check required environment variables and the Postgres extensions in section 16.2.

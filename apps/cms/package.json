@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./config": "./src/payload.config.ts",
-    "./env": "./src/env.ts"
+    "./env": "./src/env.ts",
+    "./kernel": "./src/kernel.ts"
   },
   "scripts": {
     "payload": "payload",

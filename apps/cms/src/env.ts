@@ -1,9 +1,12 @@
+/** Environment variables, as process.env or a plain object in tests. */
+type Env = Readonly<Record<string, string | undefined>>
+
 /**
  * Settings with development defaults. The defaults match docker/compose.yaml,
  * so `pnpm services` and an env file that only moves a port are enough to run
  * the app and the tests. Production must set every value.
  */
-export function databaseUrl(env: NodeJS.ProcessEnv = process.env): string {
+export function databaseUrl(env: Env = process.env): string {
   if (env.DATABASE_URL) return env.DATABASE_URL
   if (env.NODE_ENV === 'production') return ''
   const user = env.PT_POSTGRES_USER ?? 'promisetracker'
@@ -17,7 +20,7 @@ export function databaseUrl(env: NodeJS.ProcessEnv = process.env): string {
  * Fails at start-up, with the names of what is missing, rather than later with
  * a vaguer error from Payload or the database driver.
  */
-export function assertRuntimeEnv(env: NodeJS.ProcessEnv = process.env): void {
+export function assertRuntimeEnv(env: Env = process.env): void {
   const missing: string[] = []
   if (!env.PAYLOAD_SECRET) missing.push('PAYLOAD_SECRET')
   if (env.NODE_ENV === 'production' && !env.DATABASE_URL) missing.push('DATABASE_URL')

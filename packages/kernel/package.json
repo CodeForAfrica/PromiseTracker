@@ -12,5 +12,8 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "typescript": "catalog:"
+  },
+  "dependencies": {
+    "payload": "catalog:"
   }
 }

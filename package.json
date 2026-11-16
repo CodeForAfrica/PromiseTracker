@@ -20,7 +20,7 @@
     "generate": "pnpm --filter @promisetracker/cms generate",
     "lint": "biome check .",
     "format": "biome check --write .",
-    "typecheck": "pnpm -r --parallel typecheck",
+    "typecheck": "pnpm -r --parallel typecheck && tsc -p tsconfig.json",
     "test": "pnpm test:unit && pnpm test:int && pnpm test:e2e",
     "test:unit": "vitest run --project unit",
     "test:int": "vitest run --project int",
@@ -38,9 +38,12 @@
     "@promisetracker/cms": "workspace:*",
     "@promisetracker/contract": "workspace:*",
     "@promisetracker/kernel": "workspace:*",
+    "@promisetracker/plugin-core": "workspace:*",
+    "@promisetracker/plugin-site": "workspace:*",
     "@promisetracker/sdk": "workspace:*",
     "@types/node": "catalog:",
     "lefthook": "catalog:",
+    "payload": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }
