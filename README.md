@@ -99,7 +99,11 @@ Git hooks, run by Lefthook:
 - **Before each commit:** Biome formats and lints the staged files, the TypeScript check runs,
   and the unit tests run.
 - **Before each push:** the migration check and the integration tests run. They need
-  `pnpm services`.
+  `pnpm services` and a `.env.local`.
+
+`pnpm install` installs the hooks for everyone who clones the repository, worktrees included. To
+skip them once, for example to push work in progress, set `LEFTHOOK=0`. CI runs the same checks
+either way.
 
 CI runs all of these, plus the browser tests and the Docker build, on every pull request. Merges
 to `main` publish the image to Docker Hub as `codeforafrica/promisetracker-v3`.
