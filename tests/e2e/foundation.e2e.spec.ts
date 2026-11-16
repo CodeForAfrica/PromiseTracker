@@ -26,3 +26,8 @@ test('the admin is mounted at /admin', async ({ page }) => {
   await expect(page).toHaveURL(/\/admin/)
   await expect(page.locator('form')).toBeVisible()
 })
+
+test('GraphQL is switched off', async ({ request }) => {
+  const res = await request.post('/api/graphql', { data: { query: '{ __typename }' } })
+  expect(res.status()).toBe(404)
+})

@@ -5,8 +5,8 @@ is the source of truth for behaviour. Work is tracked as issues in the "v3: vers
 
 ## Layout
 
-- `apps/site`: the Next.js app. Public routes in `src/app/(site)`. Payload's admin, its REST and
-  GraphQL routes, `/api/v1` and `/api/health` in `src/app/(payload)`.
+- `apps/site`: the Next.js app. Public routes in `src/app/(site)`. Payload's admin, its REST routes,
+  `/api/v1` and `/api/health` in `src/app/(payload)`. GraphQL is switched off.
 - `apps/cms`: the Payload config, migrations, generated types, `/api/v1` handlers and health checks.
 - `packages/kernel`, `packages/contract`, `packages/sdk`, `packages/ui`: see the README.
 - `plugins/*`: Payload plugins. Each adds its collections, globals and fields to the config.
