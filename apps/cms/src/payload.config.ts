@@ -13,7 +13,9 @@ import { assertExtensions } from './extensions'
 import { ensureFirstAdmin } from './firstAdmin'
 import { kernel } from './kernel'
 import { defaultLocale, registeredLocales } from './locales'
+import { loggerConfig } from './logger'
 import { migrations } from './migrations'
+import { reportError } from './sentry'
 import { storageAdapters } from './storage'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -58,12 +60,22 @@ export default buildConfig({
   },
   // Guests read through /api/v1 only, and nothing here uses GraphQL (D46).
   graphQL: { disable: true },
+  hooks: {
+    // Errors Payload catches in its routes and operations never reach Next.js's
+    // onRequestError, so they are reported here. Only a developer's go to Sentry.
+    afterError: [
+      ({ error, collection, req }) => {
+        reportError(error, { collection: collection?.slug, method: req.method })
+      },
+    ],
+  },
   jobs: {
     // Safe with several worker replicas: Payload 4 claims each job with a
     // processing token and lease before running it, so no two workers run the
     // same job.
     autoRun: role === 'worker' ? [{ cron: '* * * * *', allQueues: true }] : [],
   },
+  logger: loggerConfig(),
   // Start-up checks that need a running Payload (section 4.4). Payload applies
   // pending migrations before this, and migration commands skip it.
   onInit: async (payload) => {

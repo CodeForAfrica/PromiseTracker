@@ -12,7 +12,7 @@ import type {
 // A change between Payload betas touches this file alone.
 import { definePlugin } from 'payload'
 
-import { KernelError } from './errors'
+import { ConfigurationError } from './errors'
 import type { AdapterContext, PortAdapters, PortName } from './ports'
 import { forgetSettings, SETTINGS_GLOBAL } from './settings'
 
@@ -147,7 +147,7 @@ function disableCollection(slug: string, collection: CollectionConfig): Collecti
   // Payload serves sign-in and file routes for these outside the access rules
   // set below, so the collection cannot be closed safely.
   if (collection.auth || collection.upload) {
-    throw new KernelError(
+    throw new ConfigurationError(
       `Plugin "${slug}" owns "${collection.slug}", which has sign-in or uploads. ` +
         'Payload serves those outside access rules, so this plugin cannot be disabled. Enable it in PT_PLUGINS.',
     )
@@ -210,7 +210,7 @@ const logOverride =
 function ownedGroup(slug: string, fields: readonly Field[], enabled: boolean): Field {
   const nonOptional = nonOptionalFields(fields)
   if (nonOptional.length > 0) {
-    throw new KernelError(
+    throw new ConfigurationError(
       `Plugin "${slug}" adds fields that are required or need rows (${nonOptional.join(', ')}). ` +
         'Fields a plugin adds must be optional.',
     )
@@ -241,13 +241,13 @@ function extendCollections(
     const index = result.findIndex((c) => c.slug === target)
     const existing = result[index]
     if (!existing) {
-      throw new KernelError(
+      throw new ConfigurationError(
         `Plugin "${manifest.slug}" extends "${target}", which no earlier plugin defines. ` +
           'Load the plugin that owns it first.',
       )
     }
     if (existing.fields.some((f) => 'name' in f && f.name === manifest.slug)) {
-      throw new KernelError(
+      throw new ConfigurationError(
         `"${target}" already has a field named "${manifest.slug}", which plugin "${manifest.slug}" needs for its group.`,
       )
     }
@@ -361,7 +361,7 @@ function takeOverFields(
     const index = result.findIndex((c) => c.slug === collection)
     let target = result[index]
     if (!target) {
-      throw new KernelError(
+      throw new ConfigurationError(
         `Plugin "${manifest.slug}" takes over fields on "${collection}", which no earlier plugin defines. ` +
           'Load the plugin that owns it first.',
       )
@@ -371,7 +371,7 @@ function takeOverFields(
         takenOver(manifest.slug, path, field),
       )
       if (!replaced) {
-        throw new KernelError(
+        throw new ConfigurationError(
           `Plugin "${manifest.slug}" takes over "${collection}.${path}", which does not exist.`,
         )
       }
@@ -393,7 +393,9 @@ function disableTask(slug: string, task: TaskConfig): TaskConfig {
     ...rest,
     retries: 0,
     handler: () => {
-      throw new KernelError(`Task "${task.slug}" belongs to plugin "${slug}", which is disabled.`)
+      throw new ConfigurationError(
+        `Task "${task.slug}" belongs to plugin "${slug}", which is disabled.`,
+      )
     },
   }
 }
@@ -404,7 +406,7 @@ function disableWorkflow(slug: string, workflow: WorkflowConfig): WorkflowConfig
     ...rest,
     retries: 0,
     handler: () => {
-      throw new KernelError(
+      throw new ConfigurationError(
         `Workflow "${workflow.slug}" belongs to plugin "${slug}", which is disabled.`,
       )
     },
@@ -511,7 +513,7 @@ export function defineFinalPlugin(slug: string, apply: (config: Config) => Confi
  */
 export function definePromiseTrackerPlugin(manifest: PluginManifest): PromiseTrackerPlugin {
   if (!/^[a-z][a-z0-9-]*$/.test(manifest.slug)) {
-    throw new KernelError(
+    throw new ConfigurationError(
       `Plugin slug "${manifest.slug}" must be lower case letters, digits and hyphens.`,
     )
   }
