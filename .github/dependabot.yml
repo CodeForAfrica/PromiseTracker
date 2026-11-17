@@ -6,11 +6,13 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    ignore:
+      # Payload 4 is pinned to an exact beta until 4.0 (D20). Each beta upgrade
+      # is done by hand on its own branch, with Payload's codemods and the full
+      # test suite (section 19.2). Remove this once 4.0 is out.
+      - dependency-name: "payload"
+      - dependency-name: "@payloadcms/*"
     groups:
-      payload:
-        patterns:
-          - "@payloadcms/*"
-          - "payload"
       ai-sdk:
         patterns:
           - "@ai-sdk/*"
@@ -20,3 +22,22 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
+
+  # The Node base image. Its version follows .nvmrc, so a major version moves by hand.
+  - package-ecosystem: docker
+    directory: "/docker"
+    schedule:
+      interval: weekly
+    ignore:
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
+
+  # Postgres, RustFS, Tika, Mailpit and the AWS CLI in Compose. Postgres moves a
+  # major version by hand, since the data folder must be upgraded with it.
+  - package-ecosystem: docker-compose
+    directory: "/docker"
+    schedule:
+      interval: weekly
+    ignore:
+      - dependency-name: "postgres"
+        update-types: ["version-update:semver-major"]

@@ -38,7 +38,7 @@ source, and follows what happens to it over time.
    on your machine, change it in the file, for example `PT_POSTGRES_PORT=55432`. The database
    and storage addresses follow it.
 
-3. Start Postgres, file storage (RustFS) and Tika.
+3. Start Postgres, file storage (RustFS), Tika and Mailpit.
 
    ```bash
    pnpm services
@@ -54,6 +54,9 @@ The site is at http://localhost:3000 and the admin at http://localhost:3000/admi
 to the admin asks you to create a user.
 
 To run everything in Docker instead, the app and the worker included, use `pnpm stack`.
+
+Email sent in development, by the app or the tests, goes to Mailpit at http://localhost:8025. No
+email reaches a real inbox until a provider is set with `SMTP_HOST`.
 
 ## Commands
 
@@ -72,6 +75,7 @@ To run everything in Docker instead, the app and the worker included, use `pnpm 
 | Unit tests, no services needed              | `pnpm test:unit`                      |
 | Integration tests, needs Postgres           | `pnpm test:int`                       |
 | Browser tests, needs Postgres               | `pnpm test:e2e`                       |
+| Unit and integration tests, with coverage   | `pnpm test:coverage`                  |
 | Build the image                             | `docker build -f docker/Dockerfile .` |
 
 ## How the code is laid out
@@ -105,8 +109,16 @@ Git hooks, run by Lefthook:
 skip them once, for example to push work in progress, set `LEFTHOOK=0`. CI runs the same checks
 either way.
 
-CI runs all of these, plus the browser tests and the Docker build, on every pull request. Merges
-to `main` publish the image to Docker Hub as `codeforafrica/promisetracker-v3`.
+The integration and browser tests never touch the database `pnpm dev` uses. Each suite drops,
+creates and migrates its own on the same Postgres, `<database>_int_test` and `<database>_e2e_test`,
+and refuses any database that is not local or not named that way. The browser tests start their
+own dev server on port 3100, so they can run while `pnpm dev` is running.
+
+CI runs all of these on every pull request, with coverage targets: 70% overall and 85% for plugin
+loading, the pipeline and the publishing rules. It also fails when `pnpm generate` changes a
+generated file. It then builds the Docker image, starts it with Compose, and runs the browser tests
+against it. Merges to `main` publish the image to Docker Hub as `codeforafrica/promisetracker-v3`
+once those pass.
 
 ## Docker image
 
