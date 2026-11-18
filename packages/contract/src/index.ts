@@ -206,7 +206,15 @@ export const ActorSummary = Holder.extend({
 })
 export type ActorSummary = z.infer<typeof ActorSummary>
 
-/** `GET /api/v1/countries/{cc}/actors`. */
+/**
+ * `GET /api/v1/countries/{cc}/actors`.
+ *
+ * - `stage=current` lists those holding a seat today, and `stage=past` those
+ *   who held one before. Parties and institutions hold no seats, so they
+ *   appear only in a list with no stage, where their stage is `current`.
+ * - `nextCursor` is an offset. A term that starts or ends between two
+ *   requests can shift the list by one.
+ */
 export const ActorList = z.object({
   items: z.array(ActorSummary),
   total: z.number().int().nonnegative(),

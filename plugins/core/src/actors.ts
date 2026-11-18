@@ -26,6 +26,7 @@ import {
 } from './places'
 import { withPublishing } from './publishing'
 import { SLUG_PATTERN } from './slugs'
+import { termTitle } from './termTitle'
 
 /** What an actor is (section 7.3). */
 export const ACTOR_KINDS = ['person', 'party', 'institution'] as const
@@ -339,6 +340,11 @@ export const Actors: CollectionConfig = withPublishing(
   [],
 )
 
+/**
+ * The fields the term checks read from an actor, office or area. Written out
+ * here because this plugin is built before the app, and cannot see the types
+ * Payload generates for the app.
+ */
 type Ref = { id: string; country?: unknown; kind?: unknown; type?: unknown; areaType?: unknown }
 
 /**
@@ -431,13 +437,11 @@ const checkTerm: CollectionBeforeChangeHook = async ({ data, originalDoc, req })
       endsOn,
     })
   }
-  // A label for the admin's lists, such as "Achieng Wekesa, Governor (2022)".
   const name = (ref: Ref) => {
     const value: unknown = Reflect.get(ref, 'name')
     return typeof value === 'string' ? value : ''
   }
-  const year = startsOn ? ` (${startsOn.slice(0, 4)})` : ''
-  return { ...data, country, title: `${name(actor)}, ${name(office)}${year}` }
+  return { ...data, country, title: termTitle(name(actor), name(office), startsOn) }
 }
 
 /**

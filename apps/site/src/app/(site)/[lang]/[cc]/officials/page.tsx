@@ -13,7 +13,16 @@ import {
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
-import { findSite, getActors, getCountry, getOffices, LOGO, loadShell, orNotFound } from '@/data'
+import {
+  findSite,
+  getActors,
+  getAllActors,
+  getCountry,
+  getOffices,
+  LOGO,
+  loadShell,
+  orNotFound,
+} from '@/data'
 
 type Props = {
   params: Promise<{ lang: string; cc: string }>
@@ -60,8 +69,9 @@ export default async function OfficialsPage({ params, searchParams }: Props) {
   const [list, offices, parties, everyone] = await Promise.all([
     orNotFound(getActors(lang, cc, query)),
     orNotFound(getOffices(lang, cc)),
-    orNotFound(getActors(lang, cc, { kind: 'party', limit: 100 })),
-    orNotFound(getActors(lang, cc, { stage: 'current', limit: 100 })),
+    // Every party, and the areas of everyone in office, so no choice is missing.
+    orNotFound(getAllActors(lang, cc, { kind: 'party' })),
+    orNotFound(getAllActors(lang, cc, { stage: 'current' })),
   ])
   const t = shell.site.strings
   const next = list.nextCursor
@@ -81,8 +91,8 @@ export default async function OfficialsPage({ params, searchParams }: Props) {
         <OfficialsFilters
           site={shell.site}
           offices={toChoices(offices.items)}
-          areas={areaChoices(everyone.items)}
-          parties={toChoices(parties.items)}
+          areas={areaChoices(everyone)}
+          parties={toChoices(parties)}
           selected={{
             office: filters.office ?? '',
             area: filters.area ?? '',

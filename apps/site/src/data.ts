@@ -74,6 +74,18 @@ export const getActors = (locale: string, code: string, query: ActorQuery = {}) 
     { tags: peopleTags(code), revalidate: HOLDERS_TTL },
   )()
 
+/** Every actor a query matches, following each page. For filter choices, not for display. */
+export async function getAllActors(locale: string, code: string, query: ActorQuery = {}) {
+  const items = []
+  let cursor: string | undefined
+  do {
+    const page = await getActors(locale, code, { ...query, limit: 100, cursor })
+    items.push(...page.items)
+    cursor = page.nextCursor ?? undefined
+  } while (cursor)
+  return items
+}
+
 export const getActor = (locale: string, code: string, slug: string) =>
   unstable_cache(() => sdk.getActor(locale, code, slug), [RUN, 'actor', locale, code, slug], {
     tags: peopleTags(code),

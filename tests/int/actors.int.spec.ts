@@ -353,6 +353,58 @@ describe('actors and terms', () => {
       })
     })
 
+    it('renames an actor even when one of their terms breaks a rule added since', async () => {
+      const office = await idOf('offices', 'woman-representative')
+      const area = await idOf('areas', 'nairobi-county')
+      const actor = await idOf('actors', 'wanjiru-kamau')
+      // A second holder, saved while the office took two, then the office goes back to one.
+      await payload.update({
+        collection: 'offices',
+        id: office,
+        data: { holdersPerSeat: 2 },
+        overrideAccess: true,
+      })
+      const second = await payload.create({
+        collection: 'terms',
+        data: {
+          actor,
+          office,
+          area,
+          startsOn: '2023-01-01T12:00:00.000Z',
+          endsOn: '2023-06-30T12:00:00.000Z',
+        },
+        overrideAccess: true,
+      })
+      await payload.update({
+        collection: 'offices',
+        id: office,
+        data: { holdersPerSeat: 1 },
+        overrideAccess: true,
+      })
+      await payload.update({
+        collection: 'actors',
+        id: actor,
+        data: { name: 'Wanjiru N. Kamau' },
+        overrideAccess: true,
+      })
+      const { docs } = await payload.find({
+        collection: 'terms',
+        where: { actor: { equals: actor } },
+        overrideAccess: true,
+      })
+      expect(docs.map((t) => t.title).sort()).toEqual([
+        'Wanjiru N. Kamau, Woman Representative (2022)',
+        'Wanjiru N. Kamau, Woman Representative (2023)',
+      ])
+      await payload.delete({ collection: 'terms', id: second.id, overrideAccess: true })
+      await payload.update({
+        collection: 'actors',
+        id: actor,
+        data: { name: 'Wanjiru Kamau' },
+        overrideAccess: true,
+      })
+    })
+
     it('refuses to delete an area or office that a term names', async () => {
       await expect(
         payload.delete({
@@ -508,6 +560,20 @@ describe('actors and terms', () => {
         to: `/${code}/mvita-constituency/mp`,
         permanent: true,
       })
+    })
+
+    it('keeps a national office’s address when an area once had the same slug', async () => {
+      // Mvita was renamed above, so its old slug is free for an office.
+      const office = await payload.create({
+        collection: 'offices',
+        locale: 'en',
+        data: { name: 'Mvita', areaType: 'country', holdersPerSeat: 1, order: 9, country },
+        overrideAccess: true,
+      })
+      // The office has no holder, so it leads nowhere: not to the renamed area.
+      expect(await sdk.getRedirect('en', `/${code}/mvita`)).toBeNull()
+      await payload.delete({ collection: 'offices', id: office.id, overrideAccess: true })
+      expect(await sdk.getRedirect('en', `/${code}/mvita`)).toMatchObject({ permanent: true })
     })
 
     it('counts what the country page’s sections need (section 10.3)', async () => {

@@ -372,17 +372,20 @@ async function sectionCounts(
 ): Promise<Country['counts']> {
   const holders = await holdersBySeat(payload, country, locale, {})
   const current = new Set([...holders.values()].flat().map((h) => h.slug))
-  const now = new Date()
-  const past = await findTerms(payload, country, locale, pastTerms(now))
-  const actors = await findActors(
-    payload,
-    publicActors(country, locale, now, idIn(past.map((t) => idOf(t.actor)))),
-    locale,
-  )
-  return {
-    currentHolders: current.size,
-    pastTerms: past.filter((t) => actors.has(idOf(t.actor) ?? '')).length,
-  }
+  // Counted in the database: a country's past terms grow with its history.
+  // A past term's actor is on the record, so being published is enough.
+  const { totalDocs } = await payload.count({
+    collection: 'terms',
+    where: {
+      and: [
+        { country: { equals: country } },
+        pastTerms(),
+        { 'actor.publishedIn': { in: [locale] } },
+      ],
+    },
+    overrideAccess: false,
+  })
+  return { currentHolders: current.size, pastTerms: totalDocs }
 }
 
 /** Finds a record by its slug in a country, or by a slug it had before (section 11.2). */
@@ -823,8 +826,11 @@ const handlers: Record<string, Handler> = {
         if (offices.length !== 1 || !only) return notFound()
         return (await toHolder(only.office.slug, area.slug ?? slug)) ?? notFound()
       }
-      const seat = await toHolder(slug, null)
-      if (seat) return seat
+      // A current address wins over a former slug: a national office keeps
+      // its own address even when an area once had the same slug.
+      if (await findSeat(payload, country.id, slug, null)) {
+        return (await toHolder(slug, null)) ?? notFound()
+      }
       const renamed =
         (await bySlug(payload, 'areas', country.id, slug, true)) ??
         (await bySlug(payload, 'offices', country.id, slug, true))

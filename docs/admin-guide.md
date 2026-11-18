@@ -216,7 +216,8 @@ last, so in Kenya it changes at 03:00. The site shows the change within the hour
 
 A seat holds as many people at once as its office's **Holders per seat**, usually one. A term
 that would overlap another in a full seat is refused: end the old term first. The new term may
-start on the day the old one ends.
+start on the day the old one ends. The check runs when a term is saved: two people saving terms for the
+same seat at the same moment could both get through, so check the seat afterwards.
 
 **When a term ends,** set **Ends on**, write the **Closing summary**, and choose the
 **Successor**. Then add the new holder's term. The seat's address, such as

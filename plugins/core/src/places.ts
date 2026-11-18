@@ -16,6 +16,7 @@ import { refreshTags } from './cache'
 import { related, relatedSection } from './joins'
 import { DEFAULT_LOCALE } from './locales'
 import { slugify, slugProblem } from './slugs'
+import { termTitle } from './termTitle'
 
 /** The kinds of area in a country's nested list (section 7.2). */
 export const AREA_TYPES = [
@@ -212,22 +213,42 @@ export const keepFormerSlug: CollectionBeforeChangeHook = ({ data, originalDoc }
 }
 
 /**
- * A renamed actor renames their terms in the admin's lists. Saving each term
- * again works its title out afresh.
+ * A renamed actor or office renames their terms in the admin's lists. Only
+ * the title is written, straight to the database: saving each term again
+ * would run its checks, and an old term that today's rules would refuse
+ * would block the rename.
  */
 const retitleTerms = async (
   req: PayloadRequest,
   field: 'actor' | 'office',
   id: string,
 ): Promise<void> => {
-  await req.payload.update({
+  const { docs } = await req.payload.find({
     collection: 'terms',
     where: { [field]: { equals: id } },
-    data: {},
+    // The actor and office, for their names.
+    depth: 1,
+    locale: DEFAULT_LOCALE,
+    pagination: false,
     // The system keeps the titles in step with the names.
     overrideAccess: true,
     req,
   })
+  const nameOf = (value: unknown): string => {
+    const name: unknown = value && typeof value === 'object' ? Reflect.get(value, 'name') : null
+    return typeof name === 'string' ? name : ''
+  }
+  for (const term of docs) {
+    const title = termTitle(nameOf(term.actor), nameOf(term.office), term.startsOn ?? null)
+    if (title === term.title) continue
+    await req.payload.db.updateOne({
+      collection: 'terms',
+      id: term.id,
+      data: { title },
+      req,
+      returning: false,
+    })
+  }
 }
 
 /** Renaming an actor or an office updates the titles of the terms that name it. */
