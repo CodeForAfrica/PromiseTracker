@@ -1,5 +1,9 @@
 // Loads the seed data into the database in .env: `pnpm seed`, or
 // `pnpm seed ke` for one country. See seed/README.md.
+//
+// The refresh at the end covers every tag a seed touches: `country:` and
+// `countries` for the country, `places:` for its areas and offices, and
+// `actors:` for its actors and terms.
 import '../tests/load-env'
 
 import { createHttpRefresher, getPayload } from '@promisetracker/cms'
@@ -14,7 +18,25 @@ if (process.env.NODE_ENV === 'production') {
   process.exit(1)
 }
 
-const asked = process.argv.slice(2)
+// A database on another host may be a shared or live one, so seeding it needs `--remote`.
+// A host without a dot, such as Compose's `postgres`, is on this machine's network.
+const REMOTE_FLAG = '--remote'
+const host = (() => {
+  try {
+    return new URL(process.env.DATABASE_URL ?? '').hostname
+  } catch {
+    return ''
+  }
+})()
+const local = ['', 'localhost', '127.0.0.1', '[::1]'].includes(host) || !host.includes('.')
+if (!local && !process.argv.includes(REMOTE_FLAG)) {
+  console.error(
+    `DATABASE_URL points at ${host}, which is not this machine. Add ${REMOTE_FLAG} to seed it anyway.`,
+  )
+  process.exit(1)
+}
+
+const asked = process.argv.slice(2).filter((arg) => arg !== REMOTE_FLAG)
 const unknown = asked.filter((code) => !(SEED_COUNTRIES as readonly string[]).includes(code))
 if (unknown.length > 0) {
   console.error(`No seed data for ${unknown.join(', ')}. Choose from ${SEED_COUNTRIES.join(', ')}.`)

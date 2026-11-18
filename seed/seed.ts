@@ -88,38 +88,6 @@ export type SeedResult = {
 }
 
 /**
- * Releases the actors this run created, so they appear on the site. Actors
- * seeded before keep the status they have, so an actor an editor held stays
- * held. Every new actor must be found, or the seed says so.
- */
-async function releaseNewActors(
-  payload: Payload,
-  code: SeedCountry,
-  country: string,
-  since: string,
-  created: number,
-): Promise<void> {
-  if (created === 0) return
-  const { docs, errors } = await payload.update({
-    collection: 'actors',
-    where: {
-      and: [
-        { country: { equals: country } },
-        { slug: { in: seedSlugs(code, 'actors') } },
-        { createdAt: { greater_than_equal: since } },
-      ],
-    },
-    data: { recordStatus: 'ready' },
-    overrideAccess: true,
-  })
-  if (errors.length > 0 || docs.length !== created) {
-    throw new Error(
-      `${created} actors were created but ${docs.length} were released: ${errors.map((e) => e.message).join('; ')}`,
-    )
-  }
-}
-
-/**
  * Loads one country's seed data through the import, so it is checked the
  * way an editor's spreadsheet is. Running it again changes nothing: each row
  * matches the record it made before.
@@ -129,7 +97,6 @@ export async function seedCountry(payload: Payload, code: SeedCountry): Promise<
   const counts = {} as SeedResult['counts']
   for (const target of SEED_ORDER) {
     const { headings, rows } = readSeed(code, target)
-    const since = new Date().toISOString()
     const result = await runImportPlan(payload, {
       target,
       country,
@@ -137,15 +104,16 @@ export async function seedCountry(payload: Payload, code: SeedCountry): Promise<
       rows,
       mapping: guessMapping(target, headings),
       commit: true,
+      // Actors the seed creates are ready, so they appear on the site. They
+      // save ready in one step, so an interrupted run leaves none on hold.
+      // An actor that exists keeps its status, so one an editor held stays held.
+      ...(target === 'actors' ? { onCreate: { recordStatus: 'ready' } } : {}),
     })
     if (result.errors.length > 0) {
       const lines = result.errors.map((e) => `  row ${e.line}: ${e.message}`).join('\n')
       throw new Error(`seed/data/${code}/${target}.csv has problems:\n${lines}`)
     }
     counts[target] = result.counts
-    if (target === 'actors') {
-      await releaseNewActors(payload, code, country, since, result.counts.create)
-    }
   }
   return { counts, notes: note ? [note] : [] }
 }

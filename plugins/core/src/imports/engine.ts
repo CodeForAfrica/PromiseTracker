@@ -22,6 +22,12 @@ type Input = {
   mapping: Readonly<Record<string, string>>
   /** False for a preview, which saves nothing. */
   commit: boolean
+  /**
+   * Values a record the import creates starts with, such as a status. They
+   * save with the record, in the same transaction. A record that exists
+   * keeps its own.
+   */
+  onCreate?: Readonly<Record<string, unknown>>
 }
 
 /** How many row errors an import keeps. The count covers them all. */
@@ -247,6 +253,7 @@ export async function runImportPlan(payload: Payload, input: Input): Promise<Imp
       slug: plan.slug,
       country: input.country,
       ...(plan.parent ? { parent: parentId } : {}),
+      ...(current ? {} : input.onCreate),
     }
     try {
       const id = await saveRow(
@@ -390,7 +397,8 @@ async function runTermsPlan(payload: Payload, input: Input): Promise<ImportResul
       continue
     }
     try {
-      await saveRow(payload, 'terms', current ? String(current.id) : null, data, plan)
+      const values = current ? data : { ...data, ...input.onCreate }
+      await saveRow(payload, 'terms', current ? String(current.id) : null, values, plan)
       counts[current ? 'update' : 'create'] += 1
     } catch (error) {
       fail(line, error instanceof Error ? error.message : String(error))

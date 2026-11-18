@@ -9,7 +9,8 @@ pnpm migrate
 pnpm seed
 ```
 
-`pnpm seed ke` loads one country. The seed refuses to run when `NODE_ENV` is `production`.
+`pnpm seed ke` loads one country. The seed refuses to run when `NODE_ENV` is `production`, and
+when `DATABASE_URL` points at another machine, unless you add `--remote`.
 
 ## What is in it
 
@@ -38,8 +39,9 @@ checked the way an editor's file is.
   by its actor, office, area and start date. A second run changes nothing. A changed row updates
   its record.
 - **It adds, and never removes.** A country that already exists keeps its settings. If it is not
-  ready, the seed says so, since its pages will not show. An actor you held stays held. Records you
-  added by hand are left alone. To start again, empty the database: `pnpm services:down`, remove
+  ready, the seed says so, since its pages will not show. Actors the seed creates are saved ready,
+  in the same step, so an interrupted run never leaves one on hold. An actor that exists keeps its
+  status, so one you held stays held. Records you added by hand are left alone. To start again, empty the database: `pnpm services:down`, remove
   the Postgres volume, then `pnpm services` and `pnpm migrate`.
 - **It loads in order:** offices, then areas, then actors, then terms, because each names records
   loaded before it.
