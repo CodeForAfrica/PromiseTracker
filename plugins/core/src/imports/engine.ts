@@ -3,6 +3,7 @@ import type { Payload, PayloadRequest, TypedLocale } from 'payload'
 import { commitTransaction, initTransaction, killTransaction } from 'payload'
 
 import { DEFAULT_LOCALE } from '../locales'
+import { slugProblem } from '../slugs'
 import type { ImportTarget, PlannedRow } from './targets'
 import { existingBySlug, planRow } from './targets'
 
@@ -57,6 +58,42 @@ function unchanged(
   return plan.parent === null || idOf(current.parent) === parentId
 }
 
+const isNational = (areaType: unknown): boolean => !areaType || areaType === 'country'
+
+/**
+ * The slug and whole-country rules a save enforces in the collection hooks
+ * (sections 7.2 and 11.2). A preview saves nothing, so it runs no hooks: the
+ * import checks them here too, so a preview refuses what the import would.
+ * The messages match the hooks'.
+ */
+function ruleProblems(
+  target: ImportTarget,
+  plan: PlannedRow,
+  others: ReadonlyMap<string, Record<string, unknown>>,
+  wholeCountry: string | null,
+): string[] {
+  if (!plan.slug) return []
+  const problem = slugProblem(plan.slug)
+  if (problem) return [problem]
+  if (target === 'offices') {
+    return isNational(plan.data.areaType) && others.has(plan.slug)
+      ? [`"${plan.slug}" is an area's address in this country.`]
+      : []
+  }
+  const problems: string[] = []
+  const office = others.get(plan.slug)
+  if (office && isNational(office.areaType)) {
+    problems.push(`"${plan.slug}" is a national office's address in this country.`)
+  }
+  if (plan.data.type === 'country') {
+    if (plan.parent) problems.push('The area for the whole country has no parent.')
+    if (wholeCountry && wholeCountry !== plan.slug) {
+      problems.push('This country already has an area for the whole country.')
+    }
+  }
+  return problems
+}
+
 /**
  * Runs an import, or previews it (section 9.6). Each row matches a record by
  * country and slug, so importing the same file twice updates rather than
@@ -67,15 +104,26 @@ function unchanged(
  */
 export async function runImportPlan(payload: Payload, input: Input): Promise<ImportResult> {
   const existing = await existingBySlug(payload, input.target, input.country)
+  // The other collection, whose slugs share a country's addresses.
+  const others = await existingBySlug(
+    payload,
+    input.target === 'areas' ? 'offices' : 'areas',
+    input.country,
+  )
+  const root = [...existing.values()].find((record) => record.type === 'country')
+  let wholeCountry = root ? String(root.slug) : null
   const localized = new Set(['name', 'shortName'])
   // Slugs seen earlier in this file, with the record's id. A preview saves
   // nothing, so a record it would create gets a placeholder that matches no
   // stored id: a row moved under it then counts as an update, as in the import.
   const seen = new Map<string, string>()
+  // Slugs of rows that failed, with their spreadsheet row, for their children's errors.
+  const failedAt = new Map<string, number>()
   const counts: ImportCounts = { create: 0, update: 0, skip: 0, failed: 0 }
   const errors: RowError[] = []
-  const fail = (line: number, message: string) => {
+  const fail = (line: number, message: string, slug: string) => {
     counts.failed += 1
+    if (slug && !failedAt.has(slug)) failedAt.set(slug, line)
     if (errors.length < MAX_ERRORS) errors.push({ line, message })
   }
 
@@ -90,14 +138,19 @@ export async function runImportPlan(payload: Payload, input: Input): Promise<Imp
       const parentInDb = existing.get(plan.parent)
       if (parentInDb) parentId = idOf(parentInDb.id)
       else if (seen.has(plan.parent)) parentId = seen.get(plan.parent) ?? null
-      else {
+      else if (failedAt.has(plan.parent)) {
+        plan.errors.push(
+          `Parent "${plan.parent}" on row ${failedAt.get(plan.parent)} was not saved.`,
+        )
+      } else {
         plan.errors.push(
           `Parent "${plan.parent}" is not in this country. If it is in this file, put it above this row.`,
         )
       }
     }
+    plan.errors.push(...ruleProblems(input.target, plan, others, wholeCountry))
     if (plan.errors.length > 0) {
-      fail(line, plan.errors.join(' '))
+      fail(line, plan.errors.join(' '), plan.slug)
       continue
     }
 
@@ -105,11 +158,13 @@ export async function runImportPlan(payload: Payload, input: Input): Promise<Imp
     if (current && unchanged(current, plan, parentId, localized)) {
       counts.skip += 1
       seen.set(plan.slug, String(current.id))
+      if (plan.data.type === 'country') wholeCountry = plan.slug
       continue
     }
     if (!input.commit) {
       counts[current ? 'update' : 'create'] += 1
       seen.set(plan.slug, current ? String(current.id) : `new:${plan.slug}`)
+      if (plan.data.type === 'country') wholeCountry = plan.slug
       continue
     }
 
@@ -159,9 +214,11 @@ export async function runImportPlan(payload: Payload, input: Input): Promise<Imp
       await commitTransaction(req)
       counts[current ? 'update' : 'create'] += 1
       seen.set(plan.slug, id)
+      if (plan.data.type === 'country') wholeCountry = plan.slug
     } catch (error) {
-      await killTransaction(req)
-      fail(line, error instanceof Error ? error.message : String(error))
+      // The row's own error is the one to report, even if the rollback fails too.
+      await killTransaction(req).catch(() => undefined)
+      fail(line, error instanceof Error ? error.message : String(error), plan.slug)
     }
   }
   return { counts, errors }

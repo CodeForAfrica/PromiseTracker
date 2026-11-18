@@ -169,19 +169,50 @@ describe('areas, offices and import', () => {
     })
 
     it('previews a move under a parent from the same file as an update, as the import does', async () => {
+      // An area with no parent, made by hand.
+      const loose = await payload.create({
+        collection: 'areas',
+        locale: 'en',
+        data: { name: 'Coast Basin', type: 'region', country, page: 'automatic' },
+        overrideAccess: true,
+      })
       const result = await runImportPlan(payload, {
         target: 'areas',
         country,
         commit: false,
         headings: ['Name', 'Type', 'Parent'],
         rows: [
-          { row: 1, values: ['Lake Region', 'region', ''] },
-          // Kenya has no parent today. A new one, not yet saved, is still a change.
-          { row: 2, values: ['Kenya', 'country', 'Lake Region'] },
+          { row: 1, values: ['Lake Region', 'region', 'Kenya'] },
+          // A new parent, not yet saved, is still a change.
+          { row: 2, values: ['Coast Basin', 'region', 'Lake Region'] },
         ],
         mapping: { name: 'Name', type: 'Type', parent: 'Parent' },
       })
+      await payload.delete({ collection: 'areas', id: loose.id, overrideAccess: true })
       expect(result.counts).toEqual({ create: 1, update: 1, skip: 0, failed: 0 })
+    })
+
+    it('previews the rules a save enforces, and names the failed row a child depends on', async () => {
+      const result = await runImportPlan(payload, {
+        target: 'areas',
+        country,
+        commit: false,
+        headings: ['Name', 'Type', 'Parent'],
+        rows: [
+          { row: 1, values: ['President', 'region', 'Kenya'] },
+          { row: 2, values: ['State House', 'ward', 'President'] },
+          { row: 3, values: ['Search', 'region', 'Kenya'] },
+          { row: 4, values: ['Another Kenya', 'country', ''] },
+        ],
+        mapping: { name: 'Name', type: 'Type', parent: 'Parent' },
+      })
+      expect(result.counts).toEqual({ create: 0, update: 0, skip: 0, failed: 4 })
+      expect(result.errors.map((e) => e.message)).toEqual([
+        '"president" is a national office\'s address in this country.',
+        'Parent "president" on row 2 was not saved.',
+        '"search" is used by the site\'s own addresses.',
+        'This country already has an area for the whole country.',
+      ])
     })
 
     it('applies the slug rules to imported rows, and saves nothing for a refused row', async () => {
@@ -196,6 +227,20 @@ describe('areas, offices and import', () => {
       expect(result.counts).toEqual({ create: 0, update: 0, skip: 0, failed: 1 })
       expect(result.errors[0]?.line).toBe(2)
       expect(await areaId('president')).toBe('')
+    })
+
+    it('refuses a national office whose slug is an area, in the preview too', async () => {
+      const result = await runImportPlan(payload, {
+        target: 'offices',
+        country,
+        commit: false,
+        headings: ['Name', 'Area type'],
+        rows: [{ row: 1, values: ['Kibra', 'country'] }],
+        mapping: { name: 'Name', areaType: 'Area type' },
+      })
+      expect(result.errors).toEqual([
+        { line: 2, message: '"kibra" is an area\'s address in this country.' },
+      ])
     })
   })
 

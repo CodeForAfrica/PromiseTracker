@@ -179,7 +179,15 @@ appears under Imports > Saved mappings.
 matched by country and slug.
 
 **Areas must come after their parents.** List the whole-country area first, then counties, then
-constituencies. A row whose parent is missing, or further down, is reported as an error.
+constituencies. A row whose parent is missing, or further down, is reported as an error. So is a
+row whose parent's row failed.
+
+**An empty Parent cell keeps the area's current parent.** To move an area, give its new parent. An
+area cannot be detached from its parent by import: do that by hand.
+
+**The preview checks what the import checks:** required values, slugs, parents, and the rules on
+slugs and the whole-country area. A save can still fail for a reason the preview cannot see, such
+as someone else changing the same records in between.
 
 ### Spreadsheet layout
 
