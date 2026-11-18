@@ -115,12 +115,16 @@ export function withPublishing(
         operation === 'update' && originalDoc?.id
           ? asRecord(
               await req.payload.findByID({
+                // Payload types collection slugs from the app's generated types,
+                // which a plugin cannot see, so this record type's slug is cast.
                 collection: collection.slug as never,
                 id: originalDoc.id,
                 locale: 'all',
                 depth: 0,
                 // Reads the record being saved, to work out where it is live.
                 overrideAccess: true,
+                // The spread copy loses no fields, but TypeScript widens it from
+                // PayloadRequest, so it is cast back.
                 req: { ...req } as PayloadRequest,
               }),
             )

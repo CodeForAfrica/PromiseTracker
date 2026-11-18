@@ -262,6 +262,21 @@ describe('countries and languages', () => {
       await expect(sdk.getCountry('en', 'zz')).rejects.toBeInstanceOf(NotFoundError)
     })
 
+    it('says nothing about a country on hold, not even the languages it has', async () => {
+      // A guest gets a plain "not found", as for a country that does not exist.
+      // "Not available" names languages, and is only for a published country.
+      for (const locale of ['en', 'fr']) {
+        await expect(v1(`/countries/${held}`, { locale })).resolves.toEqual({
+          status: 404,
+          body: { error: 'not-found' },
+        })
+      }
+    })
+
+    it('answers 404, not a server error, for a malformed address', async () => {
+      await expect(v1('/countries/%E0%A4%A', { locale: 'en' })).resolves.toBeUndefined()
+    })
+
     it('needs a language the site runs in (section 12.2)', async () => {
       for (const query of [{}, { locale: 'de' }, { locale: 'sw' }]) {
         const result = await v1('/countries', query)

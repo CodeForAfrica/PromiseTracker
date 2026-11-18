@@ -84,6 +84,12 @@ describe('/api/v1 routes', () => {
     expect(matchRoute('/countries/%2e%2e')).toBeUndefined()
     expect(matchRoute('/unknown')).toBeUndefined()
   })
+
+  it('matches nothing, rather than failing, on a malformed escape', () => {
+    expect(() => matchRoute('/countries/%E0%A4%A')).not.toThrow()
+    expect(matchRoute('/countries/%E0%A4%A')).toBeUndefined()
+    expect(matchRoute('/countries/%')).toBeUndefined()
+  })
 })
 
 describe('the cache refresh request', () => {
@@ -98,10 +104,16 @@ describe('the cache refresh request', () => {
     ])
   })
 
-  it('is refused once it is more than five minutes old, so a copy cannot be replayed', () => {
+  it('is refused once it is more than a minute old, so a copy cannot be replayed later', () => {
     const signature = sign(body, secret)
-    expect(readRefreshRequest(body, signature, secret, now + 4 * 60_000)).not.toBeNull()
-    expect(readRefreshRequest(body, signature, secret, now + 6 * 60_000)).toBeNull()
+    expect(readRefreshRequest(body, signature, secret, now + 50_000)).not.toBeNull()
+    expect(readRefreshRequest(body, signature, secret, now + 70_000)).toBeNull()
+  })
+
+  it('allows a request a few seconds ahead of this clock, and refuses one further ahead', () => {
+    const signature = sign(body, secret)
+    expect(readRefreshRequest(body, signature, secret, now - 3_000)).not.toBeNull()
+    expect(readRefreshRequest(body, signature, secret, now - 60_000)).toBeNull()
     const untimed = JSON.stringify({ tags: ['site'] })
     expect(readRefreshRequest(untimed, sign(untimed, secret), secret, now)).toBeNull()
   })

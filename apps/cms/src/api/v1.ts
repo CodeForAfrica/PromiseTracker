@@ -45,11 +45,11 @@ const text = (value: string | null | undefined): string | null =>
 type Link = { label?: string | null; url?: string | null }
 /** Links with a label in this language. A link not yet translated is left out. */
 const links = (items: readonly Link[] | null | undefined) =>
-  (items ?? []).flatMap((item) =>
-    text(item.label) && text(item.url)
-      ? [{ label: item.label as string, url: item.url as string }]
-      : [],
-  )
+  (items ?? []).flatMap((item) => {
+    const label = text(item.label)
+    const url = text(item.url)
+    return label && url ? [{ label, url }] : []
+  })
 
 const toSiteInfo = (site: Site, locale: string): SiteInfo =>
   SiteInfoSchema.parse({
@@ -134,6 +134,15 @@ const handlers: Record<string, Handler> = {
   },
 }
 
+/** A path segment decoded, or null when its percent-escapes are malformed, such as `%E0%A4%A`. */
+const decode = (part: string): string | null => {
+  try {
+    return decodeURIComponent(part)
+  } catch {
+    return null
+  }
+}
+
 /** Matches `/countries/ke` to `/countries/:code`. Segments are lower case, as addresses are. */
 export function matchRoute(
   path: string,
@@ -146,8 +155,10 @@ export function matchRoute(
     const matches = want.every((segment, i) => {
       const part = parts[i] ?? ''
       if (segment.startsWith(':')) {
-        params[segment.slice(1)] = decodeURIComponent(part)
-        return /^[a-z0-9-]+$/.test(params[segment.slice(1)] ?? '')
+        const value = decode(part)
+        if (value === null) return false
+        params[segment.slice(1)] = value
+        return /^[a-z0-9-]+$/.test(value)
       }
       return segment === part
     })
