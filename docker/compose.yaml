@@ -109,7 +109,7 @@ services:
   mailpit:
     # Catches every email sent in development, so none reaches a real inbox.
     # Read them at http://localhost:${PT_MAIL_UI_PORT:-8025}, or through its API in tests.
-    image: axllent/mailpit:v1.33.0
+    image: axllent/mailpit:v1.33.1
     ports: ["${PT_SMTP_PORT:-1025}:1025", "${PT_MAIL_UI_PORT:-8025}:8025"]
 
 volumes:
