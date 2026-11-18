@@ -156,9 +156,9 @@ export interface Config {
   };
   blocks: {};
   collections: {
-    users: User;
-    media: Media;
     countries: Country;
+    media: Media;
+    users: User;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -167,9 +167,9 @@ export interface Config {
   };
   collectionsJoins: {};
   collectionsSelect: {
-    users: UsersSelect<false> | UsersSelect<true>;
-    media: MediaSelect<false> | MediaSelect<true>;
     countries: CountriesSelect<false> | CountriesSelect<true>;
+    media: MediaSelect<false> | MediaSelect<true>;
+    users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -222,6 +222,92 @@ export interface UserAuthOperations {
     email: string;
     password: string;
   };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "countries".
+ */
+export interface Country {
+  id: string;
+  code:
+    | 'dz'
+    | 'ao'
+    | 'bj'
+    | 'bw'
+    | 'bf'
+    | 'bi'
+    | 'cm'
+    | 'cv'
+    | 'cf'
+    | 'td'
+    | 'km'
+    | 'ci'
+    | 'cd'
+    | 'dj'
+    | 'eg'
+    | 'gq'
+    | 'er'
+    | 'sz'
+    | 'et'
+    | 'ga'
+    | 'gm'
+    | 'gh'
+    | 'gn'
+    | 'gw'
+    | 'ke'
+    | 'ls'
+    | 'lr'
+    | 'ly'
+    | 'mg'
+    | 'mw'
+    | 'ml'
+    | 'mr'
+    | 'mu'
+    | 'ma'
+    | 'mz'
+    | 'na'
+    | 'ne'
+    | 'ng'
+    | 'cg'
+    | 'rw'
+    | 'st'
+    | 'sn'
+    | 'sc'
+    | 'sl'
+    | 'so'
+    | 'za'
+    | 'ss'
+    | 'sd'
+    | 'tz'
+    | 'tg'
+    | 'tn'
+    | 'ug'
+    | 'zm'
+    | 'zw';
+  codeShown?: string | null;
+  name?: string | null;
+  region?: ('east-africa' | 'west-africa' | 'central-africa' | 'southern-africa' | 'north-africa') | null;
+  languages?: ('en' | 'fr' | 'pt' | 'ar' | 'sw')[] | null;
+  defaultLanguage?: ('en' | 'fr' | 'pt' | 'ar' | 'sw') | null;
+  about?: string | null;
+  /**
+   * Ready makes it public in each language that has its required fields.
+   */
+  recordStatus: 'ready' | 'hold' | 'archived';
+  /**
+   * Worked out on save. The languages this record is live in.
+   */
+  publishedIn?: string[] | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -320,92 +406,6 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "countries".
- */
-export interface Country {
-  id: string;
-  code:
-    | 'dz'
-    | 'ao'
-    | 'bj'
-    | 'bw'
-    | 'bf'
-    | 'bi'
-    | 'cm'
-    | 'cv'
-    | 'cf'
-    | 'td'
-    | 'km'
-    | 'ci'
-    | 'cd'
-    | 'dj'
-    | 'eg'
-    | 'gq'
-    | 'er'
-    | 'sz'
-    | 'et'
-    | 'ga'
-    | 'gm'
-    | 'gh'
-    | 'gn'
-    | 'gw'
-    | 'ke'
-    | 'ls'
-    | 'lr'
-    | 'ly'
-    | 'mg'
-    | 'mw'
-    | 'ml'
-    | 'mr'
-    | 'mu'
-    | 'ma'
-    | 'mz'
-    | 'na'
-    | 'ne'
-    | 'ng'
-    | 'cg'
-    | 'rw'
-    | 'st'
-    | 'sn'
-    | 'sc'
-    | 'sl'
-    | 'so'
-    | 'za'
-    | 'ss'
-    | 'sd'
-    | 'tz'
-    | 'tg'
-    | 'tn'
-    | 'ug'
-    | 'zm'
-    | 'zw';
-  codeShown?: string | null;
-  name?: string | null;
-  region?: ('east-africa' | 'west-africa' | 'central-africa' | 'southern-africa' | 'north-africa') | null;
-  languages?: ('en' | 'fr' | 'pt' | 'ar' | 'sw')[] | null;
-  defaultLanguage?: ('en' | 'fr' | 'pt' | 'ar' | 'sw') | null;
-  about?: string | null;
-  /**
-   * Ready makes it public in each language that has its required fields.
-   */
-  recordStatus: 'ready' | 'hold' | 'archived';
-  /**
-   * Worked out on save. The languages this record is live in.
-   */
-  publishedIn?: string[] | null;
-  createdBy?: {
-    relationTo: 'users';
-    value: string | User;
-  } | null;
-  updatedBy?: {
-    relationTo: 'users';
-    value: string | User;
-  } | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -429,16 +429,16 @@ export interface PayloadLockedDocument {
   id: string;
   document?:
     | ({
-        relationTo: 'users';
-        value: string | User;
+        relationTo: 'countries';
+        value: string | Country;
       } | null)
     | ({
         relationTo: 'media';
         value: string | Media;
       } | null)
     | ({
-        relationTo: 'countries';
-        value: string | Country;
+        relationTo: 'users';
+        value: string | User;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -506,36 +506,22 @@ export interface PayloadLlmInstruction {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users_select".
+ * via the `definition` "countries_select".
  */
-export interface UsersSelect<T extends boolean = true> {
+export interface CountriesSelect<T extends boolean = true> {
+  code?: T;
+  codeShown?: T;
   name?: T;
-  roles?: T;
-  countries?: T;
+  region?: T;
+  languages?: T;
+  defaultLanguage?: T;
+  about?: T;
+  recordStatus?: T;
+  publishedIn?: T;
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;
   createdAt?: T;
-  email?: T;
-  resetPasswordToken?: T;
-  resetPasswordExpiration?: T;
-  salt?: T;
-  hash?: T;
-  resetPasswordRequestedAt?: T;
-  loginAttempts?: T;
-  lockUntil?: T;
-  sessions?:
-    | T
-    | {
-        id?: T;
-        createdAt?: T;
-        expiresAt?: T;
-        refreshCount?: T;
-        refreshedAt?: T;
-        label?: T;
-        type?: T;
-        metadata?: T;
-      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -576,22 +562,36 @@ export interface MediaSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "countries_select".
+ * via the `definition` "users_select".
  */
-export interface CountriesSelect<T extends boolean = true> {
-  code?: T;
-  codeShown?: T;
+export interface UsersSelect<T extends boolean = true> {
   name?: T;
-  region?: T;
-  languages?: T;
-  defaultLanguage?: T;
-  about?: T;
-  recordStatus?: T;
-  publishedIn?: T;
+  roles?: T;
+  countries?: T;
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;
   createdAt?: T;
+  email?: T;
+  resetPasswordToken?: T;
+  resetPasswordExpiration?: T;
+  salt?: T;
+  hash?: T;
+  resetPasswordRequestedAt?: T;
+  loginAttempts?: T;
+  lockUntil?: T;
+  sessions?:
+    | T
+    | {
+        id?: T;
+        createdAt?: T;
+        expiresAt?: T;
+        refreshCount?: T;
+        refreshedAt?: T;
+        label?: T;
+        type?: T;
+        metadata?: T;
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -806,7 +806,7 @@ export interface CollectionsWidget {
 export interface CollectionQueryWidget {
   data?: {
     title?: string | null;
-    relatedCollection: 'users' | 'media' | 'countries';
+    relatedCollection: 'countries' | 'media' | 'users';
     where?:
       | {
           [k: string]: unknown;
@@ -828,7 +828,7 @@ export interface CollectionQueryWidget {
  */
 export interface ActivityWidget {
   data?: {
-    excludedCollections?: ('users' | 'media' | 'countries')[] | null;
+    excludedCollections?: ('countries' | 'media' | 'users')[] | null;
   };
   width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }

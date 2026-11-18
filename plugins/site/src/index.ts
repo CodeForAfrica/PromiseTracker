@@ -1,6 +1,6 @@
 import { STRING_KEYS } from '@promisetracker/contract'
 import { definePromiseTrackerPlugin } from '@promisetracker/kernel'
-import { can, refreshTags } from '@promisetracker/plugin-core'
+import { ADMIN_GROUPS, can, refreshTags } from '@promisetracker/plugin-core'
 import type { Field, GlobalConfig } from 'payload'
 
 import { DEFAULT_STRINGS } from './strings'
@@ -27,6 +27,8 @@ const link = (name: string, label: string): Field => ({
  */
 export const Site: GlobalConfig = {
   slug: 'site',
+  label: 'Site settings',
+  admin: { group: ADMIN_GROUPS.site },
   // The public reads these through /api/v1/site. Editors change them.
   access: { read: () => true, update: can.editEditorial },
   hooks: {

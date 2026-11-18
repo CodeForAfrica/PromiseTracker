@@ -11,6 +11,8 @@ export const SIGNATURE_HEADER = 'x-pt-signature'
 const MAX_TAGS = 100
 const MAX_TAG_LENGTH = 256
 const TIMEOUT_MS = 5_000
+/** How old a signed refresh request may be. Older ones are refused, so a copy cannot be replayed. */
+export const MAX_AGE_MS = 5 * 60 * 1000
 
 /** Where the web process listens, for a call from this process or the worker. */
 export function webUrl(env: Env = process.env): string {
@@ -47,6 +49,7 @@ export function readRefreshRequest(
   body: string,
   signature: string | null,
   secret: string,
+  now: number = Date.now(),
 ): string[] | null {
   if (!verify(body, signature, secret)) return null
   let parsed: unknown
@@ -55,7 +58,11 @@ export function readRefreshRequest(
   } catch {
     return null
   }
-  const tags: unknown = parsed && typeof parsed === 'object' ? Reflect.get(parsed, 'tags') : null
+  const field = (key: string): unknown =>
+    parsed && typeof parsed === 'object' ? Reflect.get(parsed, key) : null
+  const at = field('at')
+  if (typeof at !== 'number' || Math.abs(now - at) > MAX_AGE_MS) return null
+  const tags = field('tags')
   if (!Array.isArray(tags) || tags.length === 0 || tags.length > MAX_TAGS) return null
   const valid = tags.every(
     (tag): tag is string =>
@@ -74,7 +81,7 @@ export function createHttpRefresher(env: Env = process.env): TagRefresher {
   return async (tags, req) => {
     if (tags.length === 0) return
     const secret = env.PAYLOAD_SECRET ?? ''
-    const body = JSON.stringify({ tags })
+    const body = JSON.stringify({ tags, at: Date.now() })
     try {
       const res = await fetch(`${webUrl(env)}${REVALIDATE_PATH}`, {
         method: 'POST',

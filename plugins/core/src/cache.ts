@@ -17,13 +17,20 @@ export function refreshTags(tags: readonly string[], req: PayloadRequest): Promi
   return refresher(tags, req)
 }
 
+/**
+ * Set in a save's context to skip the refresh, when the operation that started
+ * the save refreshes once at the end, such as filling a country's names.
+ */
+export const SKIP_REFRESH = 'promisetracker:skipRefresh'
+
 /** Hooks that refresh the tags a record belongs to, after a save and after a delete. */
 export function refreshOnChange<T>(tagsFor: (doc: T) => readonly string[]): {
   afterChange: CollectionAfterChangeHook
   afterDelete: CollectionAfterDeleteHook
 } {
   return {
-    afterChange: async ({ doc, previousDoc, req }) => {
+    afterChange: async ({ doc, previousDoc, req, context }) => {
+      if (context[SKIP_REFRESH]) return doc
       const tags = new Set([
         ...tagsFor(doc as T),
         ...(previousDoc ? tagsFor(previousDoc as T) : []),

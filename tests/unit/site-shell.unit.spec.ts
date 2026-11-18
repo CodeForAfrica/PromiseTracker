@@ -88,22 +88,32 @@ describe('/api/v1 routes', () => {
 
 describe('the cache refresh request', () => {
   const secret = 'a-test-secret'
-  const body = JSON.stringify({ tags: ['country:ke', 'countries'] })
+  const now = 1_800_000_000_000
+  const body = JSON.stringify({ tags: ['country:ke', 'countries'], at: now })
 
   it('is accepted when signed with the application secret', () => {
-    expect(readRefreshRequest(body, sign(body, secret), secret)).toEqual([
+    expect(readRefreshRequest(body, sign(body, secret), secret, now)).toEqual([
       'country:ke',
       'countries',
     ])
   })
 
+  it('is refused once it is more than five minutes old, so a copy cannot be replayed', () => {
+    const signature = sign(body, secret)
+    expect(readRefreshRequest(body, signature, secret, now + 4 * 60_000)).not.toBeNull()
+    expect(readRefreshRequest(body, signature, secret, now + 6 * 60_000)).toBeNull()
+    const untimed = JSON.stringify({ tags: ['site'] })
+    expect(readRefreshRequest(untimed, sign(untimed, secret), secret, now)).toBeNull()
+  })
+
   it('is refused unsigned, wrongly signed, changed, or malformed', () => {
-    expect(readRefreshRequest(body, null, secret)).toBeNull()
-    expect(readRefreshRequest(body, sign(body, 'another-secret'), secret)).toBeNull()
-    expect(readRefreshRequest(body.replace('ke', 'sn'), sign(body, secret), secret)).toBeNull()
-    expect(readRefreshRequest(body, 'zz', secret)).toBeNull()
-    const empty = JSON.stringify({ tags: [] })
-    expect(readRefreshRequest(empty, sign(empty, secret), secret)).toBeNull()
+    expect(readRefreshRequest(body, null, secret, now)).toBeNull()
+    expect(readRefreshRequest(body, sign(body, 'another-secret'), secret, now)).toBeNull()
+    const changed = body.replace('ke', 'sn')
+    expect(readRefreshRequest(changed, sign(body, secret), secret, now)).toBeNull()
+    expect(readRefreshRequest(body, 'zz', secret, now)).toBeNull()
+    const empty = JSON.stringify({ tags: [], at: now })
+    expect(readRefreshRequest(empty, sign(empty, secret), secret, now)).toBeNull()
     expect(verify(body, sign(body, secret), '')).toBe(false)
   })
 
@@ -183,6 +193,8 @@ describe('the country list', () => {
       name: 'Ivory Coast',
       languages: ['en'],
       region: 'west-africa',
+      // From the editor's languages, not the list's French.
+      defaultLanguage: 'en',
     })
     expect(run({ code: 'not-a-country' })).toEqual({ code: 'not-a-country' })
   })

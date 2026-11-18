@@ -6,7 +6,8 @@ import type {
 } from 'payload'
 
 import { can } from './access'
-import { refreshOnChange } from './cache'
+import { ADMIN_GROUPS } from './adminGroups'
+import { refreshOnChange, SKIP_REFRESH } from './cache'
 import {
   COUNTRY_CODES,
   countryDefaults,
@@ -45,11 +46,15 @@ const fillFromList: CollectionBeforeValidateHook = ({ data, originalDoc, operati
   const defaults = countryDefaults(data.code)
   const value = (key: string): unknown => (key in data ? data[key] : originalDoc?.[key])
   const locale = isLocaleCode(req.locale) ? req.locale : DEFAULT_LOCALE
+  const chosen = value('languages')
+  const languages = Array.isArray(chosen) && chosen.length > 0 ? chosen : defaults.languages
+  // The default comes from the languages in use: the editor's, or the list's.
+  const [firstLanguage] = languages
   return {
     ...data,
     ...(isEmpty(value('region')) ? { region: defaults.region } : {}),
-    ...(isEmpty(value('languages')) ? { languages: defaults.languages } : {}),
-    ...(isEmpty(value('defaultLanguage')) ? { defaultLanguage: defaults.defaultLanguage } : {}),
+    ...(isEmpty(chosen) ? { languages } : {}),
+    ...(isEmpty(value('defaultLanguage')) ? { defaultLanguage: firstLanguage } : {}),
     ...(operation === 'create' && isEmpty(value('name'))
       ? { name: countryName(data.code, locale) }
       : {}),
@@ -99,7 +104,8 @@ const fillNamesInEveryLanguage: CollectionAfterChangeHook = async ({
       data: { name: value },
       // As above: these are names from the country list, not anyone's edit.
       overrideAccess: true,
-      context: { [FILLING_NAMES]: true },
+      // The save that added the country refreshes its pages once, after this.
+      context: { [FILLING_NAMES]: true, [SKIP_REFRESH]: true },
       req: { ...req } as PayloadRequest,
     })
   }
@@ -118,6 +124,7 @@ export const Countries: CollectionConfig = withPublishing(
   {
     slug: 'countries',
     admin: {
+      group: ADMIN_GROUPS.places,
       useAsTitle: 'name',
       defaultColumns: ['name', 'code', 'region', 'recordStatus', 'publishedIn'],
     },

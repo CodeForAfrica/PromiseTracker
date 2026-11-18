@@ -21,6 +21,7 @@ describe('countries and languages', () => {
   let full: CountryCode
   let noFrench: CountryCode
   let held: CountryCode
+  let another: CountryCode
 
   const v1 = (path: string, query: Record<string, string>) =>
     handleV1(payload, path, new URLSearchParams(query))
@@ -39,7 +40,10 @@ describe('countries and languages', () => {
 
   beforeAll(async () => {
     payload = await getPayload()
-    ;[full = 'st', noFrench = 'km', held = 'sc'] = await unusedCountryCodes(payload, 3)
+    ;[full = 'st', noFrench = 'km', held = 'sc', another = 'cv'] = await unusedCountryCodes(
+      payload,
+      4,
+    )
     setTagRefresher(async (tags) => {
       refreshed.push([...tags])
     })
@@ -173,6 +177,29 @@ describe('countries and languages', () => {
         overrideAccess: true,
       })
       expect((await ready(noFrench))?.publishedIn).toEqual(['en', 'pt', 'ar', 'sw'])
+    })
+
+    it('refreshes a new country’s pages once, not once per language filled in', async () => {
+      const before = refreshed.length
+      await create({ code: another })
+      expect(refreshed.length - before).toBe(1)
+    })
+
+    it('leaves the caller’s language alone while filling names', async () => {
+      // Names are read in every language through a copy of the request. If the
+      // caller's request were used, this French save would come back in every
+      // language, as an object.
+      const [doc] = (
+        await payload.update({
+          collection: 'countries',
+          where: { code: { equals: full } },
+          locale: 'fr',
+          data: { about: 'Toujours en français' },
+          overrideAccess: true,
+        })
+      ).docs
+      expect(doc?.name).toBe(countryName(full, 'fr'))
+      expect(doc?.about).toBe('Toujours en français')
     })
 
     it('refreshes the country’s cached pages on every change', () => {

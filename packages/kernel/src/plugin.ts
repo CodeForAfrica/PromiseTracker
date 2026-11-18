@@ -425,6 +425,8 @@ function addSettings(globals: readonly GlobalConfig[], manifest: PluginManifest,
       ...globals,
       {
         slug: SETTINGS_GLOBAL,
+        // Plugin credentials sit with users, in the administrators' part of the menu.
+        admin: { group: 'Administration' },
         // Settings hold credentials, so only super-admins can read them (section 7.10).
         access: {
           read: ({ req }) => isSuperAdmin(req.user),
