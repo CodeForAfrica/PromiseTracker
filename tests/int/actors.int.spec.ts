@@ -189,6 +189,70 @@ describe('actors and terms', () => {
       })
     })
 
+    it('lets a guest read no candidate, through any route', async () => {
+      // As Payload's REST routes read: a guest, with access rules on.
+      const actors = await payload.find({
+        collection: 'actors',
+        where: { country: { equals: country } },
+        pagination: false,
+        overrideAccess: false,
+      })
+      const names = actors.docs.map((a) => a.slug)
+      expect(names).toContain('achieng-wekesa')
+      expect(names).not.toContain('kito-barasa')
+      const terms = await payload.find({
+        collection: 'terms',
+        where: { country: { equals: country } },
+        pagination: false,
+        overrideAccess: false,
+      })
+      expect(terms.docs).toHaveLength(7)
+      expect(terms.docs.map((t) => t.title)).not.toContain(
+        'Kito Barasa, Member of Parliament (2030)',
+      )
+    })
+
+    it('renames the terms in the admin’s lists when an actor or office is renamed', async () => {
+      const office = await idOf('offices', 'senator')
+      await payload.update({
+        collection: 'offices',
+        id: office,
+        locale: 'en',
+        data: { name: 'County Senator' },
+        overrideAccess: true,
+      })
+      const { docs } = await payload.find({
+        collection: 'terms',
+        where: { office: { equals: office } },
+        overrideAccess: true,
+      })
+      expect(docs.map((t) => t.title)).toEqual(['Halima Yusuf, County Senator (2022)'])
+      await payload.update({
+        collection: 'offices',
+        id: office,
+        locale: 'en',
+        data: { name: 'Senator' },
+        overrideAccess: true,
+      })
+    })
+
+    it('refuses to delete an area or office that a term names', async () => {
+      await expect(
+        payload.delete({
+          collection: 'areas',
+          id: await idOf('areas', 'westlands'),
+          overrideAccess: true,
+        }),
+      ).rejects.toThrow('Terms name this area')
+      await expect(
+        payload.delete({
+          collection: 'offices',
+          id: await idOf('offices', 'president'),
+          overrideAccess: true,
+        }),
+      ).rejects.toThrow('Terms name this office')
+    })
+
     it('keeps a renamed actor’s old slug, and leads the old address to the new one', async () => {
       const id = await idOf('actors', 'zawadi-mutua')
       await payload.update({

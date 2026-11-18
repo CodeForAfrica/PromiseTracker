@@ -1,5 +1,7 @@
 import type {
+  CollectionAfterChangeHook,
   CollectionBeforeChangeHook,
+  CollectionBeforeDeleteHook,
   CollectionBeforeValidateHook,
   CollectionConfig,
   PayloadRequest,
@@ -11,6 +13,7 @@ import { can, signedIn } from './access'
 import { ADMIN_GROUPS } from './adminGroups'
 import { afterCommit } from './afterCommit'
 import { refreshTags } from './cache'
+import { DEFAULT_LOCALE } from './locales'
 import { slugify, slugProblem } from './slugs'
 
 /** The kinds of area in a country's nested list (section 7.2). */
@@ -205,6 +208,57 @@ export const keepFormerSlug: CollectionBeforeChangeHook = ({ data, originalDoc }
   return { ...data, formerSlugs: [...new Set([...former, before])].filter((s) => s !== data.slug) }
 }
 
+/**
+ * A renamed actor renames their terms in the admin's lists. Saving each term
+ * again works its title out afresh.
+ */
+const retitleTerms = async (
+  req: PayloadRequest,
+  field: 'actor' | 'office',
+  id: string,
+): Promise<void> => {
+  await req.payload.update({
+    collection: 'terms',
+    where: { [field]: { equals: id } },
+    data: {},
+    // The system keeps the titles in step with the names.
+    overrideAccess: true,
+    req,
+  })
+}
+
+/** Renaming an actor or an office updates the titles of the terms that name it. */
+export const retitleOnRename =
+  (field: 'actor' | 'office'): CollectionAfterChangeHook =>
+  async ({ doc, previousDoc, req, operation }) => {
+    if (operation !== 'update' || !previousDoc) return doc
+    const name = (value: unknown) =>
+      value && typeof value === 'object' ? Reflect.get(value, DEFAULT_LOCALE) : value
+    // A localized name arrives in the language being edited. The title uses the default one.
+    if (field === 'office' && req.locale && req.locale !== DEFAULT_LOCALE) return doc
+    if (name(doc.name) !== name(previousDoc.name)) await retitleTerms(req, field, doc.id)
+    return doc
+  }
+
+/**
+ * Terms name areas and offices, and hold the history of who sat where, so an
+ * area or office a term names is not deleted.
+ */
+export const keepWhileNamedInTerms =
+  (field: 'area' | 'office'): CollectionBeforeDeleteHook =>
+  async ({ id, req }) => {
+    const { totalDocs } = await req.payload.count({
+      collection: 'terms',
+      where: { [field]: { equals: id } },
+      // Counts the terms that name this record, whoever is deleting it.
+      overrideAccess: true,
+      req: { ...req } as PayloadRequest,
+    })
+    if (totalDocs > 0) {
+      throw new APIError(`Terms name this ${field}. Delete or change those terms first.`, 400)
+    }
+  }
+
 /** The whole-country area becomes the country's root area, unless one is already set. */
 const linkRootArea = async ({
   doc,
@@ -291,6 +345,7 @@ export const Areas: CollectionConfig = {
   hooks: {
     beforeValidate: [slugFromName],
     beforeChange: [checkAreaSlug, checkAreaPlace, keepFormerSlug],
+    beforeDelete: [keepWhileNamedInTerms('area')],
     afterChange: [linkRootArea, refreshPlaces],
     afterDelete: [refreshPlaces],
   },
@@ -385,7 +440,8 @@ export const Offices: CollectionConfig = {
   hooks: {
     beforeValidate: [slugFromName],
     beforeChange: [checkOfficeSlug, keepFormerSlug],
-    afterChange: [refreshPlaces],
+    beforeDelete: [keepWhileNamedInTerms('office')],
+    afterChange: [refreshPlaces, retitleOnRename('office')],
     afterDelete: [refreshPlaces],
   },
   fields: [

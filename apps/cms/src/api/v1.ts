@@ -668,6 +668,10 @@ const handlers: Record<string, Handler> = {
         seats,
       })
     }
+    // Sorted and paged here, not in the database: the order by office needs
+    // each actor's highest seat. That suits a country's few hundred office
+    // holders. A country tracking thousands of ward seats would need the
+    // sort moved into the query.
     const byName = (a: ActorSummary, b: ActorSummary) => a.name.localeCompare(b.name, locale)
     const sort = query.get('sort') ?? 'name'
     if (sort !== 'name' && sort !== 'office') return badRequest('sort')

@@ -11,13 +11,15 @@ import { APIError } from 'payload'
 
 import { can, signedIn } from './access'
 import { ADMIN_GROUPS } from './adminGroups'
-import { refreshTags } from './cache'
+import { refreshTags, SKIP_REFRESH } from './cache'
+import { DEFAULT_LOCALE } from './locales'
 import {
   countryCode,
   countryField,
   formerSlugsField,
   idOf,
   keepFormerSlug,
+  retitleOnRename,
   slugField,
   slugFromName,
 } from './places'
@@ -56,29 +58,46 @@ export type TermStage = (typeof TERM_STAGES)[number]
 
 type Dated = { startsOn?: string | null; endsOn?: string | null }
 
+/** A date as its day, YYYY-MM-DD, in UTC. */
+const dayOf = (value: string | Date): string =>
+  (typeof value === 'string' ? value : value.toISOString()).slice(0, 10)
+
 /**
- * A term's stage on a day: candidate before it starts, current during it,
- * past once it has ended. Worked out when read, never stored, because it
- * changes with the date and not with an edit.
+ * Term dates are days, whatever time a date was saved with: the admin's date
+ * picker and the import save different times of day. A term is current from
+ * the start of its first day, in UTC, to the end of its last.
+ */
+const startOfDay = (now: Date) => `${dayOf(now)}T00:00:00.000Z`
+const endOfDay = (now: Date) => `${dayOf(now)}T23:59:59.999Z`
+
+/**
+ * A term's stage on a day: candidate before its first day, current from its
+ * first day to its last, past after its last. Worked out when read, never
+ * stored, because it changes with the date and not with an edit.
  */
 export function termStage(term: Dated, now: Date = new Date()): TermStage {
-  const starts = term.startsOn ? new Date(term.startsOn) : null
-  if (!starts || starts > now) return 'candidate'
-  if (term.endsOn && new Date(term.endsOn) < now) return 'past'
+  const today = dayOf(now)
+  if (!term.startsOn || dayOf(term.startsOn) > today) return 'candidate'
+  if (term.endsOn && dayOf(term.endsOn) < today) return 'past'
   return 'current'
 }
 
 /** Terms at the current stage on a day, as a query. */
 export const currentTerms = (now: Date = new Date()): Where => ({
   and: [
-    { startsOn: { less_than_equal: now.toISOString() } },
-    { or: [{ endsOn: { exists: false } }, { endsOn: { greater_than_equal: now.toISOString() } }] },
+    { startsOn: { less_than_equal: endOfDay(now) } },
+    { or: [{ endsOn: { exists: false } }, { endsOn: { greater_than_equal: startOfDay(now) } }] },
   ],
 })
 
 /** Terms at the past stage on a day, as a query. */
 export const pastTerms = (now: Date = new Date()): Where => ({
-  endsOn: { less_than: now.toISOString() },
+  endsOn: { less_than: startOfDay(now) },
+})
+
+/** Terms that have started by a day: current or past. */
+export const startedTerms = (now: Date = new Date()): Where => ({
+  startsOn: { less_than_equal: endOfDay(now) },
 })
 
 /**
@@ -87,24 +106,32 @@ export const pastTerms = (now: Date = new Date()): Where => ({
  * Parties and institutions hold no terms, so the rule does not apply to them.
  */
 export const onRecord = (now: Date = new Date()): Where => ({
-  or: [
-    { kind: { not_equals: 'person' } },
-    { onRecordSince: { less_than_equal: now.toISOString() } },
-  ],
+  or: [{ kind: { not_equals: 'person' } }, { onRecordSince: { less_than_equal: endOfDay(now) } }],
 })
 
-/** Staff read every actor. A guest reads those marked ready, in a country marked ready. */
+/**
+ * Staff read every actor. A guest reads those marked ready, in a country
+ * marked ready, and on the record: never a candidate (sections 7.3 and 8.1).
+ */
 const readActors = ({ req }: { req: PayloadRequest }): boolean | Where =>
   signedIn({ req }) || {
-    and: [{ recordStatus: { equals: 'ready' } }, { 'country.recordStatus': { equals: 'ready' } }],
+    and: [
+      { recordStatus: { equals: 'ready' } },
+      { 'country.recordStatus': { equals: 'ready' } },
+      onRecord(),
+    ],
   }
 
-/** A guest reads the terms of actors they can read. */
+/**
+ * A guest reads the terms that have started, of actors marked ready. A term
+ * that has started puts its actor on the record, so no candidacy shows.
+ */
 const readTerms = ({ req }: { req: PayloadRequest }): boolean | Where =>
   signedIn({ req }) || {
     and: [
       { 'actor.recordStatus': { equals: 'ready' } },
       { 'country.recordStatus': { equals: 'ready' } },
+      startedTerms(),
     ],
   }
 
@@ -122,7 +149,13 @@ const refreshActors = async (req: PayloadRequest, ...countries: unknown[]) => {
     )
 }
 
-const refreshOnActorChange: CollectionAfterChangeHook = async ({ doc, previousDoc, req }) => {
+const refreshOnActorChange: CollectionAfterChangeHook = async ({
+  doc,
+  previousDoc,
+  req,
+  context,
+}) => {
+  if (context[SKIP_REFRESH]) return doc
   await refreshActors(req, doc.country, previousDoc?.country)
   return doc
 }
@@ -201,7 +234,7 @@ export const Actors: CollectionConfig = withPublishing(
       beforeValidate: [slugFromName],
       beforeChange: [checkActorSlug, keepFormerSlug],
       beforeDelete: [keepActorWithTerms],
-      afterChange: [refreshOnActorChange],
+      afterChange: [refreshOnActorChange, retitleOnRename('actor')],
       afterDelete: [refreshOnDelete],
     },
     fields: [
@@ -300,7 +333,8 @@ async function load(
     collection,
     id,
     depth: 0,
-    locale: req.locale ?? 'en',
+    // The default language, for names in the term's title.
+    locale: DEFAULT_LOCALE,
     // Reads the records a term names, to check they fit together.
     overrideAccess: true,
     req: { ...req } as PayloadRequest,
@@ -355,10 +389,20 @@ const checkTerm: CollectionBeforeChangeHook = async ({ data, originalDoc, req })
   }
   const startsOn = get('startsOn')
   const endsOn = get('endsOn')
-  if (typeof startsOn === 'string' && typeof endsOn === 'string' && endsOn < startsOn) {
+  if (
+    typeof startsOn === 'string' &&
+    typeof endsOn === 'string' &&
+    dayOf(endsOn) < dayOf(startsOn)
+  ) {
     throw new APIError('The term must end after it starts.', 400)
   }
-  return { ...data, country }
+  // A label for the admin's lists, such as "Achieng Wekesa, Governor (2022)".
+  const name = (ref: Ref) => {
+    const value: unknown = Reflect.get(ref, 'name')
+    return typeof value === 'string' ? value : ''
+  }
+  const year = typeof startsOn === 'string' ? ` (${startsOn.slice(0, 4)})` : ''
+  return { ...data, country, title: `${name(actor)}, ${name(office)}${year}` }
 }
 
 /** Sets an actor's `onRecordSince` from the start of their earliest term. */
@@ -389,6 +433,8 @@ async function updateOnRecordSince(req: PayloadRequest, actorId: string): Promis
     // The system keeps this date in step with the terms.
     overrideAccess: true,
     req,
+    // The term's own save refreshes the same pages.
+    context: { [SKIP_REFRESH]: true },
   })
 }
 
@@ -404,19 +450,6 @@ const afterTermDelete: CollectionAfterDeleteHook = async ({ doc, req }) => {
   if (actor) await updateOnRecordSince(req, actor)
   await refreshActors(req, doc.country)
   return doc
-}
-
-/** A label for the term in the admin's lists, such as "Achieng Wekesa, Governor". */
-const titleTerm: CollectionBeforeChangeHook = async ({ data, originalDoc, req }) => {
-  const actor = await load(req, 'actors', valueIn(data, originalDoc, 'actor'))
-  const office = await load(req, 'offices', valueIn(data, originalDoc, 'office'))
-  const name = (ref: Ref | null) => {
-    const value: unknown = ref ? Reflect.get(ref, 'name') : null
-    return typeof value === 'string' ? value : ''
-  }
-  const startsOn = valueIn<string>(data, originalDoc, 'startsOn')
-  const year = startsOn ? ` (${startsOn.slice(0, 4)})` : ''
-  return { ...data, title: `${name(actor)}, ${name(office)}${year}` }
 }
 
 /** An actor's time in a seat (section 7.3). */
@@ -435,7 +468,7 @@ export const Terms: CollectionConfig = {
     delete: can.deleteRecords,
   },
   hooks: {
-    beforeChange: [checkTerm, titleTerm],
+    beforeChange: [checkTerm],
     afterChange: [afterTermChange],
     afterDelete: [afterTermDelete],
   },

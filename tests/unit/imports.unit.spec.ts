@@ -209,6 +209,21 @@ describe('terms (section 7.3)', () => {
     expect(termStage({}, now)).toBe('candidate')
   })
 
+  it('counts a term’s first and last days in full, whatever time they were saved at', () => {
+    const morning = new Date('2026-11-18T00:30:00Z')
+    const night = new Date('2026-11-18T23:30:00Z')
+    for (const at of [morning, night]) {
+      expect(termStage({ startsOn: '2026-11-18T12:00:00.000Z' }, at)).toBe('current')
+      expect(
+        termStage({ startsOn: '2020-01-01T00:00:00.000Z', endsOn: '2026-11-18T00:00:00.000Z' }, at),
+      ).toBe('current')
+      expect(
+        termStage({ startsOn: '2020-01-01T12:00:00.000Z', endsOn: '2026-11-17T12:00:00.000Z' }, at),
+      ).toBe('past')
+      expect(termStage({ startsOn: '2026-11-19T00:00:00.000Z' }, at)).toBe('candidate')
+    }
+  })
+
   it('reads a term row, with dates and the records it names', () => {
     const headings = ['Actor', 'Office', 'Area', 'Starts on', 'Ends on']
     const mapping = guessMapping('terms', headings)
@@ -222,7 +237,7 @@ describe('terms (section 7.3)', () => {
     expect(plan).toMatchObject({
       slug: '',
       errors: [],
-      data: { startsOn: '2022-08-25T00:00:00.000Z' },
+      data: { startsOn: '2022-08-25T12:00:00.000Z' },
       refs: { actor: 'achieng-wekesa', office: 'governor', area: 'nairobi-county' },
     })
     const bad = planRow('terms', headings, mapping, ['', 'Governor', '', '25/08/2022', ''], 3)

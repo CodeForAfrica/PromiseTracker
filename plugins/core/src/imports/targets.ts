@@ -156,7 +156,8 @@ export function planRow(
     } else if (field.reference) {
       refs[field.key] = slugify(raw)
     } else if (field.date) {
-      if (isDate(raw)) data[field.key] = `${raw}T00:00:00.000Z`
+      // Noon UTC, as the admin's date picker saves a day.
+      if (isDate(raw)) data[field.key] = `${raw}T12:00:00.000Z`
       else errors.push(`${field.label} "${raw}" is not a date written as YYYY-MM-DD.`)
     } else if (field.options) {
       const match = field.options.find((o) => o === raw.toLowerCase())
