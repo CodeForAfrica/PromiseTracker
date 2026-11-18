@@ -41,9 +41,10 @@ PT_ADMIN_PASSWORD=a-password-of-at-least-12-characters
 
 Nobody can register through the admin. A super-admin adds everyone else.
 
-**A forgotten password.** Until an email provider is set up, a reset email goes only to the server
-log. Ask a super-admin to set a new password: Administration > Users, open the user, and type a new
-one.
+**A forgotten password.** "Forgot password?" on the sign-in page sends a reset link once the server
+has an email provider (`SMTP_HOST`). In development the email goes to Mailpit, at
+http://localhost:8025. Without a provider, ask a super-admin to set a new password: Administration >
+Users, open the user, and type a new one.
 
 ## 2. Users and roles
 

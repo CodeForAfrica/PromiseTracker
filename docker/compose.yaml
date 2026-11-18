@@ -1,7 +1,7 @@
 # The whole PromiseTracker stack on one machine. Run it from the repository root
 # so it reads the root .env, through the package scripts:
 #
-#   pnpm services   Postgres, file storage and Tika, for `pnpm dev`
+#   pnpm services   Postgres, file storage, Tika and Mailpit, for `pnpm dev`
 #   pnpm stack      everything, the app and the worker included
 #
 # Every setting has a default. Change one in .env without touching this file.
@@ -33,9 +33,18 @@ x-app: &app
     PT_STARTUP_LOCK_TIMEOUT_SECONDS: ${PT_STARTUP_LOCK_TIMEOUT_SECONDS:-}
     # The web process, which the app and the worker call to refresh cached pages.
     PT_WEB_URL: http://app:3000
+    # Every email the stack sends lands in Mailpit until a provider is chosen (D40).
+    SMTP_HOST: mailpit
+    SMTP_PORT: 1025
+    PT_EMAIL_FROM: ${PT_EMAIL_FROM:-}
+    PT_EMAIL_FROM_NAME: ${PT_EMAIL_FROM_NAME:-}
+    SENTRY_DSN: ${SENTRY_DSN:-}
+    SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-}
+    PT_LOG_LEVEL: ${PT_LOG_LEVEL:-}
   depends_on:
     postgres: { condition: service_healthy }
     storage-init: { condition: service_completed_successfully }
+    mailpit: { condition: service_started }
 
 services:
   app:
@@ -99,6 +108,12 @@ services:
     # Reads PDF, Word, Excel and more for plugin-tika.
     image: apache/tika:3.2.3.0-full
     ports: ["${PT_TIKA_PORT:-9998}:9998"]
+
+  mailpit:
+    # Catches every email sent in development, so none reaches a real inbox.
+    # Read them at http://localhost:${PT_MAIL_UI_PORT:-8025}, or through its API in tests.
+    image: axllent/mailpit:v1.33.0
+    ports: ["${PT_SMTP_PORT:-1025}:1025", "${PT_MAIL_UI_PORT:-8025}:8025"]
 
 volumes:
   postgres:

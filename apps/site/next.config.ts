@@ -15,6 +15,9 @@ loadEnvConfig(repoRoot, process.env.NODE_ENV !== 'production', console, true)
 const nextConfig: NextConfig = {
   // The repository's own AGENTS.md covers agent guidance.
   agentRules: false,
+  // The browser tests run their own dev server in a separate folder, since
+  // Next.js allows one dev server per folder.
+  distDir: process.env.PT_NEXT_DIST_DIR || '.next',
   output: 'standalone',
   outputFileTracingRoot: repoRoot,
   transpilePackages: [

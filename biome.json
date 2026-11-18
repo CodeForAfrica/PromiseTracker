@@ -10,6 +10,7 @@
       "**",
       "!**/node_modules",
       "!**/.next",
+      "!**/.next-e2e",
       "!**/media",
       "!**/payload-types.ts",
       "!**/migrations/*.json",
