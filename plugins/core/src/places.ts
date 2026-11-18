@@ -428,7 +428,8 @@ export const Areas: CollectionConfig = {
         label: 'Areas in it',
         collection: 'areas',
         on: 'parent',
-        defaultSort: 'name',
+        // Payload cannot sort a join by a field with a value per language, such as the name.
+        defaultSort: 'slug',
         columns: ['name', 'type', 'slug'],
       }),
       related({

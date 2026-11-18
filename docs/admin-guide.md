@@ -189,7 +189,7 @@ institutions appear once they are ready.
 **Related**, at the bottom of a saved actor, lists their terms, newest first. For a party it
 also lists the terms held for it. **Add new** there starts a term with the actor filled in.
 Offices list their holders, areas list the areas in them and their terms, and countries list
-their offices and actors, in the same folded section.
+their areas, offices and actors, in the same folded section.
 
 An actor named in a term cannot be deleted. Set it to **archived** instead, or change the terms
 first.

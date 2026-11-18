@@ -308,6 +308,23 @@ describe('actors and terms', () => {
         user: staff,
       })
       expect(office.terms?.docs).toHaveLength(3)
+      const place = await payload.findByID({
+        collection: 'countries',
+        id: country,
+        overrideAccess: false,
+        user: staff,
+      })
+      // The first page of the country's 71 areas, with more to page through.
+      expect(place.areas?.docs).toHaveLength(10)
+      expect(place.areas?.hasNextPage).toBe(true)
+      const nairobi = await payload.findByID({
+        collection: 'areas',
+        id: await idOf('areas', 'nairobi-county'),
+        overrideAccess: false,
+        user: staff,
+      })
+      expect(nairobi.children?.docs).toHaveLength(10)
+      expect(nairobi.terms?.docs).toHaveLength(4)
       const guest = await payload.findByID({ collection: 'actors', id, overrideAccess: false })
       expect(guest.terms).toBeUndefined()
     })

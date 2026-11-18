@@ -179,6 +179,7 @@ export interface Config {
       partyTerms: 'terms';
     };
     countries: {
+      areas: 'areas';
       offices: 'offices';
       actors: 'actors';
     };
@@ -490,6 +491,11 @@ export interface Country {
    * The area for the whole country. Set when that area is added.
    */
   rootArea?: (string | null) | Area;
+  areas?: {
+    docs?: (string | Area)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   offices?: {
     docs?: (string | Office)[];
     hasNextPage?: boolean;
@@ -1219,6 +1225,7 @@ export interface CountriesSelect<T extends boolean = true> {
   defaultLanguage?: T;
   about?: T;
   rootArea?: T;
+  areas?: T;
   offices?: T;
   actors?: T;
   recordStatus?: T;

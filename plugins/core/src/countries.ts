@@ -217,6 +217,15 @@ export const Countries: CollectionConfig = withPublishing(
       },
       relatedSection(
         related({
+          name: 'areas',
+          label: 'Areas',
+          collection: 'areas',
+          on: 'country',
+          // Payload cannot sort a join by a field with a value per language, such as the name.
+          defaultSort: 'slug',
+          columns: ['name', 'type', 'parent', 'slug'],
+        }),
+        related({
           name: 'offices',
           label: 'Offices',
           collection: 'offices',
