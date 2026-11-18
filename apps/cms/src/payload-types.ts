@@ -324,9 +324,6 @@ export interface Media {
  */
 export interface Country {
   id: string;
-  /**
-   * Its name in every language, its region and its languages are filled in when you save.
-   */
   code:
     | 'dz'
     | 'ao'
@@ -382,25 +379,10 @@ export interface Country {
     | 'ug'
     | 'zm'
     | 'zw';
-  /**
-   * Used in addresses, such as /en/ke.
-   */
   codeShown?: string | null;
-  /**
-   * Filled in from the country list. Change it to use another name.
-   */
   name?: string | null;
-  /**
-   * From the country list.
-   */
   region?: ('east-africa' | 'west-africa' | 'central-africa' | 'southern-africa' | 'north-africa') | null;
-  /**
-   * The languages this country publishes in. Filled in from the country list when left empty.
-   */
   languages?: ('en' | 'fr' | 'pt' | 'ar' | 'sw')[] | null;
-  /**
-   * One of the languages above.
-   */
   defaultLanguage?: ('en' | 'fr' | 'pt' | 'ar' | 'sw') | null;
   about?: string | null;
   /**

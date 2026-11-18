@@ -147,10 +147,6 @@ export const Countries: CollectionConfig = withPublishing(
           value: code,
         })).sort((a, b) => a.label.localeCompare(b.label)),
         access: { update: () => false },
-        admin: {
-          description:
-            'Its name in every language, its region and its languages are filled in when you save.',
-        },
       },
       {
         name: 'codeShown',
@@ -158,11 +154,7 @@ export const Countries: CollectionConfig = withPublishing(
         type: 'text',
         // Not stored. Shows the code beside the form, as it appears in addresses.
         virtual: true,
-        admin: {
-          position: 'sidebar',
-          readOnly: true,
-          description: 'Used in addresses, such as /en/ke.',
-        },
+        admin: { position: 'sidebar', readOnly: true, condition: (data) => Boolean(data?.id) },
         hooks: {
           afterRead: [
             ({ siblingData }) => (typeof siblingData.code === 'string' ? siblingData.code : null),
@@ -174,30 +166,27 @@ export const Countries: CollectionConfig = withPublishing(
         type: 'text',
         localized: true,
         admin: {
-          description: 'Filled in from the country list. Change it to use another name.',
+          // The name comes from the country chosen above, so the form asks for
+          // nothing until the country is saved. Then an editor can change it.
+          condition: (data) => Boolean(data?.id),
         },
       },
       {
         name: 'region',
         type: 'select',
         options: REGIONS.map((value) => ({ label: value, value })),
-        admin: { position: 'sidebar', readOnly: true, description: 'From the country list.' },
+        admin: { position: 'sidebar', readOnly: true, condition: (data) => Boolean(data?.id) },
       },
       {
         name: 'languages',
         type: 'select',
         hasMany: true,
         options: LANGUAGE_OPTIONS,
-        admin: {
-          description:
-            'The languages this country publishes in. Filled in from the country list when left empty.',
-        },
       },
       {
         name: 'defaultLanguage',
         type: 'select',
         options: LANGUAGE_OPTIONS,
-        admin: { description: 'One of the languages above.' },
         validate: (value: unknown, { siblingData }: { siblingData: { languages?: unknown } }) => {
           if (isEmpty(value)) return true
           const languages = Array.isArray(siblingData.languages) ? siblingData.languages : []

@@ -1,9 +1,7 @@
 import { isNotAvailable } from '@promisetracker/sdk'
 import { CountryHero, NotAvailableNotice, PageShell } from '@promisetracker/ui'
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
-
-import { findSite, getCountry, LOGO, loadShell, NotFoundError } from '@/data'
+import { findSite, getCountry, LOGO, loadShell, orNotFound } from '@/data'
 
 type Props = { params: Promise<{ lang: string; cc: string }> }
 
@@ -16,14 +14,7 @@ export function generateStaticParams(): never[] {
   return []
 }
 
-async function loadCountry(lang: string, cc: string) {
-  try {
-    return await getCountry(lang, cc)
-  } catch (error) {
-    if (error instanceof NotFoundError) notFound()
-    throw error
-  }
-}
+const loadCountry = (lang: string, cc: string) => orNotFound(getCountry(lang, cc))
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang, cc } = await params

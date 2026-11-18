@@ -75,7 +75,15 @@ test('a country not in French says so, and links to the English page', async ({ 
 })
 
 test('an unknown country, page or language is not found', async ({ page }) => {
-  for (const path of ['/en/zz', `/en/${seed().full.code}/nothing-here`, '/de']) {
+  // Portuguese is registered but not switched on in the browser tests, so its pages do not exist.
+  const { full } = seed()
+  for (const path of [
+    '/en/zz',
+    `/en/${full.code}/nothing-here`,
+    '/de',
+    '/pt',
+    `/pt/${full.code}`,
+  ]) {
     const res = await page.goto(path)
     expect(res?.status(), path).toBe(404)
   }
