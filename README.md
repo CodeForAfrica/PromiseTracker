@@ -51,6 +51,13 @@ source, and follows what happens to it over time.
    pnpm dev
    ```
 
+5. Load the seed data: Kenya and Senegal, with their counties and regions, offices and office
+   holders. It is safe to run again. See [`seed/README.md`](seed/README.md).
+
+   ```bash
+   pnpm seed
+   ```
+
 The site is at http://localhost:3000 and the admin at http://localhost:3000/admin. The first visit
 to the admin asks you to create a user.
 
@@ -67,6 +74,7 @@ email reaches a real inbox until a provider is set with `SMTP_HOST`.
 | Stop the services                           | `pnpm services:down`                  |
 | Run the site                                | `pnpm dev`                            |
 | Run the whole stack in Docker               | `pnpm stack`                          |
+| Load the seed data                          | `pnpm seed`                           |
 | Create a migration                          | `pnpm payload migrate:create <name>`  |
 | Check migrations match the config           | `pnpm migrate:check`                  |
 | Regenerate Payload types and the import map | `pnpm generate`                       |
@@ -91,6 +99,7 @@ email reaches a real inbox until a provider is set with `SMTP_HOST`.
 | `packages/ui`                  | Components from the redesign                                                 |
 | `plugins/core`, `plugins/site` | Payload plugins: the data model, and the public site's settings              |
 | `docker`                       | The Dockerfile and the Compose file                                          |
+| `seed`                         | Seed data for development, and the loader `pnpm seed` runs                   |
 | `tests`                        | Unit, integration and browser tests                                          |
 
 The public site reads data only through `@promisetracker/sdk`. Biome stops site code from
