@@ -1,5 +1,5 @@
-// Puts the countries the browser tests need in the database, and writes what
-// it used to tests/e2e/.seed.json. With --remove it takes them out again.
+// Puts the countries and the super-admin the browser tests need in the database,
+// and writes what it used to tests/e2e/.seed.json. With --remove it takes them out again.
 // Run with tsx, from Playwright's set-up and tear-down.
 import '../load-env'
 
@@ -16,6 +16,8 @@ export type Seed = {
   full: { id: string; code: string; en: string; fr: string }
   /** Published in English only. */
   englishOnly: { id: string; code: string; en: string }
+  /** A super-admin to sign in to the admin as. */
+  admin: { id: string; email: string; password: string }
 }
 
 const file = path.resolve(import.meta.dirname, '.seed.json')
@@ -30,6 +32,10 @@ if (process.argv.includes('--remove')) {
       where: { id: { in: [seed.full.id, seed.englishOnly.id] } },
       overrideAccess: true,
     })
+    // The last super-admin cannot be deleted. Then it goes with the test database.
+    await payload
+      .delete({ collection: 'users', id: seed.admin.id, overrideAccess: true })
+      .catch(() => {})
     rmSync(file)
   }
 } else {
@@ -59,9 +65,19 @@ if (process.argv.includes('--remove')) {
       overrideAccess: true,
     })
   }
+  const admin = {
+    email: `e2e-admin-${crypto.randomUUID()}@example.org`,
+    password: `pw-${crypto.randomUUID()}`,
+  }
+  const user = await payload.create({
+    collection: 'users',
+    data: { ...admin, name: 'Browser tests', roles: ['super-admin'] },
+    overrideAccess: true,
+  })
   const seed: Seed = {
     full: { id: a.id, code: full, en: countryName(full, 'en'), fr: countryName(full, 'fr') },
     englishOnly: { id: b.id, code: englishOnly, en: countryName(englishOnly, 'en') },
+    admin: { id: user.id, ...admin },
   }
   writeFileSync(file, JSON.stringify(seed, null, 2))
 }

@@ -156,6 +156,8 @@ export interface Config {
   };
   blocks: {};
   collections: {
+    'rating-scales': RatingScale;
+    'claim-types': ClaimType;
     countries: Country;
     media: Media;
     users: User;
@@ -167,6 +169,8 @@ export interface Config {
   };
   collectionsJoins: {};
   collectionsSelect: {
+    'rating-scales': RatingScalesSelect<false> | RatingScalesSelect<true>;
+    'claim-types': ClaimTypesSelect<false> | ClaimTypesSelect<true>;
     countries: CountriesSelect<false> | CountriesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
@@ -222,6 +226,168 @@ export interface UserAuthOperations {
     email: string;
     password: string;
   };
+}
+/**
+ * The ratings claims are given, grouped in tiers. Changing a rating changes it on every claim that carries it.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rating-scales".
+ */
+export interface RatingScale {
+  id: string;
+  name: string;
+  /**
+   * The value of the best rating, for search engines.
+   */
+  bestValue: number;
+  /**
+   * The value of the worst rating.
+   */
+  worstValue: number;
+  /**
+   * Groups of ratings, in the order the site shows them.
+   */
+  tiers?:
+    | {
+        /**
+         * Ratings name their tier by this.
+         */
+        slug: string;
+        label: string;
+        colour: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * In the order the site lists them within their tier.
+   */
+  ratings?:
+    | {
+        /**
+         * Never changes once saved, such as in-progress.
+         */
+        slug: string;
+        label: string;
+        /**
+         * The slug of one of the tiers above.
+         */
+        tier: string;
+        /**
+         * Edit the wording only. A change of meaning is a new rating. Every change is kept in the history.
+         */
+        definition: string;
+        colour: string;
+        textColour: string;
+        /**
+         * Between the worst and best values.
+         */
+        value: number;
+        /**
+         * A claim with this rating must have a deadline.
+         */
+        needsDeadline?: boolean | null;
+        /**
+         * Every new claim begins with this rating.
+         */
+        isStarting?: boolean | null;
+        /**
+         * No new claim can be given this rating.
+         */
+        retired?: boolean | null;
+        /**
+         * Re-rate each through a claim update.
+         */
+        claimsWithRating?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users".
+ */
+export interface User {
+  id: string;
+  name?: string | null;
+  roles: ('super-admin' | 'editor' | 'contributor' | 'reviewer' | 'moderator' | 'viewer')[];
+  /**
+   * Two-letter country codes this user works on, such as ke. Not enforced in version 1.
+   */
+  countries?: string[] | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  resetPasswordRequestedAt?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+        refreshCount?: number | null;
+        refreshedAt?: string | null;
+        label?: string | null;
+        type?: string | null;
+        metadata?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+      }[]
+    | null;
+  password?: string | null;
+  collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "claim-types".
+ */
+export interface ClaimType {
+  id: string;
+  name: string;
+  slug: string;
+  ratingScale: string | RatingScale;
+  /**
+   * Whether claims of this type usually have a deadline.
+   */
+  hasDeadline?: boolean | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -311,59 +477,6 @@ export interface Country {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users".
- */
-export interface User {
-  id: string;
-  name?: string | null;
-  roles: ('super-admin' | 'editor' | 'contributor' | 'reviewer' | 'moderator' | 'viewer')[];
-  /**
-   * Two-letter country codes this user works on, such as ke. Not enforced in version 1.
-   */
-  countries?: string[] | null;
-  createdBy?: {
-    relationTo: 'users';
-    value: string | User;
-  } | null;
-  updatedBy?: {
-    relationTo: 'users';
-    value: string | User;
-  } | null;
-  updatedAt: string;
-  createdAt: string;
-  email: string;
-  resetPasswordToken?: string | null;
-  resetPasswordExpiration?: string | null;
-  salt?: string | null;
-  hash?: string | null;
-  resetPasswordRequestedAt?: string | null;
-  loginAttempts?: number | null;
-  lockUntil?: string | null;
-  sessions?:
-    | {
-        id: string;
-        createdAt?: string | null;
-        expiresAt: string;
-        refreshCount?: number | null;
-        refreshedAt?: string | null;
-        label?: string | null;
-        type?: string | null;
-        metadata?:
-          | {
-              [k: string]: unknown;
-            }
-          | unknown[]
-          | string
-          | number
-          | boolean
-          | null;
-      }[]
-    | null;
-  password?: string | null;
-  collection: 'users';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
 export interface Media {
@@ -428,6 +541,14 @@ export interface PayloadKv {
 export interface PayloadLockedDocument {
   id: string;
   document?:
+    | ({
+        relationTo: 'rating-scales';
+        value: string | RatingScale;
+      } | null)
+    | ({
+        relationTo: 'claim-types';
+        value: string | ClaimType;
+      } | null)
     | ({
         relationTo: 'countries';
         value: string | Country;
@@ -503,6 +624,57 @@ export interface PayloadLlmInstruction {
   } | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rating-scales_select".
+ */
+export interface RatingScalesSelect<T extends boolean = true> {
+  name?: T;
+  bestValue?: T;
+  worstValue?: T;
+  tiers?:
+    | T
+    | {
+        slug?: T;
+        label?: T;
+        colour?: T;
+        id?: T;
+      };
+  ratings?:
+    | T
+    | {
+        slug?: T;
+        label?: T;
+        tier?: T;
+        definition?: T;
+        colour?: T;
+        textColour?: T;
+        value?: T;
+        needsDeadline?: T;
+        isStarting?: T;
+        retired?: T;
+        claimsWithRating?: T;
+        id?: T;
+      };
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "claim-types_select".
+ */
+export interface ClaimTypesSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  ratingScale?: T;
+  hasDeadline?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -806,7 +978,7 @@ export interface CollectionsWidget {
 export interface CollectionQueryWidget {
   data?: {
     title?: string | null;
-    relatedCollection: 'countries' | 'media' | 'users';
+    relatedCollection: 'rating-scales' | 'claim-types' | 'countries' | 'media' | 'users';
     where?:
       | {
           [k: string]: unknown;
@@ -828,7 +1000,7 @@ export interface CollectionQueryWidget {
  */
 export interface ActivityWidget {
   data?: {
-    excludedCollections?: ('countries' | 'media' | 'users')[] | null;
+    excludedCollections?: ('rating-scales' | 'claim-types' | 'countries' | 'media' | 'users')[] | null;
   };
   width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }

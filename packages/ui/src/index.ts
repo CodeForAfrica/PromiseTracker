@@ -8,6 +8,17 @@ export { LangToggle } from './LangToggle'
 export { NotAvailableNotice, NotFoundNotice } from './notices'
 export { Explainer, PageShell, SkipLink } from './PageShell'
 export { localePath, withoutLocale } from './paths'
+export type { RatingCounts } from './ratings'
+export {
+  orderedRatings,
+  RatingChip,
+  RatingDot,
+  RatingLegend,
+  TierBar,
+  tierBarLabel,
+  tierCount,
+  tierRatings,
+} from './ratings'
 export { SiteFooter } from './SiteFooter'
 export type { ShellData } from './SiteHeader'
 export { Logo, NavLinks, SiteHeader } from './SiteHeader'

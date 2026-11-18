@@ -5,6 +5,7 @@
  * documents under "Sources", themes and articles under "Editorial".
  */
 export const ADMIN_GROUPS = {
+  claims: 'Claims',
   places: 'Places',
   library: 'Media library',
   site: 'Public site',

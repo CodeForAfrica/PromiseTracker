@@ -1,3 +1,6 @@
+import { TierRowLabel as TierRowLabel_4b2483109986546830d3cc5a8828e016 } from '@promisetracker/plugin-core/client'
+import { RatingContrast as RatingContrast_4b2483109986546830d3cc5a8828e016 } from '@promisetracker/plugin-core/client'
+import { RatingRowLabel as RatingRowLabel_4b2483109986546830d3cc5a8828e016 } from '@promisetracker/plugin-core/client'
 import { LLMInstructionsMenuItem as LLMInstructionsMenuItem_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
 import { LLMInstructionsDescription as LLMInstructionsDescription_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
 import { RscEntryLexicalCell as RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
@@ -25,6 +28,9 @@ import { UploadDropzoneCollectionsField as UploadDropzoneCollectionsField_3817bf
 
 /** @type import('payload').ImportMap */
 export const importMap = {
+  "@promisetracker/plugin-core/client#TierRowLabel": TierRowLabel_4b2483109986546830d3cc5a8828e016,
+  "@promisetracker/plugin-core/client#RatingContrast": RatingContrast_4b2483109986546830d3cc5a8828e016,
+  "@promisetracker/plugin-core/client#RatingRowLabel": RatingRowLabel_4b2483109986546830d3cc5a8828e016,
   "@payloadcms/ui#LLMInstructionsMenuItem": LLMInstructionsMenuItem_3817bf644402e67bfe6577f60ef982de,
   "@payloadcms/ui#LLMInstructionsDescription": LLMInstructionsDescription_3817bf644402e67bfe6577f60ef982de,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
