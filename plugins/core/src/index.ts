@@ -10,6 +10,7 @@ import {
   plaintextExtractor,
   uploadConnector,
 } from './adapters'
+import { Countries } from './countries'
 import { Users } from './users'
 
 export const Media: CollectionConfig = {
@@ -34,7 +35,7 @@ export const corePlugin = definePromiseTrackerPlugin({
   slug: 'core',
   version: '0.1.0',
   order: 0,
-  collections: [Users, Media],
+  collections: [Users, Media, Countries],
   provides: {
     verification: [nativeVerification],
     sourceConnector: [uploadConnector],
@@ -48,6 +49,9 @@ export const corePlugin = definePromiseTrackerPlugin({
 
 export * from './access'
 export * from './adapters'
+export * from './cache'
+export { Countries, REGIONS } from './countries'
 export { privateHistory } from './history'
+export * from './publishing'
 export * from './roles'
 export { Users } from './users'

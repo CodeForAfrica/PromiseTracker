@@ -591,11 +591,15 @@ the month, as in "August 2022".
 |---|---|
 | `code` | Two-letter ISO code in lower case. Unique. Used in web addresses |
 | `name` | Localized |
-| `region` | For grouping countries once there are many |
-| `languages`, `defaultLanguage` | The languages this country publishes in, chosen from the enabled locales |
-| `rootArea` | The area that stands for the whole country, which national offices such as President belong to |
+| `region` | For grouping countries once there are many: east, west, central, southern or north Africa |
+| `languages`, `defaultLanguage` | The languages this country publishes in, as codes from the registered locales |
+| `rootArea` | The area that stands for the whole country, which national offices such as President belong to. Added with areas |
 | `about` | Localized |
 | `recordStatus` | ready, hold, archived. Starts as hold |
+| `publishedIn` | Computed. The languages the country is live in, section 8.1 |
+
+Only super-admins manage countries. A guest reads only countries an editor has marked ready, and
+only in a language they are published in.
 
 ### 7.2 Areas, offices and seats
 
@@ -1588,22 +1592,29 @@ Migrations create the default Promise claim type and the Delivery rating scale. 
 | Claims | 2,000 | 25,000 | 150,000 |
 | Monthly visitors | 20,000 | 200,000 | 1,000,000 |
 
-Pages for published records are built ahead of time and cached with tags, using Next.js 16 cache
-components. A change refreshes only the pages tagged with the changed records.
+Pages are not built ahead of time, so the build never needs the database. Each page is rendered on
+its first visit and cached, and the SDK's reads are cached with tags. A change refreshes only the
+pages tagged with the changed records, and the next visit renders them again.
+
+Next.js 16 cache components would prerender pages during the build, which reads the database, and
+the Docker image is built without one. So the site uses Next.js's tagged data cache instead
+(D50).
 
 | Tag | Refreshed when |
 |---|---|
 | `country:{code}` | The country or its figures change |
+| `countries` | Any country is added, changed or removed, for lists of countries |
 | `area:{id}` | The area or its office holders change |
 | `actor:{id}` | The actor, or a claim naming it, changes |
 | `claim:{id}` | The claim or one of its updates changes |
 | `ratings` | A rating scale changes |
 | `site` | Site settings or picks change |
 
-A change refreshes its tags at once, as part of the same save. A change made by a background job
-in the worker calls an internal route on the web process, which refreshes the tags there. The
-call is signed with the application secret, so it needs no setting of its own. There is no
-shared cache service.
+A change refreshes its tags at once, as part of the same save. The save calls an internal route on
+the web process, `/api/internal/revalidate`, which refreshes the tags there. A background job in
+the worker takes the same path. The call is signed with the application secret, so it needs no
+secret of its own. `PT_WEB_URL` tells the worker where the web process is. There is no shared
+cache service. If the call fails, the save still succeeds and the failure is logged.
 
 ## 18. Measures
 
@@ -1737,6 +1748,7 @@ codemods, and passes the full test suite before merging.
 | D47 | Cached pages are refreshed as soon as a record changes. No shared cache service. Version 1 runs one web process |
 | D48 | The first super-admin is created from environment variables. D43 stands |
 | D49 | Spreadsheet importers only read files. The core maps, previews and saves |
+| D50 | The site caches with Next.js's tagged data cache, not cache components, so the build never needs the database |
 
 ### 20.2 Why
 

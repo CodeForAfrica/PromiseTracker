@@ -12,9 +12,9 @@ export async function GET(request: Request, { params }: Args) {
   try {
     const result = await handleV1(await getPayload(), route, new URL(request.url).searchParams)
     if (result === undefined) {
-      return Response.json({ error: 'Not found' }, { status: 404, headers })
+      return Response.json({ error: 'not-found' }, { status: 404, headers })
     }
-    return Response.json(result, { headers })
+    return Response.json(result.body, { status: result.status, headers })
   } catch (error) {
     // The public contract always answers in JSON. Details go to the log only.
     console.error(`GET /api/v1${route} failed`, error)

@@ -42,7 +42,7 @@ describe('users, roles and access', () => {
     for (const id of created) {
       await payload.delete({ collection: 'users', id, overrideAccess: true }).catch(() => {})
     }
-    await payload.updateGlobal({ slug: 'site', data: { tagline: null }, overrideAccess: true })
+    await payload.updateGlobal({ slug: 'site', data: { description: null }, overrideAccess: true })
     await payload.destroy()
   })
 
@@ -233,12 +233,12 @@ describe('users, roles and access', () => {
       for (const role of ROLES) {
         const attempt = payload.updateGlobal({
           slug: 'site',
-          data: { tagline: `Set by ${role}` },
+          data: { description: `Set by ${role}` },
           user: user(role),
           overrideAccess: false,
         })
         if (role === 'super-admin' || role === 'editor') {
-          await expect(attempt).resolves.toMatchObject({ tagline: `Set by ${role}` })
+          await expect(attempt).resolves.toMatchObject({ description: `Set by ${role}` })
         } else {
           await expect(attempt).rejects.toThrow()
         }
@@ -254,12 +254,12 @@ describe('users, roles and access', () => {
     it('cannot see who created or changed a record that guests can read', async () => {
       await payload.updateGlobal({
         slug: 'site',
-        data: { tagline: 'Changed by an editor' },
+        data: { description: 'Changed by an editor' },
         user: user('editor'),
         overrideAccess: false,
       })
       const asGuest = await payload.findGlobal({ slug: 'site', overrideAccess: false })
-      expect(asGuest.tagline).toBe('Changed by an editor')
+      expect(asGuest.description).toBe('Changed by an editor')
       expect(asGuest).not.toHaveProperty('updatedBy')
       expect(asGuest).not.toHaveProperty('createdBy')
 

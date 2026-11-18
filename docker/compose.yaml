@@ -31,6 +31,8 @@ x-app: &app
     PT_VERIFICATION: ${PT_VERIFICATION:-}
     PT_LLM_MODEL: ${PT_LLM_MODEL:-}
     PT_STARTUP_LOCK_TIMEOUT_SECONDS: ${PT_STARTUP_LOCK_TIMEOUT_SECONDS:-}
+    # The web process, which the app and the worker call to refresh cached pages.
+    PT_WEB_URL: http://app:3000
   depends_on:
     postgres: { condition: service_healthy }
     storage-init: { condition: service_completed_successfully }

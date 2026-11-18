@@ -158,6 +158,7 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    countries: Country;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -168,6 +169,7 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    countries: CountriesSelect<false> | CountriesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -177,14 +179,19 @@ export interface Config {
   db: {
     defaultIDType: string;
   };
-  fallbackLocale: null;
+  fallbackLocale:
+    | ('false' | 'none' | 'null')
+    | false
+    | null
+    | ('en' | 'fr' | 'pt' | 'ar' | 'sw')
+    | ('en' | 'fr' | 'pt' | 'ar' | 'sw')[];
   globals: {
     site: Site;
   };
   globalsSelect: {
     site: SiteSelect<false> | SiteSelect<true>;
   };
-  locale: null;
+  locale: 'en' | 'fr' | 'pt' | 'ar' | 'sw';
   widgets: {
     welcome: WelcomeWidget;
     collections: CollectionsWidget;
@@ -313,6 +320,46 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "countries".
+ */
+export interface Country {
+  id: string;
+  /**
+   * Two-letter ISO code in lower case, such as ke. Used in addresses.
+   */
+  code: string;
+  name: string;
+  region?: ('east-africa' | 'west-africa' | 'central-africa' | 'southern-africa' | 'north-africa') | null;
+  /**
+   * Language codes this country publishes in, such as en and fr.
+   */
+  languages?: string[] | null;
+  /**
+   * One of the languages above.
+   */
+  defaultLanguage?: string | null;
+  about?: string | null;
+  /**
+   * Ready makes it public in each language that has its required fields.
+   */
+  recordStatus: 'ready' | 'hold' | 'archived';
+  /**
+   * Worked out on save. The languages this record is live in.
+   */
+  publishedIn?: string[] | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -342,6 +389,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: string | Media;
+      } | null)
+    | ({
+        relationTo: 'countries';
+        value: string | Country;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -479,6 +530,24 @@ export interface MediaSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "countries_select".
+ */
+export interface CountriesSelect<T extends boolean = true> {
+  code?: T;
+  name?: T;
+  region?: T;
+  languages?: T;
+  defaultLanguage?: T;
+  about?: T;
+  recordStatus?: T;
+  publishedIn?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
@@ -540,7 +609,60 @@ export interface PayloadLlmInstructionsSelect<T extends boolean = true> {
 export interface Site {
   id: string;
   name: string;
-  tagline?: string | null;
+  /**
+   * One line under the name on every page.
+   */
+  description?: string | null;
+  /**
+   * The longer explanation, collapsed by default.
+   */
+  explainer?: string | null;
+  navigation?:
+    | {
+        label: string;
+        /**
+         * A path on this site, such as /methodology, or a full address.
+         */
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
+  footer?: {
+    about?: string | null;
+    links?:
+      | {
+          label: string;
+          /**
+           * A path on this site, such as /methodology, or a full address.
+           */
+          url: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  strings?: {
+    skipToContent?: string | null;
+    home?: string | null;
+    verified?: string | null;
+    countriesNav?: string | null;
+    otherCountries?: string | null;
+    menu?: string | null;
+    closeMenu?: string | null;
+    language?: string | null;
+    headline?: string | null;
+    headlineTail?: string | null;
+    lede?: string | null;
+    aboutSite?: string | null;
+    chooseCountry?: string | null;
+    notAvailableTitle?: string | null;
+    notAvailableBody?: string | null;
+    notFoundTitle?: string | null;
+    notFoundBody?: string | null;
+    backHome?: string | null;
+    footerNav?: string | null;
+    initiative?: string | null;
+    copyright?: string | null;
+  };
   createdBy?: {
     relationTo: 'users';
     value: string | User;
@@ -558,7 +680,52 @@ export interface Site {
  */
 export interface SiteSelect<T extends boolean = true> {
   name?: T;
-  tagline?: T;
+  description?: T;
+  explainer?: T;
+  navigation?:
+    | T
+    | {
+        label?: T;
+        url?: T;
+        id?: T;
+      };
+  footer?:
+    | T
+    | {
+        about?: T;
+        links?:
+          | T
+          | {
+              label?: T;
+              url?: T;
+              id?: T;
+            };
+      };
+  strings?:
+    | T
+    | {
+        skipToContent?: T;
+        home?: T;
+        verified?: T;
+        countriesNav?: T;
+        otherCountries?: T;
+        menu?: T;
+        closeMenu?: T;
+        language?: T;
+        headline?: T;
+        headlineTail?: T;
+        lede?: T;
+        aboutSite?: T;
+        chooseCountry?: T;
+        notAvailableTitle?: T;
+        notAvailableBody?: T;
+        notFoundTitle?: T;
+        notFoundBody?: T;
+        backHome?: T;
+        footerNav?: T;
+        initiative?: T;
+        copyright?: T;
+      };
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;
@@ -592,7 +759,7 @@ export interface CollectionsWidget {
 export interface CollectionQueryWidget {
   data?: {
     title?: string | null;
-    relatedCollection: 'users' | 'media';
+    relatedCollection: 'users' | 'media' | 'countries';
     where?:
       | {
           [k: string]: unknown;
@@ -614,7 +781,7 @@ export interface CollectionQueryWidget {
  */
 export interface ActivityWidget {
   data?: {
-    excludedCollections?: ('users' | 'media')[] | null;
+    excludedCollections?: ('users' | 'media' | 'countries')[] | null;
   };
   width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }

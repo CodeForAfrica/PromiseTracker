@@ -1,0 +1,90 @@
+import { createHmac, timingSafeEqual } from 'node:crypto'
+
+import type { TagRefresher } from '@promisetracker/plugin-core'
+
+type Env = Readonly<Record<string, string | undefined>>
+
+/** The internal route that refreshes the site's cached pages (section 11.3). */
+export const REVALIDATE_PATH = '/api/internal/revalidate'
+export const SIGNATURE_HEADER = 'x-pt-signature'
+
+const MAX_TAGS = 100
+const MAX_TAG_LENGTH = 256
+const TIMEOUT_MS = 5_000
+
+/** Where the web process listens, for a call from this process or the worker. */
+export function webUrl(env: Env = process.env): string {
+  const configured = env.PT_WEB_URL?.trim()
+  return (configured || `http://127.0.0.1:${env.PORT?.trim() || '3000'}`).replace(/\/+$/, '')
+}
+
+/**
+ * Signs a refresh request with the application secret, so the route needs no
+ * secret of its own (D47). A key derived for this one use keeps the signature
+ * from being useful anywhere else.
+ */
+function key(secret: string): Buffer {
+  return createHmac('sha256', secret).update('promisetracker:revalidate').digest()
+}
+
+export function sign(body: string, secret: string): string {
+  return createHmac('sha256', key(secret)).update(body).digest('hex')
+}
+
+export function verify(body: string, signature: string | null, secret: string): boolean {
+  if (!signature || !secret) return false
+  const expected = Buffer.from(sign(body, secret), 'hex')
+  const given = Buffer.from(signature, 'hex')
+  return given.length === expected.length && timingSafeEqual(given, expected)
+}
+
+/** The tags in a signed refresh request, or null when it is not one. */
+export function readRefreshRequest(
+  body: string,
+  signature: string | null,
+  secret: string,
+): string[] | null {
+  if (!verify(body, signature, secret)) return null
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(body)
+  } catch {
+    return null
+  }
+  const tags: unknown = parsed && typeof parsed === 'object' ? Reflect.get(parsed, 'tags') : null
+  if (!Array.isArray(tags) || tags.length === 0 || tags.length > MAX_TAGS) return null
+  const valid = tags.every(
+    (tag): tag is string =>
+      typeof tag === 'string' && tag.length > 0 && tag.length <= MAX_TAG_LENGTH,
+  )
+  return valid ? tags : null
+}
+
+/**
+ * Asks the web process to refresh tags. The web process calls itself too, so
+ * a save in the admin and a background job in the worker take the same path.
+ * A failure is logged and never fails the save: the page refreshes on the
+ * next change.
+ */
+export function createHttpRefresher(env: Env = process.env): TagRefresher {
+  return async (tags, req) => {
+    if (tags.length === 0) return
+    const secret = env.PAYLOAD_SECRET ?? ''
+    const body = JSON.stringify({ tags })
+    try {
+      const res = await fetch(`${webUrl(env)}${REVALIDATE_PATH}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', [SIGNATURE_HEADER]: sign(body, secret) },
+        body,
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      })
+      if (!res.ok) throw new Error(`status ${res.status}`)
+    } catch (error) {
+      req.payload.logger.warn({
+        msg: 'Could not refresh the site’s cached pages. They refresh on the next change.',
+        tags,
+        error: error instanceof Error ? error.message : String(error),
+      })
+    }
+  }
+}

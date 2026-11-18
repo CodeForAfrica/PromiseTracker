@@ -1,12 +1,19 @@
 import type { Health } from '@promisetracker/contract'
 import type { Transport } from '@promisetracker/sdk'
-import { NotFoundError } from '@promisetracker/sdk'
 
 import { handleV1 } from './api/v1'
 import { getPayload } from './getPayload'
 import { getHealth as checkHealth } from './health'
 
-export { handleV1 } from './api/v1'
+export { handleV1, languages, matchRoute } from './api/v1'
+export {
+  REVALIDATE_PATH,
+  readRefreshRequest,
+  SIGNATURE_HEADER,
+  sign,
+  verify,
+  webUrl,
+} from './cache'
 export { assertRuntimeEnv, databaseUrl } from './env'
 export { ensureFirstAdmin } from './firstAdmin'
 export { getPayload } from './getPayload'
@@ -35,8 +42,7 @@ export function createLocalTransport(): Transport {
   return {
     async get(path, query) {
       const result = await handleV1(await getPayload(), path, new URLSearchParams(query))
-      if (result === undefined) throw new NotFoundError(path)
-      return result
+      return result ?? { status: 404, body: { error: 'not-found' } }
     },
   }
 }
