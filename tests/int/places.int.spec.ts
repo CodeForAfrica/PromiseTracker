@@ -167,6 +167,36 @@ describe('areas, offices and import', () => {
         },
       ])
     })
+
+    it('previews a move under a parent from the same file as an update, as the import does', async () => {
+      const result = await runImportPlan(payload, {
+        target: 'areas',
+        country,
+        commit: false,
+        headings: ['Name', 'Type', 'Parent'],
+        rows: [
+          { row: 1, values: ['Lake Region', 'region', ''] },
+          // Kenya has no parent today. A new one, not yet saved, is still a change.
+          { row: 2, values: ['Kenya', 'country', 'Lake Region'] },
+        ],
+        mapping: { name: 'Name', type: 'Type', parent: 'Parent' },
+      })
+      expect(result.counts).toEqual({ create: 1, update: 1, skip: 0, failed: 0 })
+    })
+
+    it('applies the slug rules to imported rows, and saves nothing for a refused row', async () => {
+      const result = await runImportPlan(payload, {
+        target: 'areas',
+        country,
+        commit: true,
+        headings: ['Name', 'Type', 'Name (fr)'],
+        rows: [{ row: 1, values: ['President', 'region', 'Président'] }],
+        mapping: { name: 'Name', type: 'Type', 'name:fr': 'Name (fr)' },
+      })
+      expect(result.counts).toEqual({ create: 0, update: 0, skip: 0, failed: 1 })
+      expect(result.errors[0]?.line).toBe(2)
+      expect(await areaId('president')).toBe('')
+    })
   })
 
   describe('rules', () => {

@@ -1,5 +1,6 @@
 import type { ImportRow } from '@promisetracker/kernel'
-import type { Payload, TypedLocale } from 'payload'
+import type { Payload, PayloadRequest, TypedLocale } from 'payload'
+import { commitTransaction, initTransaction, killTransaction } from 'payload'
 
 import { DEFAULT_LOCALE } from '../locales'
 import type { ImportTarget, PlannedRow } from './targets'
@@ -67,8 +68,10 @@ function unchanged(
 export async function runImportPlan(payload: Payload, input: Input): Promise<ImportResult> {
   const existing = await existingBySlug(payload, input.target, input.country)
   const localized = new Set(['name', 'shortName'])
-  // Slugs seen earlier in this file, with the record's id once it exists.
-  const seen = new Map<string, string | null>()
+  // Slugs seen earlier in this file, with the record's id. A preview saves
+  // nothing, so a record it would create gets a placeholder that matches no
+  // stored id: a row moved under it then counts as an update, as in the import.
+  const seen = new Map<string, string>()
   const counts: ImportCounts = { create: 0, update: 0, skip: 0, failed: 0 }
   const errors: RowError[] = []
   const fail = (line: number, message: string) => {
@@ -101,12 +104,12 @@ export async function runImportPlan(payload: Payload, input: Input): Promise<Imp
     const current = existing.get(plan.slug)
     if (current && unchanged(current, plan, parentId, localized)) {
       counts.skip += 1
-      seen.set(plan.slug, idOf(current.id))
+      seen.set(plan.slug, String(current.id))
       continue
     }
     if (!input.commit) {
       counts[current ? 'update' : 'create'] += 1
-      seen.set(plan.slug, current ? idOf(current.id) : null)
+      seen.set(plan.slug, current ? String(current.id) : `new:${plan.slug}`)
       continue
     }
 
@@ -116,42 +119,48 @@ export async function runImportPlan(payload: Payload, input: Input): Promise<Imp
       country: input.country,
       ...(plan.parent ? { parent: parentId } : {}),
     }
+    // A row's record and its translations save together, or not at all, so a
+    // failed row leaves nothing half-written.
+    const req: Partial<PayloadRequest> & { payload: Payload } = { payload }
+    await initTransaction(req)
     try {
-      const id = current
-        ? idOf(
-            (
-              await payload.update({
-                collection: input.target,
-                id: String(current.id),
-                locale: DEFAULT_LOCALE,
-                data: data as never,
-                overrideAccess: true,
-              })
-            ).id,
-          )
-        : idOf(
-            (
-              await payload.create({
-                collection: input.target,
-                locale: DEFAULT_LOCALE,
-                data: data as never,
-                overrideAccess: true,
-              })
-            ).id,
-          )
+      // The record's shape is checked by the collection's fields and hooks.
+      // This plugin is built without the app's generated types, so the
+      // local API cannot check it here.
+      const record = current
+        ? await payload.update({
+            collection: input.target,
+            id: String(current.id),
+            locale: DEFAULT_LOCALE,
+            data: data as never,
+            overrideAccess: true,
+            req,
+          })
+        : await payload.create({
+            collection: input.target,
+            locale: DEFAULT_LOCALE,
+            data: data as never,
+            overrideAccess: true,
+            req,
+          })
+      const id = idOf(record.id)
       if (!id) throw new Error('The record was saved without an id.')
       for (const [locale, values] of Object.entries(plan.translations)) {
         await payload.update({
           collection: input.target,
           id,
+          // planRow takes languages only from the registered list.
           locale: locale as TypedLocale,
           data: values as never,
           overrideAccess: true,
+          req,
         })
       }
+      await commitTransaction(req)
       counts[current ? 'update' : 'create'] += 1
       seen.set(plan.slug, id)
     } catch (error) {
+      await killTransaction(req)
       fail(line, error instanceof Error ? error.message : String(error))
     }
   }

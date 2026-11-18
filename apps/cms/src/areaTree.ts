@@ -6,7 +6,10 @@ import type { Payload } from 'payload'
 const MAX_DEPTH = 20
 
 export type AreaFamily = {
-  /** The areas above, nearest first: a constituency's county, then the country. */
+  /**
+   * The areas above, nearest first: a constituency's county, then the
+   * whole-country area, which is included because national offices answer for it.
+   */
   ancestors: string[]
   /** Every area below, at any depth. */
   descendants: string[]
