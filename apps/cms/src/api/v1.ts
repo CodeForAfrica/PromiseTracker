@@ -141,6 +141,7 @@ async function publishedCountry(
   if (!isCountryCode(code)) return notFound()
   const { docs } = await payload.find({
     collection: 'countries',
+    joins: false,
     where: { code: { equals: code } },
     locale,
     depth: 0,
@@ -175,6 +176,7 @@ async function officesOf(
 ): Promise<Office[]> {
   const { docs } = await payload.find({
     collection: 'offices',
+    joins: false,
     where: { country: { equals: country } },
     locale,
     sort: 'order',
@@ -240,6 +242,7 @@ async function findActors(
 ): Promise<Map<string, ActorDoc>> {
   const { docs } = await payload.find({
     collection: 'actors',
+    joins: false,
     where,
     locale,
     // The image, for its address.
@@ -269,6 +272,7 @@ async function officeMap(
 ): Promise<Map<string, OfficeEntry>> {
   const { docs } = await payload.find({
     collection: 'offices',
+    joins: false,
     where: { country: { equals: country } },
     locale,
     sort: 'order',
@@ -292,6 +296,7 @@ async function areaMap(
   if (ids.length === 0) return new Map()
   const { docs } = await payload.find({
     collection: 'areas',
+    joins: false,
     where: idIn(ids),
     locale,
     depth: 0,
@@ -381,15 +386,16 @@ async function sectionCounts(
 }
 
 /** Finds a record by its slug in a country, or by a slug it had before (section 11.2). */
-async function bySlug<C extends 'areas' | 'offices' | 'actors'>(
+async function bySlug(
   payload: Payload,
-  collection: C,
+  collection: 'areas' | 'offices' | 'actors',
   country: string,
   slug: string,
   former = false,
 ): Promise<{ id: string; slug?: string | null; areaType?: string | null; type?: string } | null> {
   const { docs } = await payload.find({
     collection,
+    joins: false,
     where: {
       and: [
         { country: { equals: country } },
@@ -428,6 +434,8 @@ const termsByOffice = (offices: ReadonlyMap<string, OfficeEntry>) => (a: TermDoc
   (offices.get(idOf(a.office) ?? '')?.order ?? 0) - (offices.get(idOf(b.office) ?? '')?.order ?? 0)
 
 const PAGE_SIZE = 50
+/** A list longer than this is sorted in memory with a warning in the log. */
+const LARGE_LIST = 2000
 const MAX_PAGE_SIZE = 100
 
 const handlers: Record<string, Handler> = {
@@ -439,6 +447,7 @@ const handlers: Record<string, Handler> = {
   '/countries': async ({ payload, locale }) => {
     const result = await payload.find({
       collection: 'countries',
+      joins: false,
       where: publishedInLocale(locale),
       locale,
       sort: 'code',
@@ -460,6 +469,7 @@ const handlers: Record<string, Handler> = {
     if (!isCountryCode(params.code)) return notFound()
     const { docs } = await payload.find({
       collection: 'countries',
+      joins: false,
       where: { code: { equals: params.code } },
       locale,
       depth: 0,
@@ -490,6 +500,7 @@ const handlers: Record<string, Handler> = {
     if (parentSlug) {
       const { docs } = await payload.find({
         collection: 'areas',
+        joins: false,
         where: { and: [{ country: { equals: country.id } }, { slug: { equals: parentSlug } }] },
         depth: 0,
         limit: 1,
@@ -501,6 +512,7 @@ const handlers: Record<string, Handler> = {
     }
     const { docs } = await payload.find({
       collection: 'areas',
+      joins: false,
       where: {
         and: [
           { country: { equals: country.id } },
@@ -523,6 +535,7 @@ const handlers: Record<string, Handler> = {
     if (isResult(country)) return country
     const { docs } = await payload.find({
       collection: 'areas',
+      joins: false,
       where: { and: [{ country: { equals: country.id } }, { slug: { equals: params.area } }] },
       locale: 'all',
       depth: 0,
@@ -539,6 +552,7 @@ const handlers: Record<string, Handler> = {
       ? (
           await payload.find({
             collection: 'areas',
+            joins: false,
             where: { id: { in: family.ancestors } },
             locale,
             depth: 0,
@@ -630,6 +644,11 @@ const handlers: Record<string, Handler> = {
       locale,
     )
     if (actors.size === 0) return empty()
+    if (actors.size > LARGE_LIST) {
+      payload.logger.warn(
+        `The actor list for ${country.code} sorts ${actors.size} actors in memory. Move the sort into the query.`,
+      )
+    }
 
     // Each actor's seats today, and their party.
     const current = (

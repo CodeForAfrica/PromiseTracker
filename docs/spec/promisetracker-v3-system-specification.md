@@ -670,7 +670,9 @@ People also have an honorific and gender. Institutions have a type, such as mini
 An actor whose only terms are at the candidate stage is never public. An actor with no current
 term and at least one past term shows as an archived record.
 
-A term's stage is worked out from its dates when it is read (D51). Its actor, office, area, party
+A term's stage is worked out from its dates when it is read (D51). Dates are whole days in
+UTC. A seat holds no more terms at once than its office's `holdersPerSeat`, and one term may end
+on the day the next starts. Its actor, office, area, party
 and successor are all in one country, and its area is the kind its office answers for. Actors and
 terms can be imported from a spreadsheet, after the country's areas and offices. A term row names
 its actor, office, area, party and successor by slug or by name, and matches an existing term by

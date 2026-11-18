@@ -186,6 +186,11 @@ term has started. Someone whose only term starts later, a candidate, does not ap
 **On Record Since**, in the sidebar, shows when that is. It is set from their terms. Parties and
 institutions appear once they are ready.
 
+**Related**, at the bottom of a saved actor, lists their terms, newest first. For a party it
+also lists the terms held for it. **Add new** there starts a term with the actor filled in.
+Offices list their holders, areas list the areas in them and their terms, and countries list
+their offices and actors, in the same folded section.
+
 An actor named in a term cannot be deleted. Set it to **archived** instead, or change the terms
 first.
 
@@ -206,6 +211,12 @@ The actor, office, area, party and successor must all be in one country.
 
 **Stage**, in the sidebar, is worked out from the dates: **candidate** before the term starts,
 **current** during it, **past** once it has ended. It changes on its own as the dates pass.
+Dates are whole days in UTC: a term is current from the start of its first day to the end of its
+last, so in Kenya it changes at 03:00. The site shows the change within the hour.
+
+A seat holds as many people at once as its office's **Holders per seat**, usually one. A term
+that would overlap another in a full seat is refused: end the old term first. The new term may
+start on the day the old one ends.
 
 **When a term ends,** set **Ends on**, write the **Closing summary**, and choose the
 **Successor**. Then add the new holder's term. The seat's address, such as

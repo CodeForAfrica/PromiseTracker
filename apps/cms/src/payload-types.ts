@@ -173,7 +173,23 @@ export interface Config {
     'payload-migrations': PayloadMigration;
     'payload-llm-instructions': PayloadLlmInstruction;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    actors: {
+      terms: 'terms';
+      partyTerms: 'terms';
+    };
+    countries: {
+      offices: 'offices';
+      actors: 'actors';
+    };
+    areas: {
+      children: 'areas';
+      terms: 'terms';
+    };
+    offices: {
+      terms: 'terms';
+    };
+  };
   collectionsSelect: {
     actors: ActorsSelect<false> | ActorsSelect<true>;
     terms: TermsSelect<false> | TermsSelect<true>;
@@ -279,6 +295,16 @@ export interface Actor {
    * When the first term starts. The actor is public from then.
    */
   onRecordSince?: string | null;
+  terms?: {
+    docs?: (string | Term)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  partyTerms?: {
+    docs?: (string | Term)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   /**
    * Ready makes it public in each language that has its required fields.
    */
@@ -464,6 +490,16 @@ export interface Country {
    * The area for the whole country. Set when that area is added.
    */
   rootArea?: (string | null) | Area;
+  offices?: {
+    docs?: (string | Office)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  actors?: {
+    docs?: (string | Actor)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   /**
    * Ready makes it public in each language that has its required fields.
    */
@@ -525,6 +561,16 @@ export interface Area {
      * A GeoJSON file from Boundaries, which records its source and licence.
      */
     outline?: (string | null) | Boundary;
+  };
+  children?: {
+    docs?: (string | Area)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  terms?: {
+    docs?: (string | Term)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
   };
   createdBy?: {
     relationTo: 'users';
@@ -663,6 +709,11 @@ export interface Office {
   order: number;
   country: string | Country;
   formerSlugs?: string[] | null;
+  terms?: {
+    docs?: (string | Term)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   createdBy?: {
     relationTo: 'users';
     value: string | User;
@@ -1124,6 +1175,8 @@ export interface ActorsSelect<T extends boolean = true> {
   country?: T;
   formerSlugs?: T;
   onRecordSince?: T;
+  terms?: T;
+  partyTerms?: T;
   recordStatus?: T;
   publishedIn?: T;
   createdBy?: T;
@@ -1166,6 +1219,8 @@ export interface CountriesSelect<T extends boolean = true> {
   defaultLanguage?: T;
   about?: T;
   rootArea?: T;
+  offices?: T;
+  actors?: T;
   recordStatus?: T;
   publishedIn?: T;
   createdBy?: T;
@@ -1194,6 +1249,8 @@ export interface AreasSelect<T extends boolean = true> {
         bounds?: T;
         outline?: T;
       };
+  children?: T;
+  terms?: T;
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;
@@ -1214,6 +1271,7 @@ export interface OfficesSelect<T extends boolean = true> {
   order?: T;
   country?: T;
   formerSlugs?: T;
+  terms?: T;
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;

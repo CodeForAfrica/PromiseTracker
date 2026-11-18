@@ -195,6 +195,7 @@ export async function existingBySlug(
 ): Promise<Map<string, Record<string, unknown>>> {
   const { docs } = await payload.find({
     collection: target,
+    joins: false,
     where: { country: { equals: country } },
     locale: 'all',
     depth: 0,

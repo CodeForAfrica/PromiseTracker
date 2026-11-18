@@ -13,6 +13,7 @@ import { can, signedIn } from './access'
 import { ADMIN_GROUPS } from './adminGroups'
 import { afterCommit } from './afterCommit'
 import { refreshTags } from './cache'
+import { related, relatedSection } from './joins'
 import { DEFAULT_LOCALE } from './locales'
 import { slugify, slugProblem } from './slugs'
 
@@ -50,6 +51,7 @@ export async function countryCode(req: PayloadRequest, country: unknown): Promis
   if (!id) return null
   const doc = await req.payload.findByID({
     collection: 'countries',
+    joins: false,
     id,
     depth: 0,
     // Reads the country's code only, to name the pages to refresh.
@@ -169,6 +171,7 @@ const checkAreaPlace: CollectionBeforeChangeHook = async ({ data, originalDoc, r
   if (parent && country) {
     const parentDoc = await req.payload.findByID({
       collection: 'areas',
+      joins: false,
       id: parent,
       depth: 0,
       // Reads the parent's country, to keep a country's areas together.
@@ -272,6 +275,7 @@ const linkRootArea = async ({
   await afterCommit(req, async () => {
     const current = await req.payload.findByID({
       collection: 'countries',
+      joins: false,
       id: country,
       depth: 0,
       // The system links the root area it just saw saved.
@@ -418,6 +422,24 @@ export const Areas: CollectionConfig = {
         },
       ],
     },
+    relatedSection(
+      related({
+        name: 'children',
+        label: 'Areas in it',
+        collection: 'areas',
+        on: 'parent',
+        defaultSort: 'name',
+        columns: ['name', 'type', 'slug'],
+      }),
+      related({
+        name: 'terms',
+        label: 'Terms',
+        collection: 'terms',
+        on: 'area',
+        defaultSort: '-startsOn',
+        columns: ['title', 'party', 'startsOn', 'endsOn'],
+      }),
+    ),
   ],
 }
 
@@ -474,5 +496,15 @@ export const Offices: CollectionConfig = {
     },
     countryField,
     formerSlugsField,
+    relatedSection(
+      related({
+        name: 'terms',
+        label: 'Holders',
+        collection: 'terms',
+        on: 'office',
+        defaultSort: '-startsOn',
+        columns: ['title', 'area', 'party', 'startsOn', 'endsOn'],
+      }),
+    ),
   ],
 }

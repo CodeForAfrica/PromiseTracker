@@ -174,6 +174,84 @@ describe('actors and terms', () => {
       ).rejects.toThrow('answers for a county')
     })
 
+    it('says what to choose when a term names a record that does not exist', async () => {
+      await expect(
+        payload.create({
+          collection: 'terms',
+          data: {
+            actor: '00000000-0000-4000-8000-000000000000',
+            office: await idOf('offices', 'president'),
+            startsOn: '2022-08-25T12:00:00.000Z',
+          },
+          overrideAccess: true,
+        }),
+      ).rejects.toMatchObject({ status: 400, message: 'Choose the actor who holds this term.' })
+    })
+
+    it('fits no more holders in a seat than its office allows, and allows a handover day', async () => {
+      const seat = {
+        office: await idOf('offices', 'governor'),
+        area: await idOf('areas', 'nairobi-county'),
+      }
+      await expect(
+        payload.create({
+          collection: 'terms',
+          data: {
+            ...seat,
+            actor: await idOf('actors', 'juma-hassan'),
+            startsOn: '2024-01-01T12:00:00.000Z',
+          },
+          overrideAccess: true,
+        }),
+      ).rejects.toThrow('This seat takes one holder at a time')
+      // Ends the day the current governor started: a handover, not an overlap.
+      const before = await payload.create({
+        collection: 'terms',
+        data: {
+          ...seat,
+          actor: await idOf('actors', 'juma-hassan'),
+          startsOn: '2013-03-27T12:00:00.000Z',
+          endsOn: '2017-08-21T12:00:00.000Z',
+        },
+        overrideAccess: true,
+      })
+      await payload.delete({ collection: 'terms', id: before.id, overrideAccess: true })
+    })
+
+    it('keeps an actor’s first day in step with their terms, without a version of the actor', async () => {
+      const actor = await idOf('actors', 'juma-hassan')
+      const versions = async () =>
+        (
+          await payload.countVersions({
+            collection: 'actors',
+            where: { parent: { equals: actor } },
+            overrideAccess: true,
+          })
+        ).totalDocs
+      const count = await versions()
+      const early = await payload.create({
+        collection: 'terms',
+        data: {
+          actor,
+          office: await idOf('offices', 'mp'),
+          area: await idOf('areas', 'kibra'),
+          startsOn: '2013-03-27T12:00:00.000Z',
+          endsOn: '2017-08-21T12:00:00.000Z',
+        },
+        overrideAccess: true,
+      })
+      const doc = await payload.findByID({ collection: 'actors', id: actor, overrideAccess: true })
+      expect(doc.onRecordSince?.slice(0, 10)).toBe('2013-03-27')
+      expect(await versions()).toBe(count)
+      await payload.delete({ collection: 'terms', id: early.id, overrideAccess: true })
+      const after = await payload.findByID({
+        collection: 'actors',
+        id: actor,
+        overrideAccess: true,
+      })
+      expect(after.onRecordSince?.slice(0, 10)).toBe('2022-09-08')
+    })
+
     it('works out each term’s stage from its dates', async () => {
       const terms = await payload.find({
         collection: 'terms',
@@ -210,6 +288,28 @@ describe('actors and terms', () => {
       expect(terms.docs.map((t) => t.title)).not.toContain(
         'Kito Barasa, Member of Parliament (2030)',
       )
+    })
+
+    it('lists an actor’s terms and an office’s holders for staff, and never for guests', async () => {
+      const id = await idOf('actors', 'achieng-wekesa')
+      // A signed-in user with access rules on, as the admin reads.
+      const staff = { id: 'staff', collection: 'users', roles: ['viewer'] } as never
+      const seen = await payload.findByID({
+        collection: 'actors',
+        id,
+        overrideAccess: false,
+        user: staff,
+      })
+      expect(seen.terms?.docs).toHaveLength(1)
+      const office = await payload.findByID({
+        collection: 'offices',
+        id: await idOf('offices', 'governor'),
+        overrideAccess: false,
+        user: staff,
+      })
+      expect(office.terms?.docs).toHaveLength(3)
+      const guest = await payload.findByID({ collection: 'actors', id, overrideAccess: false })
+      expect(guest.terms).toBeUndefined()
     })
 
     it('renames the terms in the admin’s lists when an actor or office is renamed', async () => {

@@ -12,6 +12,7 @@ import { APIError } from 'payload'
 import { can, signedIn } from './access'
 import { ADMIN_GROUPS } from './adminGroups'
 import { refreshTags, SKIP_REFRESH } from './cache'
+import { related, relatedSection } from './joins'
 import { DEFAULT_LOCALE } from './locales'
 import {
   countryCode,
@@ -308,12 +309,31 @@ export const Actors: CollectionConfig = withPublishing(
         admin: {
           position: 'sidebar',
           readOnly: true,
-          date: { pickerAppearance: 'dayOnly' },
+          date: { pickerAppearance: 'dayOnly', displayFormat: 'd MMM yyyy' },
           description: 'When the first term starts. The actor is public from then.',
         },
         // Only the terms' hook writes it.
         access: { create: () => false, update: () => false },
       },
+      relatedSection(
+        related({
+          name: 'terms',
+          label: 'Terms',
+          collection: 'terms',
+          on: 'actor',
+          defaultSort: '-startsOn',
+          columns: ['office', 'area', 'party', 'startsOn', 'endsOn'],
+        }),
+        related({
+          name: 'partyTerms',
+          label: 'Terms held for this party',
+          collection: 'terms',
+          on: 'party',
+          defaultSort: '-startsOn',
+          columns: ['title', 'area', 'startsOn', 'endsOn'],
+          condition: (data) => data.kind === 'party',
+        }),
+      ),
     ],
   },
   [],
@@ -321,7 +341,11 @@ export const Actors: CollectionConfig = withPublishing(
 
 type Ref = { id: string; country?: unknown; kind?: unknown; type?: unknown; areaType?: unknown }
 
-/** One record by id, read as the system, for the checks on a term. */
+/**
+ * One record by id, read as the system, for the checks on a term. An id that
+ * names no record gives null, so the check can say what to choose rather than
+ * answer "not found".
+ */
 async function load(
   req: PayloadRequest,
   collection: 'actors' | 'offices' | 'areas',
@@ -329,9 +353,12 @@ async function load(
 ): Promise<Ref | null> {
   const id = idOf(value)
   if (!id) return null
-  const doc = await req.payload.findByID({
+  const { docs } = await req.payload.find({
     collection,
-    id,
+    joins: false,
+    where: { id: { equals: id } },
+    limit: 1,
+    pagination: false,
     depth: 0,
     // The default language, for names in the term's title.
     locale: DEFAULT_LOCALE,
@@ -339,7 +366,7 @@ async function load(
     overrideAccess: true,
     req: { ...req } as PayloadRequest,
   })
-  return doc as Ref
+  return (docs[0] as Ref | undefined) ?? null
 }
 
 const valueIn = <T>(data: Record<string, unknown>, original: unknown, key: string): T | undefined =>
@@ -387,22 +414,77 @@ const checkTerm: CollectionBeforeChangeHook = async ({ data, originalDoc, req })
   if (successor && successor.id === actor.id) {
     throw new APIError('An actor cannot succeed themselves.', 400)
   }
-  const startsOn = get('startsOn')
-  const endsOn = get('endsOn')
-  if (
-    typeof startsOn === 'string' &&
-    typeof endsOn === 'string' &&
-    dayOf(endsOn) < dayOf(startsOn)
-  ) {
+  const asDay = (value: unknown) =>
+    typeof value === 'string' || value instanceof Date ? dayOf(value) : null
+  const startsOn = asDay(get('startsOn'))
+  const endsOn = asDay(get('endsOn'))
+  if (startsOn && endsOn && endsOn < startsOn) {
     throw new APIError('The term must end after it starts.', 400)
+  }
+  if (startsOn) {
+    await checkSeatRoom(req, {
+      id: idOf(originalDoc?.id),
+      office: office.id,
+      area: area?.id ?? null,
+      holdersPerSeat: Number(Reflect.get(office, 'holdersPerSeat') ?? 1),
+      startsOn,
+      endsOn,
+    })
   }
   // A label for the admin's lists, such as "Achieng Wekesa, Governor (2022)".
   const name = (ref: Ref) => {
     const value: unknown = Reflect.get(ref, 'name')
     return typeof value === 'string' ? value : ''
   }
-  const year = typeof startsOn === 'string' ? ` (${startsOn.slice(0, 4)})` : ''
+  const year = startsOn ? ` (${startsOn.slice(0, 4)})` : ''
   return { ...data, country, title: `${name(actor)}, ${name(office)}${year}` }
+}
+
+/**
+ * A seat holds no more people at once than its office allows (section 7.2).
+ * One term may end on the day the next begins: a handover is not an overlap.
+ */
+async function checkSeatRoom(
+  req: PayloadRequest,
+  term: {
+    id: string | null
+    office: string
+    area: string | null
+    holdersPerSeat: number
+    startsOn: string
+    endsOn: string | null
+  },
+): Promise<void> {
+  const { docs } = await req.payload.find({
+    collection: 'terms',
+    where: {
+      and: [
+        { office: { equals: term.office } },
+        term.area ? { area: { equals: term.area } } : { area: { exists: false } },
+        ...(term.id ? [{ id: { not_equals: term.id } }] : []),
+      ],
+    },
+    depth: 0,
+    pagination: false,
+    // Reads the seat's other terms, whoever is saving this one.
+    overrideAccess: true,
+    req: { ...req } as PayloadRequest,
+  })
+  const ends = term.endsOn ?? '9999-12-31'
+  const overlapping = docs.filter((other) => {
+    const start = dayOf(other.startsOn)
+    const end = other.endsOn ? dayOf(other.endsOn) : '9999-12-31'
+    return start < ends && end > term.startsOn
+  })
+  if (overlapping.length >= term.holdersPerSeat) {
+    const holders = term.holdersPerSeat === 1 ? 'one holder' : `${term.holdersPerSeat} holders`
+    throw new APIError(
+      `This seat takes ${holders} at a time, and another term covers these dates: ${overlapping
+        .map((other) => other.title)
+        .join('; ')}. End that term first, on or before this one starts.`,
+      400,
+    )
+  }
 }
 
 /** Sets an actor's `onRecordSince` from the start of their earliest term. */
@@ -420,21 +502,23 @@ async function updateOnRecordSince(req: PayloadRequest, actorId: string): Promis
   const first = docs[0]?.startsOn ?? null
   const actor = await req.payload.findByID({
     collection: 'actors',
+    joins: false,
     id: actorId,
     depth: 0,
     overrideAccess: true,
     req,
   })
   if ((actor.onRecordSince ?? null) === first) return
-  await req.payload.update({
+  // Written straight to the database: the date follows the terms, so it is
+  // no edit of the actor's. Going through the actor's save would run its
+  // hooks again and add a version an editor never made. The term's own save
+  // refreshes the pages.
+  await req.payload.db.updateOne({
     collection: 'actors',
     id: actorId,
     data: { onRecordSince: first },
-    // The system keeps this date in step with the terms.
-    overrideAccess: true,
     req,
-    // The term's own save refreshes the same pages.
-    context: { [SKIP_REFRESH]: true },
+    returning: false,
   })
 }
 
@@ -504,20 +588,24 @@ export const Terms: CollectionConfig = {
     {
       type: 'row',
       fields: [
-        { name: 'electedOn', type: 'date', admin: { date: { pickerAppearance: 'dayOnly' } } },
+        {
+          name: 'electedOn',
+          type: 'date',
+          admin: { date: { pickerAppearance: 'dayOnly', displayFormat: 'd MMM yyyy' } },
+        },
         {
           name: 'startsOn',
           type: 'date',
           required: true,
           index: true,
-          admin: { date: { pickerAppearance: 'dayOnly' } },
+          admin: { date: { pickerAppearance: 'dayOnly', displayFormat: 'd MMM yyyy' } },
         },
         {
           name: 'endsOn',
           type: 'date',
           index: true,
           admin: {
-            date: { pickerAppearance: 'dayOnly' },
+            date: { pickerAppearance: 'dayOnly', displayFormat: 'd MMM yyyy' },
             description: 'Empty while in office.',
           },
         },
