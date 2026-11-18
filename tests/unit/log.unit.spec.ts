@@ -1,4 +1,11 @@
-import { createLog, REDACTED, redact, redactText, ValidationError } from '@promisetracker/kernel'
+import {
+  createLog,
+  ExternalServiceError,
+  REDACTED,
+  redact,
+  redactText,
+  ValidationError,
+} from '@promisetracker/kernel'
 import { describe, expect, it, vi } from 'vitest'
 
 describe('redactText (section 13.7)', () => {
@@ -50,6 +57,46 @@ describe('redact', () => {
       headers: { authorization: REDACTED, cookie: REDACTED, 'x-forwarded-for': REDACTED },
       settings: { apiKey: REDACTED, webhookSecret: REDACTED, accessToken: REDACTED, count: 3 },
       list: ['ok', `mail me at ${REDACTED}`],
+    })
+  })
+
+  it('matches field names by whole words, so counts are kept', () => {
+    expect(
+      redact({
+        inputTokens: 120,
+        maxTokens: 4000,
+        bypass: true,
+        author: 'Desk',
+        refresh_token: 'r',
+        'x-api-key': 'k',
+        'x-real-ip': '1',
+        remoteAddress: '1',
+        sessionId: 's',
+      }),
+    ).toEqual({
+      inputTokens: 120,
+      maxTokens: 4000,
+      bypass: true,
+      author: 'Desk',
+      refresh_token: REDACTED,
+      'x-api-key': REDACTED,
+      'x-real-ip': REDACTED,
+      remoteAddress: REDACTED,
+      sessionId: REDACTED,
+    })
+  })
+
+  it('keeps the service, failure and wait of an outside service error', () => {
+    const error = new ExternalServiceError('slow down', {
+      service: 'check',
+      failure: 'rate-limited',
+      retryAfterMs: 5_000,
+    })
+    expect(redact(error)).toMatchObject({
+      code: 'external.rate-limited',
+      service: 'check',
+      failure: 'rate-limited',
+      retryAfterMs: 5_000,
     })
   })
 

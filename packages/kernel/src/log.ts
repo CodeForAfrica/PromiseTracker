@@ -1,5 +1,5 @@
 import type { RecordIds } from './errors'
-import { PromiseTrackerError } from './errors'
+import { ExternalServiceError, PromiseTrackerError } from './errors'
 import type { Logger } from './ports'
 
 /**
@@ -9,9 +9,50 @@ import type { Logger } from './ports'
  */
 export const REDACTED = '[redacted]'
 
-// Fields whose value is a secret or personal, whatever it looks like.
-const SENSITIVE_KEY =
-  /pass(word|phrase)?|secret|token|api[-_]?key|private[-_]?key|access[-_]?key|authori[sz]ation|cookie|credential|session|signature|e-?mail|^ip$|ip[-_]?addr|remote[-_]?addr|x-forwarded-for|x-real-ip/i
+// Fields whose value is a secret or personal, whatever it looks like. A field
+// name is split into words (`accessToken` is "access token"), and matches when
+// it holds one of these as whole words. So `inputTokens` and `bypass`, which
+// are counts and flags, keep their values.
+const SENSITIVE_WORDS = [
+  'pass',
+  'password',
+  'passwd',
+  'passphrase',
+  'secret',
+  'secrets',
+  'token',
+  'jwt',
+  'api key',
+  'apikey',
+  'private key',
+  'access key',
+  'auth',
+  'authorization',
+  'authorisation',
+  'cookie',
+  'cookies',
+  'credential',
+  'credentials',
+  'session',
+  'signature',
+  'sig',
+  'email',
+  'e mail',
+  'ip',
+  'remote addr',
+  'remote address',
+  'x forwarded for',
+]
+
+function isSensitiveKey(key: string): boolean {
+  const words = key
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean)
+  const name = ` ${words.join(' ')} `
+  return SENSITIVE_WORDS.some((word) => name.includes(` ${word} `))
+}
 
 const PATTERNS: readonly [RegExp, string][] = [
   // user:password@ in a URL.
@@ -51,9 +92,11 @@ function redactValue(value: unknown, seen: WeakSet<object>): unknown {
   if (Array.isArray(value)) return value.map((item) => redactValue(item, seen))
   if (value instanceof Date) return value
   if (value instanceof Error) return redactError(value, seen)
+  // Other objects are read by their own fields, so a Map or a Set becomes {}.
+  // Log fields are plain data, and a Map should be converted before logging.
   const out: Record<string, unknown> = {}
   for (const [key, inner] of Object.entries(value)) {
-    out[key] = SENSITIVE_KEY.test(key) ? REDACTED : redactValue(inner, seen)
+    out[key] = isSensitiveKey(key) ? REDACTED : redactValue(inner, seen)
   }
   return out
 }
@@ -68,6 +111,11 @@ function redactError(error: Error, seen: WeakSet<object>): Record<string, unknow
     out.code = error.code
     out.ids = error.ids
     out.retryable = error.retryable
+  }
+  if (error instanceof ExternalServiceError) {
+    out.service = error.service
+    out.failure = error.failure
+    if (error.retryAfterMs !== undefined) out.retryAfterMs = error.retryAfterMs
   }
   if (error.cause !== undefined) out.cause = redactValue(error.cause, seen)
   return out

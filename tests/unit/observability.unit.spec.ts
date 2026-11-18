@@ -39,6 +39,7 @@ describe("Payload's logger", () => {
     expect(typeof timestamp === 'function' ? timestamp() : '').toMatch(
       /^,"time":"\d{4}-\d\d-\d\dT[\d:.]+Z"$/,
     )
+    expect(() => loggerConfig({ PT_LOG_LEVEL: 'loud' })).toThrow(ConfigurationError)
     expect(() => loggerConfig({ PT_LOG_LEVEL: 'loud' })).toThrow('PT_LOG_LEVEL must be one of')
   })
 

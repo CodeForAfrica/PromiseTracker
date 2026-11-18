@@ -1,4 +1,4 @@
-import { redact, redactText } from '@promisetracker/kernel'
+import { ConfigurationError, redact, redactText } from '@promisetracker/kernel'
 import type { Config } from 'payload'
 import { defaultLoggerOptions } from 'payload'
 
@@ -31,7 +31,9 @@ const redactCall: LogMethodHook = function (args, method) {
 export function loggerConfig(env: Readonly<Record<string, string | undefined>> = process.env) {
   const level = env.PT_LOG_LEVEL?.trim() || 'info'
   if (!LEVELS.has(level)) {
-    throw new Error(`PT_LOG_LEVEL must be one of ${[...LEVELS].join(', ')}, not "${level}".`)
+    throw new ConfigurationError(
+      `PT_LOG_LEVEL must be one of ${[...LEVELS].join(', ')}, not "${level}".`,
+    )
   }
   const options: LoggerOptions = {
     level,

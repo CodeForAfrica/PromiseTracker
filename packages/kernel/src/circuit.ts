@@ -103,10 +103,17 @@ export class CircuitBreaker {
 
   #rejection(): ExternalServiceError {
     const openedAt = this.#openedAt ?? this.#now()
-    const retryAfterMs = Math.max(0, openedAt + this.#openMs - this.#now())
+    const retryAfterMs = openedAt + this.#openMs - this.#now()
+    // Half-open with a test request running, the pause is over but there is no
+    // time to give. Leaving the wait out lets the caller use its normal backoff
+    // rather than retrying at once.
     return new ExternalServiceError(
       `Calls to ${this.service} are paused after repeated failures.`,
-      { service: this.service, failure: 'circuit-open', retryAfterMs },
+      {
+        service: this.service,
+        failure: 'circuit-open',
+        ...(retryAfterMs > 0 ? { retryAfterMs } : {}),
+      },
     )
   }
 }
@@ -124,4 +131,9 @@ export function circuitBreakerFor(service: string): CircuitBreaker {
     breakers.set(service, breaker)
   }
   return breaker
+}
+
+/** Forgets every breaker, so tests that use `circuitBreakerFor` start from closed. */
+export function resetCircuitBreakers(): void {
+  breakers.clear()
 }

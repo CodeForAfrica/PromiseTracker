@@ -7,6 +7,7 @@ import {
   ExternalServiceError,
   ExtractionError,
   RETRY_LIMITS,
+  resetCircuitBreakers,
   retryDecision,
   ValidationError,
   withRetry,
@@ -148,6 +149,15 @@ describe('withRetry', () => {
         }
         signal.addEventListener('abort', () => reject(signal.reason))
       })
+    await expect(withRetry(fn, { ...base, sleep, timeoutMs: 10 })).resolves.toBe('ok')
+    expect(waits).toEqual([1_000])
+  })
+
+  it('abandons an attempt that ignores its signal when it runs out of time', async () => {
+    const { waits, sleep } = fakeSleep()
+    let calls = 0
+    // The first attempt never settles and never looks at the signal.
+    const fn = () => (calls++ > 0 ? Promise.resolve('ok') : new Promise<string>(() => {}))
     await expect(withRetry(fn, { ...base, sleep, timeoutMs: 10 })).resolves.toBe('ok')
     expect(waits).toEqual([1_000])
   })
@@ -311,9 +321,29 @@ describe('CircuitBreaker', () => {
     expect(breaker.state).toBe('closed')
   })
 
-  it('keeps one breaker per service in a process', () => {
-    expect(circuitBreakerFor('tika')).toBe(circuitBreakerFor('tika'))
+  it('backs off normally while another caller is testing the service', async () => {
+    const time = clock()
+    const breaker = new CircuitBreaker({ service: 'tika', now: time.now })
+    for (let i = 0; i < 5; i++) await fail(breaker)
+    time.advance(60_000)
+    let release = () => {}
+    const probe = breaker.call(
+      () => new Promise<string>((resolve) => (release = () => resolve('ok'))),
+    )
+    const rejection = await pass(breaker).catch((e: unknown) => e)
+    expect(rejection).toMatchObject({ failure: 'circuit-open', retryAfterMs: undefined })
+    // Without a wait from the breaker, the caller waits 1s, 2s, 4s rather than 0.
+    expect(retryDecision(rejection, 1)).toEqual({ retry: true, waitMs: 1_000 })
+    release()
+    await probe
+  })
+
+  it('keeps one breaker per service in a process, until reset', () => {
+    const tika = circuitBreakerFor('tika')
+    expect(circuitBreakerFor('tika')).toBe(tika)
     expect(circuitBreakerFor('tika')).not.toBe(circuitBreakerFor('check'))
+    resetCircuitBreakers()
+    expect(circuitBreakerFor('tika')).not.toBe(tika)
   })
 
   it('keeps RETRY_LIMITS and the breaker defaults in step with the specification', () => {

@@ -4,7 +4,12 @@
  */
 
 export type { CircuitBreakerOptions, CircuitState } from './circuit'
-export { CIRCUIT_DEFAULTS, CircuitBreaker, circuitBreakerFor } from './circuit'
+export {
+  CIRCUIT_DEFAULTS,
+  CircuitBreaker,
+  circuitBreakerFor,
+  resetCircuitBreakers,
+} from './circuit'
 export type { Env, KernelEnv } from './env'
 export { DEFAULT_PLUGINS, readEnabledPlugins, readKernelEnv, readLocales } from './env'
 export type {

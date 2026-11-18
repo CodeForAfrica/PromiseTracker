@@ -48,7 +48,11 @@ export type RetryOptions = {
   ids?: RecordIds
   /** Ends the work early, for example when the job is cancelled. Not retried. */
   signal?: AbortSignal
-  /** How long one attempt may take. See TIMEOUTS. */
+  /**
+   * How long one attempt may take. See TIMEOUTS. An attempt still running at
+   * the limit is abandoned, but only `fn` can stop its work: pass the signal
+   * to its fetch or child process.
+   */
   timeoutMs?: number
   breaker?: CircuitBreaker
   log?: SourceLog
@@ -72,6 +76,18 @@ const defaultSleep = (ms: number, signal?: AbortSignal): Promise<void> =>
     signal?.addEventListener('abort', onAbort, { once: true })
   })
 
+/** Settles with `work`, or rejects with the signal's reason if it fires first. */
+function untilAborted<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
+  let onAbort = () => {}
+  const aborted = new Promise<never>((_, reject) => {
+    onAbort = () => reject(signal.reason)
+    // Raced either way, so a rejection from `work` is always handled.
+    if (signal.aborted) onAbort()
+    else signal.addEventListener('abort', onAbort, { once: true })
+  })
+  return Promise.race([work, aborted]).finally(() => signal.removeEventListener('abort', onAbort))
+}
+
 /**
  * Runs `fn`, retrying as section 9.7 says. Each attempt gets a signal that
  * fires on the caller's signal or the attempt's timeout, and an attempt that
@@ -91,7 +107,7 @@ export async function withRetry<T>(
     const attemptSignal = AbortSignal.any([signal, timeout].filter((s) => s !== undefined))
     const run = async (): Promise<T> => {
       try {
-        return await fn(attemptSignal, attempt)
+        return await untilAborted(fn(attemptSignal, attempt), attemptSignal)
       } catch (error) {
         // The attempt ran out of time. The caller's own cancel is passed on as it is.
         if (timeout?.aborted && !signal?.aborted) {

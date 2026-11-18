@@ -7,6 +7,7 @@ type Sentry = typeof import('@sentry/nextjs')
 // Loaded only once a Sentry address is set, so without one the core runs with
 // no outside service and never loads the SDK.
 let sentry: Sentry | null = null
+let starting: Promise<boolean> | null = null
 
 /**
  * Only problems a developer can fix reach Sentry (section 14), and never with
@@ -22,6 +23,14 @@ export async function startSentry(env: Env = process.env): Promise<boolean> {
   const dsn = env.SENTRY_DSN?.trim()
   if (!dsn) return false
   if (sentry) return true
+  // Two calls at once share one start, so the SDK is set up once.
+  starting ??= init(dsn, env).finally(() => {
+    starting = null
+  })
+  return starting
+}
+
+async function init(dsn: string, env: Env): Promise<boolean> {
   const sdk = await import('@sentry/nextjs')
   sdk.init({
     dsn,
