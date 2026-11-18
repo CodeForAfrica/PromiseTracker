@@ -2,7 +2,7 @@ import type { Payload, Plugin } from 'payload'
 
 import type { Env, KernelEnv } from './env'
 import { readKernelEnv } from './env'
-import { KernelError } from './errors'
+import { ConfigurationError, PortResolutionError } from './errors'
 import type { PluginManifest, PromiseTrackerPlugin } from './plugin'
 import type {
   AdapterContext,
@@ -94,7 +94,9 @@ function checkDependencies(
   for (const m of manifests) {
     for (const dep of m.dependsOn ?? []) {
       if (!bySlug.has(dep)) {
-        throw new KernelError(`Plugin "${m.slug}" depends on "${dep}", which does not exist.`)
+        throw new ConfigurationError(
+          `Plugin "${m.slug}" depends on "${dep}", which does not exist.`,
+        )
       }
     }
   }
@@ -106,7 +108,7 @@ function checkDependencies(
   const visit = (slug: string, path: readonly string[]): void => {
     if (done.has(slug)) return
     if (visiting.has(slug)) {
-      throw new KernelError(`Circular plugin dependency: ${[...path, slug].join(' -> ')}.`)
+      throw new ConfigurationError(`Circular plugin dependency: ${[...path, slug].join(' -> ')}.`)
     }
     visiting.add(slug)
     for (const dep of bySlug.get(slug)?.dependsOn ?? []) visit(dep, [...path, slug])
@@ -124,7 +126,7 @@ function checkDependencies(
     for (const { collection } of m.extend ?? []) {
       const owner = owners.get(collection)
       if (owner && owner !== m.slug && !(m.dependsOn ?? []).includes(owner)) {
-        throw new KernelError(
+        throw new ConfigurationError(
           `Plugin "${m.slug}" adds fields to "${collection}", which plugin "${owner}" owns. ` +
             `Add "${owner}" to its dependsOn.`,
         )
@@ -136,7 +138,7 @@ function checkDependencies(
     for (const { collection } of m.takesOver ?? []) {
       const owner = owners.get(collection)
       if (owner && owner !== m.slug && !(m.dependsOn ?? []).includes(owner)) {
-        throw new KernelError(
+        throw new ConfigurationError(
           `Plugin "${m.slug}" takes over fields on "${collection}", which plugin "${owner}" owns. ` +
             `Add "${owner}" to its dependsOn.`,
         )
@@ -153,7 +155,7 @@ function checkDependencies(
         const key = `${collection}.${path}`
         const other = takenBy.get(key)
         if (other) {
-          throw new KernelError(
+          throw new ConfigurationError(
             `Plugins "${other}" and "${m.slug}" both take over "${key}". Remove one from PT_PLUGINS.`,
           )
         }
@@ -166,12 +168,12 @@ function checkDependencies(
     for (const dep of m.dependsOn ?? []) {
       const target = bySlug.get(dep)
       if (enabled.has(m.slug) && !enabled.has(dep)) {
-        throw new KernelError(
+        throw new ConfigurationError(
           `Plugin "${m.slug}" needs "${dep}". Add "${dep}" to PT_PLUGINS or remove "${m.slug}".`,
         )
       }
       if (target && target.order >= m.order) {
-        throw new KernelError(
+        throw new ConfigurationError(
           `Plugin "${m.slug}" (order ${m.order}) depends on "${dep}" (order ${target.order}), ` +
             'so it must load later. Give it a higher order.',
         )
@@ -208,12 +210,12 @@ function pickOne<P extends PortName>(
   const selector = 'selector' in PORTS[port] ? PORTS[port].selector : undefined
   const ids = found.map((c) => c.adapter.id)
   if (found.length === 0) {
-    throw new KernelError(`No plugin provides a ${name}. Enable one in PT_PLUGINS.`)
+    throw new PortResolutionError(`No plugin provides a ${name}. Enable one in PT_PLUGINS.`)
   }
   if (selected !== undefined) {
     const match = found.find((c) => c.adapter.id === selected)
     if (!match) {
-      throw new KernelError(
+      throw new ConfigurationError(
         `${selector} is "${selected}", but the ${name} adapters available are ${list(ids)}.`,
       )
     }
@@ -225,10 +227,10 @@ function pickOne<P extends PortName>(
   const [onlyOne] = found
   if (found.length === 1 && onlyOne) return onlyOne.adapter
   if (others.length === 0 && found.length > 1) {
-    throw new KernelError(`More than one default ${name}: ${list(ids)}.`)
+    throw new PortResolutionError(`More than one default ${name}: ${list(ids)}.`)
   }
   const chooser = selector ?? 'PT_PLUGINS'
-  throw new KernelError(
+  throw new PortResolutionError(
     `More than one ${name} is enabled: ${list(others.map((c) => c.adapter.id))}. ` +
       (selector ? `Set ${chooser} to one of them.` : `Remove all but one from ${chooser}.`),
   )
@@ -241,7 +243,7 @@ function pickLlm(
   if (found.length === 0) return null
   const ids = found.map((c) => c.adapter.id)
   if (!model) {
-    throw new KernelError(
+    throw new ConfigurationError(
       `PT_LLM_MODEL is not set. Set it to provider:model, where provider is one of ${list(ids)}.`,
     )
   }
@@ -250,7 +252,7 @@ function pickLlm(
   const modelName = separator > 0 ? model.slice(separator + 1) : ''
   const match = found.find((c) => c.adapter.id === provider)
   if (!match || !modelName) {
-    throw new KernelError(
+    throw new ConfigurationError(
       `PT_LLM_MODEL is "${model}". It must be provider:model, where provider is one of ${list(ids)}.`,
     )
   }
@@ -265,13 +267,13 @@ function pickLocales(
 ): { locales: readonly LocaleSpec[]; defaultLocale: string } {
   const codes = registered.map((l) => l.code)
   if (!codes.includes(defaultLocale)) {
-    throw new KernelError(
+    throw new ConfigurationError(
       `The default locale "${defaultLocale}" is not registered. Registered locales: ${list(codes)}.`,
     )
   }
   const unknown = chosen.filter((code) => !codes.includes(code))
   if (unknown.length > 0) {
-    throw new KernelError(
+    throw new ConfigurationError(
       `PT_LOCALES names locales that are not registered: ${list(unknown)}. ` +
         `Registered locales: ${list(codes)}. Registering another needs a code change and a migration.`,
     )
@@ -292,16 +294,16 @@ export function createKernel(options: KernelOptions): Kernel {
 
   const known = new Set(manifests.map((m) => m.slug))
   if (known.size !== manifests.length) {
-    throw new KernelError('Two plugins share a slug. Each plugin needs its own.')
+    throw new ConfigurationError('Two plugins share a slug. Each plugin needs its own.')
   }
   const unknown = env.plugins.filter((slug) => !known.has(slug))
   if (unknown.length > 0) {
-    throw new KernelError(
+    throw new ConfigurationError(
       `PT_PLUGINS names unknown plugins: ${list(unknown)}. Known plugins: ${list([...known])}.`,
     )
   }
   if (!env.plugins.includes(defaultsFrom)) {
-    throw new KernelError(`PT_PLUGINS must include "${defaultsFrom}".`)
+    throw new ConfigurationError(`PT_PLUGINS must include "${defaultsFrom}".`)
   }
   const enabledSet = new Set(env.plugins)
   checkDependencies(manifests, enabledSet)
@@ -349,7 +351,7 @@ export function createKernel(options: KernelOptions): Kernel {
     ),
   })
   if (adapters.contentExtractor.length === 0) {
-    throw new KernelError(`No plugin provides a ${PORTS.contentExtractor.name}.`)
+    throw new PortResolutionError(`No plugin provides a ${PORTS.contentExtractor.name}.`)
   }
 
   const enabled = manifests.filter((m) => enabledSet.has(m.slug)).map((m) => m.slug)
@@ -415,7 +417,7 @@ export function createKernel(options: KernelOptions): Kernel {
           .map((name) => `${name} (${m.slug})`),
       )
     if (missing.length > 0) {
-      throw new KernelError(
+      throw new ConfigurationError(
         `Missing environment variables for enabled plugins: ${missing.join(', ')}.`,
       )
     }

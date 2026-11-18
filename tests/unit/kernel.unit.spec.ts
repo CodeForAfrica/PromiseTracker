@@ -10,11 +10,12 @@ import type {
 } from '@promisetracker/kernel'
 import {
   applyManifest,
+  ConfigurationError,
   createKernel,
   defineFinalPlugin,
   definePromiseTrackerPlugin,
   forgetSettings,
-  KernelError,
+  PortResolutionError,
   pluginRoute,
   readEnabledPlugins,
   readKernelEnv,
@@ -153,7 +154,7 @@ describe('start-up failures', () => {
   it('stops on a circular dependency and names the cycle', () => {
     const a = plugin({ slug: 'loop-a', order: 20, dependsOn: ['loop-b'] })
     const b = plugin({ slug: 'loop-b', order: 30, dependsOn: ['loop-a'] })
-    expect(() => kernelWith([a, b])).toThrow(KernelError)
+    expect(() => kernelWith([a, b])).toThrow(ConfigurationError)
     expect(() => kernelWith([a, b])).toThrow(
       /Circular plugin dependency: loop-a -> loop-b -> loop-a/,
     )
@@ -181,6 +182,7 @@ describe('choosing adapters', () => {
   })
 
   it('stops when two plugins offer one and names them and PT_VERIFICATION', () => {
+    expect(() => kernelWith([alt, other], enabling('alt', 'other'))).toThrow(PortResolutionError)
     expect(() => kernelWith([alt, other], enabling('alt', 'other'))).toThrow(
       'More than one VerificationProvider is enabled: "alt", "other". Set PT_VERIFICATION to one of them.',
     )
