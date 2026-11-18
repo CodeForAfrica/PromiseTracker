@@ -135,7 +135,8 @@ const isResult = (value: CountryDoc | V1Result): value is V1Result => 'status' i
 
 const toOffice = (doc: OfficeDoc): Office | null => {
   const name = text(doc.name)
-  if (!name) return null
+  // A save always gives a slug. Without one a record has no address, so it is left out.
+  if (!name || !doc.slug) return null
   return {
     slug: doc.slug,
     name,
@@ -165,7 +166,7 @@ async function officesOf(
 
 const toAreaSummary = (doc: AreaDoc): AreaSummary | null => {
   const name = text(doc.name)
-  return name ? { slug: doc.slug, name, type: doc.type } : null
+  return name && doc.slug ? { slug: doc.slug, name, type: doc.type } : null
 }
 
 /** A localized value, read with every language, in one of them. */

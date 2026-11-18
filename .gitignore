@@ -9,8 +9,12 @@ next-env.d.ts
 
 # Uploaded files when no S3 bucket is set
 media/
-# Imported spreadsheets, when files are stored locally
-imports/
+# Imported spreadsheets, when files are stored locally. Anchored, so source
+# folders named imports are not ignored.
+/imports/
+/apps/site/imports/
+/boundaries/
+/apps/site/boundaries/
 
 # Tests
 coverage/

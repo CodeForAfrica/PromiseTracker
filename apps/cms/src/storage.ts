@@ -49,7 +49,7 @@ export function storageAdapters() {
       enabled: Boolean(s3),
       bucket: s3?.bucket ?? '',
       // Imported spreadsheets are kept too, and served only to staff.
-      collections: { media: true, imports: true },
+      collections: { media: true, imports: true, boundaries: true },
       config: s3?.config ?? {},
     }),
   ]

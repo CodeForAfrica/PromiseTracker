@@ -4,6 +4,7 @@ import path from 'node:path'
 import type { ImportRow, SourceContent } from '@promisetracker/kernel'
 import {
   csvImporter,
+  geoJsonProblem,
   guessMapping,
   MAX_IMPORT_BYTES,
   planRow,
@@ -146,11 +147,47 @@ describe('slugs in addresses (section 11.2)', () => {
     expect(slugify('Thiès  Région')).toBe('thies-region')
   })
 
+  it('trim hyphens at the ends, quickly, however many there are', () => {
+    expect(slugify('--Kibra--')).toBe('kibra')
+    const started = performance.now()
+    expect(slugify(`${'-'.repeat(100_000)}x`)).toBe('x')
+    expect(performance.now() - started).toBeLessThan(500)
+  })
+
   it('cannot be one of the site’s own words, or badly formed', () => {
     for (const word of ['officials', 'e', 'p', 'a', 'search', 'opengraph-image']) {
       expect(slugProblem(word), word).toContain('site')
     }
     expect(slugProblem('Nairobi County')).toContain('lower-case')
     expect(slugProblem('nairobi-county')).toBeNull()
+  })
+})
+
+describe('area outlines (section 7.2)', () => {
+  const bytes = (value: unknown) => new TextEncoder().encode(JSON.stringify(value))
+
+  it('accept GeoJSON shapes', () => {
+    const polygon = {
+      type: 'Polygon',
+      coordinates: [
+        [
+          [36.6, -1.4],
+          [37.1, -1.4],
+          [37.1, -1.2],
+          [36.6, -1.4],
+        ],
+      ],
+    }
+    expect(geoJsonProblem(bytes(polygon))).toBeNull()
+    expect(geoJsonProblem(bytes({ type: 'Feature', geometry: polygon, properties: {} }))).toBeNull()
+    expect(geoJsonProblem(bytes({ type: 'FeatureCollection', features: [] }))).toBeNull()
+  })
+
+  it('refuse a file that is not GeoJSON', () => {
+    expect(geoJsonProblem(new Uint8Array([0x89, 0x50, 0x4e, 0x47]))).toContain('not JSON')
+    expect(geoJsonProblem(bytes({ name: 'Nairobi' }))).toContain('not a GeoJSON outline')
+    expect(geoJsonProblem(bytes({ type: 'Point', coordinates: [36.8, -1.3] }))).toContain(
+      'not a GeoJSON outline',
+    )
   })
 })

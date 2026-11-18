@@ -23,13 +23,18 @@ export const isReservedInCountry = (slug: string): boolean =>
 
 /** A slug from a name: accents dropped, lower case, words joined by hyphens. */
 export function slugify(name: string): string {
-  return name
+  const joined = name
     .normalize('NFKD')
     .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
     .replace(/['’]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+  // Hyphens at the ends are trimmed with a loop: a pattern for them is slow on a long run of hyphens.
+  let start = 0
+  let end = joined.length
+  while (start < end && joined[start] === '-') start += 1
+  while (end > start && joined[end - 1] === '-') end -= 1
+  return joined.slice(start, end)
 }
 
 /** Why a slug cannot be used, or null when it can. */

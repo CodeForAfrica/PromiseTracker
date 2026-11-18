@@ -19,6 +19,7 @@ describe('areas, offices and import', () => {
   let code: CountryCode
   let country: string
   const users: string[] = []
+  const boundaries: string[] = []
   const sdk = createSdk(createLocalTransport())
 
   const file = (name: string) =>
@@ -84,6 +85,8 @@ describe('areas, offices and import', () => {
       overrideAccess: true,
     })
     await payload.delete({ collection: 'countries', id: country, overrideAccess: true })
+    for (const id of boundaries)
+      await payload.delete({ collection: 'boundaries', id, overrideAccess: true })
     for (const id of users) await payload.delete({ collection: 'users', id, overrideAccess: true })
     await payload.destroy()
   })
@@ -176,6 +179,73 @@ describe('areas, offices and import', () => {
           overrideAccess: true,
         }),
       ).rejects.toThrow()
+    })
+
+    it('makes a slug from the name when none is given', async () => {
+      const area = await payload.create({
+        collection: 'areas',
+        locale: 'en',
+        data: {
+          name: 'Lang’ata Ward',
+          type: 'ward',
+          parent: await areaId('langata'),
+          country,
+          page: 'automatic',
+        },
+        overrideAccess: true,
+      })
+      expect(area.slug).toBe('langata-ward')
+      // Removed, so the tree tests below see only the fixture.
+      await payload.delete({ collection: 'areas', id: area.id, overrideAccess: true })
+    })
+
+    it('keeps a GeoJSON outline with its source and licence, and refuses other files', async () => {
+      const outline = Buffer.from(
+        JSON.stringify({
+          type: 'Polygon',
+          coordinates: [
+            [
+              [36.7, -1.3],
+              [36.8, -1.3],
+              [36.8, -1.2],
+              [36.7, -1.3],
+            ],
+          ],
+        }),
+      )
+      const boundary = await payload.create({
+        collection: 'boundaries',
+        data: { source: 'Test data', licence: 'CC BY 4.0' },
+        file: {
+          data: outline,
+          mimetype: 'application/geo+json',
+          name: 'test-kibra.geojson',
+          size: outline.length,
+        },
+        overrideAccess: true,
+      })
+      await payload.update({
+        collection: 'areas',
+        id: await areaId('kibra'),
+        data: { geo: { outline: boundary.id, latitude: -1.31, longitude: 36.78 } },
+        overrideAccess: true,
+      })
+      boundaries.push(boundary.id)
+
+      const notGeo = Buffer.from(JSON.stringify({ name: 'Kibra' }))
+      await expect(
+        payload.create({
+          collection: 'boundaries',
+          data: { source: 'Test data', licence: 'CC BY 4.0' },
+          file: {
+            data: notGeo,
+            mimetype: 'application/json',
+            name: 'test-not-geo.json',
+            size: notGeo.length,
+          },
+          overrideAccess: true,
+        }),
+      ).rejects.toThrow('not a GeoJSON outline')
     })
 
     it('refuses an area slug that is a site word or a national office', async () => {

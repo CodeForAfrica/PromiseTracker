@@ -610,11 +610,11 @@ circular ones.
 |---|---|
 | `country` | Required |
 | `name` | Localized |
-| `slug` | Unique within the country, and must not match a national office slug or a reserved word, section 11 |
+| `slug` | Made from the name when left empty. Unique within the country, and must not match a national office slug or a reserved word, section 11. Not Payload's slug field, which is unique across the whole collection |
 | `type` | Country, region, county, constituency, ward, city or other |
 | `parent` | The area it sits in |
 | `page` | Automatic, always or never. Automatic means the area gets a page when it holds two or more seats. A seat here is an office whose area type is the area's type |
-| `geo` | Centre point as latitude and longitude, bounds, and an uploaded GeoJSON outline with its source and licence. Plain numbers, so PostGIS stays optional |
+| `geo` | Centre point as latitude and longitude, bounds, and an outline. The outline is a GeoJSON file in the Boundaries collection, which records its source and licence. Plain numbers, so PostGIS stays optional |
 | `externalCode` | Its id in an outside boundary dataset |
 | `formerSlugs` | For redirects, section 11.2 |
 
@@ -624,7 +624,7 @@ circular ones.
 |---|---|
 | `country` | Required |
 | `name`, `shortName` | Localized, such as "Member of Parliament" and "MP" |
-| `slug` | Used in seat addresses, such as `governor` |
+| `slug` | Used in seat addresses, such as `governor`. Made from the name when left empty |
 | `areaType` | The type of area the office answers for. Empty for offices with no area, such as party-list members |
 | `holdersPerSeat` | Usually one. More for multi-member seats |
 | `order` | Display order, highest office first |

@@ -244,12 +244,22 @@ const countryField = {
   admin: { position: 'sidebar' },
 } as const
 
+/**
+ * Made from the name on save, so the form does not ask for it. Not Payload's
+ * own slug field: that one keeps slugs unique across every country, and a
+ * slug here is unique within its country, so two countries can each have a
+ * "central-region" (section 7.2). A save checks it in checkAreaSlug or
+ * checkOfficeSlug.
+ */
 const slugField = {
   name: 'slug',
   type: 'text',
-  required: true,
   index: true,
-  admin: { description: 'Used in addresses. Made from the name when left empty.' },
+  admin: {
+    position: 'sidebar',
+    description:
+      'Made from the name when you save. Used in addresses, such as /en/ke/nairobi-county.',
+  },
 } as const
 
 /** A country's nested list of places (section 7.2). */
@@ -312,24 +322,42 @@ export const Areas: CollectionConfig = {
       access: { create: () => false, update: () => false },
     },
     {
-      name: 'geo',
-      type: 'group',
+      // Collapsed: maps arrive in version 2, and most editors never need these.
+      type: 'collapsible',
+      label: 'Map',
+      admin: { initCollapsed: true, description: 'For the maps in version 2.' },
       fields: [
         {
-          type: 'row',
+          name: 'geo',
+          type: 'group',
+          label: false,
           fields: [
-            { name: 'latitude', type: 'number', min: -90, max: 90 },
-            { name: 'longitude', type: 'number', min: -180, max: 180 },
+            {
+              type: 'row',
+              fields: [
+                { name: 'latitude', type: 'number', min: -90, max: 90 },
+                { name: 'longitude', type: 'number', min: -180, max: 180 },
+              ],
+            },
+            {
+              name: 'bounds',
+              type: 'json',
+              admin: {
+                description:
+                  'West, south, east and north, in degrees, such as [36.6, -1.45, 37.1, -1.16].',
+              },
+            },
+            {
+              name: 'outline',
+              type: 'upload',
+              relationTo: 'boundaries',
+              admin: {
+                description:
+                  'A GeoJSON file from Boundaries, which records its source and licence.',
+              },
+            },
           ],
         },
-        {
-          name: 'bounds',
-          type: 'json',
-          admin: { description: 'West, south, east and north, in degrees.' },
-        },
-        { name: 'outline', type: 'upload', relationTo: 'media' },
-        { name: 'outlineSource', type: 'text' },
-        { name: 'outlineLicence', type: 'text' },
       ],
     },
   ],

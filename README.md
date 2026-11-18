@@ -9,6 +9,7 @@ source, and follows what happens to it over time.
 >
 > - Read the [product specification](docs/spec/promisetracker-v3-product-spec.md) and the
 >   [system specification](docs/spec/promisetracker-v3-system-specification.md).
+> - Set it up in the admin with the [admin guide](docs/admin-guide.md).
 > - The work is tracked in the [v3: version 1 milestone](https://github.com/CodeForAfrica/PromiseTracker/milestone/1).
 > - v2 is kept on the [`v2` branch](https://github.com/CodeForAfrica/PromiseTracker/tree/v2) and the
 >   [`v2-final` tag](https://github.com/CodeForAfrica/PromiseTracker/tree/v2-final).

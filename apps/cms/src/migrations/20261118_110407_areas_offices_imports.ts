@@ -25,7 +25,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE TYPE "public"."enum_payload_jobs_task_slug" AS ENUM('inline', 'runImport');
   CREATE TABLE "areas" (
   	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-  	"slug" varchar NOT NULL,
+  	"slug" varchar,
   	"type" "enum_areas_type" NOT NULL,
   	"parent_id" uuid,
   	"page" "enum_areas_page" DEFAULT 'automatic' NOT NULL,
@@ -35,8 +35,6 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"geo_longitude" numeric,
   	"geo_bounds" jsonb,
   	"geo_outline_id" uuid,
-  	"geo_outline_source" varchar,
-  	"geo_outline_licence" varchar,
   	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
   	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
   );
@@ -67,7 +65,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE TABLE "_areas_v" (
   	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
   	"parent_id" uuid,
-  	"version_slug" varchar NOT NULL,
+  	"version_slug" varchar,
   	"version_type" "enum__areas_v_version_type" NOT NULL,
   	"version_parent_id" uuid,
   	"version_page" "enum__areas_v_version_page" DEFAULT 'automatic' NOT NULL,
@@ -77,8 +75,6 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"version_geo_longitude" numeric,
   	"version_geo_bounds" jsonb,
   	"version_geo_outline_id" uuid,
-  	"version_geo_outline_source" varchar,
-  	"version_geo_outline_licence" varchar,
   	"version_updated_at" timestamp(3) with time zone,
   	"version_created_at" timestamp(3) with time zone,
   	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
@@ -110,7 +106,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   
   CREATE TABLE "offices" (
   	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-  	"slug" varchar NOT NULL,
+  	"slug" varchar,
   	"area_type" "enum_offices_area_type",
   	"holders_per_seat" numeric DEFAULT 1 NOT NULL,
   	"order" numeric DEFAULT 0 NOT NULL,
@@ -138,7 +134,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE TABLE "_offices_v" (
   	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
   	"parent_id" uuid,
-  	"version_slug" varchar NOT NULL,
+  	"version_slug" varchar,
   	"version_area_type" "enum__offices_v_version_area_type",
   	"version_holders_per_seat" numeric DEFAULT 1 NOT NULL,
   	"version_order" numeric DEFAULT 0 NOT NULL,
@@ -158,6 +154,85 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   );
   
   CREATE TABLE "_offices_v_rels" (
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"order" integer,
+  	"parent_id" uuid NOT NULL,
+  	"path" varchar NOT NULL,
+  	"users_id" uuid
+  );
+  
+  CREATE TABLE "boundaries" (
+  	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+  	"source" varchar NOT NULL,
+  	"licence" varchar NOT NULL,
+  	"prefix" varchar DEFAULT '',
+  	"_objectkey" varchar,
+  	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"url" varchar,
+  	"thumbnail_u_r_l" varchar,
+  	"filename" varchar,
+  	"mime_type" varchar,
+  	"filesize" numeric,
+  	"width" numeric,
+  	"height" numeric,
+  	"_stored" boolean,
+  	"_transforms" jsonb,
+  	"original_filename" varchar,
+  	"original_url" varchar,
+  	"original_mime_type" varchar,
+  	"original_filesize" numeric,
+  	"original_width" numeric,
+  	"original_height" numeric,
+  	"original_prefix" varchar,
+  	"original__objectkey" varchar,
+  	"original__stored" boolean,
+  	"focal_x" numeric,
+  	"focal_y" numeric
+  );
+  
+  CREATE TABLE "boundaries_rels" (
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"order" integer,
+  	"parent_id" uuid NOT NULL,
+  	"path" varchar NOT NULL,
+  	"users_id" uuid
+  );
+  
+  CREATE TABLE "_boundaries_v" (
+  	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+  	"parent_id" uuid,
+  	"version_source" varchar NOT NULL,
+  	"version_licence" varchar NOT NULL,
+  	"version_prefix" varchar DEFAULT '',
+  	"version__objectkey" varchar,
+  	"version_updated_at" timestamp(3) with time zone,
+  	"version_created_at" timestamp(3) with time zone,
+  	"version_url" varchar,
+  	"version_thumbnail_u_r_l" varchar,
+  	"version_filename" varchar,
+  	"version_mime_type" varchar,
+  	"version_filesize" numeric,
+  	"version_width" numeric,
+  	"version_height" numeric,
+  	"version__stored" boolean,
+  	"version__transforms" jsonb,
+  	"version_original_filename" varchar,
+  	"version_original_url" varchar,
+  	"version_original_mime_type" varchar,
+  	"version_original_filesize" numeric,
+  	"version_original_width" numeric,
+  	"version_original_height" numeric,
+  	"version_original_prefix" varchar,
+  	"version_original__objectkey" varchar,
+  	"version_original__stored" boolean,
+  	"version_focal_x" numeric,
+  	"version_focal_y" numeric,
+  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL
+  );
+  
+  CREATE TABLE "_boundaries_v_rels" (
   	"id" serial PRIMARY KEY NOT NULL,
   	"order" integer,
   	"parent_id" uuid NOT NULL,
@@ -373,6 +448,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "_countries_v" ADD COLUMN "version_root_area_id" uuid;
   ALTER TABLE "payload_locked_documents_rels" ADD COLUMN "areas_id" uuid;
   ALTER TABLE "payload_locked_documents_rels" ADD COLUMN "offices_id" uuid;
+  ALTER TABLE "payload_locked_documents_rels" ADD COLUMN "boundaries_id" uuid;
   ALTER TABLE "payload_locked_documents_rels" ADD COLUMN "imports_id" uuid;
   ALTER TABLE "payload_locked_documents_rels" ADD COLUMN "import_mappings_id" uuid;
   ALTER TABLE "site_locales" ADD COLUMN "strings_answers_for" varchar;
@@ -383,7 +459,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "_site_v_locales" ADD COLUMN "version_strings_breadcrumb" varchar;
   ALTER TABLE "areas" ADD CONSTRAINT "areas_parent_id_areas_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."areas"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "areas" ADD CONSTRAINT "areas_country_id_countries_id_fk" FOREIGN KEY ("country_id") REFERENCES "public"."countries"("id") ON DELETE set null ON UPDATE no action;
-  ALTER TABLE "areas" ADD CONSTRAINT "areas_geo_outline_id_media_id_fk" FOREIGN KEY ("geo_outline_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "areas" ADD CONSTRAINT "areas_geo_outline_id_boundaries_id_fk" FOREIGN KEY ("geo_outline_id") REFERENCES "public"."boundaries"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "areas_locales" ADD CONSTRAINT "areas_locales_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."areas"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "areas_texts" ADD CONSTRAINT "areas_texts_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."areas"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "areas_rels" ADD CONSTRAINT "areas_rels_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."areas"("id") ON DELETE cascade ON UPDATE no action;
@@ -391,7 +467,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "_areas_v" ADD CONSTRAINT "_areas_v_parent_id_areas_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."areas"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "_areas_v" ADD CONSTRAINT "_areas_v_version_parent_id_areas_id_fk" FOREIGN KEY ("version_parent_id") REFERENCES "public"."areas"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "_areas_v" ADD CONSTRAINT "_areas_v_version_country_id_countries_id_fk" FOREIGN KEY ("version_country_id") REFERENCES "public"."countries"("id") ON DELETE set null ON UPDATE no action;
-  ALTER TABLE "_areas_v" ADD CONSTRAINT "_areas_v_version_geo_outline_id_media_id_fk" FOREIGN KEY ("version_geo_outline_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "_areas_v" ADD CONSTRAINT "_areas_v_version_geo_outline_id_boundaries_id_fk" FOREIGN KEY ("version_geo_outline_id") REFERENCES "public"."boundaries"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "_areas_v_locales" ADD CONSTRAINT "_areas_v_locales_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."_areas_v"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "_areas_v_texts" ADD CONSTRAINT "_areas_v_texts_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."_areas_v"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "_areas_v_rels" ADD CONSTRAINT "_areas_v_rels_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."_areas_v"("id") ON DELETE cascade ON UPDATE no action;
@@ -405,6 +481,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "_offices_v_locales" ADD CONSTRAINT "_offices_v_locales_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."_offices_v"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "_offices_v_rels" ADD CONSTRAINT "_offices_v_rels_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."_offices_v"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "_offices_v_rels" ADD CONSTRAINT "_offices_v_rels_users_fk" FOREIGN KEY ("users_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "boundaries_rels" ADD CONSTRAINT "boundaries_rels_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."boundaries"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "boundaries_rels" ADD CONSTRAINT "boundaries_rels_users_fk" FOREIGN KEY ("users_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "_boundaries_v" ADD CONSTRAINT "_boundaries_v_parent_id_boundaries_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."boundaries"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "_boundaries_v_rels" ADD CONSTRAINT "_boundaries_v_rels_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."_boundaries_v"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "_boundaries_v_rels" ADD CONSTRAINT "_boundaries_v_rels_users_fk" FOREIGN KEY ("users_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "imports_mapping" ADD CONSTRAINT "imports_mapping_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."imports"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "imports" ADD CONSTRAINT "imports_country_id_countries_id_fk" FOREIGN KEY ("country_id") REFERENCES "public"."countries"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "imports_rels" ADD CONSTRAINT "imports_rels_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."imports"("id") ON DELETE cascade ON UPDATE no action;
@@ -472,6 +553,25 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "_offices_v_rels_parent_idx" ON "_offices_v_rels" USING btree ("parent_id");
   CREATE INDEX "_offices_v_rels_path_idx" ON "_offices_v_rels" USING btree ("path");
   CREATE INDEX "_offices_v_rels_users_id_idx" ON "_offices_v_rels" USING btree ("users_id");
+  CREATE INDEX "boundaries_updated_at_idx" ON "boundaries" USING btree ("updated_at");
+  CREATE INDEX "boundaries_created_at_idx" ON "boundaries" USING btree ("created_at");
+  CREATE UNIQUE INDEX "boundaries_filename_idx" ON "boundaries" USING btree ("filename");
+  CREATE INDEX "boundaries_original_original_filename_idx" ON "boundaries" USING btree ("original_filename");
+  CREATE INDEX "boundaries_rels_order_idx" ON "boundaries_rels" USING btree ("order");
+  CREATE INDEX "boundaries_rels_parent_idx" ON "boundaries_rels" USING btree ("parent_id");
+  CREATE INDEX "boundaries_rels_path_idx" ON "boundaries_rels" USING btree ("path");
+  CREATE INDEX "boundaries_rels_users_id_idx" ON "boundaries_rels" USING btree ("users_id");
+  CREATE INDEX "_boundaries_v_parent_idx" ON "_boundaries_v" USING btree ("parent_id");
+  CREATE INDEX "_boundaries_v_version_version_updated_at_idx" ON "_boundaries_v" USING btree ("version_updated_at");
+  CREATE INDEX "_boundaries_v_version_version_created_at_idx" ON "_boundaries_v" USING btree ("version_created_at");
+  CREATE INDEX "_boundaries_v_version_version_filename_idx" ON "_boundaries_v" USING btree ("version_filename");
+  CREATE INDEX "_boundaries_v_version_original_version_original_filename_idx" ON "_boundaries_v" USING btree ("version_original_filename");
+  CREATE INDEX "_boundaries_v_created_at_idx" ON "_boundaries_v" USING btree ("created_at");
+  CREATE INDEX "_boundaries_v_updated_at_idx" ON "_boundaries_v" USING btree ("updated_at");
+  CREATE INDEX "_boundaries_v_rels_order_idx" ON "_boundaries_v_rels" USING btree ("order");
+  CREATE INDEX "_boundaries_v_rels_parent_idx" ON "_boundaries_v_rels" USING btree ("parent_id");
+  CREATE INDEX "_boundaries_v_rels_path_idx" ON "_boundaries_v_rels" USING btree ("path");
+  CREATE INDEX "_boundaries_v_rels_users_id_idx" ON "_boundaries_v_rels" USING btree ("users_id");
   CREATE INDEX "imports_mapping_order_idx" ON "imports_mapping" USING btree ("_order");
   CREATE INDEX "imports_mapping_parent_id_idx" ON "imports_mapping" USING btree ("_parent_id");
   CREATE INDEX "imports_country_idx" ON "imports" USING btree ("country_id");
@@ -528,12 +628,14 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "_countries_v" ADD CONSTRAINT "_countries_v_version_root_area_id_areas_id_fk" FOREIGN KEY ("version_root_area_id") REFERENCES "public"."areas"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_areas_fk" FOREIGN KEY ("areas_id") REFERENCES "public"."areas"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_offices_fk" FOREIGN KEY ("offices_id") REFERENCES "public"."offices"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_boundaries_fk" FOREIGN KEY ("boundaries_id") REFERENCES "public"."boundaries"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_imports_fk" FOREIGN KEY ("imports_id") REFERENCES "public"."imports"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_import_mappings_fk" FOREIGN KEY ("import_mappings_id") REFERENCES "public"."import_mappings"("id") ON DELETE cascade ON UPDATE no action;
   CREATE INDEX "countries_root_area_idx" ON "countries" USING btree ("root_area_id");
   CREATE INDEX "_countries_v_version_version_root_area_idx" ON "_countries_v" USING btree ("version_root_area_id");
   CREATE INDEX "payload_locked_documents_rels_areas_id_idx" ON "payload_locked_documents_rels" USING btree ("areas_id");
   CREATE INDEX "payload_locked_documents_rels_offices_id_idx" ON "payload_locked_documents_rels" USING btree ("offices_id");
+  CREATE INDEX "payload_locked_documents_rels_boundaries_id_idx" ON "payload_locked_documents_rels" USING btree ("boundaries_id");
   CREATE INDEX "payload_locked_documents_rels_imports_id_idx" ON "payload_locked_documents_rels" USING btree ("imports_id");
   CREATE INDEX "payload_locked_documents_rels_import_mappings_id_idx" ON "payload_locked_documents_rels" USING btree ("import_mappings_id");`)
 }
@@ -554,6 +656,10 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   ALTER TABLE "_offices_v" DISABLE ROW LEVEL SECURITY;
   ALTER TABLE "_offices_v_locales" DISABLE ROW LEVEL SECURITY;
   ALTER TABLE "_offices_v_rels" DISABLE ROW LEVEL SECURITY;
+  ALTER TABLE "boundaries" DISABLE ROW LEVEL SECURITY;
+  ALTER TABLE "boundaries_rels" DISABLE ROW LEVEL SECURITY;
+  ALTER TABLE "_boundaries_v" DISABLE ROW LEVEL SECURITY;
+  ALTER TABLE "_boundaries_v_rels" DISABLE ROW LEVEL SECURITY;
   ALTER TABLE "imports_mapping" DISABLE ROW LEVEL SECURITY;
   ALTER TABLE "imports" DISABLE ROW LEVEL SECURITY;
   ALTER TABLE "imports_rels" DISABLE ROW LEVEL SECURITY;
@@ -581,6 +687,10 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TABLE "_offices_v" CASCADE;
   DROP TABLE "_offices_v_locales" CASCADE;
   DROP TABLE "_offices_v_rels" CASCADE;
+  DROP TABLE "boundaries" CASCADE;
+  DROP TABLE "boundaries_rels" CASCADE;
+  DROP TABLE "_boundaries_v" CASCADE;
+  DROP TABLE "_boundaries_v_rels" CASCADE;
   DROP TABLE "imports_mapping" CASCADE;
   DROP TABLE "imports" CASCADE;
   DROP TABLE "imports_rels" CASCADE;
@@ -602,6 +712,8 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   
   ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT IF EXISTS "payload_locked_documents_rels_offices_fk";
   
+  ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT IF EXISTS "payload_locked_documents_rels_boundaries_fk";
+  
   ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT IF EXISTS "payload_locked_documents_rels_imports_fk";
   
   ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT IF EXISTS "payload_locked_documents_rels_import_mappings_fk";
@@ -610,12 +722,14 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP INDEX IF EXISTS "_countries_v_version_version_root_area_idx";
   DROP INDEX IF EXISTS "payload_locked_documents_rels_areas_id_idx";
   DROP INDEX IF EXISTS "payload_locked_documents_rels_offices_id_idx";
+  DROP INDEX IF EXISTS "payload_locked_documents_rels_boundaries_id_idx";
   DROP INDEX IF EXISTS "payload_locked_documents_rels_imports_id_idx";
   DROP INDEX IF EXISTS "payload_locked_documents_rels_import_mappings_id_idx";
   ALTER TABLE "countries" DROP COLUMN "root_area_id";
   ALTER TABLE "_countries_v" DROP COLUMN "version_root_area_id";
   ALTER TABLE "payload_locked_documents_rels" DROP COLUMN "areas_id";
   ALTER TABLE "payload_locked_documents_rels" DROP COLUMN "offices_id";
+  ALTER TABLE "payload_locked_documents_rels" DROP COLUMN "boundaries_id";
   ALTER TABLE "payload_locked_documents_rels" DROP COLUMN "imports_id";
   ALTER TABLE "payload_locked_documents_rels" DROP COLUMN "import_mappings_id";
   ALTER TABLE "site_locales" DROP COLUMN "strings_answers_for";

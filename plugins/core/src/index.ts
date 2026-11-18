@@ -11,6 +11,7 @@ import {
   uploadConnector,
 } from './adapters'
 import { ADMIN_GROUPS } from './adminGroups'
+import { Boundaries } from './boundaries'
 import { Countries } from './countries'
 import { ImportMappings, Imports, runImportTask } from './imports/collections'
 import { csvImporter, xlsxImporter } from './imports/readers'
@@ -41,7 +42,7 @@ export const corePlugin = definePromiseTrackerPlugin({
   version: '0.1.0',
   order: 0,
   // The admin's menu lists groups in this order: the editors' work first, administration last.
-  collections: [Countries, Areas, Offices, Media, Imports, ImportMappings, Users],
+  collections: [Countries, Areas, Offices, Boundaries, Media, Imports, ImportMappings, Users],
   tasks: [runImportTask as never],
   provides: {
     verification: [nativeVerification],
@@ -59,6 +60,7 @@ export * from './access'
 export * from './adapters'
 export { ADMIN_GROUPS } from './adminGroups'
 export { afterCommit, installAfterCommit } from './afterCommit'
+export { Boundaries, geoJsonProblem, MAX_BOUNDARY_BYTES } from './boundaries'
 export * from './cache'
 export { Countries } from './countries'
 export * from './countryList'

@@ -159,6 +159,7 @@ export interface Config {
     countries: Country;
     areas: Area;
     offices: Office;
+    boundaries: Boundary;
     media: Media;
     imports: Import;
     'import-mappings': ImportMapping;
@@ -175,6 +176,7 @@ export interface Config {
     countries: CountriesSelect<false> | CountriesSelect<true>;
     areas: AreasSelect<false> | AreasSelect<true>;
     offices: OfficesSelect<false> | OfficesSelect<true>;
+    boundaries: BoundariesSelect<false> | BoundariesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     imports: ImportsSelect<false> | ImportsSelect<true>;
     'import-mappings': ImportMappingsSelect<false> | ImportMappingsSelect<true>;
@@ -339,9 +341,9 @@ export interface Area {
   id: string;
   name: string;
   /**
-   * Used in addresses. Made from the name when left empty.
+   * Made from the name when you save. Used in addresses, such as /en/ke/nairobi-county.
    */
-  slug: string;
+  slug?: string | null;
   type: 'country' | 'region' | 'county' | 'constituency' | 'ward' | 'city' | 'other';
   /**
    * The area it sits in.
@@ -358,7 +360,7 @@ export interface Area {
     latitude?: number | null;
     longitude?: number | null;
     /**
-     * West, south, east and north, in degrees.
+     * West, south, east and north, in degrees, such as [36.6, -1.45, 37.1, -1.16].
      */
     bounds?:
       | {
@@ -369,9 +371,10 @@ export interface Area {
       | number
       | boolean
       | null;
-    outline?: (string | null) | Media;
-    outlineSource?: string | null;
-    outlineLicence?: string | null;
+    /**
+     * A GeoJSON file from Boundaries, which records its source and licence.
+     */
+    outline?: (string | null) | Boundary;
   };
   createdBy?: {
     relationTo: 'users';
@@ -387,12 +390,21 @@ export interface Area {
   _h_titlePath?: string | null;
 }
 /**
+ * GeoJSON outlines of areas, for maps. Upload a .geojson file, then choose it on the area.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media".
+ * via the `definition` "boundaries".
  */
-export interface Media {
+export interface Boundary {
   id: string;
-  alt: string;
+  /**
+   * Where the outline comes from, such as the IEBC or OpenStreetMap.
+   */
+  source: string;
+  /**
+   * Its licence, such as ODbL 1.0 or CC BY 4.0.
+   */
+  licence: string;
   createdBy?: {
     relationTo: 'users';
     value: string | User;
@@ -490,9 +502,9 @@ export interface Office {
   name: string;
   shortName?: string | null;
   /**
-   * Used in addresses. Made from the name when left empty.
+   * Made from the name when you save. Used in addresses, such as /en/ke/nairobi-county.
    */
-  slug: string;
+  slug?: string | null;
   /**
    * The kind of area it answers for. Country for national offices, empty for offices with no area.
    */
@@ -516,6 +528,48 @@ export interface Office {
   } | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: string;
+  alt: string;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  prefix?: string | null;
+  _objectKey?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  _stored?: boolean | null;
+  _transforms?: UploadTransforms;
+  original?: {
+    filename?: string | null;
+    url?: string | null;
+    mimeType?: string | null;
+    filesize?: number | null;
+    width?: number | null;
+    height?: number | null;
+    prefix?: string | null;
+    _objectKey?: string | null;
+    _stored?: boolean | null;
+  };
+  focalX?: number | null;
+  focalY?: number | null;
 }
 /**
  * Upload a CSV or Excel file. Check the mapping, then choose Preview, and Import when the preview is right.
@@ -828,6 +882,10 @@ export interface PayloadLockedDocument {
         value: string | Office;
       } | null)
     | ({
+        relationTo: 'boundaries';
+        value: string | Boundary;
+      } | null)
+    | ({
         relationTo: 'media';
         value: string | Media;
       } | null)
@@ -947,8 +1005,6 @@ export interface AreasSelect<T extends boolean = true> {
         longitude?: T;
         bounds?: T;
         outline?: T;
-        outlineSource?: T;
-        outlineLicence?: T;
       };
   createdBy?: T;
   updatedBy?: T;
@@ -973,6 +1029,44 @@ export interface OfficesSelect<T extends boolean = true> {
   updatedBy?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "boundaries_select".
+ */
+export interface BoundariesSelect<T extends boolean = true> {
+  source?: T;
+  licence?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  prefix?: T;
+  _objectKey?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  _stored?: T;
+  _transforms?: T;
+  original?:
+    | T
+    | {
+        filename?: T;
+        url?: T;
+        mimeType?: T;
+        filesize?: T;
+        width?: T;
+        height?: T;
+        prefix?: T;
+        _objectKey?: T;
+        _stored?: T;
+      };
+  focalX?: T;
+  focalY?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1412,7 +1506,8 @@ export interface CollectionsWidget {
 export interface CollectionQueryWidget {
   data?: {
     title?: string | null;
-    relatedCollection: 'countries' | 'areas' | 'offices' | 'media' | 'imports' | 'import-mappings' | 'users';
+    relatedCollection:
+      'countries' | 'areas' | 'offices' | 'boundaries' | 'media' | 'imports' | 'import-mappings' | 'users';
     where?:
       | {
           [k: string]: unknown;
@@ -1435,7 +1530,7 @@ export interface CollectionQueryWidget {
 export interface ActivityWidget {
   data?: {
     excludedCollections?:
-      ('countries' | 'areas' | 'offices' | 'media' | 'imports' | 'import-mappings' | 'users')[] | null;
+      ('countries' | 'areas' | 'offices' | 'boundaries' | 'media' | 'imports' | 'import-mappings' | 'users')[] | null;
   };
   width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }
@@ -1445,7 +1540,7 @@ export interface ActivityWidget {
  */
 export interface UploadDropzoneWidget {
   data?: {
-    excludedCollections?: ('media' | 'imports')[] | null;
+    excludedCollections?: ('boundaries' | 'media' | 'imports')[] | null;
   };
   width: 'x-small' | 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }
