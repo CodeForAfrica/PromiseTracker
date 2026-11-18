@@ -1,0 +1,16 @@
+Name,Type,Parent,Code,Name (fr)
+Senegal,country,,SN,Sénégal
+Dakar Region,region,Senegal,SN-DK,Région de Dakar
+Diourbel Region,region,Senegal,SN-DB,Région de Diourbel
+Fatick Region,region,Senegal,SN-FK,Région de Fatick
+Kaffrine Region,region,Senegal,SN-KA,Région de Kaffrine
+Kaolack Region,region,Senegal,SN-KL,Région de Kaolack
+Kédougou Region,region,Senegal,SN-KE,Région de Kédougou
+Kolda Region,region,Senegal,SN-KD,Région de Kolda
+Louga Region,region,Senegal,SN-LG,Région de Louga
+Matam Region,region,Senegal,SN-MT,Région de Matam
+Saint-Louis Region,region,Senegal,SN-SL,Région de Saint-Louis
+Sédhiou Region,region,Senegal,SN-SE,Région de Sédhiou
+Tambacounda Region,region,Senegal,SN-TC,Région de Tambacounda
+Thiès Region,region,Senegal,SN-TH,Région de Thiès
+Ziguinchor Region,region,Senegal,SN-ZG,Région de Ziguinchor
