@@ -31,9 +31,13 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      mailpit:
+        image: axllent/mailpit:v1.33.0
+        ports: ["1025:1025", "8025:8025"]
     env:
       # Only the core plugins, and no credentials for any outside service.
-      # Files go to a local folder because S3_BUCKET is not set.
+      # Files go to a local folder because S3_BUCKET is not set. The tests make
+      # their own database beside this one, promisetracker_int_test.
       DATABASE_URL: postgres://promisetracker:promisetracker@localhost:5432/promisetracker
       PAYLOAD_SECRET: ci-only-not-a-real-secret
       PT_PLUGINS: core,site
@@ -49,22 +53,36 @@ jobs:
       - run: pnpm typecheck
       - name: Migrations match the Payload config
         run: pnpm migrate:check
-      - run: pnpm test:unit
-      - run: pnpm test:int
-      - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm test:e2e
-      - if: failure()
+      - name: Generated types and import map are committed
+        run: |
+          pnpm generate
+          generated=(apps/cms/src/payload-types.ts 'apps/site/src/app/(payload)/admin/importMap.js')
+          if [ -n "$(git status --porcelain -- "${generated[@]}")" ]; then
+            git diff -- "${generated[@]}"
+            echo "::error::pnpm generate changed generated files. Run it and commit the result."
+            exit 1
+          fi
+      - name: Unit and integration tests, with coverage
+        run: pnpm test:coverage
+      - if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-report
-          path: playwright-report
+          name: coverage
+          path: coverage
           retention-days: 7
 
   image:
-    name: Docker image
+    name: Docker image and browser tests
     needs: checks
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      # The stack's own database, created by Postgres in Compose on first start.
+      PT_POSTGRES_DB: promisetracker_e2e_test
+      PAYLOAD_SECRET: ci-only-not-a-real-secret
+      PT_E2E_URL: http://localhost:3000
+      # The browser tests cover a second language and a right-to-left one.
+      PT_LOCALES: en,fr,ar
     steps:
       - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v4
@@ -77,18 +95,60 @@ jobs:
             type=sha,format=short
             type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+      - name: Build the image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/Dockerfile
+          # Loaded under the tag Compose uses, so the stack runs this exact build.
+          load: true
+          tags: codeforafrica/promisetracker-v3:local
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Start the image with Compose
+        # The web process and the worker, with Postgres, RustFS and Mailpit. This
+        # runs the entrypoint, the migrations on start and file storage on S3.
+        run: node scripts/compose.mjs --profile app up -d --no-build app worker
+      - name: Wait until the app is ready
+        run: |
+          for i in $(seq 1 90); do
+            curl -fsS "$PT_E2E_URL/api/health/ready" && exit 0
+            sleep 2
+          done
+          echo "::error::The app did not report ready within three minutes."
+          exit 1
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Browser tests against the image
+        run: pnpm test:e2e
+      - if: failure()
+        name: Logs from the stack
+        run: node scripts/compose.mjs --profile app logs --no-color
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: playwright-report
+          retention-days: 7
       - if: github.event_name == 'push'
         uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-      - uses: docker/build-push-action@v7
+      - if: github.event_name == 'push'
+        name: Publish the image
+        # Only main publishes, and only after the browser tests pass. The build
+        # comes from the cache filled above.
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: docker/Dockerfile
-          # Pull requests build the image to prove it builds. Only main publishes.
-          push: ${{ github.event_name == 'push' }}
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max

@@ -7,6 +7,7 @@ import { defineFinalPlugin } from '@promisetracker/kernel'
 import { installAfterCommit, privateHistory, setTagRefresher } from '@promisetracker/plugin-core'
 import { buildConfig } from 'payload'
 import { createHttpRefresher } from './cache'
+import { emailAdapter } from './email'
 import { databaseUrl } from './env'
 import { assertExtensions } from './extensions'
 import { ensureFirstAdmin } from './firstAdmin'
@@ -19,6 +20,7 @@ const dirname = path.dirname(fileURLToPath(import.meta.url))
 
 /** `web` serves the site, admin and API. `worker` also runs background jobs. */
 const role = process.env.PT_ROLE === 'worker' ? 'worker' : 'web'
+const email = emailAdapter()
 
 // A change to a public record refreshes the site's cached pages (section 17).
 setTagRefresher(createHttpRefresher())
@@ -44,6 +46,7 @@ export default buildConfig({
     pool: { connectionString: databaseUrl() },
   }),
   editor: lexicalEditor(),
+  ...(email ? { email } : {}),
   localization: {
     // Every registered language is in the schema, so PT_LOCALES never needs a
     // migration. The admin shows only the ones PT_LOCALES switches on (D45).
