@@ -201,6 +201,18 @@ export const Countries: CollectionConfig = withPublishing(
         },
       },
       { name: 'about', type: 'textarea', localized: true },
+      {
+        name: 'rootArea',
+        type: 'relationship',
+        relationTo: 'areas',
+        // Only this country's areas.
+        filterOptions: ({ id }) => (id ? { country: { equals: id } } : false),
+        admin: {
+          position: 'sidebar',
+          condition: (data) => Boolean(data?.id),
+          description: 'The area for the whole country. Set when that area is added.',
+        },
+      },
     ],
   },
   ['name'],

@@ -12,6 +12,9 @@ import {
 } from './adapters'
 import { ADMIN_GROUPS } from './adminGroups'
 import { Countries } from './countries'
+import { ImportMappings, Imports, runImportTask } from './imports/collections'
+import { csvImporter, xlsxImporter } from './imports/readers'
+import { Areas, Offices } from './places'
 import { Users } from './users'
 
 export const Media: CollectionConfig = {
@@ -38,11 +41,13 @@ export const corePlugin = definePromiseTrackerPlugin({
   version: '0.1.0',
   order: 0,
   // The admin's menu lists groups in this order: the editors' work first, administration last.
-  collections: [Countries, Media, Users],
+  collections: [Countries, Areas, Offices, Media, Imports, ImportMappings, Users],
+  tasks: [runImportTask as never],
   provides: {
     verification: [nativeVerification],
     sourceConnector: [uploadConnector],
     contentExtractor: [plaintextExtractor],
+    structuredImporter: [csvImporter, xlsxImporter],
     search: [payloadSearch],
     newsletter: [localNewsletter],
     analytics: [noAnalytics],
@@ -58,7 +63,16 @@ export * from './cache'
 export { Countries } from './countries'
 export * from './countryList'
 export { privateHistory } from './history'
+export { setImporters } from './imports/collections'
+export type { ImportResult, RowError } from './imports/engine'
+export { runImportPlan } from './imports/engine'
+export { csvImporter, MAX_IMPORT_BYTES, MAX_IMPORT_ROWS, xlsxImporter } from './imports/readers'
+export type { ImportTarget } from './imports/targets'
+export { guessMapping, IMPORT_TARGETS, mappingKeys, planRow } from './imports/targets'
 export * from './locales'
+export type { AreaType } from './places'
+export { AREA_PAGE, AREA_TYPES, Areas, Offices } from './places'
 export * from './publishing'
 export * from './roles'
+export * from './slugs'
 export { Users } from './users'

@@ -101,7 +101,7 @@ describe('the default set-up', () => {
       verification: ['native'],
       sourceConnector: ['upload'],
       contentExtractor: ['plaintext'],
-      structuredImporter: [],
+      structuredImporter: ['csv', 'xlsx'],
       llm: [],
       search: ['payload-search'],
       newsletter: ['local'],

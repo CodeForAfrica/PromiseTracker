@@ -90,6 +90,38 @@ test('an unknown country, page or language is not found', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('This page is not on the record')
 })
 
+test('a county has its own page, with the seats that answer for it', async ({ page }) => {
+  const { full } = seed()
+  await page.goto(`/en/${full.code}/nairobi-county`)
+  await expect(page.getByRole('heading', { level: 1, name: 'Nairobi County' })).toBeVisible()
+  const breadcrumb = page.getByRole('navigation', { name: 'Breadcrumb' })
+  await expect(breadcrumb.getByRole('link', { name: full.en })).toBeVisible()
+  const seats = page.getByRole('region', { name: 'Who answers for this place' })
+  for (const office of ['Governor', 'Senator', 'Woman Representative']) {
+    await expect(seats.getByText(office, { exact: true })).toBeVisible()
+  }
+  await expectAccessible(page)
+})
+
+test('a constituency with one seat lists it without a page of its own', async ({ page }) => {
+  const { full } = seed()
+  await page.goto(`/en/${full.code}/kibra`)
+  await expect(page.getByRole('heading', { level: 1, name: 'Kibra' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Seats in Kibra' })).toContainText(
+    'Member of Parliament',
+  )
+  await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toHaveCount(0)
+  await expectAccessible(page)
+})
+
+test('the whole-country area and unknown areas are not pages', async ({ page }) => {
+  const { full } = seed()
+  for (const area of ['kenya', 'atlantis']) {
+    const res = await page.goto(`/en/${full.code}/${area}`)
+    expect(res?.status(), area).toBe(404)
+  }
+})
+
 test('a right-to-left language lays out without breaking', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/ar')

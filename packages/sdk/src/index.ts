@@ -1,9 +1,12 @@
-import type { Country, NotAvailable } from '@promisetracker/contract'
+import type { Area, Country, NotAvailable } from '@promisetracker/contract'
 import {
+  AreaList,
+  Area as AreaSchema,
   CountryList,
   Country as CountrySchema,
   isNotAvailable,
   NotAvailable as NotAvailableSchema,
+  OfficeList,
   SiteInfo,
 } from '@promisetracker/contract'
 
@@ -58,10 +61,11 @@ function settle(path: string, status: number, body: unknown): unknown {
 }
 
 export function createSdk(transport: Transport) {
-  const get = async (path: string, locale: string) => {
-    const { status, body } = await transport.get(path, { locale })
+  const get = async (path: string, locale: string, query: Record<string, string> = {}) => {
+    const { status, body } = await transport.get(path, { ...query, locale })
     return settle(path, status, body)
   }
+  const cc = (code: string) => `/countries/${encodeURIComponent(code)}`
   return {
     /** Everything every page needs: languages, interface text, navigation. */
     async getSiteInfo(locale: string): Promise<SiteInfo> {
@@ -75,6 +79,19 @@ export function createSdk(transport: Transport) {
     async getCountry(locale: string, code: string): Promise<Country | NotAvailable> {
       const result = await get(`/countries/${encodeURIComponent(code)}`, locale)
       return isNotAvailable(result) ? NotAvailableSchema.parse(result) : CountrySchema.parse(result)
+    },
+    /** A country's offices, highest first. */
+    async getOffices(locale: string, code: string): Promise<OfficeList> {
+      return OfficeList.parse(await get(`${cc(code)}/offices`, locale))
+    },
+    /** A country's areas one level at a time: the top level, or those in `parent`. */
+    async getAreas(locale: string, code: string, parent?: string): Promise<AreaList> {
+      return AreaList.parse(await get(`${cc(code)}/areas`, locale, parent ? { parent } : {}))
+    },
+    /** One area with its seats, or the languages it is published in. */
+    async getArea(locale: string, code: string, area: string): Promise<Area | NotAvailable> {
+      const result = await get(`${cc(code)}/areas/${encodeURIComponent(area)}`, locale)
+      return isNotAvailable(result) ? NotAvailableSchema.parse(result) : AreaSchema.parse(result)
     },
   }
 }

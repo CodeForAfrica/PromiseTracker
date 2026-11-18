@@ -9,6 +9,8 @@ next-env.d.ts
 
 # Uploaded files when no S3 bucket is set
 media/
+# Imported spreadsheets, when files are stored locally
+imports/
 
 # Tests
 coverage/
