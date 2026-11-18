@@ -610,11 +610,11 @@ circular ones.
 |---|---|
 | `country` | Required |
 | `name` | Localized |
-| `slug` | Unique within the country, and must not match a national office slug or a reserved word, section 11 |
+| `slug` | Made from the name when left empty. Unique within the country, and must not match a national office slug or a reserved word, section 11. Not Payload's slug field, which is unique across the whole collection |
 | `type` | Country, region, county, constituency, ward, city or other |
 | `parent` | The area it sits in |
-| `page` | Automatic, always or never. Automatic means the area gets a page when it holds two or more seats |
-| `geo` | Centre point, bounds, and an uploaded GeoJSON outline with its source and licence |
+| `page` | Automatic, always or never. Automatic means the area gets a page when it holds two or more seats. A seat here is an office whose area type is the area's type |
+| `geo` | Centre point as latitude and longitude, bounds, and an outline. The outline is a GeoJSON file in the Boundaries collection, which records its source and licence. Plain numbers, so PostGIS stays optional |
 | `externalCode` | Its id in an outside boundary dataset |
 | `formerSlugs` | For redirects, section 11.2 |
 
@@ -624,13 +624,17 @@ circular ones.
 |---|---|
 | `country` | Required |
 | `name`, `shortName` | Localized, such as "Member of Parliament" and "MP" |
-| `slug` | Used in seat addresses, such as `governor` |
+| `slug` | Used in seat addresses, such as `governor`. Made from the name when left empty |
 | `areaType` | The type of area the office answers for. Empty for offices with no area, such as party-list members |
 | `holdersPerSeat` | Usually one. More for multi-member seats |
 | `order` | Display order, highest office first |
 
 A **seat** is an area plus an office. It is not stored separately. The system finds a seat's
 holders by looking for current terms with that area and office.
+
+Each country has one area of type country, at the top, which stands for the whole country. When
+it is added it becomes the country's `rootArea`. It never has a page of its own: its address
+would be the country's.
 
 ### 7.3 Actors and terms
 
@@ -1035,6 +1039,12 @@ accepts, or rejects it with a reason. Accepting creates a claim on hold and unve
 2. Map: match columns to fields. The mapping is saved for reuse.
 3. Preview: run without saving, and report rows to create, update and skip, with errors by row.
 4. Commit.
+
+In the admin, an import is a record that keeps the uploaded file. Uploading reads the file and
+guesses the mapping, from a saved mapping whose columns all appear in the file, or from headings
+named like the fields. Saving with "Preview" works out what would change and lists problems by
+spreadsheet row. Saving with "Import" queues the `runImport` job, which saves the rows and
+records the counts. A mapping given a name is saved for the next file.
 
 The importer adapter only reads the file. The core does the mapping, the preview and the commit
 once, for every file format.
@@ -1604,7 +1614,7 @@ the Docker image is built without one. So the site uses Next.js's tagged data ca
 |---|---|
 | `country:{code}` | The country or its figures change |
 | `countries` | Any country is added, changed or removed, for lists of countries |
-| `area:{id}` | The area or its office holders change |
+| `places:{code}` | Any of the country's areas or offices change, for area pages and lists |
 | `actor:{id}` | The actor, or a claim naming it, changes |
 | `claim:{id}` | The claim or one of its updates changes |
 | `ratings` | A rating scale changes |

@@ -4,7 +4,12 @@ import { fileURLToPath } from 'node:url'
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { defineFinalPlugin } from '@promisetracker/kernel'
-import { installAfterCommit, privateHistory, setTagRefresher } from '@promisetracker/plugin-core'
+import {
+  installAfterCommit,
+  privateHistory,
+  setImporters,
+  setTagRefresher,
+} from '@promisetracker/plugin-core'
 import { buildConfig } from 'payload'
 import { createHttpRefresher } from './cache'
 import { emailAdapter } from './email'
@@ -26,6 +31,8 @@ const email = emailAdapter()
 
 // A change to a public record refreshes the site's cached pages (section 17).
 setTagRefresher(createHttpRefresher())
+// Imports read files with every enabled plugin's readers (section 4.1).
+setImporters(kernel.adapters.structuredImporter)
 
 const inUse = new Set(kernel.locales.map((l) => l.code))
 

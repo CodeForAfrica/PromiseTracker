@@ -25,6 +25,9 @@ export const STRING_KEYS = [
   'aboutSite',
   'chooseCountry',
   'notAvailableTitle',
+  'answersFor',
+  'seatsInArea',
+  'breadcrumb',
   'notAvailableBody',
   'notFoundTitle',
   'notFoundBody',
@@ -90,6 +93,55 @@ export const Country = CountrySummary.extend({
   defaultLanguage: z.string().nullable(),
 })
 export type Country = z.infer<typeof Country>
+
+/** An office in a country's list, such as Governor (section 7.2). */
+export const Office = z.object({
+  slug: z.string().min(1),
+  name: z.string().min(1),
+  shortName: z.string().nullable(),
+  /** The kind of area it answers for. Null for an office with no area. */
+  areaType: z.string().nullable(),
+  holdersPerSeat: z.number().int().positive(),
+})
+export type Office = z.infer<typeof Office>
+
+/** `GET /api/v1/countries/{cc}/offices`, highest office first. */
+export const OfficeList = z.object({ items: z.array(Office) })
+export type OfficeList = z.infer<typeof OfficeList>
+
+export const AreaSummary = z.object({
+  slug: z.string().min(1),
+  name: z.string().min(1),
+  type: z.string(),
+})
+export type AreaSummary = z.infer<typeof AreaSummary>
+
+/** `GET /api/v1/countries/{cc}/areas?parent=`, one level at a time. */
+export const AreaList = z.object({
+  items: z.array(AreaSummary),
+  total: z.number().int().nonnegative(),
+  nextCursor: z.string().nullable(),
+})
+export type AreaList = z.infer<typeof AreaList>
+
+/** A seat: an area plus an office. Its holders arrive with terms (#646). */
+export const Seat = z.object({
+  office: Office.pick({ slug: true, name: true, shortName: true }),
+  holdersPerSeat: z.number().int().positive(),
+})
+export type Seat = z.infer<typeof Seat>
+
+/** `GET /api/v1/countries/{cc}/areas/{area}`. */
+export const Area = AreaSummary.extend({
+  /** The areas above it, the country first. */
+  ancestors: z.array(AreaSummary),
+  seats: z.array(Seat),
+  /** Whether it has a page of its own, from its page setting and its seats (section 7.2). */
+  hasPage: z.boolean(),
+  /** How many areas sit directly in it. */
+  children: z.number().int().nonnegative(),
+})
+export type Area = z.infer<typeof Area>
 
 /**
  * A record that exists but is not published in the language asked for

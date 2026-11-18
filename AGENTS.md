@@ -64,7 +64,8 @@ Issue #672 gives the build order and the owner of each issue.
    decisions made while building, environment and config changes, migrations, how to test.
 9. A decision that changes behaviour also goes in the specification's decision register, section
    20.1, with the PDFs rebuilt.
-10. After the merge, look at the issue's "Unblocks" section. Move each issue listed there to
+10. A change to what editors do in the admin also goes in `docs/admin-guide.md`.
+11. After the merge, look at the issue's "Unblocks" section. Move each issue listed there to
     `status: ready` if nothing else open blocks it.
 
 Where things are:

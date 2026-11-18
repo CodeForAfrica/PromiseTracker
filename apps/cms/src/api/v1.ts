@@ -1,23 +1,35 @@
 import type {
+  Area,
+  AreaSummary,
   Country,
   CountryList,
   CountrySummary,
   Language,
   NotAvailable,
+  Office,
   SiteInfo,
 } from '@promisetracker/contract'
 import {
+  AreaList as AreaListSchema,
+  Area as AreaSchema,
   CountryList as CountryListSchema,
   Country as CountrySchema,
+  OfficeList as OfficeListSchema,
   SiteInfo as SiteInfoSchema,
 } from '@promisetracker/contract'
 import { countryName, isCountryCode, publishedInLocale } from '@promisetracker/plugin-core'
 import { resolveStrings } from '@promisetracker/plugin-site'
 import type { Payload, TypedLocale } from 'payload'
 
+import { areaFamily } from '../areaTree'
 import { kernel } from '../kernel'
 import { registeredLocales } from '../locales'
-import type { Country as CountryDoc, Site } from '../payload-types'
+import type {
+  Area as AreaDoc,
+  Country as CountryDoc,
+  Office as OfficeDoc,
+  Site,
+} from '../payload-types'
 
 /**
  * Handlers for `/api/v1`. The HTTP route and the SDK's local transport both
@@ -81,7 +93,87 @@ const toCountry = (doc: CountryDoc, locale: TypedLocale): Country =>
     defaultLanguage: doc.defaultLanguage ?? null,
   })
 
-type Context = { payload: Payload; params: Record<string, string>; locale: TypedLocale }
+type Context = {
+  payload: Payload
+  params: Record<string, string>
+  locale: TypedLocale
+  query: URLSearchParams
+}
+
+const notAvailable = (codes: readonly string[]): V1Result => {
+  const availableIn = languages().filter((l) => codes.includes(l.code))
+  if (availableIn.length === 0) return notFound()
+  const body: NotAvailable = { error: 'not-available', availableIn }
+  return { status: 404, body }
+}
+
+/**
+ * The country a place belongs to, if it is published in this language. A
+ * country's places are public wherever it is (section 8.1). Anything else
+ * answers as the country would.
+ */
+async function publishedCountry(
+  payload: Payload,
+  code: string,
+  locale: TypedLocale,
+): Promise<CountryDoc | V1Result> {
+  if (!isCountryCode(code)) return notFound()
+  const { docs } = await payload.find({
+    collection: 'countries',
+    where: { code: { equals: code } },
+    locale,
+    depth: 0,
+    limit: 1,
+    overrideAccess: false,
+  })
+  const [doc] = docs
+  if (!doc) return notFound()
+  return (doc.publishedIn ?? []).includes(locale) ? doc : notAvailable(doc.publishedIn ?? [])
+}
+
+const isResult = (value: CountryDoc | V1Result): value is V1Result => 'status' in value
+
+const toOffice = (doc: OfficeDoc): Office | null => {
+  const name = text(doc.name)
+  // A save always gives a slug. Without one a record has no address, so it is left out.
+  if (!name || !doc.slug) return null
+  return {
+    slug: doc.slug,
+    name,
+    shortName: text(doc.shortName),
+    areaType: doc.areaType ?? null,
+    holdersPerSeat: doc.holdersPerSeat,
+  }
+}
+
+/** A country's offices with a name in this language, highest first. */
+async function officesOf(
+  payload: Payload,
+  country: string,
+  locale: TypedLocale,
+): Promise<Office[]> {
+  const { docs } = await payload.find({
+    collection: 'offices',
+    where: { country: { equals: country } },
+    locale,
+    sort: 'order',
+    depth: 0,
+    pagination: false,
+    overrideAccess: false,
+  })
+  return docs.map(toOffice).filter((o): o is Office => o !== null)
+}
+
+const toAreaSummary = (doc: AreaDoc): AreaSummary | null => {
+  const name = text(doc.name)
+  return name && doc.slug ? { slug: doc.slug, name, type: doc.type } : null
+}
+
+/** A localized value, read with every language, in one of them. */
+const nameIn = (value: unknown, locale: string): string | null => {
+  const inLocale: unknown = value && typeof value === 'object' ? Reflect.get(value, locale) : null
+  return typeof inLocale === 'string' ? text(inLocale) : null
+}
 
 /** A language the site runs in: registered, and switched on by PT_LOCALES. */
 const inUse = (value: string): value is TypedLocale =>
@@ -131,6 +223,107 @@ const handlers: Record<string, Handler> = {
     if (availableIn.length === 0) return notFound()
     const body: NotAvailable = { error: 'not-available', availableIn }
     return { status: 404, body }
+  },
+
+  '/countries/:code/offices': async ({ payload, params, locale }) => {
+    const country = await publishedCountry(payload, params.code ?? '', locale)
+    if (isResult(country)) return country
+    return ok(OfficeListSchema.parse({ items: await officesOf(payload, country.id, locale) }))
+  },
+
+  '/countries/:code/areas': async ({ payload, params, locale, query }) => {
+    const country = await publishedCountry(payload, params.code ?? '', locale)
+    if (isResult(country)) return country
+    const parentSlug = query.get('parent')
+    let parent: string | null = null
+    if (parentSlug) {
+      const { docs } = await payload.find({
+        collection: 'areas',
+        where: { and: [{ country: { equals: country.id } }, { slug: { equals: parentSlug } }] },
+        depth: 0,
+        limit: 1,
+        overrideAccess: false,
+      })
+      const [found] = docs
+      if (!found) return notFound()
+      parent = found.id
+    }
+    const { docs } = await payload.find({
+      collection: 'areas',
+      where: {
+        and: [
+          { country: { equals: country.id } },
+          parent ? { parent: { equals: parent } } : { parent: { exists: false } },
+        ],
+      },
+      locale,
+      sort: 'slug',
+      depth: 0,
+      pagination: false,
+      overrideAccess: false,
+    })
+    const items = docs.map(toAreaSummary).filter((a): a is AreaSummary => a !== null)
+    // A country's areas at one level are few, so they all come in the first page.
+    return ok(AreaListSchema.parse({ items, total: items.length, nextCursor: null }))
+  },
+
+  '/countries/:code/areas/:area': async ({ payload, params, locale }) => {
+    const country = await publishedCountry(payload, params.code ?? '', locale)
+    if (isResult(country)) return country
+    const { docs } = await payload.find({
+      collection: 'areas',
+      where: { and: [{ country: { equals: country.id } }, { slug: { equals: params.area } }] },
+      locale: 'all',
+      depth: 0,
+      limit: 1,
+      overrideAccess: false,
+    })
+    const [doc] = docs
+    if (!doc) return notFound()
+    const name = nameIn(doc.name, locale)
+    if (!name)
+      return notAvailable((country.publishedIn ?? []).filter((code) => nameIn(doc.name, code)))
+    const family = await areaFamily(payload, doc.id)
+    const above = family.ancestors.length
+      ? (
+          await payload.find({
+            collection: 'areas',
+            where: { id: { in: family.ancestors } },
+            locale,
+            depth: 0,
+            pagination: false,
+            overrideAccess: false,
+          })
+        ).docs
+      : []
+    // The query gives the nearest first. The page wants the country first.
+    const rank = new Map(family.ancestors.map((id, i) => [id, i]))
+    const ancestors = above
+      .sort((a, b) => (rank.get(b.id) ?? 0) - (rank.get(a.id) ?? 0))
+      .map(toAreaSummary)
+      .filter((a): a is AreaSummary => a !== null)
+    const seats = (await officesOf(payload, country.id, locale))
+      .filter((office) => office.areaType === doc.type)
+      .map((office) => ({
+        office: { slug: office.slug, name: office.name, shortName: office.shortName },
+        holdersPerSeat: office.holdersPerSeat,
+      }))
+    const { totalDocs: children } = await payload.count({
+      collection: 'areas',
+      where: { parent: { equals: doc.id } },
+      overrideAccess: false,
+    })
+    const hasPage = doc.page === 'always' || (doc.page === 'automatic' && seats.length >= 2)
+    const area: Area = AreaSchema.parse({
+      slug: doc.slug,
+      name,
+      type: doc.type,
+      ancestors,
+      seats,
+      hasPage,
+      children,
+    })
+    return ok(area)
   },
 }
 
@@ -183,5 +376,5 @@ export async function handleV1(
     const codes = kernel.locales.map((l) => l.code).join(', ')
     return { status: 400, body: { error: `The locale parameter must be one of ${codes}.` } }
   }
-  return handler({ payload, params: route.params, locale })
+  return handler({ payload, params: route.params, locale, query })
 }

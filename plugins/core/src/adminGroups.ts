@@ -8,5 +8,6 @@ export const ADMIN_GROUPS = {
   places: 'Places',
   library: 'Media library',
   site: 'Public site',
+  imports: 'Imports',
   administration: 'Administration',
 } as const

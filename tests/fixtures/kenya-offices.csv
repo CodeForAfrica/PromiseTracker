@@ -1,0 +1,6 @@
+Name,Short name,Slug,Area type,Holders per seat,Order,Name (fr),Short name (fr)
+President,President,president,country,1,1,Président,Président
+Governor,Governor,governor,county,1,2,Gouverneur,Gouverneur
+Senator,Senator,senator,county,1,3,Sénateur,Sénateur
+Woman Representative,Woman Rep.,woman-representative,county,1,4,Représentante des femmes,Représentante
+Member of Parliament,MP,mp,constituency,1,5,Député,Député

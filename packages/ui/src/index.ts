@@ -1,3 +1,4 @@
+export { AreaHero, AreaSeatsOnly, fill, SeatList } from './area'
 export { Container } from './Container'
 export { cn } from './cn'
 export { CountryHero } from './country'

@@ -33,6 +33,12 @@ export const getCountries = (locale: string) =>
     tags: ['countries'],
   })()
 
+/** A country's areas and offices change together, so they share one tag. */
+export const getArea = (locale: string, code: string, area: string) =>
+  unstable_cache(() => sdk.getArea(locale, code, area), [RUN, 'area', locale, code, area], {
+    tags: [`places:${code}`, `country:${code}`],
+  })()
+
 export const getCountry = (locale: string, code: string) =>
   unstable_cache(() => sdk.getCountry(locale, code), [RUN, 'country', locale, code], {
     tags: [`country:${code}`],
