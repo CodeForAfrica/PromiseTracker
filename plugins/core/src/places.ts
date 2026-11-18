@@ -28,7 +28,7 @@ export type AreaType = (typeof AREA_TYPES)[number]
 /** When an area has its own page (section 7.2). */
 export const AREA_PAGE = ['automatic', 'always', 'never'] as const
 
-const idOf = (value: unknown): string | null => {
+export const idOf = (value: unknown): string | null => {
   if (typeof value === 'string' && value) return value
   if (value && typeof value === 'object') {
     const id: unknown = Reflect.get(value, 'id')
@@ -42,7 +42,7 @@ const readPlaces = ({ req }: { req: PayloadRequest }): boolean | Where =>
   signedIn({ req }) || { 'country.recordStatus': { equals: 'ready' } }
 
 /** The country's code, for the cache tags of its places. */
-async function countryCode(req: PayloadRequest, country: unknown): Promise<string | null> {
+export async function countryCode(req: PayloadRequest, country: unknown): Promise<string | null> {
   const id = idOf(country)
   if (!id) return null
   const doc = await req.payload.findByID({
@@ -83,7 +83,7 @@ const refreshPlaces = async ({
 }
 
 /** A slug from the name when none is given. */
-const slugFromName: CollectionBeforeValidateHook = ({ data }) => {
+export const slugFromName: CollectionBeforeValidateHook = ({ data }) => {
   if (!data || data.slug) return data
   const name = typeof data.name === 'string' ? data.name : null
   return name ? { ...data, slug: slugify(name) } : data
@@ -198,7 +198,7 @@ const checkAreaPlace: CollectionBeforeChangeHook = async ({ data, originalDoc, r
 }
 
 /** The old slug is kept when a slug changes, so its address can redirect (section 11.2). */
-const keepFormerSlug: CollectionBeforeChangeHook = ({ data, originalDoc }) => {
+export const keepFormerSlug: CollectionBeforeChangeHook = ({ data, originalDoc }) => {
   const before = originalDoc?.slug
   if (!before || !data.slug || data.slug === before) return data
   const former: string[] = Array.isArray(originalDoc?.formerSlugs) ? originalDoc.formerSlugs : []
@@ -235,7 +235,7 @@ const linkRootArea = async ({
   return doc
 }
 
-const countryField = {
+export const countryField = {
   name: 'country',
   type: 'relationship',
   relationTo: 'countries',
@@ -251,7 +251,16 @@ const countryField = {
  * "central-region" (section 7.2). A save checks it in checkAreaSlug or
  * checkOfficeSlug.
  */
-const slugField = {
+/** Slugs a record had before, so their addresses redirect (section 11.2). Set by keepFormerSlug. */
+export const formerSlugsField = {
+  name: 'formerSlugs',
+  type: 'text',
+  hasMany: true,
+  admin: { position: 'sidebar', readOnly: true },
+  access: { create: () => false, update: () => false },
+} as const
+
+export const slugField = {
   name: 'slug',
   type: 'text',
   index: true,
@@ -314,13 +323,7 @@ export const Areas: CollectionConfig = {
     },
     countryField,
     { name: 'externalCode', type: 'text', admin: { position: 'sidebar' } },
-    {
-      name: 'formerSlugs',
-      type: 'text',
-      hasMany: true,
-      admin: { position: 'sidebar', readOnly: true },
-      access: { create: () => false, update: () => false },
-    },
+    formerSlugsField,
     {
       // Collapsed: maps arrive in version 2, and most editors never need these.
       type: 'collapsible',
@@ -381,7 +384,7 @@ export const Offices: CollectionConfig = {
   indexes: [{ fields: ['country', 'slug'], unique: true }],
   hooks: {
     beforeValidate: [slugFromName],
-    beforeChange: [checkOfficeSlug],
+    beforeChange: [checkOfficeSlug, keepFormerSlug],
     afterChange: [refreshPlaces],
     afterDelete: [refreshPlaces],
   },
@@ -414,5 +417,6 @@ export const Offices: CollectionConfig = {
       admin: { description: 'Lower comes first. Put the highest office first.' },
     },
     countryField,
+    formerSlugsField,
   ],
 }

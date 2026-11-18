@@ -2,14 +2,27 @@ import { isNotAvailable } from '@promisetracker/sdk'
 import {
   AreaHero,
   AreaSeatsOnly,
+  actorPath,
   NotAvailableNotice,
   PageShell,
   SeatList,
+  SeatPage,
+  seatLabel,
 } from '@promisetracker/ui'
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 
-import { findSite, getArea, getCountry, LOGO, loadShell, orNotFound } from '@/data'
+import {
+  findSite,
+  followRedirect,
+  getArea,
+  getCountry,
+  getSeat,
+  LOGO,
+  loadShell,
+  orNotFound,
+  orNull,
+} from '@/data'
 
 type Props = { params: Promise<{ lang: string; cc: string; area: string }> }
 
@@ -18,45 +31,81 @@ export function generateStaticParams(): never[] {
   return []
 }
 
+/** The segment after the country is an area or a national office (section 11.2). */
+async function load(lang: string, cc: string, slug: string) {
+  const area = await orNull(getArea(lang, cc, slug))
+  if (area) return { area, seat: null }
+  return { area: null, seat: await orNull(getSeat(lang, cc, slug)) }
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { lang, cc, area } = await params
+  const { lang, cc, area: slug } = await params
   if (!(await findSite(lang))) return {}
-  const result = await orNotFound(getArea(lang, cc, area))
-  return isNotAvailable(result) ? {} : { title: result.name }
+  const { area, seat } = await load(lang, cc, slug)
+  if (area && !isNotAvailable(area)) return { title: area.name }
+  if (seat && !isNotAvailable(seat)) return { title: seatLabel(seat) }
+  return {}
 }
 
 /**
- * An area's page (sections 10.2 and 11.2). An area with a page of its own
- * shows its hero and the seats that answer for it. One without lists its
- * seats. The holders of each seat, and the redirect to a single seat's
- * holder, arrive with terms in #646.
+ * An area's page, or a national seat's (sections 10.2 and 11.2).
+ *
+ * - An area with one seat and one holder leads to that holder.
+ * - An area with a page of its own shows its hero and its seats' holders.
+ *   One without lists its seats.
+ * - A national seat with one holder leads to them. One with several lists them.
+ * - A renamed area or office leads to its new address.
  */
 export default async function AreaPage({ params }: Props) {
   const { lang, cc, area: slug } = await params
   const shell = await loadShell(lang)
-  const [area, country] = await Promise.all([
-    orNotFound(getArea(lang, cc, slug)),
-    orNotFound(getCountry(lang, cc)),
-  ])
-  if (isNotAvailable(area)) {
+  const { area, seat } = await load(lang, cc, slug)
+  const found = area ?? seat
+  if (found && isNotAvailable(found)) {
     return (
       <PageShell {...shell} logo={LOGO} active={cc}>
-        <NotAvailableNotice site={shell.site} notAvailable={area} path={`/${cc}/${slug}`} />
+        <NotAvailableNotice site={shell.site} notAvailable={found} path={`/${cc}/${slug}`} />
       </PageShell>
     )
   }
-  if (isNotAvailable(country)) notFound()
-  if (area.type === 'country' || area.seats.length === 0) notFound()
 
+  if (seat && !isNotAvailable(seat)) {
+    const [only] = seat.holders
+    if (seat.holders.length === 1 && only) redirect(actorPath(lang, cc, only.slug))
+    return (
+      <PageShell {...shell} logo={LOGO} active={cc}>
+        <SeatPage site={shell.site} code={cc} seat={seat} />
+      </PageShell>
+    )
+  }
+
+  if (!area || isNotAvailable(area)) {
+    await followRedirect(lang, `/${cc}/${slug}`)
+    notFound()
+  }
+  if (area.type === 'country' || area.seats.length === 0) notFound()
+  const [single] = area.seats
+  const [holder] = single?.holders ?? []
+  if (area.seats.length === 1 && single?.holders.length === 1 && holder) {
+    redirect(actorPath(lang, cc, holder.slug))
+  }
+
+  const country = await orNotFound(getCountry(lang, cc))
+  if (isNotAvailable(country)) notFound()
   return (
     <PageShell {...shell} logo={LOGO} active={country.code}>
       {area.hasPage ? (
         <>
           <AreaHero site={shell.site} country={country} area={area} />
-          <SeatList area={area} title={shell.site.strings.answersFor} />
+          <SeatList
+            site={shell.site}
+            code={country.code}
+            area={area}
+            title={shell.site.strings.answersFor}
+          />
         </>
       ) : (
-        <AreaSeatsOnly site={shell.site} area={area} />
+        <AreaSeatsOnly site={shell.site} code={country.code} area={area} />
       )}
     </PageShell>
   )

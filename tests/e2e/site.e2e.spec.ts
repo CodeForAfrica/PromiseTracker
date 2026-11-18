@@ -16,6 +16,8 @@ const seed = (): Seed =>
   JSON.parse(readFileSync(path.resolve(import.meta.dirname, '.seed.json'), 'utf8')) as Seed
 
 async function expectAccessible(page: Page) {
+  // Next.js streams the title after the page, so wait for it before checking.
+  await expect(page).toHaveTitle(/\S/)
   const { violations } = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
     .analyze()
@@ -136,4 +138,84 @@ test('a right-to-left language lays out without breaking', async ({ page }) => {
   const languages = await page.getByRole('navigation', { name: 'Language' }).boundingBox()
   expect(logo?.x ?? 0).toBeGreaterThan(languages?.x ?? Number.POSITIVE_INFINITY)
   await expectAccessible(page)
+})
+
+test('a seat leads to its holder today, and a former holder keeps an archived page', async ({
+  page,
+}) => {
+  const { full } = seed()
+  // The governor's term ended in 2022, and the seat passed to a new holder.
+  await page.goto(`/en/${full.code}/nairobi-county/governor`)
+  await expect(page).toHaveURL(new RegExp(`/en/${full.code}/e/achieng-wekesa$`))
+  await expect(page.getByRole('heading', { level: 1, name: 'Achieng Wekesa' })).toBeVisible()
+  await expect(page.getByText('Governor, Nairobi County').first()).toBeVisible()
+  await expectAccessible(page)
+
+  await page.goto(`/en/${full.code}/e/baraka-njoroge`)
+  await expect(page.getByText('Former office holder')).toBeVisible()
+  const closing = page.getByRole('region', { name: 'How the term closed' })
+  await expect(closing).toContainText('Two of five housing pledges were met.')
+  await closing.getByRole('link', { name: 'Achieng Wekesa' }).click()
+  await expect(page).toHaveURL(/\/e\/achieng-wekesa$/)
+})
+
+test('an area with one seat leads to its holder, and a national seat to its own', async ({
+  page,
+}) => {
+  const { full } = seed()
+  await page.goto(`/en/${full.code}/westlands`)
+  await expect(page).toHaveURL(/\/e\/juma-hassan$/)
+  await page.goto(`/en/${full.code}/president`)
+  await expect(page).toHaveURL(/\/e\/amani-otieno$/)
+})
+
+test('a county page names who holds each seat', async ({ page }) => {
+  const { full } = seed()
+  await page.goto(`/en/${full.code}/nairobi-county`)
+  const seats = page.getByRole('region', { name: 'Who answers for this place' })
+  for (const name of ['Achieng Wekesa', 'Halima Yusuf', 'Wanjiru Kamau']) {
+    await expect(seats.getByRole('link', { name: new RegExp(name) })).toBeVisible()
+  }
+})
+
+test('the country page shows the officials, and those who held office before', async ({ page }) => {
+  const { full } = seed()
+  await page.goto(`/en/${full.code}`)
+  await expect(page.getByRole('region', { name: 'Who is delivering' })).toContainText(
+    'Amani Otieno',
+  )
+  await expect(page.getByRole('region', { name: 'Officials' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Past administrations' })).toContainText(
+    'Baraka Njoroge',
+  )
+  await expectAccessible(page)
+  // The English-only country has no office holders, so its page has none of these sections.
+  await page.goto(`/en/${seed().englishOnly.code}`)
+  await expect(page.getByRole('region', { name: 'Officials' })).toHaveCount(0)
+})
+
+test('the officials list filters by office, and keeps the filter in the address', async ({
+  page,
+}) => {
+  const { full } = seed()
+  await page.goto(`/en/${full.code}/officials`)
+  await expect(page.getByRole('heading', { level: 1, name: 'Officials' })).toBeVisible()
+  await expectAccessible(page)
+  await page.getByLabel('Office', { exact: true }).selectOption('governor')
+  await page.getByRole('button', { name: 'Show' }).click()
+  await expect(page).toHaveURL(/office=governor/)
+  const list = page.getByRole('main').getByRole('list').last()
+  await expect(list.getByRole('link')).toHaveCount(2)
+  await expect(list).toContainText('Achieng Wekesa')
+  await expect(list).toContainText('Zawadi Mutua')
+})
+
+test('seat addresses answer with a real redirect, not a page', async ({ request }) => {
+  const { full } = seed()
+  const visit = (path: string) => request.get(path, { maxRedirects: 0 })
+  const seat = await visit(`/en/${full.code}/westlands`)
+  expect(seat.status()).toBe(307)
+  expect(seat.headers().location).toBe(`/en/${full.code}/e/juma-hassan`)
+  const national = await visit(`/en/${full.code}/president`)
+  expect(national.status()).toBe(307)
 })

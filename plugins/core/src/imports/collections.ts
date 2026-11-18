@@ -22,6 +22,8 @@ import { ALL_MAPPING_KEYS, guessMapping, IMPORT_TARGETS, mappingKeys } from './t
 const PERMISSION: Record<ImportTarget, Permission> = {
   areas: 'manageStructure',
   offices: 'manageStructure',
+  actors: 'editRecords',
+  terms: 'editRecords',
 }
 
 let importers: readonly StructuredImporter[] = [csvImporter, xlsxImporter]
@@ -188,7 +190,7 @@ const counted = (group: unknown) =>
   typeof group === 'object' &&
   typeof Reflect.get(group as object, 'failed') === 'number'
 
-/** An import of areas or offices from a spreadsheet (section 9.6). */
+/** An import of areas, offices, actors or terms from a spreadsheet (section 9.6). */
 export const Imports: CollectionConfig = {
   slug: 'imports',
   labels: { singular: 'Import', plural: 'Imports' },

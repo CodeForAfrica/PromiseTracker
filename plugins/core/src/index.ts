@@ -1,6 +1,7 @@
 import { definePromiseTrackerPlugin } from '@promisetracker/kernel'
 import type { CollectionConfig } from 'payload'
 import { can } from './access'
+import { Actors, Terms } from './actors'
 import {
   localCaptcha,
   localNewsletter,
@@ -42,7 +43,18 @@ export const corePlugin = definePromiseTrackerPlugin({
   version: '0.1.0',
   order: 0,
   // The admin's menu lists groups in this order: the editors' work first, administration last.
-  collections: [Countries, Areas, Offices, Boundaries, Media, Imports, ImportMappings, Users],
+  collections: [
+    Actors,
+    Terms,
+    Countries,
+    Areas,
+    Offices,
+    Boundaries,
+    Media,
+    Imports,
+    ImportMappings,
+    Users,
+  ],
   tasks: [runImportTask as never],
   provides: {
     verification: [nativeVerification],
@@ -57,6 +69,17 @@ export const corePlugin = definePromiseTrackerPlugin({
 })
 
 export * from './access'
+export type { ActorKind, TermStage } from './actors'
+export {
+  ACTOR_KINDS,
+  Actors,
+  currentTerms,
+  onRecord,
+  pastTerms,
+  TERM_STAGES,
+  Terms,
+  termStage,
+} from './actors'
 export * from './adapters'
 export { ADMIN_GROUPS } from './adminGroups'
 export { afterCommit, installAfterCommit } from './afterCommit'

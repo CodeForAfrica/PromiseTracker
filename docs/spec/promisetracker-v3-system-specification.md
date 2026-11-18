@@ -670,6 +670,12 @@ People also have an honorific and gender. Institutions have a type, such as mini
 An actor whose only terms are at the candidate stage is never public. An actor with no current
 term and at least one past term shows as an archived record.
 
+A term's stage is worked out from its dates when it is read (D51). Its actor, office, area, party
+and successor are all in one country, and its area is the kind its office answers for. Actors and
+terms can be imported from a spreadsheet, after the country's areas and offices. A term row names
+its actor, office, area, party and successor by slug or by name, and matches an existing term by
+actor, office, area and start date.
+
 ### 7.4 Claim types and rating scales
 
 **Claim types**
@@ -1615,10 +1621,13 @@ the Docker image is built without one. So the site uses Next.js's tagged data ca
 | `country:{code}` | The country or its figures change |
 | `countries` | Any country is added, changed or removed, for lists of countries |
 | `places:{code}` | Any of the country's areas or offices change, for area pages and lists |
-| `actor:{id}` | The actor, or a claim naming it, changes |
+| `actors:{code}` | Any of the country's actors or terms change, for actor pages, seats, area pages, the officials list and the country page |
 | `claim:{id}` | The claim or one of its updates changes |
 | `ratings` | A rating scale changes |
 | `site` | Site settings or picks change |
+
+Pages that name office holders also expire after an hour. A term starts and ends on its dates,
+with no save to refresh the pages it changes (D53).
 
 A change refreshes its tags at once, as part of the same save. The save calls an internal route on
 the web process, `/api/internal/revalidate`, which refreshes the tags there. A background job in
@@ -1759,6 +1768,10 @@ codemods, and passes the full test suite before merging.
 | D48 | The first super-admin is created from environment variables. D43 stands |
 | D49 | Spreadsheet importers only read files. The core maps, previews and saves |
 | D50 | The site caches with Next.js's tagged data cache, not cache components, so the build never needs the database |
+| D51 | A term's stage is worked out from its dates when read, never stored. An actor stores the start of their first term, `onRecordSince`, so a query can tell whether a person is on the record today |
+| D52 | The rule that an actor needs a current or past term applies to people. Parties and institutions hold no terms, so they are public once ready |
+| D53 | Pages that name office holders expire hourly, besides refreshing on a change, so a term that starts or ends on its date shows within the hour |
+| D54 | Until claims exist, "Who is delivering" lists the highest current office holders without figures, and "Officials" links to the officials list by office. The key claim and the record so far arrive with claims |
 
 ### 20.2 Why
 
