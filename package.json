@@ -27,9 +27,11 @@
     "test:e2e": "playwright test",
     "services": "node scripts/compose.mjs up -d",
     "stack": "node scripts/compose.mjs --profile app up -d --build",
-    "services:down": "node scripts/compose.mjs down"
+    "services:down": "node scripts/compose.mjs down",
+    "spec:pdf": "node scripts/spec-pdf.mjs"
   },
   "devDependencies": {
+    "@axe-core/playwright": "catalog:",
     "@biomejs/biome": "catalog:",
     "@biomejs/js-api": "catalog:",
     "@biomejs/wasm-nodejs": "catalog:",
@@ -41,6 +43,7 @@
     "@promisetracker/plugin-core": "workspace:*",
     "@promisetracker/plugin-site": "workspace:*",
     "@promisetracker/sdk": "workspace:*",
+    "@promisetracker/ui": "workspace:*",
     "@types/node": "catalog:",
     "lefthook": "catalog:",
     "payload": "catalog:",

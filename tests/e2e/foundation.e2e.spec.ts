@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test'
 
 test('the home page shows the site name stored in Payload', async ({ page }) => {
-  await page.goto('/')
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('PromiseTracker')
+  await page.goto('/en')
+  await expect(page.getByRole('link', { name: 'PromiseTracker home' })).toBeVisible()
+  await expect(page.getByRole('img', { name: 'PromiseTracker' }).first()).toBeVisible()
 })
 
 test('the health check reports the database and file storage', async ({ request }) => {
@@ -15,7 +16,7 @@ test('the health check reports the database and file storage', async ({ request 
 })
 
 test('the API serves the same data the page shows', async ({ request }) => {
-  const res = await request.get('/api/v1/site')
+  const res = await request.get('/api/v1/site?locale=en')
   expect(res.ok()).toBe(true)
   expect(await res.json()).toMatchObject({ name: 'PromiseTracker' })
   expect((await request.get('/api/v1/unknown')).status()).toBe(404)
@@ -89,6 +90,6 @@ test.describe("Payload's REST routes are closed to guests", () => {
   })
 
   test('the public API still answers guests', async ({ request }) => {
-    expect((await request.get('/api/v1/site')).ok()).toBe(true)
+    expect((await request.get('/api/v1/site?locale=en')).ok()).toBe(true)
   })
 })

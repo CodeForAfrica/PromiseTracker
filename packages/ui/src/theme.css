@@ -1,0 +1,49 @@
+/*
+ * Theme tokens for the default site (section 10.6). Colours, type and spacing
+ * live here, so a deployment can restyle the site by overriding these values.
+ * Import after Tailwind: @import "tailwindcss"; @import "@promisetracker/ui/theme.css";
+ */
+@theme {
+  /* Code for Africa's desktop width: the full country nav shows from 1152px. */
+  --breakpoint-nav: 72rem;
+
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+
+  --color-ink: #16181c;
+  --color-ink-2: #464a50;
+  --color-muted: #63666d;
+  --color-faint: #8e939c;
+  --color-subtle: #8c9099;
+  --color-slate: #6a6f7a;
+  --color-line: #d6dae0;
+  --color-line-2: #e4e7eb;
+  --color-line-soft: #eaecef;
+  --color-surface: #f4f5f7;
+  --color-tile: #edeff2;
+  --color-link: #1b4fd8;
+  --color-link-hover: #17694e;
+  --color-verified: #17694e;
+  --color-verified-ink: #0f5038;
+
+  --ease-out-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-white font-sans text-ink antialiased;
+    text-wrap: pretty;
+    font-variant-numeric: tabular-nums;
+  }
+  a {
+    @apply text-link no-underline;
+  }
+  a:hover {
+    @apply text-link-hover;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-link;
+  }
+}

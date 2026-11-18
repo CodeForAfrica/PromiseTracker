@@ -11,18 +11,32 @@ describe('foundation', () => {
 
   afterAll(async () => {
     const payload = await getPayload()
-    await payload.updateGlobal({ slug: 'site', data: { tagline: null }, overrideAccess: true })
+    await payload.updateGlobal({
+      slug: 'site',
+      locale: 'en',
+      data: { description: null },
+      overrideAccess: true,
+    })
     // Close the database pool so the test run can exit.
     await payload.destroy()
   })
 
   it('reads a value stored in Postgres through the SDK, anonymously, with access rules on', async () => {
     const payload = await getPayload()
-    const tagline = `Tracked on ${new Date().toISOString()}`
+    const description = `Tracked on ${new Date().toISOString()}`
     // Tests write as the system, without a signed-in user.
-    await payload.updateGlobal({ slug: 'site', data: { tagline }, overrideAccess: true })
+    await payload.updateGlobal({
+      slug: 'site',
+      locale: 'en',
+      data: { description },
+      overrideAccess: true,
+    })
 
-    await expect(sdk.getSiteInfo()).resolves.toEqual({ name: 'PromiseTracker', tagline })
+    await expect(sdk.getSiteInfo('en')).resolves.toMatchObject({
+      name: 'PromiseTracker',
+      locale: 'en',
+      description,
+    })
   })
 
   it('reports the database and file storage as healthy', async () => {

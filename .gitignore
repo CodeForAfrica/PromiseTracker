@@ -40,3 +40,6 @@ countries.json
 /*.pdf
 /PromiseTracker v3 specification.md
 docs/spec/promisetracker-v3-revision-proposal.md
+
+# Written by the browser tests' seed
+tests/e2e/.seed.json

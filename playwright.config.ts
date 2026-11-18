@@ -7,6 +7,7 @@ const baseURL = externalUrl ?? 'http://localhost:3000'
 export default defineConfig({
   testDir: './tests/e2e',
   testMatch: '**/*.e2e.spec.ts',
+  globalSetup: './tests/e2e/global-setup.ts',
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
   workers: 1,
@@ -22,6 +23,8 @@ export default defineConfig({
           url: `${baseURL}/api/health/ready`,
           reuseExistingServer: !process.env.CI,
           timeout: 180_000,
+          // French and Arabic too, so the tests cover a second language and a right-to-left one.
+          env: { PT_LOCALES: 'en,fr,ar' },
         },
       }),
 })

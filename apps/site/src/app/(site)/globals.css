@@ -1,0 +1,5 @@
+@import "tailwindcss";
+@import "@promisetracker/ui/theme.css";
+
+/* The components live in the UI package, outside this app's folder. */
+@source "../../../../../packages/ui/src";

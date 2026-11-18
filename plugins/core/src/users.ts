@@ -2,6 +2,7 @@ import type { CollectionConfig, PayloadRequest } from 'payload'
 import { APIError } from 'payload'
 
 import { can, signedIn } from './access'
+import { ADMIN_GROUPS } from './adminGroups'
 import { ROLES, rolesIn } from './roles'
 
 const COUNTRY_CODE = /^[a-z]{2}$/
@@ -36,7 +37,11 @@ async function anotherSuperAdminExists(req: PayloadRequest, id: unknown): Promis
  */
 export const Users: CollectionConfig = {
   slug: 'users',
-  admin: { useAsTitle: 'email', defaultColumns: ['name', 'email', 'roles'] },
+  admin: {
+    group: ADMIN_GROUPS.administration,
+    useAsTitle: 'email',
+    defaultColumns: ['name', 'email', 'roles'],
+  },
   auth: {
     useSessions: true,
     // Editors stay signed in across the working day without typing a password again.

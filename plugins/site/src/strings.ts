@@ -1,0 +1,70 @@
+import type { Strings } from '@promisetracker/contract'
+
+/**
+ * The interface text in English and French (section 10.5). An editor's text
+ * for a language, saved in the site settings, wins over these. A language
+ * with neither uses English.
+ */
+export const DEFAULT_STRINGS: { en: Strings; fr: Strings } = {
+  en: {
+    skipToContent: 'Skip to content',
+    home: 'PromiseTracker home',
+    verified: 'Verified by PromiseTracker',
+    countriesNav: 'Countries',
+    otherCountries: 'Other countries',
+    menu: 'Menu',
+    closeMenu: 'Close menu',
+    language: 'Language',
+    headline: 'A record of what those elected to office promised,',
+    headlineTail: 'and what they actually delivered.',
+    lede: 'Every promise is sourced from a cited document and assessed against public evidence. You can send in evidence, a correction or a note that something has changed. An editor decides what changes the record.',
+    aboutSite: 'What is PromiseTracker?',
+    chooseCountry: 'Choose a country',
+    notAvailableTitle: 'This page is not available in English yet',
+    notAvailableBody: 'It is published in:',
+    notFoundTitle: 'This page is not on the record',
+    notFoundBody: 'The link may be old, or the page may have moved.',
+    backHome: 'Back to the homepage',
+    footerNav: 'Footer',
+    initiative: 'An initiative of',
+    copyright: 'Copyright 2026 Code for Africa',
+  },
+  fr: {
+    skipToContent: 'Aller au contenu',
+    home: 'Accueil PromiseTracker',
+    verified: 'Vérifié par PromiseTracker',
+    countriesNav: 'Pays',
+    otherCountries: 'Autres pays',
+    menu: 'Menu',
+    closeMenu: 'Fermer le menu',
+    language: 'Langue',
+    headline: 'Un registre de ce que les élus ont promis,',
+    headlineTail: 'et de ce qu’ils ont réellement livré.',
+    lede: 'Chaque promesse provient d’un document cité et est évaluée à partir de preuves publiques. Vous pouvez envoyer une preuve, une correction ou signaler un changement. C’est un rédacteur qui décide de ce qui modifie le registre.',
+    aboutSite: 'Qu’est-ce que PromiseTracker ?',
+    chooseCountry: 'Choisir un pays',
+    notAvailableTitle: 'Cette page n’est pas encore disponible en français',
+    notAvailableBody: 'Elle est publiée en :',
+    notFoundTitle: 'Cette page n’est pas au registre',
+    notFoundBody: 'Le lien est peut-être ancien, ou la page a changé d’adresse.',
+    backHome: 'Retour à l’accueil',
+    footerNav: 'Pied de page',
+    initiative: 'Une initiative de',
+    copyright: 'Copyright 2026 Code for Africa',
+  },
+}
+
+/** The text for one language: the editor's, then the default for that language, then English. */
+export function resolveStrings(
+  locale: string,
+  saved: Readonly<Partial<Record<keyof Strings, string | null | undefined>>> | null | undefined,
+): Strings {
+  const defaults: Strings = locale === 'fr' ? DEFAULT_STRINGS.fr : DEFAULT_STRINGS.en
+  const english = DEFAULT_STRINGS.en
+  const result = { ...english }
+  for (const key of Object.keys(english) as (keyof Strings)[]) {
+    const own = saved?.[key]
+    result[key] = typeof own === 'string' && own.trim() ? own : defaults[key]
+  }
+  return result
+}

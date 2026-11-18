@@ -31,8 +31,7 @@ ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
 COPY --from=builder --chown=nextjs:nodejs /app/apps/site/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/site/.next/static ./apps/site/.next/static
-# The site has no public/ folder yet. When one is added, copy it here too:
-# COPY --from=builder --chown=nextjs:nodejs /app/apps/site/public ./apps/site/public
+COPY --from=builder --chown=nextjs:nodejs /app/apps/site/public ./apps/site/public
 COPY --chmod=755 docker/entrypoint.sh /usr/local/bin/promisetracker
 USER nextjs
 EXPOSE 3000
