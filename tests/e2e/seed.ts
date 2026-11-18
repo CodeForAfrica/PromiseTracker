@@ -7,7 +7,7 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { getPayload } from '@promisetracker/cms'
-import { countryName, csvImporter, runImportPlan } from '@promisetracker/plugin-core'
+import { countryName, csvImporter, guessMapping, runImportPlan } from '@promisetracker/plugin-core'
 
 import { unusedCountryCodes } from '../countries'
 
@@ -25,7 +25,7 @@ if (process.argv.includes('--remove')) {
   if (existsSync(file)) {
     const seed = JSON.parse(readFileSync(file, 'utf8')) as Seed
     // Test set-up writes as the system, and removes only what it added.
-    for (const collection of ['areas', 'offices'] as const) {
+    for (const collection of ['terms', 'actors', 'areas', 'offices'] as const) {
       await payload.delete({
         collection,
         where: { country: { equals: seed.full.id } },
@@ -66,11 +66,14 @@ if (process.argv.includes('--remove')) {
       overrideAccess: true,
     })
   }
-  // The Kenyan areas and offices, so the full country has area pages.
+  // The Kenyan areas and offices, so the full country has area pages, and
+  // fictional office holders, one of whom has left office.
   const fixtures = path.resolve(import.meta.dirname, '../fixtures')
   for (const [target, name] of [
     ['offices', 'kenya-offices.csv'],
     ['areas', 'kenya-areas.csv'],
+    ['actors', 'kenya-actors.csv'],
+    ['terms', 'kenya-terms.csv'],
   ] as const) {
     const content = {
       filename: name,
@@ -83,13 +86,15 @@ if (process.argv.includes('--remove')) {
     const mapping =
       target === 'areas'
         ? { name: 'Name', type: 'Type', parent: 'Parent' }
-        : {
-            name: 'Name',
-            shortName: 'Short name',
-            slug: 'Slug',
-            areaType: 'Area type',
-            order: 'Order',
-          }
+        : target === 'offices'
+          ? {
+              name: 'Name',
+              shortName: 'Short name',
+              slug: 'Slug',
+              areaType: 'Area type',
+              order: 'Order',
+            }
+          : guessMapping(target, headings)
     const { errors } = await runImportPlan(payload, {
       target,
       country: a.id,
@@ -100,6 +105,13 @@ if (process.argv.includes('--remove')) {
     })
     if (errors.length) throw new Error(`Seeding ${name} failed: ${JSON.stringify(errors)}`)
   }
+  // An editor releases each actor. The seed releases them all.
+  await payload.update({
+    collection: 'actors',
+    where: { country: { equals: a.id } },
+    data: { recordStatus: 'ready' },
+    overrideAccess: true,
+  })
   const seed: Seed = {
     full: { id: a.id, code: full, en: countryName(full, 'en'), fr: countryName(full, 'fr') },
     englishOnly: { id: b.id, code: englishOnly, en: countryName(englishOnly, 'en') },

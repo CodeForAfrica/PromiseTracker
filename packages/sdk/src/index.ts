@@ -1,5 +1,7 @@
-import type { Area, Country, NotAvailable } from '@promisetracker/contract'
+import type { Actor, Area, Country, NotAvailable, Redirect } from '@promisetracker/contract'
 import {
+  ActorList,
+  Actor as ActorSchema,
   AreaList,
   Area as AreaSchema,
   CountryList,
@@ -7,8 +9,22 @@ import {
   isNotAvailable,
   NotAvailable as NotAvailableSchema,
   OfficeList,
+  Redirect as RedirectSchema,
+  SeatHolders,
   SiteInfo,
 } from '@promisetracker/contract'
+
+/** The filters and order of an actor list (section 12.1). */
+export type ActorQuery = {
+  kind?: 'person' | 'party' | 'institution' | undefined
+  stage?: 'current' | 'past' | undefined
+  office?: string | undefined
+  area?: string | undefined
+  party?: string | undefined
+  sort?: 'name' | 'office' | undefined
+  cursor?: string | undefined
+  limit?: number | undefined
+}
 
 /**
  * Moves a request for an API path to wherever the API runs. The local
@@ -92,6 +108,42 @@ export function createSdk(transport: Transport) {
     async getArea(locale: string, code: string, area: string): Promise<Area | NotAvailable> {
       const result = await get(`${cc(code)}/areas/${encodeURIComponent(area)}`, locale)
       return isNotAvailable(result) ? NotAvailableSchema.parse(result) : AreaSchema.parse(result)
+    },
+    /** A seat's holders today. A national seat has no area. */
+    async getSeat(
+      locale: string,
+      code: string,
+      office: string,
+      area?: string,
+    ): Promise<SeatHolders | NotAvailable> {
+      const path = area
+        ? `${cc(code)}/seats/${encodeURIComponent(area)}/${encodeURIComponent(office)}`
+        : `${cc(code)}/seats/${encodeURIComponent(office)}`
+      const result = await get(path, locale)
+      return isNotAvailable(result) ? NotAvailableSchema.parse(result) : SeatHolders.parse(result)
+    },
+    /** A country's actors, filtered and sorted. */
+    async getActors(locale: string, code: string, query: ActorQuery = {}): Promise<ActorList> {
+      const params = Object.fromEntries(
+        Object.entries(query)
+          .filter(([, value]) => value !== undefined && value !== '')
+          .map(([key, value]) => [key, String(value)]),
+      )
+      return ActorList.parse(await get(`${cc(code)}/actors`, locale, params))
+    },
+    /** One actor with their terms, or the languages their country is published in. */
+    async getActor(locale: string, code: string, slug: string): Promise<Actor | NotAvailable> {
+      const result = await get(`${cc(code)}/actors/${encodeURIComponent(slug)}`, locale)
+      return isNotAvailable(result) ? NotAvailableSchema.parse(result) : ActorSchema.parse(result)
+    },
+    /** Where an address leads, or null when it leads nowhere else (section 11.2). */
+    async getRedirect(locale: string, path: string): Promise<Redirect | null> {
+      try {
+        return RedirectSchema.parse(await get('/redirects', locale, { path }))
+      } catch (error) {
+        if (error instanceof NotFoundError) return null
+        throw error
+      }
     },
   }
 }

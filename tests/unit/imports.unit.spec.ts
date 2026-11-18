@@ -10,6 +10,7 @@ import {
   planRow,
   slugify,
   slugProblem,
+  termStage,
   xlsxImporter,
 } from '@promisetracker/plugin-core'
 import { describe, expect, it } from 'vitest'
@@ -120,6 +121,7 @@ describe('checking a row', () => {
       data: { name: 'Murang’a County', type: 'county' },
       translations: { fr: { name: 'Comté de Murang’a' } },
       parent: 'kenya',
+      refs: {},
       errors: [],
     })
   })
@@ -189,5 +191,59 @@ describe('area outlines (section 7.2)', () => {
     expect(geoJsonProblem(bytes({ type: 'Point', coordinates: [36.8, -1.3] }))).toContain(
       'not a GeoJSON outline',
     )
+  })
+})
+
+describe('terms (section 7.3)', () => {
+  const now = new Date('2026-11-18T12:00:00Z')
+
+  it('works out a term’s stage from its dates', () => {
+    expect(termStage({ startsOn: '2030-01-01T00:00:00.000Z' }, now)).toBe('candidate')
+    expect(termStage({ startsOn: '2022-08-25T00:00:00.000Z' }, now)).toBe('current')
+    expect(
+      termStage({ startsOn: '2022-08-25T00:00:00.000Z', endsOn: '2027-08-25T00:00:00.000Z' }, now),
+    ).toBe('current')
+    expect(
+      termStage({ startsOn: '2017-08-21T00:00:00.000Z', endsOn: '2022-08-25T00:00:00.000Z' }, now),
+    ).toBe('past')
+    expect(termStage({}, now)).toBe('candidate')
+  })
+
+  it('counts a term’s first and last days in full, whatever time they were saved at', () => {
+    const morning = new Date('2026-11-18T00:30:00Z')
+    const night = new Date('2026-11-18T23:30:00Z')
+    for (const at of [morning, night]) {
+      expect(termStage({ startsOn: '2026-11-18T12:00:00.000Z' }, at)).toBe('current')
+      expect(
+        termStage({ startsOn: '2020-01-01T00:00:00.000Z', endsOn: '2026-11-18T00:00:00.000Z' }, at),
+      ).toBe('current')
+      expect(
+        termStage({ startsOn: '2020-01-01T12:00:00.000Z', endsOn: '2026-11-17T12:00:00.000Z' }, at),
+      ).toBe('past')
+      expect(termStage({ startsOn: '2026-11-19T00:00:00.000Z' }, at)).toBe('candidate')
+    }
+  })
+
+  it('reads a term row, with dates and the records it names', () => {
+    const headings = ['Actor', 'Office', 'Area', 'Starts on', 'Ends on']
+    const mapping = guessMapping('terms', headings)
+    const plan = planRow(
+      'terms',
+      headings,
+      mapping,
+      ['Achieng Wekesa', 'Governor', 'Nairobi County', '2022-08-25', ''],
+      2,
+    )
+    expect(plan).toMatchObject({
+      slug: '',
+      errors: [],
+      data: { startsOn: '2022-08-25T12:00:00.000Z' },
+      refs: { actor: 'achieng-wekesa', office: 'governor', area: 'nairobi-county' },
+    })
+    const bad = planRow('terms', headings, mapping, ['', 'Governor', '', '25/08/2022', ''], 3)
+    expect(bad.errors).toEqual([
+      'Actor is empty.',
+      'Starts on "25/08/2022" is not a date written as YYYY-MM-DD.',
+    ])
   })
 })

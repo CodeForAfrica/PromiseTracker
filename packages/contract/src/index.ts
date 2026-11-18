@@ -29,6 +29,29 @@ export const STRING_KEYS = [
   'seatsInArea',
   'breadcrumb',
   'notAvailableBody',
+  'officials',
+  'seeAllOfficials',
+  'whoIsDelivering',
+  'pastAdministrations',
+  'whoThisIs',
+  'timeInOffice',
+  'present',
+  'closingSummary',
+  'succeededBy',
+  'formerHolder',
+  'noHolder',
+  'links',
+  'photoCredit',
+  'filterOffice',
+  'filterArea',
+  'filterParty',
+  'filterAll',
+  'sortBy',
+  'sortName',
+  'sortOffice',
+  'showResults',
+  'noMatches',
+  'nextPage',
   'notFoundTitle',
   'notFoundBody',
   'backHome',
@@ -91,6 +114,13 @@ export type CountryList = z.infer<typeof CountryList>
 export const Country = CountrySummary.extend({
   about: z.string().nullable(),
   defaultLanguage: z.string().nullable(),
+  /** What the rules for the country page's sections need (section 10.3). */
+  counts: z.object({
+    /** People holding an office today. */
+    currentHolders: z.number().int().nonnegative(),
+    /** Terms that have ended. */
+    pastTerms: z.number().int().nonnegative(),
+  }),
 })
 export type Country = z.infer<typeof Country>
 
@@ -124,12 +154,105 @@ export const AreaList = z.object({
 })
 export type AreaList = z.infer<typeof AreaList>
 
-/** A seat: an area plus an office. Its holders arrive with terms (#646). */
+export const ACTOR_KINDS = ['person', 'party', 'institution'] as const
+export const TERM_STAGES = ['candidate', 'current', 'past'] as const
+
+/** A public image, such as an actor's photo. */
+export const Image = z.object({
+  url: z.string().min(1),
+  alt: z.string(),
+  credit: z.string().nullable(),
+})
+export type Image = z.infer<typeof Image>
+
+/** An actor named on another record: a holder, a party or a successor. */
+export const ActorRef = z.object({
+  slug: z.string().min(1),
+  name: z.string().min(1),
+  kind: z.enum(ACTOR_KINDS),
+})
+export type ActorRef = z.infer<typeof ActorRef>
+
+const OfficeRef = Office.pick({ slug: true, name: true, shortName: true })
+
+/** Where an actor sits: an office, and the area for offices that have one. */
+export const SeatRef = z.object({ office: OfficeRef, area: AreaSummary.nullable() })
+export type SeatRef = z.infer<typeof SeatRef>
+
+/** Someone holding a seat today. */
+export const Holder = ActorRef.extend({
+  image: Image.nullable(),
+  party: ActorRef.nullable(),
+})
+export type Holder = z.infer<typeof Holder>
+
+/** A seat: an area plus an office, with its holders today (section 7.2). */
 export const Seat = z.object({
-  office: Office.pick({ slug: true, name: true, shortName: true }),
+  office: OfficeRef,
   holdersPerSeat: z.number().int().positive(),
+  holders: z.array(Holder),
 })
 export type Seat = z.infer<typeof Seat>
+
+/** `GET /api/v1/countries/{cc}/seats/{area}/{office}`, or `/seats/{office}` for a national one. */
+export const SeatHolders = Seat.extend({ area: AreaSummary.nullable() })
+export type SeatHolders = z.infer<typeof SeatHolders>
+
+/** An actor in a list. `seats` are the ones held today. */
+export const ActorSummary = Holder.extend({
+  /** Current while they hold a seat. Past once every term has ended (section 7.3). */
+  stage: z.enum(['current', 'past']),
+  seats: z.array(SeatRef),
+})
+export type ActorSummary = z.infer<typeof ActorSummary>
+
+/**
+ * `GET /api/v1/countries/{cc}/actors`.
+ *
+ * - `stage=current` lists those holding a seat today, and `stage=past` those
+ *   who held one before. Parties and institutions hold no seats, so they
+ *   appear only in a list with no stage, where their stage is `current`.
+ * - `nextCursor` is an offset. A term that starts or ends between two
+ *   requests can shift the list by one.
+ */
+export const ActorList = z.object({
+  items: z.array(ActorSummary),
+  total: z.number().int().nonnegative(),
+  nextCursor: z.string().nullable(),
+})
+export type ActorList = z.infer<typeof ActorList>
+
+/** An actor's time in a seat (section 7.3). Dates are YYYY-MM-DD. */
+export const Term = SeatRef.extend({
+  party: ActorRef.nullable(),
+  electedOn: z.string().nullable(),
+  startsOn: z.string(),
+  endsOn: z.string().nullable(),
+  stage: z.enum(TERM_STAGES),
+  closingSummary: z.string().nullable(),
+  successor: ActorRef.nullable(),
+})
+export type Term = z.infer<typeof Term>
+
+/** `GET /api/v1/countries/{cc}/actors/{slug}`. */
+export const Actor = ActorSummary.extend({
+  shortName: z.string().nullable(),
+  honorific: z.string().nullable(),
+  institutionType: z.string().nullable(),
+  biography: z.string().nullable(),
+  links: z.array(z.object({ type: z.string(), url: z.string() })),
+  /** Every term, the latest first. Terms not yet started are left out. */
+  terms: z.array(Term),
+})
+export type Actor = z.infer<typeof Actor>
+
+/**
+ * `GET /api/v1/redirects?path=`: where an address leads, for a former slug
+ * (permanent) or a seat with one holder (temporary) (section 11.2). The path
+ * has no language, such as `/ke/nairobi-county/governor`, and so has `to`.
+ */
+export const Redirect = z.object({ to: z.string().startsWith('/'), permanent: z.boolean() })
+export type Redirect = z.infer<typeof Redirect>
 
 /** `GET /api/v1/countries/{cc}/areas/{area}`. */
 export const Area = AreaSummary.extend({

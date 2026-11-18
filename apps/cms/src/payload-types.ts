@@ -156,6 +156,8 @@ export interface Config {
   };
   blocks: {};
   collections: {
+    actors: Actor;
+    terms: Term;
     countries: Country;
     areas: Area;
     offices: Office;
@@ -171,8 +173,27 @@ export interface Config {
     'payload-migrations': PayloadMigration;
     'payload-llm-instructions': PayloadLlmInstruction;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    actors: {
+      terms: 'terms';
+      partyTerms: 'terms';
+    };
+    countries: {
+      areas: 'areas';
+      offices: 'offices';
+      actors: 'actors';
+    };
+    areas: {
+      children: 'areas';
+      terms: 'terms';
+    };
+    offices: {
+      terms: 'terms';
+    };
+  };
   collectionsSelect: {
+    actors: ActorsSelect<false> | ActorsSelect<true>;
+    terms: TermsSelect<false> | TermsSelect<true>;
     countries: CountriesSelect<false> | CountriesSelect<true>;
     areas: AreasSelect<false> | AreasSelect<true>;
     offices: OfficesSelect<false> | OfficesSelect<true>;
@@ -245,75 +266,46 @@ export interface UserAuthOperations {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "countries".
+ * via the `definition` "actors".
  */
-export interface Country {
+export interface Actor {
   id: string;
-  code:
-    | 'dz'
-    | 'ao'
-    | 'bj'
-    | 'bw'
-    | 'bf'
-    | 'bi'
-    | 'cm'
-    | 'cv'
-    | 'cf'
-    | 'td'
-    | 'km'
-    | 'ci'
-    | 'cd'
-    | 'dj'
-    | 'eg'
-    | 'gq'
-    | 'er'
-    | 'sz'
-    | 'et'
-    | 'ga'
-    | 'gm'
-    | 'gh'
-    | 'gn'
-    | 'gw'
-    | 'ke'
-    | 'ls'
-    | 'lr'
-    | 'ly'
-    | 'mg'
-    | 'mw'
-    | 'ml'
-    | 'mr'
-    | 'mu'
-    | 'ma'
-    | 'mz'
-    | 'na'
-    | 'ne'
-    | 'ng'
-    | 'cg'
-    | 'rw'
-    | 'st'
-    | 'sn'
-    | 'sc'
-    | 'sl'
-    | 'so'
-    | 'za'
-    | 'ss'
-    | 'sd'
-    | 'tz'
-    | 'tg'
-    | 'tn'
-    | 'ug'
-    | 'zm'
-    | 'zw';
-  codeShown?: string | null;
-  name?: string | null;
-  region?: ('east-africa' | 'west-africa' | 'central-africa' | 'southern-africa' | 'north-africa') | null;
-  languages?: ('en' | 'fr' | 'pt' | 'ar' | 'sw')[] | null;
-  defaultLanguage?: ('en' | 'fr' | 'pt' | 'ar' | 'sw') | null;
-  about?: string | null;
+  name: string;
+  kind: 'person' | 'party' | 'institution';
+  shortName?: string | null;
+  honorific?: string | null;
+  gender?: ('female' | 'male' | 'non-binary') | null;
+  institutionType?: ('ministry' | 'agency' | 'department' | 'commission' | 'state-corporation' | 'other') | null;
+  image?: (string | null) | Media;
+  imageCredit?: string | null;
+  biography?: string | null;
+  links?:
+    | {
+        type: 'website' | 'facebook' | 'x' | 'instagram' | 'youtube' | 'tiktok' | 'linkedin' | 'other';
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
   /**
-   * The area for the whole country. Set when that area is added.
+   * Made from the name when you save. Used in addresses, such as /en/ke/nairobi-county.
    */
-  rootArea?: (string | null) | Area;
+  slug?: string | null;
+  country: string | Country;
+  formerSlugs?: string[] | null;
+  /**
+   * When the first term starts. The actor is public from then.
+   */
+  onRecordSince?: string | null;
+  terms?: {
+    docs?: (string | Term)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  partyTerms?: {
+    docs?: (string | Term)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   /**
    * Ready makes it public in each language that has its required fields.
    */
@@ -335,76 +327,11 @@ export interface Country {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "areas".
+ * via the `definition` "media".
  */
-export interface Area {
+export interface Media {
   id: string;
-  name: string;
-  /**
-   * Made from the name when you save. Used in addresses, such as /en/ke/nairobi-county.
-   */
-  slug?: string | null;
-  type: 'country' | 'region' | 'county' | 'constituency' | 'ward' | 'city' | 'other';
-  /**
-   * The area it sits in.
-   */
-  parent?: (string | null) | Area;
-  /**
-   * Automatic gives the area a page when two or more seats answer for it.
-   */
-  page: 'automatic' | 'always' | 'never';
-  country: string | Country;
-  externalCode?: string | null;
-  formerSlugs?: string[] | null;
-  geo?: {
-    latitude?: number | null;
-    longitude?: number | null;
-    /**
-     * West, south, east and north, in degrees, such as [36.6, -1.45, 37.1, -1.16].
-     */
-    bounds?:
-      | {
-          [k: string]: unknown;
-        }
-      | unknown[]
-      | string
-      | number
-      | boolean
-      | null;
-    /**
-     * A GeoJSON file from Boundaries, which records its source and licence.
-     */
-    outline?: (string | null) | Boundary;
-  };
-  createdBy?: {
-    relationTo: 'users';
-    value: string | User;
-  } | null;
-  updatedBy?: {
-    relationTo: 'users';
-    value: string | User;
-  } | null;
-  updatedAt: string;
-  createdAt: string;
-  _h_slugPath?: string | null;
-  _h_titlePath?: string | null;
-}
-/**
- * GeoJSON outlines of areas, for maps. Upload a .geojson file, then choose it on the area.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "boundaries".
- */
-export interface Boundary {
-  id: string;
-  /**
-   * Where the outline comes from, such as the IEBC or OpenStreetMap.
-   */
-  source: string;
-  /**
-   * Its licence, such as ODbL 1.0 or CC BY 4.0.
-   */
-  licence: string;
+  alt: string;
   createdBy?: {
     relationTo: 'users';
     value: string | User;
@@ -495,29 +422,98 @@ export interface User {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "offices".
+ * via the `definition` "countries".
  */
-export interface Office {
+export interface Country {
   id: string;
-  name: string;
-  shortName?: string | null;
+  code:
+    | 'dz'
+    | 'ao'
+    | 'bj'
+    | 'bw'
+    | 'bf'
+    | 'bi'
+    | 'cm'
+    | 'cv'
+    | 'cf'
+    | 'td'
+    | 'km'
+    | 'ci'
+    | 'cd'
+    | 'dj'
+    | 'eg'
+    | 'gq'
+    | 'er'
+    | 'sz'
+    | 'et'
+    | 'ga'
+    | 'gm'
+    | 'gh'
+    | 'gn'
+    | 'gw'
+    | 'ke'
+    | 'ls'
+    | 'lr'
+    | 'ly'
+    | 'mg'
+    | 'mw'
+    | 'ml'
+    | 'mr'
+    | 'mu'
+    | 'ma'
+    | 'mz'
+    | 'na'
+    | 'ne'
+    | 'ng'
+    | 'cg'
+    | 'rw'
+    | 'st'
+    | 'sn'
+    | 'sc'
+    | 'sl'
+    | 'so'
+    | 'za'
+    | 'ss'
+    | 'sd'
+    | 'tz'
+    | 'tg'
+    | 'tn'
+    | 'ug'
+    | 'zm'
+    | 'zw';
+  codeShown?: string | null;
+  name?: string | null;
+  region?: ('east-africa' | 'west-africa' | 'central-africa' | 'southern-africa' | 'north-africa') | null;
+  languages?: ('en' | 'fr' | 'pt' | 'ar' | 'sw')[] | null;
+  defaultLanguage?: ('en' | 'fr' | 'pt' | 'ar' | 'sw') | null;
+  about?: string | null;
   /**
-   * Made from the name when you save. Used in addresses, such as /en/ke/nairobi-county.
+   * The area for the whole country. Set when that area is added.
    */
-  slug?: string | null;
+  rootArea?: (string | null) | Area;
+  areas?: {
+    docs?: (string | Area)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  offices?: {
+    docs?: (string | Office)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  actors?: {
+    docs?: (string | Actor)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   /**
-   * The kind of area it answers for. Country for national offices, empty for offices with no area.
+   * Ready makes it public in each language that has its required fields.
    */
-  areaType?: ('country' | 'region' | 'county' | 'constituency' | 'ward' | 'city' | 'other') | null;
+  recordStatus: 'ready' | 'hold' | 'archived';
   /**
-   * More than one for seats with several members.
+   * Worked out on save. The languages this record is live in.
    */
-  holdersPerSeat: number;
-  /**
-   * Lower comes first. Put the highest office first.
-   */
-  order: number;
-  country: string | Country;
+  publishedIn?: string[] | null;
   createdBy?: {
     relationTo: 'users';
     value: string | User;
@@ -531,11 +527,86 @@ export interface Office {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media".
+ * via the `definition` "areas".
  */
-export interface Media {
+export interface Area {
   id: string;
-  alt: string;
+  name: string;
+  /**
+   * Made from the name when you save. Used in addresses, such as /en/ke/nairobi-county.
+   */
+  slug?: string | null;
+  type: 'country' | 'region' | 'county' | 'constituency' | 'ward' | 'city' | 'other';
+  /**
+   * The area it sits in.
+   */
+  parent?: (string | null) | Area;
+  /**
+   * Automatic gives the area a page when two or more seats answer for it.
+   */
+  page: 'automatic' | 'always' | 'never';
+  country: string | Country;
+  externalCode?: string | null;
+  formerSlugs?: string[] | null;
+  geo?: {
+    latitude?: number | null;
+    longitude?: number | null;
+    /**
+     * West, south, east and north, in degrees, such as [36.6, -1.45, 37.1, -1.16].
+     */
+    bounds?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+    /**
+     * A GeoJSON file from Boundaries, which records its source and licence.
+     */
+    outline?: (string | null) | Boundary;
+  };
+  children?: {
+    docs?: (string | Area)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  terms?: {
+    docs?: (string | Term)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  _h_slugPath?: string | null;
+  _h_titlePath?: string | null;
+}
+/**
+ * GeoJSON outlines of areas, for maps. Upload a .geojson file, then choose it on the area.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "boundaries".
+ */
+export interface Boundary {
+  id: string;
+  /**
+   * Where the outline comes from, such as the IEBC or OpenStreetMap.
+   */
+  source: string;
+  /**
+   * Its licence, such as ODbL 1.0 or CC BY 4.0.
+   */
+  licence: string;
   createdBy?: {
     relationTo: 'users';
     value: string | User;
@@ -572,6 +643,95 @@ export interface Media {
   focalY?: number | null;
 }
 /**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "terms".
+ */
+export interface Term {
+  id: string;
+  actor: string | Actor;
+  office: string | Office;
+  /**
+   * Empty for an office that answers for the whole country.
+   */
+  area?: (string | null) | Area;
+  /**
+   * The party during this term.
+   */
+  party?: (string | null) | Actor;
+  electedOn?: string | null;
+  startsOn: string;
+  /**
+   * Empty while in office.
+   */
+  endsOn?: string | null;
+  stage?: string | null;
+  /**
+   * What the term delivered. Written when it ends.
+   */
+  closingSummary?: string | null;
+  /**
+   * Who took the seat next.
+   */
+  successor?: (string | null) | Actor;
+  title?: string | null;
+  /**
+   * The actor’s country.
+   */
+  country?: (string | null) | Country;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "offices".
+ */
+export interface Office {
+  id: string;
+  name: string;
+  shortName?: string | null;
+  /**
+   * Made from the name when you save. Used in addresses, such as /en/ke/nairobi-county.
+   */
+  slug?: string | null;
+  /**
+   * The kind of area it answers for. Country for national offices, empty for offices with no area.
+   */
+  areaType?: ('country' | 'region' | 'county' | 'constituency' | 'ward' | 'city' | 'other') | null;
+  /**
+   * More than one for seats with several members.
+   */
+  holdersPerSeat: number;
+  /**
+   * Lower comes first. Put the highest office first.
+   */
+  order: number;
+  country: string | Country;
+  formerSlugs?: string[] | null;
+  terms?: {
+    docs?: (string | Term)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Upload a CSV or Excel file. Check the mapping, then choose Preview, and Import when the preview is right.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -580,7 +740,7 @@ export interface Media {
 export interface Import {
   id: string;
   country: string | Country;
-  recordType: 'areas' | 'offices';
+  recordType: 'areas' | 'offices' | 'actors' | 'terms';
   /**
    * Runs when you save.
    */
@@ -608,7 +768,30 @@ export interface Import {
           | 'shortName:sw'
           | 'areaType'
           | 'holdersPerSeat'
-          | 'order';
+          | 'order'
+          | 'kind'
+          | 'honorific'
+          | 'gender'
+          | 'institutionType'
+          | 'imageCredit'
+          | 'biography'
+          | 'biography:fr'
+          | 'biography:pt'
+          | 'biography:ar'
+          | 'biography:sw'
+          | 'actor'
+          | 'office'
+          | 'area'
+          | 'party'
+          | 'electedOn'
+          | 'startsOn'
+          | 'endsOn'
+          | 'successor'
+          | 'closingSummary'
+          | 'closingSummary:fr'
+          | 'closingSummary:pt'
+          | 'closingSummary:ar'
+          | 'closingSummary:sw';
         column: string;
         id?: string | null;
       }[]
@@ -711,7 +894,7 @@ export interface Import {
 export interface ImportMapping {
   id: string;
   name: string;
-  recordType: 'areas' | 'offices';
+  recordType: 'areas' | 'offices' | 'actors' | 'terms';
   /**
    * Field to column heading.
    */
@@ -870,6 +1053,14 @@ export interface PayloadLockedDocument {
   id: string;
   document?:
     | ({
+        relationTo: 'actors';
+        value: string | Actor;
+      } | null)
+    | ({
+        relationTo: 'terms';
+        value: string | Term;
+      } | null)
+    | ({
         relationTo: 'countries';
         value: string | Country;
       } | null)
@@ -967,6 +1158,62 @@ export interface PayloadLlmInstruction {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "actors_select".
+ */
+export interface ActorsSelect<T extends boolean = true> {
+  name?: T;
+  kind?: T;
+  shortName?: T;
+  honorific?: T;
+  gender?: T;
+  institutionType?: T;
+  image?: T;
+  imageCredit?: T;
+  biography?: T;
+  links?:
+    | T
+    | {
+        type?: T;
+        url?: T;
+        id?: T;
+      };
+  slug?: T;
+  country?: T;
+  formerSlugs?: T;
+  onRecordSince?: T;
+  terms?: T;
+  partyTerms?: T;
+  recordStatus?: T;
+  publishedIn?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "terms_select".
+ */
+export interface TermsSelect<T extends boolean = true> {
+  actor?: T;
+  office?: T;
+  area?: T;
+  party?: T;
+  electedOn?: T;
+  startsOn?: T;
+  endsOn?: T;
+  stage?: T;
+  closingSummary?: T;
+  successor?: T;
+  title?: T;
+  country?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "countries_select".
  */
 export interface CountriesSelect<T extends boolean = true> {
@@ -978,6 +1225,9 @@ export interface CountriesSelect<T extends boolean = true> {
   defaultLanguage?: T;
   about?: T;
   rootArea?: T;
+  areas?: T;
+  offices?: T;
+  actors?: T;
   recordStatus?: T;
   publishedIn?: T;
   createdBy?: T;
@@ -1006,6 +1256,8 @@ export interface AreasSelect<T extends boolean = true> {
         bounds?: T;
         outline?: T;
       };
+  children?: T;
+  terms?: T;
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;
@@ -1025,6 +1277,8 @@ export interface OfficesSelect<T extends boolean = true> {
   holdersPerSeat?: T;
   order?: T;
   country?: T;
+  formerSlugs?: T;
+  terms?: T;
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;
@@ -1372,6 +1626,29 @@ export interface Site {
     seatsInArea?: string | null;
     breadcrumb?: string | null;
     notAvailableBody?: string | null;
+    officials?: string | null;
+    seeAllOfficials?: string | null;
+    whoIsDelivering?: string | null;
+    pastAdministrations?: string | null;
+    whoThisIs?: string | null;
+    timeInOffice?: string | null;
+    present?: string | null;
+    closingSummary?: string | null;
+    succeededBy?: string | null;
+    formerHolder?: string | null;
+    noHolder?: string | null;
+    links?: string | null;
+    photoCredit?: string | null;
+    filterOffice?: string | null;
+    filterArea?: string | null;
+    filterParty?: string | null;
+    filterAll?: string | null;
+    sortBy?: string | null;
+    sortName?: string | null;
+    sortOffice?: string | null;
+    showResults?: string | null;
+    noMatches?: string | null;
+    nextPage?: string | null;
     notFoundTitle?: string | null;
     notFoundBody?: string | null;
     backHome?: string | null;
@@ -1456,6 +1733,29 @@ export interface SiteSelect<T extends boolean = true> {
         seatsInArea?: T;
         breadcrumb?: T;
         notAvailableBody?: T;
+        officials?: T;
+        seeAllOfficials?: T;
+        whoIsDelivering?: T;
+        pastAdministrations?: T;
+        whoThisIs?: T;
+        timeInOffice?: T;
+        present?: T;
+        closingSummary?: T;
+        succeededBy?: T;
+        formerHolder?: T;
+        noHolder?: T;
+        links?: T;
+        photoCredit?: T;
+        filterOffice?: T;
+        filterArea?: T;
+        filterParty?: T;
+        filterAll?: T;
+        sortBy?: T;
+        sortName?: T;
+        sortOffice?: T;
+        showResults?: T;
+        noMatches?: T;
+        nextPage?: T;
         notFoundTitle?: T;
         notFoundBody?: T;
         backHome?: T;
@@ -1507,7 +1807,16 @@ export interface CollectionQueryWidget {
   data?: {
     title?: string | null;
     relatedCollection:
-      'countries' | 'areas' | 'offices' | 'boundaries' | 'media' | 'imports' | 'import-mappings' | 'users';
+      | 'actors'
+      | 'terms'
+      | 'countries'
+      | 'areas'
+      | 'offices'
+      | 'boundaries'
+      | 'media'
+      | 'imports'
+      | 'import-mappings'
+      | 'users';
     where?:
       | {
           [k: string]: unknown;
@@ -1530,7 +1839,19 @@ export interface CollectionQueryWidget {
 export interface ActivityWidget {
   data?: {
     excludedCollections?:
-      ('countries' | 'areas' | 'offices' | 'boundaries' | 'media' | 'imports' | 'import-mappings' | 'users')[] | null;
+      | (
+          | 'actors'
+          | 'terms'
+          | 'countries'
+          | 'areas'
+          | 'offices'
+          | 'boundaries'
+          | 'media'
+          | 'imports'
+          | 'import-mappings'
+          | 'users'
+        )[]
+      | null;
   };
   width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }

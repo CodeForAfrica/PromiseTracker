@@ -11,6 +11,7 @@ const POOL: readonly CountryCode[] = ['st', 'km', 'sc', 'cv', 'gw', 'sz', 'ls', 
 export async function unusedCountryCodes(payload: Payload, count: number): Promise<CountryCode[]> {
   const { docs } = await payload.find({
     collection: 'countries',
+    joins: false,
     where: { code: { in: [...POOL] } },
     pagination: false,
     depth: 0,

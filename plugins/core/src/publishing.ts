@@ -118,6 +118,7 @@ export function withPublishing(
                 // Payload types collection slugs from the app's generated types,
                 // which a plugin cannot see, so this record type's slug is cast.
                 collection: collection.slug as never,
+                joins: false,
                 id: originalDoc.id,
                 locale: 'all',
                 depth: 0,

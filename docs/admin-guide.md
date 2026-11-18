@@ -11,15 +11,17 @@ explains the rules behind each step.
 3. Languages
 4. Countries
 5. Areas and offices
-6. Importing from a spreadsheet
-7. Area outlines
-8. Site settings
-9. When changes appear on the site
+6. Actors and terms
+7. Importing from a spreadsheet
+8. Area outlines
+9. Site settings
+10. When changes appear on the site
 
 The admin's menu groups record types by what they are for:
 
 | Group          | Holds                                             |
 | -------------- | ------------------------------------------------- |
+| People         | Actors, Terms                                     |
 | Places         | Countries, Areas, Offices, Boundaries             |
 | Media library  | Images, such as actor photos                      |
 | Imports        | Imports, Saved mappings                           |
@@ -106,7 +108,7 @@ is added, by import or by hand.
 
 **Areas** are a country's places, nested: the country, then its counties, then their
 constituencies, and so on. **Offices** are its titles, such as Governor or Member of Parliament.
-Importing them from a spreadsheet is quickest (section 6). Only super-admins manage them.
+Importing them from a spreadsheet is quickest (section 7). Only super-admins manage them.
 
 ### An area by hand
 
@@ -152,13 +154,94 @@ Places > Offices > Create New.
 An office with area type **country**, or none, is national: its address is `/{lang}/{cc}/{slug}`,
 such as `/en/ke/president`.
 
-## 6. Importing from a spreadsheet
+## 6. Actors and terms
+
+**Actors** are the people, parties and institutions the site tracks. **Terms** are an actor's time
+in a seat: an office, and the area for offices that have one. Editors, contributors and
+super-admins add them. Importing them from a spreadsheet is quickest (section 7).
+
+### An actor by hand
+
+People > Actors > Create New.
+
+| Field               | What to enter                                                      |
+| ------------------- | ------------------------------------------------------------------ |
+| Name                | Such as "Achieng Wekesa", or "Umoja Party"                         |
+| Kind                | person, party or institution                                       |
+| Short name          | Optional, such as a party's initials                               |
+| Honorific, Gender   | For a person. Such as "Hon." or "H.E."                             |
+| Institution type    | For an institution, such as ministry or agency                     |
+| Image, Image credit | A photo from the media library, and who took it                    |
+| Biography           | A few lines on who this is. One value per language                 |
+| Links               | Their official site and social accounts                            |
+| Country, Slug       | In the sidebar. The slug is made from the name when you save       |
+| Record Status       | In the sidebar. Starts on **hold**. Set it to **ready** to publish |
+
+A slug is unique in its country, across people, parties and institutions. The actor's address is
+`/{lang}/{cc}/e/{slug}`, such as `/en/ke/e/achieng-wekesa`. If you change a slug, the old address
+leads to the new one.
+
+**When a person appears on the site.** A person is public once they are ready and their first
+term has started. Someone whose only term starts later, a candidate, does not appear.
+**On Record Since**, in the sidebar, shows when that is. It is set from their terms. Parties and
+institutions appear once they are ready.
+
+**Related**, at the bottom of a saved actor, lists their terms, newest first. For a party it
+also lists the terms held for it. **Add new** there starts a term with the actor filled in.
+Offices list their holders, areas list the areas in them and their terms, and countries list
+their areas, offices and actors, in the same folded section.
+
+An actor named in a term cannot be deleted. Set it to **archived** instead, or change the terms
+first.
+
+### A term by hand
+
+People > Terms > Create New.
+
+| Field                          | What to enter                                                                                                                                                         |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Actor                          | Who held the seat                                                                                                                                                     |
+| Office, Area                   | The seat. Leave the area empty for a national office, such as President. Otherwise choose an area of the type the office answers for, such as a county for a governor |
+| Party                          | Their party during this term, an actor of kind party                                                                                                                  |
+| Elected on, Starts on, Ends on | Leave **Ends on** empty while they are in office                                                                                                                      |
+| Closing summary                | What the term delivered. Written when it ends. One value per language                                                                                                 |
+| Successor                      | Who took the seat next                                                                                                                                                |
+
+The actor, office, area, party and successor must all be in one country.
+
+**Stage**, in the sidebar, is worked out from the dates: **candidate** before the term starts,
+**current** during it, **past** once it has ended. It changes on its own as the dates pass.
+Dates are whole days in UTC: a term is current from the start of its first day to the end of its
+last, so in Kenya it changes at 03:00. The site shows the change within the hour.
+
+A seat holds as many people at once as its office's **Holders per seat**, usually one. A term
+that would overlap another in a full seat is refused: end the old term first. The new term may
+start on the day the old one ends. The check runs when a term is saved: two people saving terms for the
+same seat at the same moment could both get through, so check the seat afterwards.
+
+**When a term ends,** set **Ends on**, write the **Closing summary**, and choose the
+**Successor**. Then add the new holder's term. The seat's address, such as
+`/en/ke/nairobi-county/governor`, then leads to the new holder. The former holder keeps their
+page, marked as a former office holder, with the closing summary and a link to the successor.
+
+### What appears on the site
+
+- **Seat addresses** lead to whoever holds the seat today. A seat with several holders lists
+  them. An area with only one seat, such as a constituency with its MP, leads to that seat's holder.
+- **The officials list**, at `/{lang}/{cc}/officials`, lists everyone in office today. Readers
+  can filter it by office, area and party.
+- **The country page** shows "Who is delivering" and "Officials" when two or more people hold
+  office, and leads with the one holder when there is only one. "Past administrations" appears
+  once a term has ended.
+- **Area pages** name each seat's holders.
+
+## 7. Importing from a spreadsheet
 
 Imports > Imports > Create New.
 
 1. **Upload** a CSV or Excel file, up to 5 MB and 10,000 rows. Excel files are read from their first
    sheet.
-2. Choose the **Country** and what **The file holds**: areas or offices.
+2. Choose the **Country** and what **The file holds**: areas, offices, actors or terms.
 3. **Save.** The file is read, and the **Mapping** fills in: which column fills each field. It comes
    from a saved mapping whose columns all appear in the file, or from column headings named like the
    fields, such as "Name", "Type", "Parent", "Area type" or "Name (fr)".
@@ -206,10 +289,29 @@ Offices, one row per office:
 | President | President  | country   | 1                | 1     | Président  |
 | Governor  | Governor   | county    | 1                | 2     | Gouverneur |
 
-`tests/fixtures/kenya-areas.csv` and `tests/fixtures/kenya-offices.csv` in the repository are full
-examples.
+Actors, one row per actor. Import parties before the terms that name them:
 
-## 7. Area outlines
+| Name           | Kind   | Honorific | Gender | Biography            | Biography (fr)           |
+| -------------- | ------ | --------- | ------ | -------------------- | ------------------------ |
+| Umoja Party    | party  |           |        |                      |                          |
+| Achieng Wekesa | person |           | female | Governor since 2022. | Gouverneure depuis 2022. |
+
+Terms, one row per term. Import the areas, offices and actors first. Name each record by its name
+or its slug. Dates are written as YYYY-MM-DD:
+
+| Actor          | Office   | Area           | Party       | Starts on  | Ends on    | Successor      |
+| -------------- | -------- | -------------- | ----------- | ---------- | ---------- | -------------- |
+| Baraka Njoroge | Governor | Nairobi County | Umoja Party | 2017-08-21 | 2022-08-25 | Achieng Wekesa |
+| Achieng Wekesa | Governor | Nairobi County | Umoja Party | 2022-08-25 |            |                |
+
+A term row matches an existing term by its actor, office, area and start date, so importing the
+same file again updates rather than duplicates. Imported actors start on **hold**: set each to
+**ready** to publish it.
+
+`tests/fixtures/kenya-areas.csv`, `kenya-offices.csv`, `kenya-actors.csv` and `kenya-terms.csv` in
+the repository are full examples. The people in them are fictional.
+
+## 8. Area outlines
 
 An outline is the shape of an area on a map, kept for the maps in version 2. It is a **GeoJSON**
 file, usually ending in `.geojson`, not an image. Boundary data comes from sources such as a
@@ -224,7 +326,7 @@ country's electoral commission or OpenStreetMap, and many need crediting.
 The Map section also holds the area's centre, as latitude and longitude, and its bounds. All of it
 is optional.
 
-## 8. Site settings
+## 9. Site settings
 
 Public site > Site settings. Editors and super-admins can change these.
 
@@ -237,10 +339,13 @@ Public site > Site settings. Editors and super-admins can change these.
 These are per language: switch language at the top right to edit another. Interface text in a
 language with no translation shows in English.
 
-## 9. When changes appear on the site
+## 10. When changes appear on the site
 
 A saved change appears on the site at once: the pages it affects are refreshed when the save
 completes. If a page still shows old content, reload it once.
 
 A country appears only when it is **ready** and published in the visitor's language. Its areas and
 offices appear wherever the country does, in each language they have a name in.
+
+Pages that name office holders also refresh every hour, so a term that starts or ends on its date
+shows within the hour without anyone saving it.

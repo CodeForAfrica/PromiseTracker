@@ -16,6 +16,7 @@ import {
   isCountryCode,
   REGIONS,
 } from './countryList'
+import { related, relatedSection } from './joins'
 import { DEFAULT_LOCALE, isLocaleCode, REGISTERED_LOCALES } from './locales'
 import { readReadyOrStaff, withPublishing } from './publishing'
 
@@ -81,6 +82,7 @@ const fillNamesInEveryLanguage: CollectionAfterChangeHook = async ({
   const local = { ...req } as PayloadRequest
   const stored: unknown = await req.payload.findByID({
     collection: 'countries',
+    joins: false,
     id: doc.id,
     locale: 'all',
     depth: 0,
@@ -213,6 +215,33 @@ export const Countries: CollectionConfig = withPublishing(
           description: 'The area for the whole country. Set when that area is added.',
         },
       },
+      relatedSection(
+        related({
+          name: 'areas',
+          label: 'Areas',
+          collection: 'areas',
+          on: 'country',
+          // Payload cannot sort a join by a field with a value per language, such as the name.
+          defaultSort: 'slug',
+          columns: ['name', 'type', 'parent', 'slug'],
+        }),
+        related({
+          name: 'offices',
+          label: 'Offices',
+          collection: 'offices',
+          on: 'country',
+          defaultSort: 'order',
+          columns: ['name', 'shortName', 'areaType'],
+        }),
+        related({
+          name: 'actors',
+          label: 'Actors',
+          collection: 'actors',
+          on: 'country',
+          defaultSort: 'name',
+          columns: ['name', 'kind', 'recordStatus'],
+        }),
+      ),
     ],
   },
   ['name'],

@@ -1,5 +1,7 @@
 import type {
+  CollectionAfterChangeHook,
   CollectionBeforeChangeHook,
+  CollectionBeforeDeleteHook,
   CollectionBeforeValidateHook,
   CollectionConfig,
   PayloadRequest,
@@ -11,7 +13,10 @@ import { can, signedIn } from './access'
 import { ADMIN_GROUPS } from './adminGroups'
 import { afterCommit } from './afterCommit'
 import { refreshTags } from './cache'
+import { related, relatedSection } from './joins'
+import { DEFAULT_LOCALE } from './locales'
 import { slugify, slugProblem } from './slugs'
+import { termTitle } from './termTitle'
 
 /** The kinds of area in a country's nested list (section 7.2). */
 export const AREA_TYPES = [
@@ -28,7 +33,7 @@ export type AreaType = (typeof AREA_TYPES)[number]
 /** When an area has its own page (section 7.2). */
 export const AREA_PAGE = ['automatic', 'always', 'never'] as const
 
-const idOf = (value: unknown): string | null => {
+export const idOf = (value: unknown): string | null => {
   if (typeof value === 'string' && value) return value
   if (value && typeof value === 'object') {
     const id: unknown = Reflect.get(value, 'id')
@@ -42,11 +47,12 @@ const readPlaces = ({ req }: { req: PayloadRequest }): boolean | Where =>
   signedIn({ req }) || { 'country.recordStatus': { equals: 'ready' } }
 
 /** The country's code, for the cache tags of its places. */
-async function countryCode(req: PayloadRequest, country: unknown): Promise<string | null> {
+export async function countryCode(req: PayloadRequest, country: unknown): Promise<string | null> {
   const id = idOf(country)
   if (!id) return null
   const doc = await req.payload.findByID({
     collection: 'countries',
+    joins: false,
     id,
     depth: 0,
     // Reads the country's code only, to name the pages to refresh.
@@ -83,7 +89,7 @@ const refreshPlaces = async ({
 }
 
 /** A slug from the name when none is given. */
-const slugFromName: CollectionBeforeValidateHook = ({ data }) => {
+export const slugFromName: CollectionBeforeValidateHook = ({ data }) => {
   if (!data || data.slug) return data
   const name = typeof data.name === 'string' ? data.name : null
   return name ? { ...data, slug: slugify(name) } : data
@@ -166,6 +172,7 @@ const checkAreaPlace: CollectionBeforeChangeHook = async ({ data, originalDoc, r
   if (parent && country) {
     const parentDoc = await req.payload.findByID({
       collection: 'areas',
+      joins: false,
       id: parent,
       depth: 0,
       // Reads the parent's country, to keep a country's areas together.
@@ -198,12 +205,83 @@ const checkAreaPlace: CollectionBeforeChangeHook = async ({ data, originalDoc, r
 }
 
 /** The old slug is kept when a slug changes, so its address can redirect (section 11.2). */
-const keepFormerSlug: CollectionBeforeChangeHook = ({ data, originalDoc }) => {
+export const keepFormerSlug: CollectionBeforeChangeHook = ({ data, originalDoc }) => {
   const before = originalDoc?.slug
   if (!before || !data.slug || data.slug === before) return data
   const former: string[] = Array.isArray(originalDoc?.formerSlugs) ? originalDoc.formerSlugs : []
   return { ...data, formerSlugs: [...new Set([...former, before])].filter((s) => s !== data.slug) }
 }
+
+/**
+ * A renamed actor or office renames their terms in the admin's lists. Only
+ * the title is written, straight to the database: saving each term again
+ * would run its checks, and an old term that today's rules would refuse
+ * would block the rename.
+ */
+const retitleTerms = async (
+  req: PayloadRequest,
+  field: 'actor' | 'office',
+  id: string,
+): Promise<void> => {
+  const { docs } = await req.payload.find({
+    collection: 'terms',
+    where: { [field]: { equals: id } },
+    // The actor and office, for their names.
+    depth: 1,
+    locale: DEFAULT_LOCALE,
+    pagination: false,
+    // The system keeps the titles in step with the names.
+    overrideAccess: true,
+    req,
+  })
+  const nameOf = (value: unknown): string => {
+    const name: unknown = value && typeof value === 'object' ? Reflect.get(value, 'name') : null
+    return typeof name === 'string' ? name : ''
+  }
+  for (const term of docs) {
+    const title = termTitle(nameOf(term.actor), nameOf(term.office), term.startsOn ?? null)
+    if (title === term.title) continue
+    await req.payload.db.updateOne({
+      collection: 'terms',
+      id: term.id,
+      data: { title },
+      req,
+      returning: false,
+    })
+  }
+}
+
+/** Renaming an actor or an office updates the titles of the terms that name it. */
+export const retitleOnRename =
+  (field: 'actor' | 'office'): CollectionAfterChangeHook =>
+  async ({ doc, previousDoc, req, operation }) => {
+    if (operation !== 'update' || !previousDoc) return doc
+    const name = (value: unknown) =>
+      value && typeof value === 'object' ? Reflect.get(value, DEFAULT_LOCALE) : value
+    // A localized name arrives in the language being edited. The title uses the default one.
+    if (field === 'office' && req.locale && req.locale !== DEFAULT_LOCALE) return doc
+    if (name(doc.name) !== name(previousDoc.name)) await retitleTerms(req, field, doc.id)
+    return doc
+  }
+
+/**
+ * Terms name areas and offices, and hold the history of who sat where, so an
+ * area or office a term names is not deleted.
+ */
+export const keepWhileNamedInTerms =
+  (field: 'area' | 'office'): CollectionBeforeDeleteHook =>
+  async ({ id, req }) => {
+    const { totalDocs } = await req.payload.count({
+      collection: 'terms',
+      where: { [field]: { equals: id } },
+      // Counts the terms that name this record, whoever is deleting it.
+      overrideAccess: true,
+      req: { ...req } as PayloadRequest,
+    })
+    if (totalDocs > 0) {
+      throw new APIError(`Terms name this ${field}. Delete or change those terms first.`, 400)
+    }
+  }
 
 /** The whole-country area becomes the country's root area, unless one is already set. */
 const linkRootArea = async ({
@@ -218,6 +296,7 @@ const linkRootArea = async ({
   await afterCommit(req, async () => {
     const current = await req.payload.findByID({
       collection: 'countries',
+      joins: false,
       id: country,
       depth: 0,
       // The system links the root area it just saw saved.
@@ -235,7 +314,7 @@ const linkRootArea = async ({
   return doc
 }
 
-const countryField = {
+export const countryField = {
   name: 'country',
   type: 'relationship',
   relationTo: 'countries',
@@ -251,7 +330,16 @@ const countryField = {
  * "central-region" (section 7.2). A save checks it in checkAreaSlug or
  * checkOfficeSlug.
  */
-const slugField = {
+/** Slugs a record had before, so their addresses redirect (section 11.2). Set by keepFormerSlug. */
+export const formerSlugsField = {
+  name: 'formerSlugs',
+  type: 'text',
+  hasMany: true,
+  admin: { position: 'sidebar', readOnly: true },
+  access: { create: () => false, update: () => false },
+} as const
+
+export const slugField = {
   name: 'slug',
   type: 'text',
   index: true,
@@ -282,6 +370,7 @@ export const Areas: CollectionConfig = {
   hooks: {
     beforeValidate: [slugFromName],
     beforeChange: [checkAreaSlug, checkAreaPlace, keepFormerSlug],
+    beforeDelete: [keepWhileNamedInTerms('area')],
     afterChange: [linkRootArea, refreshPlaces],
     afterDelete: [refreshPlaces],
   },
@@ -314,13 +403,7 @@ export const Areas: CollectionConfig = {
     },
     countryField,
     { name: 'externalCode', type: 'text', admin: { position: 'sidebar' } },
-    {
-      name: 'formerSlugs',
-      type: 'text',
-      hasMany: true,
-      admin: { position: 'sidebar', readOnly: true },
-      access: { create: () => false, update: () => false },
-    },
+    formerSlugsField,
     {
       // Collapsed: maps arrive in version 2, and most editors never need these.
       type: 'collapsible',
@@ -360,6 +443,25 @@ export const Areas: CollectionConfig = {
         },
       ],
     },
+    relatedSection(
+      related({
+        name: 'children',
+        label: 'Areas in it',
+        collection: 'areas',
+        on: 'parent',
+        // Payload cannot sort a join by a field with a value per language, such as the name.
+        defaultSort: 'slug',
+        columns: ['name', 'type', 'slug'],
+      }),
+      related({
+        name: 'terms',
+        label: 'Terms',
+        collection: 'terms',
+        on: 'area',
+        defaultSort: '-startsOn',
+        columns: ['title', 'party', 'startsOn', 'endsOn'],
+      }),
+    ),
   ],
 }
 
@@ -381,8 +483,9 @@ export const Offices: CollectionConfig = {
   indexes: [{ fields: ['country', 'slug'], unique: true }],
   hooks: {
     beforeValidate: [slugFromName],
-    beforeChange: [checkOfficeSlug],
-    afterChange: [refreshPlaces],
+    beforeChange: [checkOfficeSlug, keepFormerSlug],
+    beforeDelete: [keepWhileNamedInTerms('office')],
+    afterChange: [refreshPlaces, retitleOnRename('office')],
     afterDelete: [refreshPlaces],
   },
   fields: [
@@ -414,5 +517,16 @@ export const Offices: CollectionConfig = {
       admin: { description: 'Lower comes first. Put the highest office first.' },
     },
     countryField,
+    formerSlugsField,
+    relatedSection(
+      related({
+        name: 'terms',
+        label: 'Holders',
+        collection: 'terms',
+        on: 'office',
+        defaultSort: '-startsOn',
+        columns: ['title', 'area', 'party', 'startsOn', 'endsOn'],
+      }),
+    ),
   ],
 }

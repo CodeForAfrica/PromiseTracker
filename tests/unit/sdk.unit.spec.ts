@@ -6,7 +6,14 @@ const answering = (status: number, body: unknown): Transport => ({
   get: async () => ({ status, body }),
 })
 
-const country = { code: 'ke', name: 'Kenya', region: null, about: null, defaultLanguage: 'en' }
+const country = {
+  code: 'ke',
+  name: 'Kenya',
+  region: null,
+  about: null,
+  defaultLanguage: 'en',
+  counts: { currentHolders: 0, pastTerms: 0 },
+}
 
 describe('sdk', () => {
   afterEach(() => {
