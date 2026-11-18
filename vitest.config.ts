@@ -1,7 +1,9 @@
 import { defineConfig } from 'vitest/config'
 
-// Section 15: 70% overall, 85% for the pipeline, publishing rules and plugin
-// loading. Add the pipeline's and the publishing rules' files here as they land.
+// Section 15: 85% for the pipeline, publishing rules and plugin loading, 70%
+// for everything else. Vitest leaves files matched by a glob out of the
+// overall numbers, so `overall` covers only the rest. Add the pipeline's and
+// the publishing rules' files here as they land.
 const overall = { lines: 70, statements: 70, functions: 70, branches: 70 }
 const strict = { lines: 85, statements: 85, functions: 85, branches: 85 }
 const strictPaths = [

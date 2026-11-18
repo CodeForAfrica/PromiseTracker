@@ -114,8 +114,9 @@ creates and migrates its own on the same Postgres, `<database>_int_test` and `<d
 and refuses any database that is not local or not named that way. The browser tests start their
 own dev server on port 3100, so they can run while `pnpm dev` is running.
 
-CI runs all of these on every pull request, with coverage targets: 70% overall and 85% for plugin
-loading, the pipeline and the publishing rules. It also fails when `pnpm generate` changes a
+CI runs all of these on every pull request, with coverage targets: 85% for plugin loading
+and 70% for the rest of the code. The pipeline and the publishing rules join the 85% target as
+they are built. It also fails when `pnpm generate` changes a
 generated file. It then builds the Docker image, starts it with Compose, and runs the browser tests
 against it. Merges to `main` publish the image to Docker Hub as `codeforafrica/promisetracker-v3`
 once those pass.
