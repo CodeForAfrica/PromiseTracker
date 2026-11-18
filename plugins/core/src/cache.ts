@@ -7,7 +7,11 @@ import { afterCommit } from './afterCommit'
  * names the tags a change touches, and the app sets how they reach the site,
  * with `setTagRefresher`. Until it does, nothing is refreshed.
  */
-export type TagRefresher = (tags: readonly string[], req: PayloadRequest) => Promise<void>
+/** It needs only the request's Payload, for its logger, so a script can call it too. */
+export type TagRefresher = (
+  tags: readonly string[],
+  req: Pick<PayloadRequest, 'payload'>,
+) => Promise<void>
 
 let refresher: TagRefresher = async () => {}
 

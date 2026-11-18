@@ -45,13 +45,62 @@ describe('seed data', () => {
 
   it.each(SEED_COUNTRIES)('loads %s, and changes nothing the second time', async (code) => {
     const first = await seedCountry(payload, code)
-    for (const counts of Object.values(first)) {
+    for (const counts of Object.values(first.counts)) {
       expect(counts).toMatchObject({ update: 0, skip: 0, failed: 0 })
     }
+    expect(first.notes).toEqual([])
     const again = await seedCountry(payload, code)
-    for (const counts of Object.values(again)) {
+    for (const counts of Object.values(again.counts)) {
       expect(counts).toMatchObject({ create: 0, update: 0, failed: 0 })
     }
+  })
+
+  it('leaves an actor an editor held on hold, and says when a country is held', async () => {
+    const { docs } = await payload.find({
+      collection: 'actors',
+      where: { slug: { equals: 'johnson-sakaja' } },
+      overrideAccess: true,
+    })
+    const [sakaja] = docs
+    if (!sakaja) throw new Error('The seed has no Johnson Sakaja')
+    await payload.update({
+      collection: 'actors',
+      id: sakaja.id,
+      data: { recordStatus: 'hold' },
+      overrideAccess: true,
+    })
+    const { docs: countries } = await payload.find({
+      collection: 'countries',
+      where: { code: { equals: 'ke' } },
+      overrideAccess: true,
+    })
+    const ke = countries[0]?.id ?? ''
+    await payload.update({
+      collection: 'countries',
+      id: ke,
+      data: { recordStatus: 'hold' },
+      overrideAccess: true,
+    })
+    const again = await seedCountry(payload, 'ke')
+    expect(again.notes).toEqual([expect.stringContaining('set to hold')])
+    const after = await payload.findByID({
+      collection: 'actors',
+      id: sakaja.id,
+      overrideAccess: true,
+    })
+    expect(after.recordStatus).toBe('hold')
+    await payload.update({
+      collection: 'actors',
+      id: sakaja.id,
+      data: { recordStatus: 'ready' },
+      overrideAccess: true,
+    })
+    await payload.update({
+      collection: 'countries',
+      id: ke,
+      data: { recordStatus: 'ready' },
+      overrideAccess: true,
+    })
   })
 
   it('gives Kenya its presidency and a governor in every county', async () => {
@@ -65,6 +114,15 @@ describe('seed data', () => {
       stage: 'past',
       terms: [{ successor: { slug: 'william-ruto' } }, { successor: null }],
     })
+    // Kenyan places have Swahili names too. The tests do not switch Swahili on,
+    // so the name is read from the record rather than the site.
+    const nairobi = await payload.find({
+      collection: 'areas',
+      where: { slug: { equals: 'nairobi-county' } },
+      locale: 'sw',
+      overrideAccess: true,
+    })
+    expect(nairobi.docs[0]?.name).toBe('Kaunti ya Nairobi')
     expect(await sdk.getActor('en', 'ke', 'william-ruto')).toMatchObject({
       stage: 'current',
       seats: [{ office: { slug: 'president' } }],

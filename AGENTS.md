@@ -38,7 +38,8 @@ Issue #672 gives the build order and the owner of each issue.
   generated types to them in one typed function, as `apps/cms/src/api/v1.ts` does.
 - **Every feature brings seed data.** A feature that adds a record type, or a field the site
   shows, adds real, public data for it in `seed/data` in the same pull request, so collaborators
-  see it working without entering anything. `seed/README.md` says how.
+  see it working without entering anything. `seed/README.md` says how. A feature with nothing to
+  seed, such as a change to the build, says so in its pull request.
 - **Every schema change has a committed migration.** `push` is off, in development too.
 - **Access rules apply by default.** Code that passes `overrideAccess: true` says why in a
   comment.

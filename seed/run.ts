@@ -4,7 +4,6 @@ import '../tests/load-env'
 
 import { createHttpRefresher, getPayload } from '@promisetracker/cms'
 import { setTagRefresher } from '@promisetracker/plugin-core'
-import type { PayloadRequest } from 'payload'
 
 import type { SeedCountry } from './seed'
 import { SEED_COUNTRIES, seedCountry } from './seed'
@@ -31,19 +30,21 @@ const refresh = createHttpRefresher()
 let failed = false
 for (const code of codes) {
   try {
-    const result = await seedCountry(payload, code)
-    const summary = Object.entries(result)
+    const { counts, notes } = await seedCountry(payload, code)
+    const summary = Object.entries(counts)
       .map(([target, c]) => `${target}: ${c.create} new, ${c.update} changed, ${c.skip} unchanged`)
       .join('; ')
     console.log(`${code}: ${summary}`)
-    await refresh(['countries', `country:${code}`, `places:${code}`, `actors:${code}`], {
-      payload,
-    } as PayloadRequest)
+    for (const note of notes) console.log(`${code}: ${note}`)
   } catch (error) {
     failed = true
     console.error(`${code}: ${error instanceof Error ? error.message : String(error)}`)
+  } finally {
+    // Rows saved before a failure are in the database too, so the refresh always runs.
+    await refresh(['countries', `country:${code}`, `places:${code}`, `actors:${code}`], { payload })
   }
 }
 await payload.destroy()
-// Payload's database pool closes above, but other handles can keep Node running.
+// Payload closes its database pool above, but other open handles, such as
+// sockets, can keep Node running, so the script exits on its own.
 process.exit(failed ? 1 : 0)

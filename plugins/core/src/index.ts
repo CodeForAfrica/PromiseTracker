@@ -91,7 +91,13 @@ export { privateHistory } from './history'
 export { setImporters } from './imports/collections'
 export type { ImportResult, RowError } from './imports/engine'
 export { runImportPlan } from './imports/engine'
-export { csvImporter, MAX_IMPORT_BYTES, MAX_IMPORT_ROWS, xlsxImporter } from './imports/readers'
+export {
+  csvImporter,
+  MAX_IMPORT_BYTES,
+  MAX_IMPORT_ROWS,
+  readCsv,
+  xlsxImporter,
+} from './imports/readers'
 export type { ImportTarget } from './imports/targets'
 export { guessMapping, IMPORT_TARGETS, mappingKeys, planRow } from './imports/targets'
 export * from './locales'

@@ -19,8 +19,8 @@ pnpm seed
 | Senegal, `sn` | The country and its 14 regions, with French names                                       | President of the Republic                                            | President Bassirou Diomaye Faye, and Macky Sall before him                                                                            |
 
 Kenya has past holders, so the site shows archived records, successors and "Past administrations".
-Senegal is French first, so it shows the site in French. Seeded actors are marked ready, so they
-appear on the site at once.
+Senegal is French first, so it shows the site in French. Actors the seed creates are marked ready,
+so they appear on the site at once.
 
 The office holders are real public officials. The list was compiled without checking each row
 against an official source, so check a name against the Independent Electoral and Boundaries
@@ -37,7 +37,8 @@ checked the way an editor's file is.
 - **It is safe to run again.** Each row matches the record it made before, by slug, or for a term
   by its actor, office, area and start date. A second run changes nothing. A changed row updates
   its record.
-- **It adds, and never removes.** A country that already exists keeps its settings. Records you
+- **It adds, and never removes.** A country that already exists keeps its settings. If it is not
+  ready, the seed says so, since its pages will not show. An actor you held stays held. Records you
   added by hand are left alone. To start again, empty the database: `pnpm services:down`, remove
   the Postgres volume, then `pnpm services` and `pnpm migrate`.
 - **It loads in order:** offices, then areas, then actors, then terms, because each names records

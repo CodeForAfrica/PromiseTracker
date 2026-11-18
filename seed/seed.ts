@@ -3,7 +3,7 @@ import path from 'node:path'
 
 import type { ImportRow } from '@promisetracker/kernel'
 import type { CountryCode, ImportResult, ImportTarget } from '@promisetracker/plugin-core'
-import { csvImporter, guessMapping, runImportPlan, slugify } from '@promisetracker/plugin-core'
+import { guessMapping, planRow, readCsv, runImportPlan } from '@promisetracker/plugin-core'
 import type { Payload } from 'payload'
 
 /**
@@ -17,33 +17,43 @@ import type { Payload } from 'payload'
 export const SEED_COUNTRIES = ['ke', 'sn'] as const satisfies readonly CountryCode[]
 export type SeedCountry = (typeof SEED_COUNTRIES)[number]
 
-/** The order the spreadsheets load in: a record comes after the records it names. */
+/**
+ * The order the spreadsheets load in: a record comes after the records it
+ * names. Offices and areas name nothing outside their own file, so either can
+ * go first. Terms name both, and actors, so they come last.
+ */
 export const SEED_ORDER = [
   'offices',
   'areas',
   'actors',
   'terms',
 ] as const satisfies readonly ImportTarget[]
+export type SeedTarget = (typeof SEED_ORDER)[number]
 
 const DATA = path.resolve(import.meta.dirname, 'data')
 
 /** One seed spreadsheet, read the way an import reads an upload. */
-export async function readSeed(
+export function readSeed(
   code: SeedCountry,
-  target: ImportTarget,
-): Promise<{ headings: string[]; rows: ImportRow[] }> {
+  target: SeedTarget,
+): { headings: string[]; rows: ImportRow[] } {
   const filename = `${target}.csv`
   const data = readFileSync(path.join(DATA, code, filename))
-  const content = { filename, mimeType: 'text/csv', data: new Uint8Array(data) }
-  const ctx = {} as Parameters<typeof csvImporter.inspect>[1]
-  const { headings } = await csvImporter.inspect(content, ctx)
-  const rows: ImportRow[] = []
-  for await (const row of csvImporter.rows(content, ctx)) rows.push(row)
-  return { headings, rows }
+  return readCsv({ filename, mimeType: 'text/csv', data: new Uint8Array(data) })
+}
+
+/** The slug each row of a seed spreadsheet gets, as the import works it out. */
+export function seedSlugs(code: SeedCountry, target: 'actors' | 'areas' | 'offices'): string[] {
+  const { headings, rows } = readSeed(code, target)
+  const mapping = guessMapping(target, headings)
+  return rows.map((row) => planRow(target, headings, mapping, row.values, row.row + 1).slug)
 }
 
 /** The country's record, created and marked ready if it is not there yet. */
-async function ensureCountry(payload: Payload, code: SeedCountry): Promise<string> {
+async function ensureCountry(
+  payload: Payload,
+  code: SeedCountry,
+): Promise<{ id: string; note: string | null }> {
   const { docs } = await payload.find({
     collection: 'countries',
     where: { code: { equals: code } },
@@ -53,7 +63,14 @@ async function ensureCountry(payload: Payload, code: SeedCountry): Promise<strin
     overrideAccess: true,
   })
   const [found] = docs
-  if (found) return found.id
+  if (found) {
+    // An existing country keeps its settings, even one an editor is holding back.
+    const note =
+      found.recordStatus === 'ready'
+        ? null
+        : `The country is set to ${found.recordStatus}, so its pages do not show. Set it to ready in the admin to see them.`
+    return { id: found.id, note }
+  }
   const created = await payload.create({
     collection: 'countries',
     locale: 'en',
@@ -61,23 +78,59 @@ async function ensureCountry(payload: Payload, code: SeedCountry): Promise<strin
     data: { code, recordStatus: 'ready' },
     overrideAccess: true,
   })
-  return created.id
+  return { id: created.id, note: null }
 }
 
-export type SeedResult = Record<(typeof SEED_ORDER)[number], ImportResult['counts']>
+export type SeedResult = {
+  counts: Record<SeedTarget, ImportResult['counts']>
+  /** Things worth telling whoever ran the seed. */
+  notes: string[]
+}
+
+/**
+ * Releases the actors this run created, so they appear on the site. Actors
+ * seeded before keep the status they have, so an actor an editor held stays
+ * held. Every new actor must be found, or the seed says so.
+ */
+async function releaseNewActors(
+  payload: Payload,
+  code: SeedCountry,
+  country: string,
+  since: string,
+  created: number,
+): Promise<void> {
+  if (created === 0) return
+  const { docs, errors } = await payload.update({
+    collection: 'actors',
+    where: {
+      and: [
+        { country: { equals: country } },
+        { slug: { in: seedSlugs(code, 'actors') } },
+        { createdAt: { greater_than_equal: since } },
+      ],
+    },
+    data: { recordStatus: 'ready' },
+    overrideAccess: true,
+  })
+  if (errors.length > 0 || docs.length !== created) {
+    throw new Error(
+      `${created} actors were created but ${docs.length} were released: ${errors.map((e) => e.message).join('; ')}`,
+    )
+  }
+}
 
 /**
  * Loads one country's seed data through the import, so it is checked the
  * way an editor's spreadsheet is. Running it again changes nothing: each row
- * matches the record it made before. Seeded actors are marked ready, so they
- * appear on the site.
+ * matches the record it made before.
  */
 export async function seedCountry(payload: Payload, code: SeedCountry): Promise<SeedResult> {
-  const country = await ensureCountry(payload, code)
-  const result = {} as SeedResult
+  const { id: country, note } = await ensureCountry(payload, code)
+  const counts = {} as SeedResult['counts']
   for (const target of SEED_ORDER) {
-    const { headings, rows } = await readSeed(code, target)
-    const { counts, errors } = await runImportPlan(payload, {
+    const { headings, rows } = readSeed(code, target)
+    const since = new Date().toISOString()
+    const result = await runImportPlan(payload, {
       target,
       country,
       headings,
@@ -85,21 +138,14 @@ export async function seedCountry(payload: Payload, code: SeedCountry): Promise<
       mapping: guessMapping(target, headings),
       commit: true,
     })
-    if (errors.length > 0) {
-      const lines = errors.map((e) => `  row ${e.line}: ${e.message}`).join('\n')
+    if (result.errors.length > 0) {
+      const lines = result.errors.map((e) => `  row ${e.line}: ${e.message}`).join('\n')
       throw new Error(`seed/data/${code}/${target}.csv has problems:\n${lines}`)
     }
-    result[target] = counts
+    counts[target] = result.counts
     if (target === 'actors') {
-      const name = headings.indexOf('Name')
-      const slugs = rows.map((row) => slugify(row.values[name] ?? ''))
-      await payload.update({
-        collection: 'actors',
-        where: { and: [{ country: { equals: country } }, { slug: { in: slugs } }] },
-        data: { recordStatus: 'ready' },
-        overrideAccess: true,
-      })
+      await releaseNewActors(payload, code, country, since, result.counts.create)
     }
   }
-  return result
+  return { counts, notes: note ? [note] : [] }
 }

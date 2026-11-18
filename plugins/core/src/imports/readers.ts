@@ -40,7 +40,11 @@ function toTable(cells: readonly (readonly unknown[])[]): {
   return { headings, rows }
 }
 
-function readCsv(content: SourceContent) {
+/**
+ * Reads a CSV file into headings and numbered rows, as an import does. For
+ * code that reads a spreadsheet outside an import, such as the seed data.
+ */
+export function readCsv(content: SourceContent) {
   checkSize(content)
   // Empty lines are kept here and skipped in toTable, so row numbers match the file.
   const cells: string[][] = parse(Buffer.from(content.data), {
