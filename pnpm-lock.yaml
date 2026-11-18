@@ -19,8 +19,8 @@ catalogs:
       specifier: 6.1.0
       version: 6.1.0
     '@biomejs/wasm-nodejs':
-      specifier: 2.6.6
-      version: 2.6.6
+      specifier: 2.6.7
+      version: 2.6.7
     '@next/env':
       specifier: 16.4.6
       version: 16.4.6
@@ -115,10 +115,10 @@ importers:
         version: 2.6.6
       '@biomejs/js-api':
         specifier: 'catalog:'
-        version: 6.1.0(@biomejs/wasm-nodejs@2.6.6)
+        version: 6.1.0(@biomejs/wasm-nodejs@2.6.7)
       '@biomejs/wasm-nodejs':
         specifier: 'catalog:'
-        version: 2.6.6
+        version: 2.6.7
       '@next/env':
         specifier: 'catalog:'
         version: 16.4.6
@@ -639,8 +639,8 @@ packages:
       '@biomejs/wasm-web':
         optional: true
 
-  '@biomejs/wasm-nodejs@2.6.6':
-    resolution: {integrity: sha512-Xn/2c1dlKW4QrnejhP8IFPS3MuAfNN+HIFf9WbWhUxU0Ya+sQXxJEJPMVlsOfAH/vzvJfmBpgrN+94AYO5J1AQ==}
+  '@biomejs/wasm-nodejs@2.6.7':
+    resolution: {integrity: sha512-lbJmeSn20rOPB72VbDvb5TJqAfpvsWGrpcccKylp47k9v/KV4k8jkKkS/5OmeVUpD+N+0FWj/URGxRagmCV+fw==}
 
   '@borewit/text-codec@0.2.3':
     resolution: {integrity: sha512-49CycTz1aAZmvFcwkeFyhud1HUmRIB5Tabf7ALV+VA4Iu85MTfz2cUwzPagMFAdVBvrWdkCxG67I30tUwwpKsw==}
@@ -4052,11 +4052,11 @@ snapshots:
   '@biomejs/cli-win32-x64@2.6.6':
     optional: true
 
-  '@biomejs/js-api@6.1.0(@biomejs/wasm-nodejs@2.6.6)':
+  '@biomejs/js-api@6.1.0(@biomejs/wasm-nodejs@2.6.7)':
     optionalDependencies:
-      '@biomejs/wasm-nodejs': 2.6.6
+      '@biomejs/wasm-nodejs': 2.6.7
 
-  '@biomejs/wasm-nodejs@2.6.6': {}
+  '@biomejs/wasm-nodejs@2.6.7': {}
 
   '@borewit/text-codec@0.2.3': {}
 
