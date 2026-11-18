@@ -53,6 +53,7 @@ export const corePlugin = definePromiseTrackerPlugin({
 export * from './access'
 export * from './adapters'
 export { ADMIN_GROUPS } from './adminGroups'
+export { afterCommit, installAfterCommit } from './afterCommit'
 export * from './cache'
 export { Countries } from './countries'
 export * from './countryList'

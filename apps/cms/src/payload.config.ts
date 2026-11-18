@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { defineFinalPlugin } from '@promisetracker/kernel'
-import { privateHistory, setTagRefresher } from '@promisetracker/plugin-core'
+import { installAfterCommit, privateHistory, setTagRefresher } from '@promisetracker/plugin-core'
 import { buildConfig } from 'payload'
 import { createHttpRefresher } from './cache'
 import { databaseUrl } from './env'
@@ -64,6 +64,8 @@ export default buildConfig({
   // Start-up checks that need a running Payload (section 4.4). Payload applies
   // pending migrations before this, and migration commands skip it.
   onInit: async (payload) => {
+    // First, so a cache refresh waits for its save to commit (section 17).
+    installAfterCommit(payload)
     await assertExtensions()
     await kernel.onInit(payload)
     await ensureFirstAdmin(payload)

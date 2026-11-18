@@ -127,6 +127,8 @@ describe('the cache refresh request', () => {
     const empty = JSON.stringify({ tags: [], at: now })
     expect(readRefreshRequest(empty, sign(empty, secret), secret, now)).toBeNull()
     expect(verify(body, sign(body, secret), '')).toBe(false)
+    // A server without PAYLOAD_SECRET refuses every request, even one signed with an empty one.
+    expect(readRefreshRequest(body, sign(body, ''), '', now)).toBeNull()
   })
 
   it('goes to the web process, wherever it is', () => {
@@ -158,6 +160,14 @@ describe('the record status', () => {
   it('lets a contributor hold a record, and nothing else', () => {
     expect(run(['contributor'], 'hold', 'ready')).toBe('hold')
     expect(() => run(['contributor'], 'ready')).toThrow('cannot set this record to ready')
+    // Creating a record has no previous status, and the same rule applies.
+    expect(() =>
+      hook?.({
+        value: 'ready',
+        previousValue: undefined,
+        req: { user: { id: 'u1', roles: ['contributor'] } },
+      }),
+    ).toThrow('cannot set this record to ready')
   })
 
   it('lets an editor set any status', () => {

@@ -202,6 +202,37 @@ describe('countries and languages', () => {
       expect(doc?.about).toBe('Toujours en français')
     })
 
+    it('refreshes only after the save commits, so the site reads the new data', async () => {
+      // The refresher reads the country the way the web process would: on
+      // another connection, which sees only committed data.
+      const seen: (string | null | undefined)[] = []
+      setTagRefresher(async () => {
+        const [doc] = (
+          await payload.find({
+            collection: 'countries',
+            where: { code: { equals: another } },
+            locale: 'en',
+            overrideAccess: true,
+          })
+        ).docs
+        seen.push(doc?.about)
+      })
+      try {
+        await payload.update({
+          collection: 'countries',
+          where: { code: { equals: another } },
+          locale: 'en',
+          data: { about: 'Committed before the refresh' },
+          overrideAccess: true,
+        })
+      } finally {
+        setTagRefresher(async (tags) => {
+          refreshed.push([...tags])
+        })
+      }
+      expect(seen).toEqual(['Committed before the refresh'])
+    })
+
     it('refreshes the country’s cached pages on every change', () => {
       expect(refreshed.length).toBeGreaterThanOrEqual(3)
       for (const tags of refreshed) {

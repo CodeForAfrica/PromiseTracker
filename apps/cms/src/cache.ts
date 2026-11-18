@@ -64,8 +64,8 @@ export function readRefreshRequest(
   } catch {
     return null
   }
-  const field = (key: string): unknown =>
-    parsed && typeof parsed === 'object' ? Reflect.get(parsed, key) : null
+  const field = (name: string): unknown =>
+    parsed && typeof parsed === 'object' ? Reflect.get(parsed, name) : null
   const at = field('at')
   if (typeof at !== 'number' || now - at > MAX_AGE_MS || at - now > CLOCK_SKEW_MS) return null
   const tags = field('tags')

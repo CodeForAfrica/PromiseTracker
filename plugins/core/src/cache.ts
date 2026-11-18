@@ -1,5 +1,7 @@
 import type { CollectionAfterChangeHook, CollectionAfterDeleteHook, PayloadRequest } from 'payload'
 
+import { afterCommit } from './afterCommit'
+
 /**
  * Refreshes the public site's cached pages (section 17, D47). A record type
  * names the tags a change touches, and the app sets how they reach the site,
@@ -13,8 +15,13 @@ export function setTagRefresher(next: TagRefresher): void {
   refresher = next
 }
 
+/**
+ * Refreshes tags once the save commits. Refreshing before would let a visitor
+ * arriving in between cache the page again with the old data, since the web
+ * process reads on another connection and cannot see an uncommitted save.
+ */
 export function refreshTags(tags: readonly string[], req: PayloadRequest): Promise<void> {
-  return refresher(tags, req)
+  return afterCommit(req, () => refresher(tags, req))
 }
 
 /**
