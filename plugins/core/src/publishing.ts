@@ -108,8 +108,9 @@ export function withPublishing(
       const editing = req.locale
       // The values saved before, in every language. A save carries only the
       // language being edited, so the others come from the database. The read
-      // does not share this request: reading every language through it would
-      // switch the save itself to every language, and drop the new value.
+      // uses a copy of the request: it shares the transaction, so it sees a
+      // record created in this same transaction, but reading every language
+      // does not switch the save itself to every language.
       const stored =
         operation === 'update' && originalDoc?.id
           ? asRecord(
@@ -120,6 +121,7 @@ export function withPublishing(
                 depth: 0,
                 // Reads the record being saved, to work out where it is live.
                 overrideAccess: true,
+                req: { ...req } as PayloadRequest,
               }),
             )
           : {}

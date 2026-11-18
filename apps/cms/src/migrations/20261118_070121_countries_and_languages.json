@@ -1987,6 +1987,90 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.countries_languages": {
+      "name": "countries_languages",
+      "schema": "",
+      "columns": {
+        "order": {
+          "name": "order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value": {
+          "name": "value",
+          "type": "enum_countries_languages",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        }
+      },
+      "indexes": {
+        "countries_languages_order_idx": {
+          "name": "countries_languages_order_idx",
+          "columns": [
+            {
+              "expression": "order",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "countries_languages_parent_idx": {
+          "name": "countries_languages_parent_idx",
+          "columns": [
+            {
+              "expression": "parent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "countries_languages_parent_fk": {
+          "name": "countries_languages_parent_fk",
+          "tableFrom": "countries_languages",
+          "tableTo": "countries",
+          "columnsFrom": [
+            "parent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.countries": {
       "name": "countries",
       "schema": "",
@@ -2000,7 +2084,8 @@
         },
         "code": {
           "name": "code",
-          "type": "varchar",
+          "type": "enum_countries_code",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -2013,7 +2098,8 @@
         },
         "default_language": {
           "name": "default_language",
-          "type": "varchar",
+          "type": "enum_countries_default_language",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": false
         },
@@ -2117,7 +2203,7 @@
           "name": "name",
           "type": "varchar",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "about": {
           "name": "about",
@@ -2414,6 +2500,90 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public._countries_v_version_languages": {
+      "name": "_countries_v_version_languages",
+      "schema": "",
+      "columns": {
+        "order": {
+          "name": "order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value": {
+          "name": "value",
+          "type": "enum__countries_v_version_languages",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        }
+      },
+      "indexes": {
+        "_countries_v_version_languages_order_idx": {
+          "name": "_countries_v_version_languages_order_idx",
+          "columns": [
+            {
+              "expression": "order",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "_countries_v_version_languages_parent_idx": {
+          "name": "_countries_v_version_languages_parent_idx",
+          "columns": [
+            {
+              "expression": "parent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "_countries_v_version_languages_parent_fk": {
+          "name": "_countries_v_version_languages_parent_fk",
+          "tableFrom": "_countries_v_version_languages",
+          "tableTo": "_countries_v",
+          "columnsFrom": [
+            "parent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public._countries_v": {
       "name": "_countries_v",
       "schema": "",
@@ -2433,7 +2603,8 @@
         },
         "version_code": {
           "name": "version_code",
-          "type": "varchar",
+          "type": "enum__countries_v_version_code",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -2446,7 +2617,8 @@
         },
         "version_default_language": {
           "name": "version_default_language",
-          "type": "varchar",
+          "type": "enum__countries_v_version_default_language",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": false
         },
@@ -2621,7 +2793,7 @@
           "name": "version_name",
           "type": "varchar",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "version_about": {
           "name": "version_about",
@@ -5249,6 +5421,77 @@
         "viewer"
       ]
     },
+    "public.enum_countries_languages": {
+      "name": "enum_countries_languages",
+      "schema": "public",
+      "values": [
+        "en",
+        "fr",
+        "pt",
+        "ar",
+        "sw"
+      ]
+    },
+    "public.enum_countries_code": {
+      "name": "enum_countries_code",
+      "schema": "public",
+      "values": [
+        "dz",
+        "ao",
+        "bj",
+        "bw",
+        "bf",
+        "bi",
+        "cm",
+        "cv",
+        "cf",
+        "td",
+        "km",
+        "ci",
+        "cd",
+        "dj",
+        "eg",
+        "gq",
+        "er",
+        "sz",
+        "et",
+        "ga",
+        "gm",
+        "gh",
+        "gn",
+        "gw",
+        "ke",
+        "ls",
+        "lr",
+        "ly",
+        "mg",
+        "mw",
+        "ml",
+        "mr",
+        "mu",
+        "ma",
+        "mz",
+        "na",
+        "ne",
+        "ng",
+        "cg",
+        "rw",
+        "st",
+        "sn",
+        "sc",
+        "sl",
+        "so",
+        "za",
+        "ss",
+        "sd",
+        "tz",
+        "tg",
+        "tn",
+        "ug",
+        "zm",
+        "zw"
+      ]
+    },
     "public.enum_countries_region": {
       "name": "enum_countries_region",
       "schema": "public",
@@ -5260,6 +5503,17 @@
         "north-africa"
       ]
     },
+    "public.enum_countries_default_language": {
+      "name": "enum_countries_default_language",
+      "schema": "public",
+      "values": [
+        "en",
+        "fr",
+        "pt",
+        "ar",
+        "sw"
+      ]
+    },
     "public.enum_countries_record_status": {
       "name": "enum_countries_record_status",
       "schema": "public",
@@ -5267,6 +5521,77 @@
         "ready",
         "hold",
         "archived"
+      ]
+    },
+    "public.enum__countries_v_version_languages": {
+      "name": "enum__countries_v_version_languages",
+      "schema": "public",
+      "values": [
+        "en",
+        "fr",
+        "pt",
+        "ar",
+        "sw"
+      ]
+    },
+    "public.enum__countries_v_version_code": {
+      "name": "enum__countries_v_version_code",
+      "schema": "public",
+      "values": [
+        "dz",
+        "ao",
+        "bj",
+        "bw",
+        "bf",
+        "bi",
+        "cm",
+        "cv",
+        "cf",
+        "td",
+        "km",
+        "ci",
+        "cd",
+        "dj",
+        "eg",
+        "gq",
+        "er",
+        "sz",
+        "et",
+        "ga",
+        "gm",
+        "gh",
+        "gn",
+        "gw",
+        "ke",
+        "ls",
+        "lr",
+        "ly",
+        "mg",
+        "mw",
+        "ml",
+        "mr",
+        "mu",
+        "ma",
+        "mz",
+        "na",
+        "ne",
+        "ng",
+        "cg",
+        "rw",
+        "st",
+        "sn",
+        "sc",
+        "sl",
+        "so",
+        "za",
+        "ss",
+        "sd",
+        "tz",
+        "tg",
+        "tn",
+        "ug",
+        "zm",
+        "zw"
       ]
     },
     "public.enum__countries_v_version_region": {
@@ -5278,6 +5603,17 @@
         "central-africa",
         "southern-africa",
         "north-africa"
+      ]
+    },
+    "public.enum__countries_v_version_default_language": {
+      "name": "enum__countries_v_version_default_language",
+      "schema": "public",
+      "values": [
+        "en",
+        "fr",
+        "pt",
+        "ar",
+        "sw"
       ]
     },
     "public.enum__countries_v_version_record_status": {
@@ -5308,6 +5644,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "050dbbf4-3148-4273-bebc-c95f8dbf3337",
+  "id": "74a475ec-91cd-4e67-9920-b48b0739031c",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

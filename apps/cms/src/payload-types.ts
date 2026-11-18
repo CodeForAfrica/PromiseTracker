@@ -325,19 +325,83 @@ export interface Media {
 export interface Country {
   id: string;
   /**
-   * Two-letter ISO code in lower case, such as ke. Used in addresses.
+   * Its name in every language, its region and its languages are filled in when you save.
    */
-  code: string;
-  name: string;
+  code:
+    | 'dz'
+    | 'ao'
+    | 'bj'
+    | 'bw'
+    | 'bf'
+    | 'bi'
+    | 'cm'
+    | 'cv'
+    | 'cf'
+    | 'td'
+    | 'km'
+    | 'ci'
+    | 'cd'
+    | 'dj'
+    | 'eg'
+    | 'gq'
+    | 'er'
+    | 'sz'
+    | 'et'
+    | 'ga'
+    | 'gm'
+    | 'gh'
+    | 'gn'
+    | 'gw'
+    | 'ke'
+    | 'ls'
+    | 'lr'
+    | 'ly'
+    | 'mg'
+    | 'mw'
+    | 'ml'
+    | 'mr'
+    | 'mu'
+    | 'ma'
+    | 'mz'
+    | 'na'
+    | 'ne'
+    | 'ng'
+    | 'cg'
+    | 'rw'
+    | 'st'
+    | 'sn'
+    | 'sc'
+    | 'sl'
+    | 'so'
+    | 'za'
+    | 'ss'
+    | 'sd'
+    | 'tz'
+    | 'tg'
+    | 'tn'
+    | 'ug'
+    | 'zm'
+    | 'zw';
+  /**
+   * Used in addresses, such as /en/ke.
+   */
+  codeShown?: string | null;
+  /**
+   * Filled in from the country list. Change it to use another name.
+   */
+  name?: string | null;
+  /**
+   * From the country list.
+   */
   region?: ('east-africa' | 'west-africa' | 'central-africa' | 'southern-africa' | 'north-africa') | null;
   /**
-   * Language codes this country publishes in, such as en and fr.
+   * The languages this country publishes in. Filled in from the country list when left empty.
    */
-  languages?: string[] | null;
+  languages?: ('en' | 'fr' | 'pt' | 'ar' | 'sw')[] | null;
   /**
    * One of the languages above.
    */
-  defaultLanguage?: string | null;
+  defaultLanguage?: ('en' | 'fr' | 'pt' | 'ar' | 'sw') | null;
   about?: string | null;
   /**
    * Ready makes it public in each language that has its required fields.
@@ -534,6 +598,7 @@ export interface MediaSelect<T extends boolean = true> {
  */
 export interface CountriesSelect<T extends boolean = true> {
   code?: T;
+  codeShown?: T;
   name?: T;
   region?: T;
   languages?: T;

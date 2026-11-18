@@ -589,10 +589,10 @@ the month, as in "August 2022".
 
 | Field | Notes |
 |---|---|
-| `code` | Two-letter ISO code in lower case. Unique. Used in web addresses |
-| `name` | Localized |
-| `region` | For grouping countries once there are many: east, west, central, southern or north Africa |
-| `languages`, `defaultLanguage` | The languages this country publishes in, as codes from the registered locales |
+| `code` | Two-letter ISO code in lower case. Unique. Used in web addresses. Chosen by name from the list of African countries, and never changed once saved |
+| `name` | Localized. Filled in every registered language from the country list when the country is added. An editor can change it, and clearing it takes the country off the site in that language |
+| `region` | For grouping countries once there are many: east, west, central, southern or north Africa. From the country list |
+| `languages`, `defaultLanguage` | The languages this country publishes in, chosen from the registered locales. Filled from the country list, from the country's official languages |
 | `rootArea` | The area that stands for the whole country, which national offices such as President belong to. Added with areas |
 | `about` | Localized |
 | `recordStatus` | ready, hold, archived. Starts as hold |

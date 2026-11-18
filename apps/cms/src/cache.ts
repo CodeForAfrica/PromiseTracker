@@ -15,7 +15,11 @@ const TIMEOUT_MS = 5_000
 /** Where the web process listens, for a call from this process or the worker. */
 export function webUrl(env: Env = process.env): string {
   const configured = env.PT_WEB_URL?.trim()
-  return (configured || `http://127.0.0.1:${env.PORT?.trim() || '3000'}`).replace(/\/+$/, '')
+  const url = configured || `http://127.0.0.1:${env.PORT?.trim() || '3000'}`
+  // Trailing slashes are dropped with a loop: a pattern for them is slow on a long run of slashes.
+  let end = url.length
+  while (end > 0 && url[end - 1] === '/') end -= 1
+  return url.slice(0, end)
 }
 
 /**

@@ -4,22 +4,35 @@ import { sql } from '@payloadcms/db-postgres'
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
    CREATE TYPE "public"."_locales" AS ENUM('en', 'fr', 'pt', 'ar', 'sw');
+  CREATE TYPE "public"."enum_countries_languages" AS ENUM('en', 'fr', 'pt', 'ar', 'sw');
+  CREATE TYPE "public"."enum_countries_code" AS ENUM('dz', 'ao', 'bj', 'bw', 'bf', 'bi', 'cm', 'cv', 'cf', 'td', 'km', 'ci', 'cd', 'dj', 'eg', 'gq', 'er', 'sz', 'et', 'ga', 'gm', 'gh', 'gn', 'gw', 'ke', 'ls', 'lr', 'ly', 'mg', 'mw', 'ml', 'mr', 'mu', 'ma', 'mz', 'na', 'ne', 'ng', 'cg', 'rw', 'st', 'sn', 'sc', 'sl', 'so', 'za', 'ss', 'sd', 'tz', 'tg', 'tn', 'ug', 'zm', 'zw');
   CREATE TYPE "public"."enum_countries_region" AS ENUM('east-africa', 'west-africa', 'central-africa', 'southern-africa', 'north-africa');
+  CREATE TYPE "public"."enum_countries_default_language" AS ENUM('en', 'fr', 'pt', 'ar', 'sw');
   CREATE TYPE "public"."enum_countries_record_status" AS ENUM('ready', 'hold', 'archived');
+  CREATE TYPE "public"."enum__countries_v_version_languages" AS ENUM('en', 'fr', 'pt', 'ar', 'sw');
+  CREATE TYPE "public"."enum__countries_v_version_code" AS ENUM('dz', 'ao', 'bj', 'bw', 'bf', 'bi', 'cm', 'cv', 'cf', 'td', 'km', 'ci', 'cd', 'dj', 'eg', 'gq', 'er', 'sz', 'et', 'ga', 'gm', 'gh', 'gn', 'gw', 'ke', 'ls', 'lr', 'ly', 'mg', 'mw', 'ml', 'mr', 'mu', 'ma', 'mz', 'na', 'ne', 'ng', 'cg', 'rw', 'st', 'sn', 'sc', 'sl', 'so', 'za', 'ss', 'sd', 'tz', 'tg', 'tn', 'ug', 'zm', 'zw');
   CREATE TYPE "public"."enum__countries_v_version_region" AS ENUM('east-africa', 'west-africa', 'central-africa', 'southern-africa', 'north-africa');
+  CREATE TYPE "public"."enum__countries_v_version_default_language" AS ENUM('en', 'fr', 'pt', 'ar', 'sw');
   CREATE TYPE "public"."enum__countries_v_version_record_status" AS ENUM('ready', 'hold', 'archived');
+  CREATE TABLE "countries_languages" (
+  	"order" integer NOT NULL,
+  	"parent_id" uuid NOT NULL,
+  	"value" "enum_countries_languages",
+  	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL
+  );
+  
   CREATE TABLE "countries" (
   	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-  	"code" varchar NOT NULL,
+  	"code" "enum_countries_code" NOT NULL,
   	"region" "enum_countries_region",
-  	"default_language" varchar,
+  	"default_language" "enum_countries_default_language",
   	"record_status" "enum_countries_record_status" DEFAULT 'hold' NOT NULL,
   	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
   	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
   );
   
   CREATE TABLE "countries_locales" (
-  	"name" varchar NOT NULL,
+  	"name" varchar,
   	"about" varchar,
   	"id" serial PRIMARY KEY NOT NULL,
   	"_locale" "_locales" NOT NULL,
@@ -42,12 +55,19 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"users_id" uuid
   );
   
+  CREATE TABLE "_countries_v_version_languages" (
+  	"order" integer NOT NULL,
+  	"parent_id" uuid NOT NULL,
+  	"value" "enum__countries_v_version_languages",
+  	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL
+  );
+  
   CREATE TABLE "_countries_v" (
   	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
   	"parent_id" uuid,
-  	"version_code" varchar NOT NULL,
+  	"version_code" "enum__countries_v_version_code" NOT NULL,
   	"version_region" "enum__countries_v_version_region",
-  	"version_default_language" varchar,
+  	"version_default_language" "enum__countries_v_version_default_language",
   	"version_record_status" "enum__countries_v_version_record_status" DEFAULT 'hold' NOT NULL,
   	"version_updated_at" timestamp(3) with time zone,
   	"version_created_at" timestamp(3) with time zone,
@@ -56,7 +76,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   );
   
   CREATE TABLE "_countries_v_locales" (
-  	"version_name" varchar NOT NULL,
+  	"version_name" varchar,
   	"version_about" varchar,
   	"id" serial PRIMARY KEY NOT NULL,
   	"_locale" "_locales" NOT NULL,
@@ -198,10 +218,12 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   );
   
   ALTER TABLE "payload_locked_documents_rels" ADD COLUMN "countries_id" uuid;
+  ALTER TABLE "countries_languages" ADD CONSTRAINT "countries_languages_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."countries"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "countries_locales" ADD CONSTRAINT "countries_locales_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."countries"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "countries_texts" ADD CONSTRAINT "countries_texts_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."countries"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "countries_rels" ADD CONSTRAINT "countries_rels_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."countries"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "countries_rels" ADD CONSTRAINT "countries_rels_users_fk" FOREIGN KEY ("users_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "_countries_v_version_languages" ADD CONSTRAINT "_countries_v_version_languages_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."_countries_v"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "_countries_v" ADD CONSTRAINT "_countries_v_parent_id_countries_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."countries"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "_countries_v_locales" ADD CONSTRAINT "_countries_v_locales_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."_countries_v"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "_countries_v_texts" ADD CONSTRAINT "_countries_v_texts_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."_countries_v"("id") ON DELETE cascade ON UPDATE no action;
@@ -217,6 +239,8 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "_site_v_version_footer_links" ADD CONSTRAINT "_site_v_version_footer_links_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."_site_v"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "_site_v_version_footer_links_locales" ADD CONSTRAINT "_site_v_version_footer_links_locales_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."_site_v_version_footer_links"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "_site_v_locales" ADD CONSTRAINT "_site_v_locales_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."_site_v"("id") ON DELETE cascade ON UPDATE no action;
+  CREATE INDEX "countries_languages_order_idx" ON "countries_languages" USING btree ("order");
+  CREATE INDEX "countries_languages_parent_idx" ON "countries_languages" USING btree ("parent_id");
   CREATE UNIQUE INDEX "countries_code_idx" ON "countries" USING btree ("code");
   CREATE INDEX "countries_record_status_idx" ON "countries" USING btree ("record_status");
   CREATE INDEX "countries_updated_at_idx" ON "countries" USING btree ("updated_at");
@@ -228,6 +252,8 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "countries_rels_parent_idx" ON "countries_rels" USING btree ("parent_id");
   CREATE INDEX "countries_rels_path_idx" ON "countries_rels" USING btree ("path");
   CREATE INDEX "countries_rels_users_id_idx" ON "countries_rels" USING btree ("users_id");
+  CREATE INDEX "_countries_v_version_languages_order_idx" ON "_countries_v_version_languages" USING btree ("order");
+  CREATE INDEX "_countries_v_version_languages_parent_idx" ON "_countries_v_version_languages" USING btree ("parent_id");
   CREATE INDEX "_countries_v_parent_idx" ON "_countries_v" USING btree ("parent_id");
   CREATE INDEX "_countries_v_version_version_code_idx" ON "_countries_v" USING btree ("version_code");
   CREATE INDEX "_countries_v_version_version_record_status_idx" ON "_countries_v" USING btree ("version_record_status");
@@ -263,10 +289,12 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
 
 export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
-   ALTER TABLE "countries" DISABLE ROW LEVEL SECURITY;
+   ALTER TABLE "countries_languages" DISABLE ROW LEVEL SECURITY;
+  ALTER TABLE "countries" DISABLE ROW LEVEL SECURITY;
   ALTER TABLE "countries_locales" DISABLE ROW LEVEL SECURITY;
   ALTER TABLE "countries_texts" DISABLE ROW LEVEL SECURITY;
   ALTER TABLE "countries_rels" DISABLE ROW LEVEL SECURITY;
+  ALTER TABLE "_countries_v_version_languages" DISABLE ROW LEVEL SECURITY;
   ALTER TABLE "_countries_v" DISABLE ROW LEVEL SECURITY;
   ALTER TABLE "_countries_v_locales" DISABLE ROW LEVEL SECURITY;
   ALTER TABLE "_countries_v_texts" DISABLE ROW LEVEL SECURITY;
@@ -281,10 +309,12 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   ALTER TABLE "_site_v_version_footer_links" DISABLE ROW LEVEL SECURITY;
   ALTER TABLE "_site_v_version_footer_links_locales" DISABLE ROW LEVEL SECURITY;
   ALTER TABLE "_site_v_locales" DISABLE ROW LEVEL SECURITY;
+  DROP TABLE "countries_languages" CASCADE;
   DROP TABLE "countries" CASCADE;
   DROP TABLE "countries_locales" CASCADE;
   DROP TABLE "countries_texts" CASCADE;
   DROP TABLE "countries_rels" CASCADE;
+  DROP TABLE "_countries_v_version_languages" CASCADE;
   DROP TABLE "_countries_v" CASCADE;
   DROP TABLE "_countries_v_locales" CASCADE;
   DROP TABLE "_countries_v_texts" CASCADE;
@@ -299,15 +329,21 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TABLE "_site_v_version_footer_links" CASCADE;
   DROP TABLE "_site_v_version_footer_links_locales" CASCADE;
   DROP TABLE "_site_v_locales" CASCADE;
-  ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT "payload_locked_documents_rels_countries_fk";
+  ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT IF EXISTS "payload_locked_documents_rels_countries_fk";
   
-  DROP INDEX "payload_locked_documents_rels_countries_id_idx";
+  DROP INDEX IF EXISTS "payload_locked_documents_rels_countries_id_idx";
   ALTER TABLE "site" ADD COLUMN "tagline" varchar;
   ALTER TABLE "_site_v" ADD COLUMN "version_tagline" varchar;
   ALTER TABLE "payload_locked_documents_rels" DROP COLUMN "countries_id";
   DROP TYPE "public"."_locales";
+  DROP TYPE "public"."enum_countries_languages";
+  DROP TYPE "public"."enum_countries_code";
   DROP TYPE "public"."enum_countries_region";
+  DROP TYPE "public"."enum_countries_default_language";
   DROP TYPE "public"."enum_countries_record_status";
+  DROP TYPE "public"."enum__countries_v_version_languages";
+  DROP TYPE "public"."enum__countries_v_version_code";
   DROP TYPE "public"."enum__countries_v_version_region";
+  DROP TYPE "public"."enum__countries_v_version_default_language";
   DROP TYPE "public"."enum__countries_v_version_record_status";`)
 }

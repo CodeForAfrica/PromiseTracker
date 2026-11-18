@@ -11,7 +11,7 @@ import {
   Country as CountrySchema,
   SiteInfo as SiteInfoSchema,
 } from '@promisetracker/contract'
-import { publishedInLocale } from '@promisetracker/plugin-core'
+import { countryName, isCountryCode, publishedInLocale } from '@promisetracker/plugin-core'
 import { resolveStrings } from '@promisetracker/plugin-site'
 import type { Payload, TypedLocale } from 'payload'
 
@@ -64,15 +64,19 @@ const toSiteInfo = (site: Site, locale: string): SiteInfo =>
     footer: { about: text(site.footer?.about), links: links(site.footer?.links) },
   })
 
-const toSummary = (doc: CountryDoc): CountrySummary => ({
+/** A published country always has a name. The standard one covers a gap all the same. */
+const nameOf = (doc: CountryDoc, locale: TypedLocale): string =>
+  text(doc.name) ?? (isCountryCode(doc.code) ? countryName(doc.code, locale) : doc.code)
+
+const toSummary = (doc: CountryDoc, locale: TypedLocale): CountrySummary => ({
   code: doc.code,
-  name: doc.name,
+  name: nameOf(doc, locale),
   region: doc.region ?? null,
 })
 
-const toCountry = (doc: CountryDoc): Country =>
+const toCountry = (doc: CountryDoc, locale: TypedLocale): Country =>
   CountrySchema.parse({
-    ...toSummary(doc),
+    ...toSummary(doc, locale),
     about: text(doc.about),
     defaultLanguage: doc.defaultLanguage ?? null,
   })
@@ -101,7 +105,7 @@ const handlers: Record<string, Handler> = {
       overrideAccess: false,
     })
     const list: CountryList = CountryListSchema.parse({
-      items: result.docs.map(toSummary),
+      items: result.docs.map((doc) => toSummary(doc, locale)),
       total: result.totalDocs,
       // Countries are few, so every one comes in the first page.
       nextCursor: null,
@@ -110,6 +114,8 @@ const handlers: Record<string, Handler> = {
   },
 
   '/countries/:code': async ({ payload, params, locale }) => {
+    // Only codes on the country list exist, and the database refuses any other.
+    if (!isCountryCode(params.code)) return notFound()
     const { docs } = await payload.find({
       collection: 'countries',
       where: { code: { equals: params.code } },
@@ -120,7 +126,7 @@ const handlers: Record<string, Handler> = {
     })
     const [doc] = docs
     if (!doc) return notFound()
-    if ((doc.publishedIn ?? []).includes(locale)) return ok(toCountry(doc))
+    if ((doc.publishedIn ?? []).includes(locale)) return ok(toCountry(doc, locale))
     const availableIn = languages().filter((l) => (doc.publishedIn ?? []).includes(l.code))
     if (availableIn.length === 0) return notFound()
     const body: NotAvailable = { error: 'not-available', availableIn }

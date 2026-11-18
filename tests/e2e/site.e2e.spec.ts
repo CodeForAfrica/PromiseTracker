@@ -1,12 +1,19 @@
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+
 import AxeBuilder from '@axe-core/playwright'
 import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 
+import type { Seed } from './seed'
+
 /**
  * The public site's first pages (#644). The countries come from
- * tests/e2e/seed.ts: zx is published in English and French, zw in English only.
+ * tests/e2e/seed.ts: one published in English and French, one in English only.
  * The browser tests run with PT_LOCALES=en,fr,ar.
  */
+const seed = (): Seed =>
+  JSON.parse(readFileSync(path.resolve(import.meta.dirname, '.seed.json'), 'utf8')) as Seed
 
 async function expectAccessible(page: Page) {
   const { violations } = await new AxeBuilder({ page })
@@ -29,43 +36,46 @@ test('the home page explains the site and lets the reader choose a country', asy
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
   await expect(page.getByRole('heading', { level: 1 })).toContainText('A record of what')
   const picker = page.getByRole('region', { name: 'Choose a country' })
-  await expect(picker.getByRole('link', { name: 'Testland' })).toBeVisible()
+  await expect(picker.getByRole('link', { name: seed().full.en })).toBeVisible()
   await expectAccessible(page)
 })
 
 test('the home page in French lists only countries published in French', async ({ page }) => {
   await page.goto('/fr')
   await expect(page.locator('html')).toHaveAttribute('lang', 'fr')
-  await expect(page.getByRole('link', { name: 'Pays de test' }).first()).toBeVisible()
-  await expect(page.getByRole('link', { name: 'English only' })).toHaveCount(0)
+  const { full, englishOnly } = seed()
+  await expect(page.getByRole('link', { name: full.fr }).first()).toBeVisible()
+  await expect(page.getByRole('link', { name: englishOnly.en })).toHaveCount(0)
 })
 
 test('a country page shows the country, and the language switch keeps the page', async ({
   page,
 }) => {
-  await page.goto('/en/zx')
-  await expect(page.getByRole('heading', { level: 1, name: 'Testland' })).toBeVisible()
-  await expect(page.getByText('About Testland.')).toBeVisible()
+  const { full } = seed()
+  await page.goto(`/en/${full.code}`)
+  await expect(page.getByRole('heading', { level: 1, name: full.en })).toBeVisible()
+  await expect(page.getByText(`About ${full.en}.`)).toBeVisible()
   await expectAccessible(page)
 
   await page.getByRole('link', { name: 'fr', exact: true }).first().click()
-  await expect(page).toHaveURL(/\/fr\/zx$/)
-  await expect(page.getByRole('heading', { level: 1, name: 'Pays de test' })).toBeVisible()
+  await expect(page).toHaveURL(new RegExp(`/fr/${full.code}$`))
+  await expect(page.getByRole('heading', { level: 1, name: full.fr })).toBeVisible()
 })
 
 test('a country not in French says so, and links to the English page', async ({ page }) => {
-  const res = await page.goto('/fr/zw')
+  const { englishOnly } = seed()
+  const res = await page.goto(`/fr/${englishOnly.code}`)
   expect(res?.ok()).toBe(true)
   await expect(page.getByRole('heading', { level: 1 })).toContainText('pas encore disponible')
   // No English text from the record appears on the French page (D30).
-  await expect(page.getByText('English only', { exact: true })).toHaveCount(0)
+  await expect(page.getByText(`About ${englishOnly.en}.`)).toHaveCount(0)
   await page.getByRole('link', { name: 'English' }).click()
-  await expect(page).toHaveURL(/\/en\/zw$/)
+  await expect(page).toHaveURL(new RegExp(`/en/${englishOnly.code}$`))
   await expectAccessible(page)
 })
 
 test('an unknown country, page or language is not found', async ({ page }) => {
-  for (const path of ['/en/zz', '/en/zx/nothing-here', '/de']) {
+  for (const path of ['/en/zz', `/en/${seed().full.code}/nothing-here`, '/de']) {
     const res = await page.goto(path)
     expect(res?.status(), path).toBe(404)
   }

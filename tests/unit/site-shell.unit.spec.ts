@@ -1,6 +1,15 @@
 import { readRefreshRequest, sign, verify, webUrl } from '@promisetracker/cms'
 import { STRING_KEYS } from '@promisetracker/contract'
-import { Countries, computePublishedIn } from '@promisetracker/plugin-core'
+import {
+  COUNTRY_CODES,
+  Countries,
+  computePublishedIn,
+  countryDefaults,
+  countryName,
+  countryNames,
+  isLocaleCode,
+  REGIONS,
+} from '@promisetracker/plugin-core'
 import { DEFAULT_STRINGS, resolveStrings } from '@promisetracker/plugin-site'
 import { localePath, withoutLocale } from '@promisetracker/ui'
 import type { Field } from 'payload'
@@ -132,5 +141,49 @@ describe('the record status', () => {
   it('lets an editor set any status', () => {
     expect(run(['editor'], 'ready')).toBe('ready')
     expect(run(['editor'], 'archived')).toBe('archived')
+  })
+})
+
+describe('the country list', () => {
+  it('has the 54 African countries, each with a region and registered languages', () => {
+    expect(COUNTRY_CODES).toHaveLength(54)
+    for (const code of COUNTRY_CODES) {
+      const { region, languages, defaultLanguage } = countryDefaults(code)
+      expect(REGIONS, code).toContain(region)
+      expect(languages.length, code).toBeGreaterThan(0)
+      for (const language of languages) expect(isLocaleCode(language), code).toBe(true)
+      expect(languages, code).toContain(defaultLanguage)
+    }
+  })
+
+  it('names a country in every registered language', () => {
+    expect(countryNames('sn')).toMatchObject({ en: 'Senegal', fr: 'Sénégal', ar: 'السنغال' })
+    expect(countryName('cd', 'en')).toBe('Democratic Republic of the Congo')
+    expect(countryName('cg', 'fr')).toBe('République du Congo')
+    for (const code of COUNTRY_CODES) {
+      for (const locale of ['en', 'fr', 'pt', 'ar', 'sw'] as const) {
+        const name = countryName(code, locale)
+        expect(name, `${code} ${locale}`).not.toBe(code.toUpperCase())
+        expect(name, `${code} ${locale}`).not.toMatch(/ - /)
+      }
+    }
+  })
+
+  it('fills a new country from the list, and keeps what an editor entered', () => {
+    const hook = Countries.hooks?.beforeValidate?.[0]
+    const run = (data: Record<string, unknown>, locale = 'fr') =>
+      hook?.({ data, req: { locale }, operation: 'create' } as never)
+    expect(run({ code: 'ke' })).toMatchObject({
+      name: 'Kenya',
+      region: 'east-africa',
+      languages: ['en', 'sw'],
+      defaultLanguage: 'en',
+    })
+    expect(run({ code: 'ci', name: 'Ivory Coast', languages: ['en'] }, 'en')).toMatchObject({
+      name: 'Ivory Coast',
+      languages: ['en'],
+      region: 'west-africa',
+    })
+    expect(run({ code: 'not-a-country' })).toEqual({ code: 'not-a-country' })
   })
 })
