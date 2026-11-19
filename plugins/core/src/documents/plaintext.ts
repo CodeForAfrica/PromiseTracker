@@ -90,8 +90,10 @@ export function htmlToText(html: string): string {
   let preformatted = 0
   const atLineStart = () => out === '' || out.endsWith('\n')
   const newline = () => {
-    out = out.replace(/ +$/, '')
-    out += '\n'
+    // Only the end is looked at: a pattern on the whole text would rescan it each time.
+    let end = out.length
+    while (end > 0 && out[end - 1] === ' ') end--
+    out = `${out.slice(0, end)}\n`
   }
   /** Runs of spaces become one, and a line never starts with one. Preformatted text is kept. */
   const write = (text: string) => {

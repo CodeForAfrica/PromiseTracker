@@ -358,6 +358,13 @@ describe('reading text (section 9.3)', () => {
     expect(readPlaintext(text('a\r\n\r\n\r\n\r\nb  \n'), 'text/plain')).toBe('a\n\nb')
   })
 
+  it('stays fast on a page with long runs of spaces', () => {
+    const started = performance.now()
+    const out = htmlToText(`<p>a${' '.repeat(50_000)}</p>`.repeat(20))
+    expect(performance.now() - started).toBeLessThan(1000)
+    expect(out.trim().split('\n').filter(Boolean)).toEqual(Array(20).fill('a'))
+  })
+
   it('is what the plaintext extractor returns, for the kinds it accepts', async () => {
     const ctx = {} as never
     const result = await plaintextExtractor.extract(
@@ -448,6 +455,16 @@ describe('downloadFile (v2)', () => {
       'passwd.txt',
     )
     expect(filenameFor(new URL('https://example.com/'), 'application/pdf')).toBe('example-com.pdf')
+    expect(filenameFor(new URL('https://example.com/--a--b--.pdf'), 'application/pdf')).toBe(
+      'a-b.pdf',
+    )
+  })
+
+  it('names a file quickly from a link of many dashes', () => {
+    const started = performance.now()
+    const name = filenameFor(new URL(`https://example.com/${'-'.repeat(100_000)}x`), 'text/plain')
+    expect(performance.now() - started).toBeLessThan(1000)
+    expect(name).toBe('x.txt')
   })
 
   it('rejects downloads that exceed the size limit, declared or read', async () => {

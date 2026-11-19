@@ -51,8 +51,10 @@ export function filenameFor(url: URL, type: DocumentType): string {
     last
       .replace(/\.[^.]*$/, '')
       .normalize('NFKD')
-      .replace(/[^\w-]+/g, '-')
-      .replace(/^-+|-+$/g, '')
+      // One dash for each run of other characters, dashes included, so at most
+      // one is left at either end to trim.
+      .replace(/[^a-zA-Z0-9_]+/g, '-')
+      .replace(/^-|-$/g, '')
       .toLowerCase()
       .slice(0, 100) || url.hostname.replace(/[^\w-]+/g, '-')
   const extension = EXTENSIONS[type]
