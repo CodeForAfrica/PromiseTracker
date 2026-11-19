@@ -1512,7 +1512,9 @@ Version 1 runs one web process. Cached pages live in that process, section 17. R
 than one needs a shared cache first.
 
 A staging environment runs the image built from `main` from the first public page onward, so
-editors can review each piece as it lands.
+editors can review each piece as it lands. Each push to `main` deploys there once the
+browser tests pass. Staging sets `PT_NOINDEX`, so every response tells search engines not to
+index it.
 
 Images are published to Docker Hub as `codeforafrica/promisetracker-v3`, following v2's
 `codeforafrica/promisetracker-v2`.
@@ -1834,7 +1836,8 @@ the platform.
 4. The email provider. Brevo is the likely choice.
 5. Whether Payload 4.0 has been released. If it is still in beta, the team decides whether to
    launch on the pinned beta.
-6. The staging host, needed as soon as the first public page exists.
+6. ~~The staging host.~~ Settled: Dokku on Code for Africa's development server, as v2's
+   development site, at `promisetracker-v3.dev.codeforafrica.org`.
 
 ### Superdesk, later
 

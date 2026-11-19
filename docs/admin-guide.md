@@ -33,6 +33,11 @@ The admin's menu groups record types by what they are for:
 Sign in at `/admin` with your email address and password. Five wrong passwords lock the account
 for fifteen minutes.
 
+**Staging**, at https://promisetracker-v3.dev.codeforafrica.org/admin, runs the latest version
+from `main` so editors can try each piece as it lands. It updates by itself a few minutes after
+each change is merged. Its accounts are separate from production's, search engines do not index
+it, and its email goes to a test mailbox rather than to anyone's inbox.
+
 **The first super-admin** is not created in the admin. Whoever runs the server sets two
 environment variables before the first start, and the account is created when no user exists:
 
