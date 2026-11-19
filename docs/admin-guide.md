@@ -272,7 +272,8 @@ known.
 **The rating** starts on the starting rating of the claim type's scale, Unstarted for a Promise.
 It shows in the sidebar, and changes through claim updates once they arrive.
 
-The slug, in the sidebar, is made from the title. The claim's page is `/{lang}/{cc}/p/{slug}`, such
+The slug, in the sidebar, is made from the title in the language of the first save, so add a new
+claim in the language whose title should name its address. The claim's page is `/{lang}/{cc}/p/{slug}`, such
 as `/en/ke/p/build-200000-homes-a-year`. A renamed slug's old address leads to the new one. If you
 clear the slug, it is made again from the title in the language you are editing, so clear it while
 editing in the language whose title should name the address.

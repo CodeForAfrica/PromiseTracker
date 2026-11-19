@@ -12,7 +12,19 @@ describe('partial dates (section 7.5)', () => {
   })
 
   it('refuses what is not a date', () => {
-    for (const value of ['27', '2027-13', '2027-02-30', '2027-8', 'August 2027', '', null]) {
+    for (const value of [
+      '27',
+      '2027-00',
+      '2027-13',
+      '2027-02-30',
+      '2027-08-00',
+      '2027-08-32',
+      '2027-08-99',
+      '2027-8',
+      'August 2027',
+      '',
+      null,
+    ]) {
       expect(partialDatePrecision(value), String(value)).toBeNull()
     }
   })

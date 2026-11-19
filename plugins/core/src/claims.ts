@@ -43,8 +43,11 @@ export function partialDatePrecision(value: unknown): DatePrecision | null {
   const m = Number(month)
   if (m < 1 || m > 12) return null
   if (day === undefined) return 'month'
+  const d = Number(day)
+  if (d < 1 || d > 31) return null
+  // An impossible day, such as 30 February, rolls over into the next month.
   const date = new Date(`${year}-${month}-${day}T00:00:00Z`)
-  return date.toISOString().startsWith(value) ? 'day' : null
+  return !Number.isNaN(date.getTime()) && date.toISOString().startsWith(value) ? 'day' : null
 }
 
 const partialDate = (name: string, description: string) =>
