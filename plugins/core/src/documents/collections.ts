@@ -225,7 +225,7 @@ export const Documents: CollectionConfig = {
     delete: can.deleteRecords,
   },
   hooks: { beforeChange: [startProcessing], afterChange: [queueJob] },
-  // The work queue is read by status, oldest attempt first (section 7.10).
+  // The work queue is read by status, oldest attempt first (section 7.11).
   indexes: [{ fields: ['status', 'lastAttemptAt'] }],
   fields: [
     { name: 'title', type: 'text', required: true },
