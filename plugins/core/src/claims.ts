@@ -2,6 +2,7 @@ import type {
   CollectionAfterChangeHook,
   CollectionAfterDeleteHook,
   CollectionBeforeChangeHook,
+  CollectionBeforeDeleteHook,
   CollectionBeforeValidateHook,
   CollectionConfig,
   PayloadRequest,
@@ -509,6 +510,28 @@ const checkTopic: CollectionBeforeChangeHook = async ({ data, originalDoc, req }
   return data
 }
 
+/** A topic that claims or other topics use stays, so nothing points at a deleted topic. */
+const keepTopicInUse: CollectionBeforeDeleteHook = async ({ id, req }) => {
+  const count = async (collection: 'claims' | 'topics', field: 'topic' | 'parent') =>
+    (
+      await req.payload.count({
+        collection,
+        where: { [field]: { equals: id } },
+        // Counts what points at the topic, whoever deletes it.
+        overrideAccess: true,
+        req: { ...req } as PayloadRequest,
+      })
+    ).totalDocs
+  const claims = await count('claims', 'topic')
+  if (claims > 0) {
+    throw new APIError(`${claims} claim(s) use this topic. Move them to another topic first.`, 400)
+  }
+  const children = await count('topics', 'parent')
+  if (children > 0) {
+    throw new APIError(`${children} topic(s) sit under this one. Move or delete them first.`, 400)
+  }
+}
+
 const refreshTopics: CollectionAfterChangeHook = async ({ doc, req }) => {
   await refreshTags(['topics'], req)
   return doc
@@ -538,6 +561,7 @@ export const Topics: CollectionConfig = {
   hooks: {
     beforeValidate: [slugFromName],
     beforeChange: [checkTopic],
+    beforeDelete: [keepTopicInUse],
     afterChange: [refreshTopics],
     afterDelete: [refreshTopicsOnDelete],
   },

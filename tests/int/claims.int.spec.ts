@@ -175,6 +175,32 @@ describe('claims and topics', () => {
   })
 
   describe('rules', () => {
+    it('keeps a topic that claims or other topics use', async () => {
+      const health = (
+        await payload.find({ collection: 'topics', where: { slug: { equals: 'health' } } })
+      ).docs[0]
+      await expect(
+        payload.delete({ collection: 'topics', id: health?.id ?? '', overrideAccess: true }),
+      ).rejects.toThrow('claim(s) use this topic')
+      const water = await payload.create({
+        collection: 'topics',
+        locale: 'en',
+        data: { name: 'Water' },
+        overrideAccess: true,
+      })
+      const boreholes = await payload.create({
+        collection: 'topics',
+        locale: 'en',
+        data: { name: 'Boreholes', parent: water.id },
+        overrideAccess: true,
+      })
+      await expect(
+        payload.delete({ collection: 'topics', id: water.id, overrideAccess: true }),
+      ).rejects.toThrow('topic(s) sit under this one')
+      await payload.delete({ collection: 'topics', id: boreholes.id, overrideAccess: true })
+      await payload.delete({ collection: 'topics', id: water.id, overrideAccess: true })
+    })
+
     it('starts a claim on its type’s starting rating, as a Promise', async () => {
       const claim = await payload.findByID({
         collection: 'claims',
