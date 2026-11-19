@@ -8,8 +8,10 @@ import {
   CountrySection,
   NotAvailableNotice,
   PageShell,
+  topicPath,
 } from '@promisetracker/ui'
 import type { Metadata } from 'next'
+import Link from 'next/link'
 
 import { findSite, getClaims, getTopic, LOGO, loadShell, orNotFound } from '@/data'
 
@@ -34,7 +36,7 @@ const PER_COUNTRY = 10
  */
 export default async function TopicPage({ params, searchParams }: Props) {
   const { lang, topic: slug } = await params
-  const { country: asked } = await searchParams
+  const { country: asked, cursor: rawCursor } = await searchParams
   const shell = await loadShell(lang)
   const topic = await orNotFound(getTopic(lang, slug))
   if (isNotAvailable(topic)) {
@@ -49,12 +51,26 @@ export default async function TopicPage({ params, searchParams }: Props) {
   const shown = country
     ? topic.countries.filter((c) => c.country.code === country)
     : topic.countries
+  // One country's claims page through with a cursor. Every country's together
+  // show each one's latest, with a link to the rest.
+  const cursor =
+    country && typeof rawCursor === 'string' && /^\d+$/.test(rawCursor) ? rawCursor : undefined
   const lists = await Promise.all(
     shown.map(({ country: c }) =>
-      orNotFound(getClaims(lang, c.code, { topic: slug, limit: country ? 100 : PER_COUNTRY })),
+      orNotFound(
+        getClaims(lang, c.code, { topic: slug, limit: country ? undefined : PER_COUNTRY, cursor }),
+      ),
     ),
   )
   const claims: ClaimSummary[] = lists.flatMap((list) => list.items)
+  const nextCursor = country ? lists[0]?.nextCursor : null
+  const next = nextCursor
+    ? `${topicPath(lang, topic.slug)}?${new URLSearchParams({ country: country ?? '', cursor: nextCursor })}`
+    : null
+  // Without a country, a country with more claims than shown links to all of them.
+  const more = country
+    ? []
+    : shown.filter((_, i) => (lists[i]?.total ?? 0) > PER_COUNTRY).map((c) => c.country)
 
   return (
     <PageShell {...shell} logo={LOGO}>
@@ -101,6 +117,27 @@ export default async function TopicPage({ params, searchParams }: Props) {
           <p className="text-[15px] text-ink-2">{t.noClaims}</p>
         ) : (
           <ClaimList site={shell.site} claims={claims} />
+        )}
+        {next && (
+          <p className="mt-6">
+            <Link href={next} className="text-[14px] font-medium tracking-[.03em]">
+              {t.nextPage}
+            </Link>
+          </p>
+        )}
+        {more.length > 0 && (
+          <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2">
+            {more.map((c) => (
+              <li key={c.code}>
+                <Link
+                  href={`${topicPath(lang, topic.slug)}?country=${c.code}`}
+                  className="text-[14px] font-medium tracking-[.03em]"
+                >
+                  {c.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
         )}
       </CountrySection>
     </PageShell>

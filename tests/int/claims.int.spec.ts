@@ -418,6 +418,33 @@ describe('claims and topics', () => {
       })
     })
 
+    it('keeps a claim type that claims use', async () => {
+      const promise = (
+        await payload.find({ collection: 'claim-types', where: { slug: { equals: 'promise' } } })
+      ).docs[0]
+      await expect(
+        payload.delete({ collection: 'claim-types', id: promise?.id ?? '', overrideAccess: true }),
+      ).rejects.toThrow('claim(s) are of this type')
+    })
+
+    it('makes a cleared slug from the saved title', async () => {
+      const id = await claimId('county-clinics')
+      const cleared = await payload.update({
+        collection: 'claims',
+        id,
+        locale: 'en',
+        data: { slug: '' },
+        overrideAccess: true,
+      })
+      expect(cleared.slug).toBe('a-clinic-in-every-county')
+      await payload.update({
+        collection: 'claims',
+        id,
+        data: { slug: 'county-clinics' },
+        overrideAccess: true,
+      })
+    })
+
     it('refuses a key claim that is another actor’s', async () => {
       const amani = (
         await payload.find({

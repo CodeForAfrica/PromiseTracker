@@ -51,31 +51,49 @@ export function figureFormat(site: SiteInfo, figures: Figures): (count: number) 
     )
 }
 
-/** The scale most of the figures' ratings belong to, to draw them with. */
-export function scaleOf(site: SiteInfo, figures: Figures): RatingScale | null {
-  let best: { scale: RatingScale; n: number } | null = null
-  for (const scale of site.ratingScales) {
-    const n = scale.ratings.reduce((sum, r) => sum + (figures.byRating[r.slug] ?? 0), 0)
-    if (n > 0 && (!best || n > best.n)) best = { scale, n }
-  }
-  return best?.scale ?? null
+/**
+ * The figures split by scale: each scale with claims on it, with its own
+ * counts and total. Claims on different scales are never drawn on one bar.
+ */
+export function scalesOf(
+  site: SiteInfo,
+  figures: Figures,
+): { scale: RatingScale; figures: Figures }[] {
+  return site.ratingScales.flatMap((scale) => {
+    const byRating: Record<string, number> = {}
+    for (const rating of scale.ratings) {
+      const count = figures.byRating[rating.slug]
+      if (count) byRating[rating.slug] = count
+    }
+    const total = Object.values(byRating).reduce((sum, n) => sum + n, 0)
+    // Each scale keeps the form the API chose for the whole set (section 10.4).
+    return total > 0 ? [{ scale, figures: { ...figures, total, byRating, byTier: {} } }] : []
+  })
 }
 
-/** A set of figures as a tier bar and a legend, written as the API says. */
+/**
+ * A set of figures as a tier bar and a legend for each scale its claims are
+ * rated on, written as the API says. The scale is named when there are several.
+ */
 export function FiguresBlock({ site, figures }: { site: SiteInfo; figures: Figures }) {
-  const scale = scaleOf(site, figures)
-  if (!scale || figures.total === 0) return null
+  const parts = scalesOf(site, figures)
+  if (parts.length === 0) return null
   return (
-    <div className="grid gap-4">
-      <TierBar scale={scale} counts={figures.byRating} className="h-3 gap-0.5 rounded-full" />
-      <RatingLegend
-        scale={scale}
-        counts={figures.byRating}
-        hideEmpty
-        leader
-        format={figureFormat(site, figures)}
-        className="max-w-md"
-      />
+    <div className="grid gap-8">
+      {parts.map(({ scale, figures: part }) => (
+        <div key={scale.id} className="grid gap-4">
+          {parts.length > 1 && <p className="text-[13px] font-semibold text-ink">{scale.name}</p>}
+          <TierBar scale={scale} counts={part.byRating} className="h-3 gap-0.5 rounded-full" />
+          <RatingLegend
+            scale={scale}
+            counts={part.byRating}
+            hideEmpty
+            leader
+            format={figureFormat(site, part)}
+            className="max-w-md"
+          />
+        </div>
+      ))}
     </div>
   )
 }

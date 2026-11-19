@@ -28,7 +28,7 @@ export {
   formatPartialDate,
   KeyClaim,
   ratingChoices,
-  scaleOf,
+  scalesOf,
   topicChoices,
   topicPath,
 } from './claims'

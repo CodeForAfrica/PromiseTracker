@@ -144,11 +144,10 @@ const refreshActors = async (req: PayloadRequest, ...countries: unknown[]) => {
     const code = await countryCode(req, country)
     if (code) codes.add(code)
   }
+  // Topic pages count the claims of public actors in every country, so an
+  // actor's change can move their figures too.
   if (codes.size > 0)
-    await refreshTags(
-      [...codes].map((code) => `actors:${code}`),
-      req,
-    )
+    await refreshTags(['topics', ...[...codes].map((code) => `actors:${code}`)], req)
 }
 
 const refreshOnActorChange: CollectionAfterChangeHook = async ({
@@ -204,6 +203,11 @@ const checkActorSlug: CollectionBeforeChangeHook = async ({ data, originalDoc, r
 const checkKeyClaim: CollectionBeforeChangeHook = async ({ data, originalDoc, req }) => {
   if (!('keyClaim' in data) || !data.keyClaim) return data
   const claimId = idOf(data.keyClaim)
+  // The admin sends the key claim with every save. One already chosen is
+  // checked only when it changes, so a later move of that claim does not
+  // block every edit to the actor. The site shows only a key claim that is
+  // still one of the actor's own.
+  if (claimId === idOf(originalDoc?.keyClaim)) return data
   const { docs } = await req.payload.find({
     collection: 'claims',
     where: { id: { equals: claimId } },

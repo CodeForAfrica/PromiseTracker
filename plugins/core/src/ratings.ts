@@ -456,6 +456,17 @@ const keepTypeScale: CollectionBeforeChangeHook = async ({ data, originalDoc, re
   return data
 }
 
+/** A claim type whose claims exist stays, so no claim loses the scale its rating is on. */
+const keepTypeInUse: CollectionBeforeDeleteHook = async ({ id, req }) => {
+  const claims = await claimTypeUsage({ req, type: String(id) })
+  if (claims > 0) {
+    throw new APIError(
+      `${claims} claim(s) are of this type. Change their type first, or keep it.`,
+      400,
+    )
+  }
+}
+
 export const ClaimTypes: CollectionConfig = {
   slug: 'claim-types',
   labels: { singular: 'Claim type', plural: 'Claim types' },
@@ -467,6 +478,7 @@ export const ClaimTypes: CollectionConfig = {
   access: ratingAccess,
   hooks: {
     beforeChange: [keepTypeScale],
+    beforeDelete: [keepTypeInUse],
     afterChange: [cacheHooks.afterChange],
     afterDelete: [cacheHooks.afterDelete],
   },

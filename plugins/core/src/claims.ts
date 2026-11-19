@@ -80,19 +80,22 @@ const readClaims = ({ req }: { req: PayloadRequest }): boolean | Where =>
   }
 
 /** A slug from the title when none is given. The title is in the language being edited. */
-const slugFromTitle: CollectionBeforeValidateHook = ({ data, operation }) => {
+const slugFromTitle: CollectionBeforeValidateHook = ({ data, operation, originalDoc }) => {
   if (!data || data.slug) return data
   // On an update, only a slug cleared on purpose is made again. A save that
   // sends a new title and no slug keeps the address.
   if (operation === 'update' && !('slug' in data)) return data
-  const title = typeof data.title === 'string' ? data.title : null
+  // A cleared slug with no new title is made from the saved one.
+  const given = data.title ?? originalDoc?.title
+  const title = typeof given === 'string' ? given : null
   return title ? { ...data, slug: slugify(title) } : data
 }
 
-const slugFromName: CollectionBeforeValidateHook = ({ data, operation }) => {
+const slugFromName: CollectionBeforeValidateHook = ({ data, operation, originalDoc }) => {
   if (!data || data.slug) return data
   if (operation === 'update' && !('slug' in data)) return data
-  const name = typeof data.name === 'string' ? data.name : null
+  const given = data.name ?? originalDoc?.name
+  const name = typeof given === 'string' ? given : null
   return name ? { ...data, slug: slugify(name) } : data
 }
 
@@ -226,6 +229,9 @@ const checkClaim: CollectionBeforeChangeHook = async ({ data, originalDoc, req, 
   if (operation === 'create') {
     const { starting } = await typeRatings(req, type)
     if (!starting) throw new APIError('The claim type’s scale has no starting rating.', 400)
+    // These fields refuse values from editors, but Payload applies field
+    // access before this hook runs, so the system's values are kept. A test
+    // creates a claim as an editor to prove it.
     next.currentRating = starting
     next.updateCount = 0
     if (req.user) next.enteredBy = req.user.id
@@ -457,10 +463,18 @@ export const Claims: CollectionConfig = withPublishing(
           {
             name: 'extraction',
             type: 'select',
+            access: { read: signedIn },
             defaultValue: 'manual',
             options: EXTRACTIONS.map((value) => ({ label: value, value })),
           },
-          { name: 'confidence', type: 'number', min: 0, max: 1 },
+          {
+            name: 'confidence',
+            type: 'number',
+            min: 0,
+            max: 1,
+            // How a claim was found is for staff, not the public (D46).
+            access: { read: signedIn },
+          },
           {
             name: 'enteredBy',
             type: 'relationship',

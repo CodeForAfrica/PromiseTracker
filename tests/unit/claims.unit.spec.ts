@@ -1,7 +1,7 @@
-import type { Figures, SiteInfo } from '@promisetracker/contract'
+import type { Figures, RatingScale, SiteInfo } from '@promisetracker/contract'
 import { partialDatePrecision } from '@promisetracker/plugin-core'
 import { resolveStrings } from '@promisetracker/plugin-site'
-import { figureFormat, formatPartialDate } from '@promisetracker/ui'
+import { figureFormat, formatPartialDate, scalesOf } from '@promisetracker/ui'
 import { describe, expect, it } from 'vitest'
 
 describe('partial dates (section 7.5)', () => {
@@ -51,5 +51,50 @@ describe('figures (section 10.4)', () => {
 
   it('writes percentages from the threshold', () => {
     expect(figureFormat(site, figures(40, 'percentages'))(10)).toBe('25%')
+  })
+})
+
+describe('figures across scales', () => {
+  const rating = (slug: string, tier: string) => ({
+    slug,
+    label: slug,
+    definition: null,
+    tier,
+    colour: '#1b4fd8',
+    textColour: '#ffffff',
+    value: 1,
+    needsDeadline: false,
+    isStarting: false,
+    retired: false,
+  })
+  const scale = (id: string, slugs: string[]): RatingScale => ({
+    id,
+    name: id,
+    bestValue: 2,
+    worstValue: 1,
+    tiers: [{ slug: 'one', label: 'One', colour: '#1b4fd8' }],
+    ratings: slugs.map((slug) => rating(slug, 'one')),
+  })
+
+  it('splits figures by scale, each with its own total', () => {
+    const site = {
+      ratingScales: [scale('delivery', ['completed', 'stalled']), scale('truth', ['true'])],
+    } as SiteInfo
+    const figures: Figures = {
+      total: 3,
+      form: 'counts',
+      byRating: { completed: 1, stalled: 1, true: 1 },
+      byTier: {},
+    }
+    expect(
+      scalesOf(site, figures).map((part) => [
+        part.scale.id,
+        part.figures.total,
+        part.figures.byRating,
+      ]),
+    ).toEqual([
+      ['delivery', 2, { completed: 1, stalled: 1 }],
+      ['truth', 1, { true: 1 }],
+    ])
   })
 })

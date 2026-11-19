@@ -1223,8 +1223,15 @@ const handlers: Record<string, Handler> = {
   '/topics': async ({ payload, locale }) => {
     const topics = await topicMap(payload, locale)
     const counts = new Map<string, number>()
-    for (const country of await publishedCountries(payload, locale)) {
-      for (const claim of await publicClaims(payload, country.id, locale)) {
+    // Each country's claims load at once. Worth revisiting past a few
+    // thousand claims across countries (D57).
+    const perCountry = await Promise.all(
+      (await publishedCountries(payload, locale)).map((country) =>
+        publicClaims(payload, country.id, locale),
+      ),
+    )
+    for (const claims of perCountry) {
+      for (const claim of claims) {
         const topic = topics.get(idOf(claim.topic) ?? '')
         if (!topic) continue
         // A claim counts for its topic and for the broader one above it.
@@ -1260,15 +1267,19 @@ const handlers: Record<string, Handler> = {
     const threshold = await figuresThreshold(payload)
     const book = await ratingBook(payload, locale)
     const countries: { country: CountrySummary; figures: Figures }[] = []
-    for (const country of await publishedCountries(payload, locale)) {
-      const claims = await publicClaims(payload, country.id, locale, { topic: { in: ids } })
+    const published = await publishedCountries(payload, locale)
+    const perCountry = await Promise.all(
+      published.map((country) => publicClaims(payload, country.id, locale, { topic: { in: ids } })),
+    )
+    published.forEach((country, i) => {
+      const claims = perCountry[i] ?? []
       if (claims.length > 0) {
         countries.push({
           country: toSummary(country, locale),
           figures: figuresOf(claims, book, threshold),
         })
       }
-    }
+    })
     return ok(
       TopicSchema.parse({
         ...topic.summary,
