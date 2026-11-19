@@ -1,6 +1,7 @@
 import { definePromiseTrackerPlugin } from '@promisetracker/kernel'
 import type { CollectionConfig } from 'payload'
 import { can } from './access'
+import { Actors, Terms } from './actors'
 import {
   localCaptcha,
   localNewsletter,
@@ -11,7 +12,11 @@ import {
   uploadConnector,
 } from './adapters'
 import { ADMIN_GROUPS } from './adminGroups'
+import { Boundaries } from './boundaries'
 import { Countries } from './countries'
+import { ImportMappings, Imports, runImportTask } from './imports/collections'
+import { csvImporter, xlsxImporter } from './imports/readers'
+import { Areas, Offices } from './places'
 import { ClaimTypes, RatingScales } from './ratings'
 import { Users } from './users'
 
@@ -39,11 +44,26 @@ export const corePlugin = definePromiseTrackerPlugin({
   version: '0.1.0',
   order: 0,
   // The admin's menu lists groups in this order: the editors' work first, administration last.
-  collections: [RatingScales, ClaimTypes, Countries, Media, Users],
+  collections: [
+    Actors,
+    Terms,
+    Countries,
+    Areas,
+    Offices,
+    Boundaries,
+    RatingScales,
+    ClaimTypes,
+    Media,
+    Imports,
+    ImportMappings,
+    Users,
+  ],
+  tasks: [runImportTask as never],
   provides: {
     verification: [nativeVerification],
     sourceConnector: [uploadConnector],
     contentExtractor: [plaintextExtractor],
+    structuredImporter: [csvImporter, xlsxImporter],
     search: [payloadSearch],
     newsletter: [localNewsletter],
     analytics: [noAnalytics],
@@ -52,17 +72,44 @@ export const corePlugin = definePromiseTrackerPlugin({
 })
 
 export * from './access'
+export type { ActorKind, TermStage } from './actors'
+export {
+  ACTOR_KINDS,
+  Actors,
+  currentTerms,
+  onRecord,
+  pastTerms,
+  TERM_STAGES,
+  Terms,
+  termStage,
+} from './actors'
 export * from './adapters'
 export { ADMIN_GROUPS } from './adminGroups'
 export { afterCommit, installAfterCommit } from './afterCommit'
+export { Boundaries, geoJsonProblem, MAX_BOUNDARY_BYTES } from './boundaries'
 export * from './cache'
 export * from './contrast'
 export { Countries } from './countries'
 export * from './countryList'
 export * from './defaultRatings'
 export { privateHistory } from './history'
+export { setImporters } from './imports/collections'
+export type { ImportResult, RowError } from './imports/engine'
+export { runImportPlan } from './imports/engine'
+export {
+  csvImporter,
+  MAX_IMPORT_BYTES,
+  MAX_IMPORT_ROWS,
+  readCsv,
+  xlsxImporter,
+} from './imports/readers'
+export type { ImportTarget } from './imports/targets'
+export { guessMapping, IMPORT_TARGETS, mappingKeys, planRow } from './imports/targets'
 export * from './locales'
+export type { AreaType } from './places'
+export { AREA_PAGE, AREA_TYPES, Areas, Offices } from './places'
 export * from './publishing'
 export * from './ratings'
 export * from './roles'
+export * from './slugs'
 export { Users } from './users'

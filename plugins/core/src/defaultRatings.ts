@@ -1,9 +1,12 @@
 import type { Payload, PayloadRequest } from 'payload'
+import { commitTransaction, initTransaction, killTransaction } from 'payload'
+
+import { SKIP_REFRESH } from './cache'
 
 /**
  * The Delivery scale and the Promise claim type that a new installation starts
- * with (section 7.4, D22). A migration adds them once. After that they are
- * editors' data like any other.
+ * with (section 7.4, D22). `ensureDefaultRatings` adds them once. After that
+ * they are editors' data like any other.
  *
  * Colours are the redesign's. Each text colour meets WCAG AA on its colour.
  * Values run from Stalled, 1, to Completed, 5, for ClaimReview data (section
@@ -31,7 +34,7 @@ export const DELIVERY_SCALE = {
   worstValue: 1,
   tiers: [
     { slug: 'kept', label: { en: 'Promise kept', fr: 'Promesse tenue' }, colour: '#1b4fd8' },
-    { slug: 'uncertain', label: { en: 'Uncertain', fr: 'Incertain' }, colour: '#9aa0a8' },
+    { slug: 'uncertain', label: { en: 'Uncertain', fr: 'Incertain' }, colour: '#80868f' },
     {
       slug: 'not-kept',
       label: { en: 'Promise not kept', fr: 'Promesse non tenue' },
@@ -148,57 +151,74 @@ const scaleIn = (lang: Lang) => ({
 })
 
 /**
- * Adds the Delivery scale and the Promise claim type, in English and French.
- * Does nothing when a Promise claim type already exists.
+ * Adds the Delivery scale and the Promise claim type, in English and French,
+ * while no rating scale exists. Runs at start-up, as the first super-admin is
+ * created, rather than in a migration: a migration would save through whatever
+ * the collections look like when it runs, which later issues change.
+ *
+ * Everything saves in one transaction. The web process and the worker start
+ * together, and the Promise type's unique slug lets only one of them finish.
  */
-export async function seedDefaultRatings(payload: Payload, req: PayloadRequest): Promise<void> {
-  // The installation's own data, added by the system, not by a user.
-  const system = { overrideAccess: true, req, depth: 0 } as const
-  const existing = await payload.find({
-    collection: 'claim-types',
-    where: { slug: { equals: PROMISE_TYPE.slug } },
-    limit: 1,
-    ...system,
-  })
-  if (existing.totalDocs > 0) return
+export async function ensureDefaultRatings(payload: Payload): Promise<void> {
+  // Start-up writes the installation's own data. There is no user to act as.
+  const { totalDocs } = await payload.count({ collection: 'rating-scales', overrideAccess: true })
+  if (totalDocs > 0) return
 
-  const scale = await payload.create({
-    collection: 'rating-scales',
-    locale: 'en',
-    data: scaleIn('en'),
-    ...system,
-  })
-  // A second language is saved over the same rows, by their ids, so French
-  // adds labels to the English rows rather than new rows.
-  const fr = scaleIn('fr')
-  await payload.update({
-    collection: 'rating-scales',
-    id: scale.id,
-    locale: 'fr',
-    data: {
-      ...fr,
-      tiers: fr.tiers.map((t, i) => ({ ...t, id: scale.tiers?.[i]?.id ?? null })),
-      ratings: fr.ratings.map((r, i) => ({ ...r, id: scale.ratings?.[i]?.id ?? null })),
-    },
-    ...system,
-  })
-
-  const type = await payload.create({
-    collection: 'claim-types',
-    locale: 'en',
-    data: {
-      name: PROMISE_TYPE.name.en,
-      slug: PROMISE_TYPE.slug,
-      ratingScale: scale.id,
-      hasDeadline: PROMISE_TYPE.hasDeadline,
-    },
-    ...system,
-  })
-  await payload.update({
-    collection: 'claim-types',
-    id: type.id,
-    locale: 'fr',
-    data: { name: PROMISE_TYPE.name.fr },
-    ...system,
-  })
+  const req: Partial<PayloadRequest> & { payload: Payload } = { payload }
+  // Nothing is cached before the installation's first start.
+  const system = {
+    overrideAccess: true,
+    req,
+    depth: 0,
+    context: { [SKIP_REFRESH]: true },
+  } as const
+  await initTransaction(req)
+  try {
+    const scale = await payload.create({
+      collection: 'rating-scales',
+      locale: 'en',
+      data: scaleIn('en'),
+      ...system,
+    })
+    // A second language is saved over the same rows, by their ids, so French
+    // adds labels to the English rows rather than new rows.
+    const fr = scaleIn('fr')
+    await payload.update({
+      collection: 'rating-scales',
+      id: scale.id,
+      locale: 'fr',
+      data: {
+        ...fr,
+        tiers: fr.tiers.map((t, i) => ({ ...t, id: scale.tiers?.[i]?.id ?? null })),
+        ratings: fr.ratings.map((r, i) => ({ ...r, id: scale.ratings?.[i]?.id ?? null })),
+      },
+      ...system,
+    })
+    const type = await payload.create({
+      collection: 'claim-types',
+      locale: 'en',
+      data: {
+        name: PROMISE_TYPE.name.en,
+        slug: PROMISE_TYPE.slug,
+        ratingScale: scale.id,
+        hasDeadline: PROMISE_TYPE.hasDeadline,
+      },
+      ...system,
+    })
+    await payload.update({
+      collection: 'claim-types',
+      id: type.id,
+      locale: 'fr',
+      data: { name: PROMISE_TYPE.name.fr },
+      ...system,
+    })
+    await commitTransaction(req)
+  } catch (error) {
+    await killTransaction(req).catch(() => undefined)
+    // The other process added them first.
+    const again = await payload.count({ collection: 'rating-scales', overrideAccess: true })
+    if (again.totalDocs > 0) return
+    throw error
+  }
+  payload.logger.info('Added the default Delivery scale and Promise claim type.')
 }

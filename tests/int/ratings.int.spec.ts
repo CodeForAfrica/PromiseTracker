@@ -1,6 +1,11 @@
 import { getPayload, handleV1 } from '@promisetracker/cms'
 import { SiteInfo } from '@promisetracker/contract'
-import { DELIVERY_SCALE, setRatingUsage, setTagRefresher } from '@promisetracker/plugin-core'
+import {
+  DELIVERY_SCALE,
+  ensureDefaultRatings,
+  setRatingUsage,
+  setTagRefresher,
+} from '@promisetracker/plugin-core'
 import type { Payload, PayloadRequest } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
@@ -8,7 +13,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
  * Rating scales and claim types against a real database (section 7.4, D22):
  * what the migration adds, what the API returns, and the rules that keep
  * ratings safe to change. Tests make their own scale and leave the default
- * one as the migration made it.
+ * one as start-up made it.
  */
 describe('rating scales and claim types', () => {
   let payload: Payload
@@ -138,6 +143,18 @@ describe('rating scales and claim types', () => {
         expect(scale?.ratings[i]?.label).toMatchObject(r.label)
         expect(scale?.ratings[i]?.definition).toMatchObject(r.definition)
       }
+    })
+
+    it('adds the defaults once, however often it starts', async () => {
+      const count = async () => ({
+        scales: (await payload.count({ collection: 'rating-scales', overrideAccess: true }))
+          .totalDocs,
+        types: (await payload.count({ collection: 'claim-types', overrideAccess: true })).totalDocs,
+      })
+      const before = await count()
+      // Start-up runs again, in the web process and the worker together.
+      await Promise.all([ensureDefaultRatings(payload), ensureDefaultRatings(payload)])
+      expect(await count()).toEqual(before)
     })
 
     it('has the Promise claim type, using the Delivery scale', async () => {

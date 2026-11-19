@@ -119,6 +119,10 @@ type TierBarProps = {
  * One group per tier, sized by its share, each split into its ratings. Sizes
  * are data, so they are set inline. Tiers and ratings with no claims are left
  * out.
+ *
+ * Sighted readers see only colour here, so always show a `RatingLegend` for
+ * the same scale and counts beside it (section 10.5). Screen readers get the
+ * bar's label instead.
  */
 export function TierBar({
   scale,

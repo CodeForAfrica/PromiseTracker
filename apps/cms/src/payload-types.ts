@@ -156,25 +156,58 @@ export interface Config {
   };
   blocks: {};
   collections: {
+    actors: Actor;
+    terms: Term;
+    countries: Country;
+    areas: Area;
+    offices: Office;
+    boundaries: Boundary;
     'rating-scales': RatingScale;
     'claim-types': ClaimType;
-    countries: Country;
     media: Media;
+    imports: Import;
+    'import-mappings': ImportMapping;
     users: User;
     'payload-kv': PayloadKv;
+    'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
     'payload-llm-instructions': PayloadLlmInstruction;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    actors: {
+      terms: 'terms';
+      partyTerms: 'terms';
+    };
+    countries: {
+      areas: 'areas';
+      offices: 'offices';
+      actors: 'actors';
+    };
+    areas: {
+      children: 'areas';
+      terms: 'terms';
+    };
+    offices: {
+      terms: 'terms';
+    };
+  };
   collectionsSelect: {
+    actors: ActorsSelect<false> | ActorsSelect<true>;
+    terms: TermsSelect<false> | TermsSelect<true>;
+    countries: CountriesSelect<false> | CountriesSelect<true>;
+    areas: AreasSelect<false> | AreasSelect<true>;
+    offices: OfficesSelect<false> | OfficesSelect<true>;
+    boundaries: BoundariesSelect<false> | BoundariesSelect<true>;
     'rating-scales': RatingScalesSelect<false> | RatingScalesSelect<true>;
     'claim-types': ClaimTypesSelect<false> | ClaimTypesSelect<true>;
-    countries: CountriesSelect<false> | CountriesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    imports: ImportsSelect<false> | ImportsSelect<true>;
+    'import-mappings': ImportMappingsSelect<false> | ImportMappingsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
+    'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -191,9 +224,11 @@ export interface Config {
     | ('en' | 'fr' | 'pt' | 'ar' | 'sw')[];
   globals: {
     site: Site;
+    'payload-jobs-stats': PayloadJobsStat;
   };
   globalsSelect: {
     site: SiteSelect<false> | SiteSelect<true>;
+    'payload-jobs-stats': PayloadJobsStatsSelect<false> | PayloadJobsStatsSelect<true>;
   };
   locale: 'en' | 'fr' | 'pt' | 'ar' | 'sw';
   widgets: {
@@ -205,7 +240,13 @@ export interface Config {
   };
   user: User;
   jobs: {
-    tasks: unknown;
+    tasks: {
+      runImport: TaskRunImport;
+      inline: {
+        input: unknown;
+        output: unknown;
+      };
+    };
     workflows: unknown;
   };
 }
@@ -226,6 +267,473 @@ export interface UserAuthOperations {
     email: string;
     password: string;
   };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "actors".
+ */
+export interface Actor {
+  id: string;
+  name: string;
+  kind: 'person' | 'party' | 'institution';
+  shortName?: string | null;
+  honorific?: string | null;
+  gender?: ('female' | 'male' | 'non-binary') | null;
+  institutionType?: ('ministry' | 'agency' | 'department' | 'commission' | 'state-corporation' | 'other') | null;
+  image?: (string | null) | Media;
+  imageCredit?: string | null;
+  biography?: string | null;
+  links?:
+    | {
+        type: 'website' | 'facebook' | 'x' | 'instagram' | 'youtube' | 'tiktok' | 'linkedin' | 'other';
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Made from the name when you save. Used in addresses, such as /en/ke/nairobi-county.
+   */
+  slug?: string | null;
+  country: string | Country;
+  formerSlugs?: string[] | null;
+  /**
+   * When the first term starts. The actor is public from then.
+   */
+  onRecordSince?: string | null;
+  terms?: {
+    docs?: (string | Term)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  partyTerms?: {
+    docs?: (string | Term)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  /**
+   * Ready makes it public in each language that has its required fields.
+   */
+  recordStatus: 'ready' | 'hold' | 'archived';
+  /**
+   * Worked out on save. The languages this record is live in.
+   */
+  publishedIn?: string[] | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: string;
+  alt: string;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  prefix?: string | null;
+  _objectKey?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  _stored?: boolean | null;
+  _transforms?: UploadTransforms;
+  original?: {
+    filename?: string | null;
+    url?: string | null;
+    mimeType?: string | null;
+    filesize?: number | null;
+    width?: number | null;
+    height?: number | null;
+    prefix?: string | null;
+    _objectKey?: string | null;
+    _stored?: boolean | null;
+  };
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users".
+ */
+export interface User {
+  id: string;
+  name?: string | null;
+  roles: ('super-admin' | 'editor' | 'contributor' | 'reviewer' | 'moderator' | 'viewer')[];
+  /**
+   * Two-letter country codes this user works on, such as ke. Not enforced in version 1.
+   */
+  countries?: string[] | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  resetPasswordRequestedAt?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+        refreshCount?: number | null;
+        refreshedAt?: string | null;
+        label?: string | null;
+        type?: string | null;
+        metadata?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+      }[]
+    | null;
+  password?: string | null;
+  collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "countries".
+ */
+export interface Country {
+  id: string;
+  code:
+    | 'dz'
+    | 'ao'
+    | 'bj'
+    | 'bw'
+    | 'bf'
+    | 'bi'
+    | 'cm'
+    | 'cv'
+    | 'cf'
+    | 'td'
+    | 'km'
+    | 'ci'
+    | 'cd'
+    | 'dj'
+    | 'eg'
+    | 'gq'
+    | 'er'
+    | 'sz'
+    | 'et'
+    | 'ga'
+    | 'gm'
+    | 'gh'
+    | 'gn'
+    | 'gw'
+    | 'ke'
+    | 'ls'
+    | 'lr'
+    | 'ly'
+    | 'mg'
+    | 'mw'
+    | 'ml'
+    | 'mr'
+    | 'mu'
+    | 'ma'
+    | 'mz'
+    | 'na'
+    | 'ne'
+    | 'ng'
+    | 'cg'
+    | 'rw'
+    | 'st'
+    | 'sn'
+    | 'sc'
+    | 'sl'
+    | 'so'
+    | 'za'
+    | 'ss'
+    | 'sd'
+    | 'tz'
+    | 'tg'
+    | 'tn'
+    | 'ug'
+    | 'zm'
+    | 'zw';
+  codeShown?: string | null;
+  name?: string | null;
+  region?: ('east-africa' | 'west-africa' | 'central-africa' | 'southern-africa' | 'north-africa') | null;
+  languages?: ('en' | 'fr' | 'pt' | 'ar' | 'sw')[] | null;
+  defaultLanguage?: ('en' | 'fr' | 'pt' | 'ar' | 'sw') | null;
+  about?: string | null;
+  /**
+   * The area for the whole country. Set when that area is added.
+   */
+  rootArea?: (string | null) | Area;
+  areas?: {
+    docs?: (string | Area)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  offices?: {
+    docs?: (string | Office)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  actors?: {
+    docs?: (string | Actor)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  /**
+   * Ready makes it public in each language that has its required fields.
+   */
+  recordStatus: 'ready' | 'hold' | 'archived';
+  /**
+   * Worked out on save. The languages this record is live in.
+   */
+  publishedIn?: string[] | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "areas".
+ */
+export interface Area {
+  id: string;
+  name: string;
+  /**
+   * Made from the name when you save. Used in addresses, such as /en/ke/nairobi-county.
+   */
+  slug?: string | null;
+  type: 'country' | 'region' | 'county' | 'constituency' | 'ward' | 'city' | 'other';
+  /**
+   * The area it sits in.
+   */
+  parent?: (string | null) | Area;
+  /**
+   * Automatic gives the area a page when two or more seats answer for it.
+   */
+  page: 'automatic' | 'always' | 'never';
+  country: string | Country;
+  externalCode?: string | null;
+  formerSlugs?: string[] | null;
+  geo?: {
+    latitude?: number | null;
+    longitude?: number | null;
+    /**
+     * West, south, east and north, in degrees, such as [36.6, -1.45, 37.1, -1.16].
+     */
+    bounds?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+    /**
+     * A GeoJSON file from Boundaries, which records its source and licence.
+     */
+    outline?: (string | null) | Boundary;
+  };
+  children?: {
+    docs?: (string | Area)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  terms?: {
+    docs?: (string | Term)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  _h_slugPath?: string | null;
+  _h_titlePath?: string | null;
+}
+/**
+ * GeoJSON outlines of areas, for maps. Upload a .geojson file, then choose it on the area.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "boundaries".
+ */
+export interface Boundary {
+  id: string;
+  /**
+   * Where the outline comes from, such as the IEBC or OpenStreetMap.
+   */
+  source: string;
+  /**
+   * Its licence, such as ODbL 1.0 or CC BY 4.0.
+   */
+  licence: string;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  prefix?: string | null;
+  _objectKey?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  _stored?: boolean | null;
+  _transforms?: UploadTransforms;
+  original?: {
+    filename?: string | null;
+    url?: string | null;
+    mimeType?: string | null;
+    filesize?: number | null;
+    width?: number | null;
+    height?: number | null;
+    prefix?: string | null;
+    _objectKey?: string | null;
+    _stored?: boolean | null;
+  };
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "terms".
+ */
+export interface Term {
+  id: string;
+  actor: string | Actor;
+  office: string | Office;
+  /**
+   * Empty for an office that answers for the whole country.
+   */
+  area?: (string | null) | Area;
+  /**
+   * The party during this term.
+   */
+  party?: (string | null) | Actor;
+  electedOn?: string | null;
+  startsOn: string;
+  /**
+   * Empty while in office.
+   */
+  endsOn?: string | null;
+  stage?: string | null;
+  /**
+   * What the term delivered. Written when it ends.
+   */
+  closingSummary?: string | null;
+  /**
+   * Who took the seat next.
+   */
+  successor?: (string | null) | Actor;
+  title?: string | null;
+  /**
+   * The actor’s country.
+   */
+  country?: (string | null) | Country;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "offices".
+ */
+export interface Office {
+  id: string;
+  name: string;
+  shortName?: string | null;
+  /**
+   * Made from the name when you save. Used in addresses, such as /en/ke/nairobi-county.
+   */
+  slug?: string | null;
+  /**
+   * The kind of area it answers for. Country for national offices, empty for offices with no area.
+   */
+  areaType?: ('country' | 'region' | 'county' | 'constituency' | 'ward' | 'city' | 'other') | null;
+  /**
+   * More than one for seats with several members.
+   */
+  holdersPerSeat: number;
+  /**
+   * Lower comes first. Put the highest office first.
+   */
+  order: number;
+  country: string | Country;
+  formerSlugs?: string[] | null;
+  terms?: {
+    docs?: (string | Term)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * The ratings claims are given, grouped in tiers. Changing a rating changes it on every claim that carries it.
@@ -314,59 +822,6 @@ export interface RatingScale {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users".
- */
-export interface User {
-  id: string;
-  name?: string | null;
-  roles: ('super-admin' | 'editor' | 'contributor' | 'reviewer' | 'moderator' | 'viewer')[];
-  /**
-   * Two-letter country codes this user works on, such as ke. Not enforced in version 1.
-   */
-  countries?: string[] | null;
-  createdBy?: {
-    relationTo: 'users';
-    value: string | User;
-  } | null;
-  updatedBy?: {
-    relationTo: 'users';
-    value: string | User;
-  } | null;
-  updatedAt: string;
-  createdAt: string;
-  email: string;
-  resetPasswordToken?: string | null;
-  resetPasswordExpiration?: string | null;
-  salt?: string | null;
-  hash?: string | null;
-  resetPasswordRequestedAt?: string | null;
-  loginAttempts?: number | null;
-  lockUntil?: string | null;
-  sessions?:
-    | {
-        id: string;
-        createdAt?: string | null;
-        expiresAt: string;
-        refreshCount?: number | null;
-        refreshedAt?: string | null;
-        label?: string | null;
-        type?: string | null;
-        metadata?:
-          | {
-              [k: string]: unknown;
-            }
-          | unknown[]
-          | string
-          | number
-          | boolean
-          | null;
-      }[]
-    | null;
-  password?: string | null;
-  collection: 'users';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "claim-types".
  */
 export interface ClaimType {
@@ -390,98 +845,126 @@ export interface ClaimType {
   createdAt: string;
 }
 /**
+ * Upload a CSV or Excel file. Check the mapping, then choose Preview, and Import when the preview is right.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "countries".
+ * via the `definition` "imports".
  */
-export interface Country {
+export interface Import {
   id: string;
-  code:
-    | 'dz'
-    | 'ao'
-    | 'bj'
-    | 'bw'
-    | 'bf'
-    | 'bi'
-    | 'cm'
-    | 'cv'
-    | 'cf'
-    | 'td'
-    | 'km'
-    | 'ci'
-    | 'cd'
-    | 'dj'
-    | 'eg'
-    | 'gq'
-    | 'er'
-    | 'sz'
-    | 'et'
-    | 'ga'
-    | 'gm'
-    | 'gh'
-    | 'gn'
-    | 'gw'
-    | 'ke'
-    | 'ls'
-    | 'lr'
-    | 'ly'
-    | 'mg'
-    | 'mw'
-    | 'ml'
-    | 'mr'
-    | 'mu'
-    | 'ma'
-    | 'mz'
-    | 'na'
-    | 'ne'
-    | 'ng'
-    | 'cg'
-    | 'rw'
-    | 'st'
-    | 'sn'
-    | 'sc'
-    | 'sl'
-    | 'so'
-    | 'za'
-    | 'ss'
-    | 'sd'
-    | 'tz'
-    | 'tg'
-    | 'tn'
-    | 'ug'
-    | 'zm'
-    | 'zw';
-  codeShown?: string | null;
-  name?: string | null;
-  region?: ('east-africa' | 'west-africa' | 'central-africa' | 'southern-africa' | 'north-africa') | null;
-  languages?: ('en' | 'fr' | 'pt' | 'ar' | 'sw')[] | null;
-  defaultLanguage?: ('en' | 'fr' | 'pt' | 'ar' | 'sw') | null;
-  about?: string | null;
+  country: string | Country;
+  recordType: 'areas' | 'offices' | 'actors' | 'terms';
   /**
-   * Ready makes it public in each language that has its required fields.
+   * Runs when you save.
    */
-  recordStatus: 'ready' | 'hold' | 'archived';
+  nextStep?: ('preview' | 'import') | null;
   /**
-   * Worked out on save. The languages this record is live in.
+   * Which column fills each field. Guessed from the headings, or from a saved mapping.
    */
-  publishedIn?: string[] | null;
-  createdBy?: {
-    relationTo: 'users';
-    value: string | User;
-  } | null;
-  updatedBy?: {
-    relationTo: 'users';
-    value: string | User;
-  } | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media".
- */
-export interface Media {
-  id: string;
-  alt: string;
+  mapping?:
+    | {
+        field:
+          | 'name'
+          | 'name:fr'
+          | 'name:pt'
+          | 'name:ar'
+          | 'name:sw'
+          | 'slug'
+          | 'type'
+          | 'parent'
+          | 'page'
+          | 'externalCode'
+          | 'shortName'
+          | 'shortName:fr'
+          | 'shortName:pt'
+          | 'shortName:ar'
+          | 'shortName:sw'
+          | 'areaType'
+          | 'holdersPerSeat'
+          | 'order'
+          | 'kind'
+          | 'honorific'
+          | 'gender'
+          | 'institutionType'
+          | 'imageCredit'
+          | 'biography'
+          | 'biography:fr'
+          | 'biography:pt'
+          | 'biography:ar'
+          | 'biography:sw'
+          | 'actor'
+          | 'office'
+          | 'area'
+          | 'party'
+          | 'electedOn'
+          | 'startsOn'
+          | 'endsOn'
+          | 'successor'
+          | 'closingSummary'
+          | 'closingSummary:fr'
+          | 'closingSummary:pt'
+          | 'closingSummary:ar'
+          | 'closingSummary:sw';
+        column: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Give the mapping a name to keep it for the next file with these headings.
+   */
+  saveMappingAs?: string | null;
+  status?: ('mapping' | 'previewed' | 'queued' | 'running' | 'done' | 'failed') | null;
+  preview?: {
+    create?: number | null;
+    update?: number | null;
+    skip?: number | null;
+    failed?: number | null;
+  };
+  result?: {
+    create?: number | null;
+    update?: number | null;
+    skip?: number | null;
+    failed?: number | null;
+  };
+  /**
+   * Problems by spreadsheet row, headings being row 1.
+   */
+  errors?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  headings?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  sampleRows?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  rows?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   createdBy?: {
     relationTo: 'users';
     value: string | User;
@@ -519,6 +1002,37 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "import-mappings".
+ */
+export interface ImportMapping {
+  id: string;
+  name: string;
+  recordType: 'areas' | 'offices' | 'actors' | 'terms';
+  /**
+   * Field to column heading.
+   */
+  columns:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -536,11 +1050,145 @@ export interface PayloadKv {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs".
+ */
+export interface PayloadJob {
+  id: string;
+  /**
+   * Input data provided to the job
+   */
+  input?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  taskStatus?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  meta?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  completedAt?: string | null;
+  totalTried?: number | null;
+  /**
+   * If hasError is true this job will not be retried
+   */
+  hasError?: boolean | null;
+  /**
+   * If hasError is true, this is the error that caused it
+   */
+  error?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Task execution log
+   */
+  log?:
+    | {
+        executedAt: string;
+        completedAt: string;
+        taskSlug: 'inline' | 'runImport';
+        taskID: string;
+        input:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        output?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        state: 'failed' | 'succeeded';
+        error?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        parent?: {
+          taskSlug?: ('inline' | 'runImport') | null;
+          taskID?: string | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
+  taskSlug?: ('inline' | 'runImport') | null;
+  queue?: string | null;
+  waitUntil?: string | null;
+  processingUntil?: string | null;
+  processingToken?: string | null;
+  /**
+   * Used for concurrency control. Jobs with the same key are subject to exclusive/supersedes rules.
+   */
+  concurrencyKey?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
   id: string;
   document?:
+    | ({
+        relationTo: 'actors';
+        value: string | Actor;
+      } | null)
+    | ({
+        relationTo: 'terms';
+        value: string | Term;
+      } | null)
+    | ({
+        relationTo: 'countries';
+        value: string | Country;
+      } | null)
+    | ({
+        relationTo: 'areas';
+        value: string | Area;
+      } | null)
+    | ({
+        relationTo: 'offices';
+        value: string | Office;
+      } | null)
+    | ({
+        relationTo: 'boundaries';
+        value: string | Boundary;
+      } | null)
     | ({
         relationTo: 'rating-scales';
         value: string | RatingScale;
@@ -550,12 +1198,16 @@ export interface PayloadLockedDocument {
         value: string | ClaimType;
       } | null)
     | ({
-        relationTo: 'countries';
-        value: string | Country;
-      } | null)
-    | ({
         relationTo: 'media';
         value: string | Media;
+      } | null)
+    | ({
+        relationTo: 'imports';
+        value: string | Import;
+      } | null)
+    | ({
+        relationTo: 'import-mappings';
+        value: string | ImportMapping;
       } | null)
     | ({
         relationTo: 'users';
@@ -627,6 +1279,172 @@ export interface PayloadLlmInstruction {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "actors_select".
+ */
+export interface ActorsSelect<T extends boolean = true> {
+  name?: T;
+  kind?: T;
+  shortName?: T;
+  honorific?: T;
+  gender?: T;
+  institutionType?: T;
+  image?: T;
+  imageCredit?: T;
+  biography?: T;
+  links?:
+    | T
+    | {
+        type?: T;
+        url?: T;
+        id?: T;
+      };
+  slug?: T;
+  country?: T;
+  formerSlugs?: T;
+  onRecordSince?: T;
+  terms?: T;
+  partyTerms?: T;
+  recordStatus?: T;
+  publishedIn?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "terms_select".
+ */
+export interface TermsSelect<T extends boolean = true> {
+  actor?: T;
+  office?: T;
+  area?: T;
+  party?: T;
+  electedOn?: T;
+  startsOn?: T;
+  endsOn?: T;
+  stage?: T;
+  closingSummary?: T;
+  successor?: T;
+  title?: T;
+  country?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "countries_select".
+ */
+export interface CountriesSelect<T extends boolean = true> {
+  code?: T;
+  codeShown?: T;
+  name?: T;
+  region?: T;
+  languages?: T;
+  defaultLanguage?: T;
+  about?: T;
+  rootArea?: T;
+  areas?: T;
+  offices?: T;
+  actors?: T;
+  recordStatus?: T;
+  publishedIn?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "areas_select".
+ */
+export interface AreasSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  type?: T;
+  parent?: T;
+  page?: T;
+  country?: T;
+  externalCode?: T;
+  formerSlugs?: T;
+  geo?:
+    | T
+    | {
+        latitude?: T;
+        longitude?: T;
+        bounds?: T;
+        outline?: T;
+      };
+  children?: T;
+  terms?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _h_slugPath?: T;
+  _h_titlePath?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "offices_select".
+ */
+export interface OfficesSelect<T extends boolean = true> {
+  name?: T;
+  shortName?: T;
+  slug?: T;
+  areaType?: T;
+  holdersPerSeat?: T;
+  order?: T;
+  country?: T;
+  formerSlugs?: T;
+  terms?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "boundaries_select".
+ */
+export interface BoundariesSelect<T extends boolean = true> {
+  source?: T;
+  licence?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  prefix?: T;
+  _objectKey?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  _stored?: T;
+  _transforms?: T;
+  original?:
+    | T
+    | {
+        filename?: T;
+        url?: T;
+        mimeType?: T;
+        filesize?: T;
+        width?: T;
+        height?: T;
+        prefix?: T;
+        _objectKey?: T;
+        _stored?: T;
+      };
+  focalX?: T;
+  focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "rating-scales_select".
  */
 export interface RatingScalesSelect<T extends boolean = true> {
@@ -678,25 +1496,6 @@ export interface ClaimTypesSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "countries_select".
- */
-export interface CountriesSelect<T extends boolean = true> {
-  code?: T;
-  codeShown?: T;
-  name?: T;
-  region?: T;
-  languages?: T;
-  defaultLanguage?: T;
-  about?: T;
-  recordStatus?: T;
-  publishedIn?: T;
-  createdBy?: T;
-  updatedBy?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media_select".
  */
 export interface MediaSelect<T extends boolean = true> {
@@ -731,6 +1530,87 @@ export interface MediaSelect<T extends boolean = true> {
       };
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "imports_select".
+ */
+export interface ImportsSelect<T extends boolean = true> {
+  country?: T;
+  recordType?: T;
+  nextStep?: T;
+  mapping?:
+    | T
+    | {
+        field?: T;
+        column?: T;
+        id?: T;
+      };
+  saveMappingAs?: T;
+  status?: T;
+  preview?:
+    | T
+    | {
+        create?: T;
+        update?: T;
+        skip?: T;
+        failed?: T;
+      };
+  result?:
+    | T
+    | {
+        create?: T;
+        update?: T;
+        skip?: T;
+        failed?: T;
+      };
+  errors?: T;
+  headings?: T;
+  sampleRows?: T;
+  rows?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  prefix?: T;
+  _objectKey?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  _stored?: T;
+  _transforms?: T;
+  original?:
+    | T
+    | {
+        filename?: T;
+        url?: T;
+        mimeType?: T;
+        filesize?: T;
+        width?: T;
+        height?: T;
+        prefix?: T;
+        _objectKey?: T;
+        _stored?: T;
+      };
+  focalX?: T;
+  focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "import-mappings_select".
+ */
+export interface ImportMappingsSelect<T extends boolean = true> {
+  name?: T;
+  recordType?: T;
+  columns?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -772,6 +1652,46 @@ export interface UsersSelect<T extends boolean = true> {
 export interface PayloadKvSelect<T extends boolean = true> {
   key?: T;
   data?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs_select".
+ */
+export interface PayloadJobsSelect<T extends boolean = true> {
+  input?: T;
+  taskStatus?: T;
+  meta?: T;
+  completedAt?: T;
+  totalTried?: T;
+  hasError?: T;
+  error?: T;
+  log?:
+    | T
+    | {
+        executedAt?: T;
+        completedAt?: T;
+        taskSlug?: T;
+        taskID?: T;
+        input?: T;
+        output?: T;
+        state?: T;
+        error?: T;
+        parent?:
+          | T
+          | {
+              taskSlug?: T;
+              taskID?: T;
+            };
+        id?: T;
+      };
+  taskSlug?: T;
+  queue?: T;
+  waitUntil?: T;
+  processingUntil?: T;
+  processingToken?: T;
+  concurrencyKey?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -874,7 +1794,33 @@ export interface Site {
     aboutSite?: string | null;
     chooseCountry?: string | null;
     notAvailableTitle?: string | null;
+    answersFor?: string | null;
+    seatsInArea?: string | null;
+    breadcrumb?: string | null;
     notAvailableBody?: string | null;
+    officials?: string | null;
+    seeAllOfficials?: string | null;
+    whoIsDelivering?: string | null;
+    pastAdministrations?: string | null;
+    whoThisIs?: string | null;
+    timeInOffice?: string | null;
+    present?: string | null;
+    closingSummary?: string | null;
+    succeededBy?: string | null;
+    formerHolder?: string | null;
+    noHolder?: string | null;
+    links?: string | null;
+    photoCredit?: string | null;
+    filterOffice?: string | null;
+    filterArea?: string | null;
+    filterParty?: string | null;
+    filterAll?: string | null;
+    sortBy?: string | null;
+    sortName?: string | null;
+    sortOffice?: string | null;
+    showResults?: string | null;
+    noMatches?: string | null;
+    nextPage?: string | null;
     notFoundTitle?: string | null;
     notFoundBody?: string | null;
     backHome?: string | null;
@@ -890,6 +1836,24 @@ export interface Site {
     relationTo: 'users';
     value: string | User;
   } | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs-stats".
+ */
+export interface PayloadJobsStat {
+  id: string;
+  stats?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -937,7 +1901,33 @@ export interface SiteSelect<T extends boolean = true> {
         aboutSite?: T;
         chooseCountry?: T;
         notAvailableTitle?: T;
+        answersFor?: T;
+        seatsInArea?: T;
+        breadcrumb?: T;
         notAvailableBody?: T;
+        officials?: T;
+        seeAllOfficials?: T;
+        whoIsDelivering?: T;
+        pastAdministrations?: T;
+        whoThisIs?: T;
+        timeInOffice?: T;
+        present?: T;
+        closingSummary?: T;
+        succeededBy?: T;
+        formerHolder?: T;
+        noHolder?: T;
+        links?: T;
+        photoCredit?: T;
+        filterOffice?: T;
+        filterArea?: T;
+        filterParty?: T;
+        filterAll?: T;
+        sortBy?: T;
+        sortName?: T;
+        sortOffice?: T;
+        showResults?: T;
+        noMatches?: T;
+        nextPage?: T;
         notFoundTitle?: T;
         notFoundBody?: T;
         backHome?: T;
@@ -947,6 +1937,16 @@ export interface SiteSelect<T extends boolean = true> {
       };
   createdBy?: T;
   updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs-stats_select".
+ */
+export interface PayloadJobsStatsSelect<T extends boolean = true> {
+  stats?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
@@ -978,7 +1978,19 @@ export interface CollectionsWidget {
 export interface CollectionQueryWidget {
   data?: {
     title?: string | null;
-    relatedCollection: 'rating-scales' | 'claim-types' | 'countries' | 'media' | 'users';
+    relatedCollection:
+      | 'actors'
+      | 'terms'
+      | 'countries'
+      | 'areas'
+      | 'offices'
+      | 'boundaries'
+      | 'rating-scales'
+      | 'claim-types'
+      | 'media'
+      | 'imports'
+      | 'import-mappings'
+      | 'users';
     where?:
       | {
           [k: string]: unknown;
@@ -1000,7 +2012,22 @@ export interface CollectionQueryWidget {
  */
 export interface ActivityWidget {
   data?: {
-    excludedCollections?: ('rating-scales' | 'claim-types' | 'countries' | 'media' | 'users')[] | null;
+    excludedCollections?:
+      | (
+          | 'actors'
+          | 'terms'
+          | 'countries'
+          | 'areas'
+          | 'offices'
+          | 'boundaries'
+          | 'rating-scales'
+          | 'claim-types'
+          | 'media'
+          | 'imports'
+          | 'import-mappings'
+          | 'users'
+        )[]
+      | null;
   };
   width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }
@@ -1010,9 +2037,19 @@ export interface ActivityWidget {
  */
 export interface UploadDropzoneWidget {
   data?: {
-    excludedCollections?: 'media'[] | null;
+    excludedCollections?: ('boundaries' | 'media' | 'imports')[] | null;
   };
   width: 'x-small' | 'small' | 'medium' | 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskRunImport".
+ */
+export interface TaskRunImport {
+  input: {
+    importId: string;
+  };
+  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

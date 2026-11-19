@@ -7,7 +7,7 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { getPayload } from '@promisetracker/cms'
-import { countryName } from '@promisetracker/plugin-core'
+import { countryName, csvImporter, guessMapping, runImportPlan } from '@promisetracker/plugin-core'
 
 import { unusedCountryCodes } from '../countries'
 
@@ -27,6 +27,13 @@ if (process.argv.includes('--remove')) {
   if (existsSync(file)) {
     const seed = JSON.parse(readFileSync(file, 'utf8')) as Seed
     // Test set-up writes as the system, and removes only what it added.
+    for (const collection of ['terms', 'actors', 'areas', 'offices'] as const) {
+      await payload.delete({
+        collection,
+        where: { country: { equals: seed.full.id } },
+        overrideAccess: true,
+      })
+    }
     await payload.delete({
       collection: 'countries',
       where: { id: { in: [seed.full.id, seed.englishOnly.id] } },
@@ -65,6 +72,52 @@ if (process.argv.includes('--remove')) {
       overrideAccess: true,
     })
   }
+  // The Kenyan areas and offices, so the full country has area pages, and
+  // fictional office holders, one of whom has left office.
+  const fixtures = path.resolve(import.meta.dirname, '../fixtures')
+  for (const [target, name] of [
+    ['offices', 'kenya-offices.csv'],
+    ['areas', 'kenya-areas.csv'],
+    ['actors', 'kenya-actors.csv'],
+    ['terms', 'kenya-terms.csv'],
+  ] as const) {
+    const content = {
+      filename: name,
+      mimeType: 'text/csv',
+      data: new Uint8Array(readFileSync(path.join(fixtures, name))),
+    }
+    const { headings } = await csvImporter.inspect(content, {} as never)
+    const rows = []
+    for await (const row of csvImporter.rows(content, {} as never)) rows.push(row)
+    const mapping =
+      target === 'areas'
+        ? { name: 'Name', type: 'Type', parent: 'Parent' }
+        : target === 'offices'
+          ? {
+              name: 'Name',
+              shortName: 'Short name',
+              slug: 'Slug',
+              areaType: 'Area type',
+              order: 'Order',
+            }
+          : guessMapping(target, headings)
+    const { errors } = await runImportPlan(payload, {
+      target,
+      country: a.id,
+      headings,
+      rows,
+      mapping,
+      commit: true,
+    })
+    if (errors.length) throw new Error(`Seeding ${name} failed: ${JSON.stringify(errors)}`)
+  }
+  // An editor releases each actor. The seed releases them all.
+  await payload.update({
+    collection: 'actors',
+    where: { country: { equals: a.id } },
+    data: { recordStatus: 'ready' },
+    overrideAccess: true,
+  })
   const admin = {
     email: `e2e-admin-${crypto.randomUUID()}@example.org`,
     password: `pw-${crypto.randomUUID()}`,

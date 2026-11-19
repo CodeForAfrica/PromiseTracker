@@ -84,6 +84,12 @@ describe('colour contrast (section 10.5)', () => {
       expect(contrastRatio(r.textColour, r.colour), r.slug).toBeGreaterThanOrEqual(AA_CONTRAST)
     }
   })
+
+  it('every default tier colour stands out on white, as graphics need 3:1', () => {
+    for (const t of DELIVERY_SCALE.tiers) {
+      expect(contrastRatio(t.colour, '#ffffff'), t.slug).toBeGreaterThanOrEqual(3)
+    }
+  })
 })
 
 describe('the default Delivery scale (section 7.4)', () => {

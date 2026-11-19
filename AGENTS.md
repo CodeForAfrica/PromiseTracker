@@ -12,10 +12,11 @@ Issue #672 gives the build order and the owner of each issue.
 - `packages/kernel`, `packages/contract`, `packages/sdk`, `packages/ui`: see the README.
 - `plugins/*`: Payload plugins. Each adds its collections, globals and fields to the config.
 - `tests/unit`, `tests/int`, `tests/e2e`: Vitest unit and integration tests, and Playwright tests.
+- `seed`: seed data for development, one folder of spreadsheets per country. `pnpm seed` loads it.
 
 ## Commands
 
-- Install: `pnpm install`. Services: `pnpm services`. Dev: `pnpm dev`.
+- Install: `pnpm install`. Services: `pnpm services`. Dev: `pnpm dev`. Seed data: `pnpm seed`.
 - Lint: `pnpm lint`. Format: `pnpm format`. Types: `pnpm typecheck`.
 - Tests: `pnpm test:unit`, `pnpm test:int` and `pnpm test:e2e`. The last two need Postgres.
 - Migrations: `pnpm payload migrate:create <name>`, then `pnpm migrate:check`.
@@ -35,6 +36,10 @@ Issue #672 gives the build order and the owner of each issue.
   generated one with `Pick`, `Omit` or an intersection when you need something narrower or wider.
   The Zod schemas in `@promisetracker/contract` describe the public API, which the site uses. Map
   generated types to them in one typed function, as `apps/cms/src/api/v1.ts` does.
+- **Every feature brings seed data.** A feature that adds a record type, or a field the site
+  shows, adds real, public data for it in `seed/data` in the same pull request, so collaborators
+  see it working without entering anything. `seed/README.md` says how. A feature with nothing to
+  seed, such as a change to the build, says so in its pull request.
 - **Every schema change has a committed migration.** `push` is off, in development too.
 - **Access rules apply by default.** Code that passes `overrideAccess: true` says why in a
   comment.
@@ -58,13 +63,17 @@ Issue #672 gives the build order and the owner of each issue.
    pull request saying how it was checked.
 6. After changing collections or fields: `pnpm generate`, then `pnpm payload migrate:create <name>`,
    then `pnpm migrate:check`.
-7. Before opening the pull request: `pnpm lint`, `pnpm typecheck` and `pnpm test`. The last needs
+7. Add seed data for what the feature adds, in `seed/data`, and check `pnpm seed` loads it. See
+   `seed/README.md`, "Adding seed data with a feature".
+8. Before opening the pull request: `pnpm lint`, `pnpm typecheck` and `pnpm test`. The last needs
    `pnpm services` running.
-8. The pull request says `Closes #<issue>` and follows the format of #663 and #664: what it does,
-   decisions made while building, environment and config changes, migrations, how to test.
-9. A decision that changes behaviour also goes in the specification's decision register, section
-   20.1, with the PDFs rebuilt.
-10. After the merge, look at the issue's "Unblocks" section. Move each issue listed there to
+9. The pull request says `Closes #<issue>` and follows the format of #663 and #664: what it does,
+   decisions made while building, environment and config changes, migrations, seed data, how to
+   test.
+10. A decision that changes behaviour also goes in the specification's decision register, section
+    20.1, with the PDFs rebuilt.
+11. A change to what editors do in the admin also goes in `docs/admin-guide.md`.
+12. After the merge, look at the issue's "Unblocks" section. Move each issue listed there to
     `status: ready` if nothing else open blocks it.
 
 Where things are:
@@ -83,6 +92,7 @@ Where things are:
 | Admin, REST, `/api/v1`, health and plugin routes | `apps/site/src/app/(payload)` |
 | Registered languages                             | `apps/cms/src/locales.ts`     |
 | Every environment key                            | `.env.example`                |
+| Seed data and its loader                         | `seed`                        |
 
 A new plugin is a package in `plugins/`. It is also added to `firstPartyPlugins` in
 `apps/cms/src/kernel.ts`, to `transpilePackages` in `apps/site/next.config.ts`, and to the `COPY`

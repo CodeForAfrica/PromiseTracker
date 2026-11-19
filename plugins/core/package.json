@@ -23,6 +23,8 @@
     "typescript": "catalog:"
   },
   "dependencies": {
-    "@promisetracker/kernel": "workspace:*"
+    "@promisetracker/kernel": "workspace:*",
+    "csv-parse": "catalog:",
+    "read-excel-file": "catalog:"
   }
 }

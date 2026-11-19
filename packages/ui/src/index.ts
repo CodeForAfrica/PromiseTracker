@@ -1,8 +1,27 @@
+export {
+  ActorGrid,
+  ActorHero,
+  actorPath,
+  areaChoices,
+  ClosingSummary,
+  CountrySection,
+  HolderCard,
+  OfficeLinks,
+  OfficialsFilters,
+  SeatPage,
+  seatLabel,
+  TermList,
+  termDates,
+  toChoices,
+  WhoThisIs,
+} from './actors'
+export { AreaHero, AreaSeatsOnly, SeatList } from './area'
 export { Container } from './Container'
 export { cn } from './cn'
 export { CountryHero } from './country'
 export { Disclosure } from './Disclosure'
 export { Flag } from './Flag'
+export { fill } from './fill'
 export { CountryPicker, HomeHero } from './home'
 export { LangToggle } from './LangToggle'
 export { NotAvailableNotice, NotFoundNotice } from './notices'

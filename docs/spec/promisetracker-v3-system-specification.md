@@ -610,11 +610,11 @@ circular ones.
 |---|---|
 | `country` | Required |
 | `name` | Localized |
-| `slug` | Unique within the country, and must not match a national office slug or a reserved word, section 11 |
+| `slug` | Made from the name when left empty. Unique within the country, and must not match a national office slug or a reserved word, section 11. Not Payload's slug field, which is unique across the whole collection |
 | `type` | Country, region, county, constituency, ward, city or other |
 | `parent` | The area it sits in |
-| `page` | Automatic, always or never. Automatic means the area gets a page when it holds two or more seats |
-| `geo` | Centre point, bounds, and an uploaded GeoJSON outline with its source and licence |
+| `page` | Automatic, always or never. Automatic means the area gets a page when it holds two or more seats. A seat here is an office whose area type is the area's type |
+| `geo` | Centre point as latitude and longitude, bounds, and an outline. The outline is a GeoJSON file in the Boundaries collection, which records its source and licence. Plain numbers, so PostGIS stays optional |
 | `externalCode` | Its id in an outside boundary dataset |
 | `formerSlugs` | For redirects, section 11.2 |
 
@@ -624,13 +624,17 @@ circular ones.
 |---|---|
 | `country` | Required |
 | `name`, `shortName` | Localized, such as "Member of Parliament" and "MP" |
-| `slug` | Used in seat addresses, such as `governor` |
+| `slug` | Used in seat addresses, such as `governor`. Made from the name when left empty |
 | `areaType` | The type of area the office answers for. Empty for offices with no area, such as party-list members |
 | `holdersPerSeat` | Usually one. More for multi-member seats |
 | `order` | Display order, highest office first |
 
 A **seat** is an area plus an office. It is not stored separately. The system finds a seat's
 holders by looking for current terms with that area and office.
+
+Each country has one area of type country, at the top, which stands for the whole country. When
+it is added it becomes the country's `rootArea`. It never has a page of its own: its address
+would be the country's.
 
 ### 7.3 Actors and terms
 
@@ -665,6 +669,15 @@ People also have an honorific and gender. Institutions have a type, such as mini
 
 An actor whose only terms are at the candidate stage is never public. An actor with no current
 term and at least one past term shows as an archived record.
+
+A term's stage is worked out from its dates when it is read (D51). Dates are whole days in
+UTC. A seat holds no more terms at once than its office's `holdersPerSeat`, and one term may end
+on the day the next starts. The check runs when a term is saved, not in the database, so two saves at the
+same moment could both pass. At a newsroom's pace that is accepted. Its actor, office, area, party
+and successor are all in one country, and its area is the kind its office answers for. Actors and
+terms can be imported from a spreadsheet, after the country's areas and offices. A term row names
+its actor, office, area, party and successor by slug or by name, and matches an existing term by
+actor, office, area and start date.
 
 ### 7.4 Claim types and rating scales
 
@@ -1035,6 +1048,12 @@ accepts, or rejects it with a reason. Accepting creates a claim on hold and unve
 2. Map: match columns to fields. The mapping is saved for reuse.
 3. Preview: run without saving, and report rows to create, update and skip, with errors by row.
 4. Commit.
+
+In the admin, an import is a record that keeps the uploaded file. Uploading reads the file and
+guesses the mapping, from a saved mapping whose columns all appear in the file, or from headings
+named like the fields. Saving with "Preview" works out what would change and lists problems by
+spreadsheet row. Saving with "Import" queues the `runImport` job, which saves the rows and
+records the counts. A mapping given a name is saved for the next file.
 
 The importer adapter only reads the file. The core does the mapping, the preview and the commit
 once, for every file format.
@@ -1604,11 +1623,14 @@ the Docker image is built without one. So the site uses Next.js's tagged data ca
 |---|---|
 | `country:{code}` | The country or its figures change |
 | `countries` | Any country is added, changed or removed, for lists of countries |
-| `area:{id}` | The area or its office holders change |
-| `actor:{id}` | The actor, or a claim naming it, changes |
+| `places:{code}` | Any of the country's areas or offices change, for area pages and lists |
+| `actors:{code}` | Any of the country's actors or terms change, for actor pages, seats, area pages, the officials list and the country page |
 | `claim:{id}` | The claim or one of its updates changes |
 | `ratings` | A rating scale changes |
 | `site` | Site settings or picks change |
+
+Pages that name office holders also expire after an hour. A term starts and ends on its dates,
+with no save to refresh the pages it changes (D53).
 
 A change refreshes its tags at once, as part of the same save. The save calls an internal route on
 the web process, `/api/internal/revalidate`, which refreshes the tags there. A background job in
@@ -1749,6 +1771,10 @@ codemods, and passes the full test suite before merging.
 | D48 | The first super-admin is created from environment variables. D43 stands |
 | D49 | Spreadsheet importers only read files. The core maps, previews and saves |
 | D50 | The site caches with Next.js's tagged data cache, not cache components, so the build never needs the database |
+| D51 | A term's stage is worked out from its dates when read, never stored. An actor stores the start of their first term, `onRecordSince`, so a query can tell whether a person is on the record today |
+| D52 | The rule that an actor needs a current or past term applies to people. Parties and institutions hold no terms, so they are public once ready |
+| D53 | Pages that name office holders expire hourly, besides refreshing on a change, so a term that starts or ends on its date shows within the hour |
+| D54 | Until claims exist, "Who is delivering" lists the highest current office holders without figures, and "Officials" links to the officials list by office. The key claim and the record so far arrive with claims |
 
 ### 20.2 Why
 

@@ -6,7 +6,10 @@ import { getPayload } from './getPayload'
 import { getHealth as checkHealth } from './health'
 
 export { handleV1, languages, matchRoute } from './api/v1'
+export type { AreaFamily } from './areaTree'
+export { areaFamily } from './areaTree'
 export {
+  createHttpRefresher,
   REVALIDATE_PATH,
   readRefreshRequest,
   SIGNATURE_HEADER,

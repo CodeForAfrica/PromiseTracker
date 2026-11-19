@@ -11,7 +11,8 @@ import { AA_CONTRAST, contrastRatio, formatRatio, isHexColour } from './contrast
  * that runs only on the server.
  */
 
-const sibling = (path: string, name: string): string => path.replace(/[^.]+$/, name)
+const sibling = (path: string, name: string): string =>
+  path.slice(0, path.lastIndexOf('.') + 1) + name
 
 /**
  * Shows a rating as it will look, with the contrast of its text on its colour,

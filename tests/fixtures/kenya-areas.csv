@@ -1,0 +1,72 @@
+Name,Type,Parent,Code
+Kenya,country,,KE
+Mombasa County,county,Kenya,001
+Kwale County,county,Kenya,002
+Kilifi County,county,Kenya,003
+Tana River County,county,Kenya,004
+Lamu County,county,Kenya,005
+Taita-Taveta County,county,Kenya,006
+Garissa County,county,Kenya,007
+Wajir County,county,Kenya,008
+Mandera County,county,Kenya,009
+Marsabit County,county,Kenya,010
+Isiolo County,county,Kenya,011
+Meru County,county,Kenya,012
+Tharaka-Nithi County,county,Kenya,013
+Embu County,county,Kenya,014
+Kitui County,county,Kenya,015
+Machakos County,county,Kenya,016
+Makueni County,county,Kenya,017
+Nyandarua County,county,Kenya,018
+Nyeri County,county,Kenya,019
+Kirinyaga County,county,Kenya,020
+Murang'a County,county,Kenya,021
+Kiambu County,county,Kenya,022
+Turkana County,county,Kenya,023
+West Pokot County,county,Kenya,024
+Samburu County,county,Kenya,025
+Trans Nzoia County,county,Kenya,026
+Uasin Gishu County,county,Kenya,027
+Elgeyo-Marakwet County,county,Kenya,028
+Nandi County,county,Kenya,029
+Baringo County,county,Kenya,030
+Laikipia County,county,Kenya,031
+Nakuru County,county,Kenya,032
+Narok County,county,Kenya,033
+Kajiado County,county,Kenya,034
+Kericho County,county,Kenya,035
+Bomet County,county,Kenya,036
+Kakamega County,county,Kenya,037
+Vihiga County,county,Kenya,038
+Bungoma County,county,Kenya,039
+Busia County,county,Kenya,040
+Siaya County,county,Kenya,041
+Kisumu County,county,Kenya,042
+Homa Bay County,county,Kenya,043
+Migori County,county,Kenya,044
+Kisii County,county,Kenya,045
+Nyamira County,county,Kenya,046
+Nairobi County,county,Kenya,047
+Westlands,constituency,Nairobi County,
+Dagoretti North,constituency,Nairobi County,
+Dagoretti South,constituency,Nairobi County,
+Lang'ata,constituency,Nairobi County,
+Kibra,constituency,Nairobi County,
+Roysambu,constituency,Nairobi County,
+Kasarani,constituency,Nairobi County,
+Ruaraka,constituency,Nairobi County,
+Embakasi South,constituency,Nairobi County,
+Embakasi North,constituency,Nairobi County,
+Embakasi Central,constituency,Nairobi County,
+Embakasi East,constituency,Nairobi County,
+Embakasi West,constituency,Nairobi County,
+Makadara,constituency,Nairobi County,
+Kamukunji,constituency,Nairobi County,
+Starehe,constituency,Nairobi County,
+Mathare,constituency,Nairobi County,
+Changamwe,constituency,Mombasa County,
+Jomvu,constituency,Mombasa County,
+Kisauni,constituency,Mombasa County,
+Nyali,constituency,Mombasa County,
+Likoni,constituency,Mombasa County,
+Mvita,constituency,Mombasa County,
