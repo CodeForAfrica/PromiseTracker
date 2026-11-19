@@ -373,6 +373,42 @@ describe('claims and topics', () => {
       }
     })
 
+    it('keeps a claim’s address when only its title changes', async () => {
+      const id = await claimId('kibra-housing')
+      const renamed = await payload.update({
+        collection: 'claims',
+        id,
+        locale: 'en',
+        data: { title: 'Build 6000 homes in Kibra' },
+        overrideAccess: true,
+      })
+      expect(renamed.slug).toBe('kibra-housing')
+      await payload.update({
+        collection: 'claims',
+        id,
+        locale: 'en',
+        data: { title: 'Build 5000 homes in Kibra' },
+        overrideAccess: true,
+      })
+    })
+
+    it('refuses a key claim that is another actor’s', async () => {
+      const amani = (
+        await payload.find({
+          collection: 'actors',
+          where: { and: [{ country: { equals: country } }, { slug: { equals: 'amani-otieno' } }] },
+        })
+      ).docs[0]
+      await expect(
+        payload.update({
+          collection: 'actors',
+          id: amani?.id ?? '',
+          data: { keyClaim: await claimId('kibra-housing') },
+          overrideAccess: true,
+        }),
+      ).rejects.toThrow('The key claim must be one of this actor’s claims')
+    })
+
     it('says when a title makes no slug', async () => {
       const actor = (
         await payload.find({

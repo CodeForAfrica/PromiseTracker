@@ -197,6 +197,29 @@ const checkActorSlug: CollectionBeforeChangeHook = async ({ data, originalDoc, r
   return data
 }
 
+/**
+ * An actor's key claim is one of their own. The admin offers only those, and
+ * this holds for the API and imports too.
+ */
+const checkKeyClaim: CollectionBeforeChangeHook = async ({ data, originalDoc, req }) => {
+  if (!('keyClaim' in data) || !data.keyClaim) return data
+  const claimId = idOf(data.keyClaim)
+  const { docs } = await req.payload.find({
+    collection: 'claims',
+    where: { id: { equals: claimId } },
+    depth: 0,
+    limit: 1,
+    // Reads the chosen claim's actor, whoever saves the actor.
+    overrideAccess: true,
+    req: { ...req } as PayloadRequest,
+  })
+  const claim = docs[0]
+  if (!claim || !originalDoc?.id || idOf(claim.actor) !== String(originalDoc.id)) {
+    throw new APIError('The key claim must be one of this actor’s claims.', 400)
+  }
+  return data
+}
+
 /** Terms hold an actor's history, so an actor with terms is not deleted. */
 const keepActorWithTerms: CollectionBeforeDeleteHook = async ({ id, req }) => {
   const { totalDocs } = await req.payload.count({
@@ -234,7 +257,7 @@ export const Actors: CollectionConfig = withPublishing(
     indexes: [{ fields: ['country', 'slug'], unique: true }],
     hooks: {
       beforeValidate: [slugFromName],
-      beforeChange: [checkActorSlug, keepFormerSlug],
+      beforeChange: [checkActorSlug, keepFormerSlug, checkKeyClaim],
       beforeDelete: [keepActorWithTerms],
       afterChange: [refreshOnActorChange, retitleOnRename('actor')],
       afterDelete: [refreshOnDelete],

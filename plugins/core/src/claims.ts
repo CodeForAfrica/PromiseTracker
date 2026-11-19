@@ -76,14 +76,18 @@ const readClaims = ({ req }: { req: PayloadRequest }): boolean | Where =>
   }
 
 /** A slug from the title when none is given. The title is in the language being edited. */
-const slugFromTitle: CollectionBeforeValidateHook = ({ data }) => {
+const slugFromTitle: CollectionBeforeValidateHook = ({ data, operation }) => {
   if (!data || data.slug) return data
+  // On an update, only a slug cleared on purpose is made again. A save that
+  // sends a new title and no slug keeps the address.
+  if (operation === 'update' && !('slug' in data)) return data
   const title = typeof data.title === 'string' ? data.title : null
   return title ? { ...data, slug: slugify(title) } : data
 }
 
-const slugFromName: CollectionBeforeValidateHook = ({ data }) => {
+const slugFromName: CollectionBeforeValidateHook = ({ data, operation }) => {
   if (!data || data.slug) return data
+  if (operation === 'update' && !('slug' in data)) return data
   const name = typeof data.name === 'string' ? data.name : null
   return name ? { ...data, slug: slugify(name) } : data
 }
@@ -250,8 +254,9 @@ const refreshClaims = async (req: PayloadRequest, ...countries: unknown[]) => {
   await refreshTags(['topics', ...[...codes].map((code) => `claims:${code}`)], req)
 }
 
-const refreshOnClaimChange: CollectionAfterChangeHook = async ({ doc, previousDoc, req }) => {
-  await refreshClaims(req, doc.country, previousDoc?.country)
+// A claim never changes country, so its own is the only one to refresh.
+const refreshOnClaimChange: CollectionAfterChangeHook = async ({ doc, req }) => {
+  await refreshClaims(req, doc.country)
   return doc
 }
 

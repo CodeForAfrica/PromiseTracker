@@ -551,17 +551,22 @@ async function figuresThreshold(payload: Payload): Promise<number> {
   return typeof site.figuresThreshold === 'number' ? site.figuresThreshold : 20
 }
 
-/** The figures of a set of claims, in the shape every endpoint shares (section 12.2). */
+/**
+ * The figures of a set of claims, in the shape every endpoint shares (section
+ * 12.2). Only claims with a rating on their scale count, so the ratings and
+ * tiers always add up to the total.
+ */
 function figuresOf(claims: readonly ClaimDoc[], book: RatingBook, threshold: number): Figures {
   const byRating: Record<string, number> = {}
   const byTier: Record<string, number> = {}
+  let total = 0
   for (const claim of claims) {
     const { rating } = ratingOf(book, claim)
     if (!rating) continue
+    total += 1
     byRating[rating.slug] = (byRating[rating.slug] ?? 0) + 1
     byTier[rating.tier] = (byTier[rating.tier] ?? 0) + 1
   }
-  const total = claims.length
   return { total, form: total >= threshold ? 'percentages' : 'counts', byRating, byTier }
 }
 
@@ -674,20 +679,22 @@ function toClaimSummary(
   }
 }
 
-/** Newest first by when it was said, then by title. Undated claims go last. */
-const byRecent = (a: ClaimDoc, b: ClaimDoc) =>
-  (b.saidOn ?? '').localeCompare(a.saidOn ?? '') || (a.title ?? '').localeCompare(b.title ?? '')
+type ClaimOrder = (locale: string) => (a: ClaimDoc, b: ClaimDoc) => number
 
-/** Soonest deadline first. Claims with none go last. */
-const byDeadline = (a: ClaimDoc, b: ClaimDoc) =>
-  (a.deadline ?? '9999').localeCompare(b.deadline ?? '9999') ||
-  (a.title ?? '').localeCompare(b.title ?? '')
+/** By title, in the reader's language. */
+const byTitle: ClaimOrder = (locale) => (a, b) =>
+  (a.title ?? '').localeCompare(b.title ?? '', locale)
 
+/** Partial dates are text in date order, so they compare as text. */
 const CLAIM_SORTS = {
-  recent: byRecent,
-  deadline: byDeadline,
-  title: (a: ClaimDoc, b: ClaimDoc) => (a.title ?? '').localeCompare(b.title ?? ''),
-} as const
+  /** Newest first by when it was said, then by title. Undated claims go last. */
+  recent: (locale) => (a, b) =>
+    (b.saidOn ?? '').localeCompare(a.saidOn ?? '') || byTitle(locale)(a, b),
+  /** Soonest deadline first. Claims with none go last. */
+  deadline: (locale) => (a, b) =>
+    (a.deadline ?? '9999').localeCompare(b.deadline ?? '9999') || byTitle(locale)(a, b),
+  title: byTitle,
+} as const satisfies Record<string, ClaimOrder>
 
 const PAGE_SIZE = 50
 /** A list longer than this is sorted in memory with a warning in the log. */
@@ -1117,7 +1124,7 @@ const handlers: Record<string, Handler> = {
       const found = ratingOf(book, claim).rating
       return (!rating || found?.slug === rating) && (!tier || found?.tier === tier)
     })
-    claims.sort(CLAIM_SORTS[sort as keyof typeof CLAIM_SORTS])
+    claims.sort(CLAIM_SORTS[sort as keyof typeof CLAIM_SORTS](locale))
     const page = claims.slice(start, start + size)
     const actors = await findActors(payload, idIn(page.map((c) => idOf(c.actor))), locale)
     const items = page
