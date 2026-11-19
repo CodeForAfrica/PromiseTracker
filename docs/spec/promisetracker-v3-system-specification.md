@@ -747,7 +747,7 @@ claim updates. Retiring a rating lists the claims that carry it so editors can r
 | `source`, `sourceLocator` | The source document and page. A source document or at least one piece of evidence is required to publish |
 | `sourceUrl` | Shown as a link. Never fetched by the server |
 | `saidAt`, `saidOn` | Where and when it was said. `saidOn` is a partial date |
-| `deadline`, `deadlineText` | A partial date, and the written form such as "End of term" |
+| `deadline`, `deadlineText` | A partial date, and the written form such as "End of term". A partial date is a year, a month or a day, written `2027`, `2027-08` or `2027-08-09` (D55) |
 | `currentRating`, `ratedOn` | Read-only. From the latest published update |
 | `lastReviewedAt` | Read-only. Set by an update or by confirming the rating, section 8.4 |
 | `updateCount` | Read-only |
@@ -1625,7 +1625,8 @@ the Docker image is built without one. So the site uses Next.js's tagged data ca
 | `countries` | Any country is added, changed or removed, for lists of countries |
 | `places:{code}` | Any of the country's areas or offices change, for area pages and lists |
 | `actors:{code}` | Any of the country's actors or terms change, for actor pages, seats, area pages, the officials list and the country page |
-| `claim:{id}` | The claim or one of its updates changes |
+| `claims:{code}` | Any of the country's claims or their updates change, for claim pages, claim lists, actor pages and figures |
+| `topics` | A topic or any claim changes, for topic pages and lists |
 | `ratings` | A rating scale changes |
 | `site` | Site settings or picks change |
 
@@ -1775,6 +1776,9 @@ codemods, and passes the full test suite before merging.
 | D52 | The rule that an actor needs a current or past term applies to people. Parties and institutions hold no terms, so they are public once ready |
 | D53 | Pages that name office holders expire hourly, besides refreshing on a change, so a term that starts or ends on its date shows within the hour |
 | D54 | Until claims exist, "Who is delivering" lists the highest current office holders without figures, and "Officials" links to the officials list by office. The key claim and the record so far arrive with claims |
+| D55 | A partial date is written `2027`, `2027-08` or `2027-08-09` and stored as text, so it keeps its precision and sorts in date order |
+| D56 | Until the publishing checks of section 8.1 arrive, a claim is public when it is ready, has a title in the language, and its actor and country are public. The verdict fields and the source document arrive with their own record types |
+| D57 | Figures are worked out from the matching claims on each request, and use the threshold in Site settings, 20 by default |
 
 ### 20.2 Why
 

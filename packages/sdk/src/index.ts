@@ -1,9 +1,19 @@
-import type { Actor, Area, Country, NotAvailable, Redirect } from '@promisetracker/contract'
+import type {
+  Actor,
+  Area,
+  Claim,
+  Country,
+  NotAvailable,
+  Redirect,
+  Topic,
+} from '@promisetracker/contract'
 import {
   ActorList,
   Actor as ActorSchema,
   AreaList,
   Area as AreaSchema,
+  ClaimList,
+  Claim as ClaimSchema,
   CountryList,
   Country as CountrySchema,
   isNotAvailable,
@@ -12,6 +22,8 @@ import {
   Redirect as RedirectSchema,
   SeatHolders,
   SiteInfo,
+  TopicList,
+  Topic as TopicSchema,
 } from '@promisetracker/contract'
 
 /** The filters and order of an actor list (section 12.1). */
@@ -25,6 +37,26 @@ export type ActorQuery = {
   cursor?: string | undefined
   limit?: number | undefined
 }
+
+/** The filters and order of a claim list (section 12.1). */
+export type ClaimQuery = {
+  actor?: string | undefined
+  topic?: string | undefined
+  type?: string | undefined
+  rating?: string | undefined
+  tier?: string | undefined
+  sort?: 'recent' | 'deadline' | 'title' | undefined
+  cursor?: string | undefined
+  limit?: number | undefined
+}
+
+/** A query as the API's parameters, leaving out what is not set. */
+const params = (query: Readonly<Record<string, string | number | undefined>>) =>
+  Object.fromEntries(
+    Object.entries(query)
+      .filter(([, value]) => value !== undefined && value !== '')
+      .map(([key, value]) => [key, String(value)]),
+  )
 
 /**
  * Moves a request for an API path to wherever the API runs. The local
@@ -124,17 +156,30 @@ export function createSdk(transport: Transport) {
     },
     /** A country's actors, filtered and sorted. */
     async getActors(locale: string, code: string, query: ActorQuery = {}): Promise<ActorList> {
-      const params = Object.fromEntries(
-        Object.entries(query)
-          .filter(([, value]) => value !== undefined && value !== '')
-          .map(([key, value]) => [key, String(value)]),
-      )
-      return ActorList.parse(await get(`${cc(code)}/actors`, locale, params))
+      return ActorList.parse(await get(`${cc(code)}/actors`, locale, params(query)))
     },
     /** One actor with their terms, or the languages their country is published in. */
     async getActor(locale: string, code: string, slug: string): Promise<Actor | NotAvailable> {
       const result = await get(`${cc(code)}/actors/${encodeURIComponent(slug)}`, locale)
       return isNotAvailable(result) ? NotAvailableSchema.parse(result) : ActorSchema.parse(result)
+    },
+    /** A country's claims, filtered and sorted, with the figures of every match. */
+    async getClaims(locale: string, code: string, query: ClaimQuery = {}): Promise<ClaimList> {
+      return ClaimList.parse(await get(`${cc(code)}/claims`, locale, params(query)))
+    },
+    /** One claim, or the languages it is published in. */
+    async getClaim(locale: string, code: string, slug: string): Promise<Claim | NotAvailable> {
+      const result = await get(`${cc(code)}/claims/${encodeURIComponent(slug)}`, locale)
+      return isNotAvailable(result) ? NotAvailableSchema.parse(result) : ClaimSchema.parse(result)
+    },
+    /** Every topic, with how many published claims it has. */
+    async getTopics(locale: string): Promise<TopicList> {
+      return TopicList.parse(await get('/topics', locale))
+    },
+    /** One topic with its figures by country, or the languages it has a name in. */
+    async getTopic(locale: string, slug: string): Promise<Topic | NotAvailable> {
+      const result = await get(`/topics/${encodeURIComponent(slug)}`, locale)
+      return isNotAvailable(result) ? NotAvailableSchema.parse(result) : TopicSchema.parse(result)
     },
     /** Where an address leads, or null when it leads nowhere else (section 11.2). */
     async getRedirect(locale: string, path: string): Promise<Redirect | null> {
