@@ -16,7 +16,7 @@ import {
 import { buildConfig } from 'payload'
 import { createHttpRefresher } from './cache'
 import { emailAdapter } from './email'
-import { databaseUrl } from './env'
+import { databaseUrl, publicUrl } from './env'
 import { assertExtensions } from './extensions'
 import { ensureFirstAdmin } from './firstAdmin'
 import { kernel } from './kernel'
@@ -51,6 +51,8 @@ const s3Reader = s3FileReader()
 if (s3Reader) setFileReader(s3Reader)
 
 const inUse = new Set(kernel.locales.map((l) => l.code))
+// Makes links in emails, such as a failed document's or a password reset, absolute.
+const serverURL = publicUrl()
 
 export default buildConfig({
   admin: {
@@ -72,6 +74,7 @@ export default buildConfig({
   }),
   editor: lexicalEditor(),
   ...(email ? { email } : {}),
+  ...(serverURL ? { serverURL } : {}),
   localization: {
     // Every registered language is in the schema, so PT_LOCALES never needs a
     // migration. The admin shows only the ones PT_LOCALES switches on (D45).

@@ -109,6 +109,9 @@ const isBlockedIpv6 = (ip: string): boolean => {
 
   // :: and ::1
   if (zeroUntil(7) && (g7 === 0 || g7 === 1)) return true
+  // ::a.b.c.d, the retired IPv4-compatible form. Nothing public uses it, and a
+  // system may still route it to the IPv4 address inside, such as ::7f00:1.
+  if (zeroUntil(6)) return true
   // ::ffff:a.b.c.d, an IPv4 address in IPv6 form
   if (zeroUntil(5) && g5 === 0xffff) return isBlockedIpv4(groupsToIpv4(g6, g7))
   // 64:ff9b::/96, NAT64
@@ -123,6 +126,8 @@ const isBlockedIpv6 = (ip: string): boolean => {
   // ff00::/8 multicast, 2001:db8::/32 documentation
   if ((g0 & 0xff00) === 0xff00) return true
   if (g0 === 0x2001 && g1 === 0x0db8) return true
+  // 2001::/32, Teredo, which tunnels to an IPv4 address carried inside it
+  if (g0 === 0x2001 && g1 === 0) return true
   return false
 }
 

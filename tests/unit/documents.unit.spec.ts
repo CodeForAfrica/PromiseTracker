@@ -15,8 +15,10 @@ import {
   htmlToText,
   isBlockedIpAddress,
   isHostnameAllowed,
+  lastSegment,
   MAX_RUNS,
   NEXT_RUN_MS,
+  normaliseText,
   normaliseType,
   outcomeOf,
   parseHostnameAllowlist,
@@ -26,6 +28,7 @@ import {
   readStoredFile,
   setFileReader,
   storedPath,
+  tellUploader,
   uploadConnector,
   urlConnector,
 } from '@promisetracker/plugin-core'
@@ -84,6 +87,13 @@ describe('isBlockedIpAddress (v2)', () => {
     'ff02::1',
     '2001:db8::1',
     '2002:7f00:0001::',
+    // The retired IPv4-compatible form, which can still reach the IPv4 address inside.
+    '::7f00:1',
+    '::127.0.0.1',
+    '::808:808',
+    // Teredo tunnels to an IPv4 address carried inside the IPv6 one.
+    '2001::1',
+    '2001:0:4136:e378:8000:63bf:3fff:fdd2',
     '[::1]',
     'not-an-ip',
   ])('blocks %s', (ip) => {
@@ -98,6 +108,7 @@ describe('isBlockedIpAddress (v2)', () => {
     '2606:4700::6810:85e5',
     '2a00:1450:4009:81f::200e',
     '2002:5db8:d822::',
+    '2001:4860:4860::8888',
   ])('allows public address %s', (ip) => {
     expect(isBlockedIpAddress(ip)).toBe(false)
   })
@@ -358,6 +369,13 @@ describe('reading text (section 9.3)', () => {
     expect(readPlaintext(text('a\r\n\r\n\r\n\r\nb  \n'), 'text/plain')).toBe('a\n\nb')
   })
 
+  it('trims the end of each line quickly, however many spaces it has', () => {
+    const started = performance.now()
+    const out = normaliseText(`${' '.repeat(1_000_000)}a  \nb\t\n`)
+    expect(performance.now() - started).toBeLessThan(1000)
+    expect(out).toBe('a\nb')
+  })
+
   it('stays fast on a page with long runs of spaces', () => {
     const started = performance.now()
     const out = htmlToText(`<p>a${' '.repeat(50_000)}</p>`.repeat(20))
@@ -458,6 +476,14 @@ describe('downloadFile (v2)', () => {
     expect(filenameFor(new URL('https://example.com/--a--b--.pdf'), 'application/pdf')).toBe(
       'a-b.pdf',
     )
+  })
+
+  it('keeps a malformed escape as written rather than failing', () => {
+    const url = new URL('https://example.com/files/%E0%A4%A')
+    expect(lastSegment(url, 'download')).toBe('%E0%A4%A')
+    expect(lastSegment(new URL('https://example.com/'), 'download')).toBe('download')
+    expect(lastSegment(new URL('https://example.com/a%20b'), 'download')).toBe('a b')
+    expect(filenameFor(url, 'text/plain')).toBe('e0-a4-a.txt')
   })
 
   it('names a file quickly from a link of many dashes', () => {
@@ -779,5 +805,42 @@ describe('reading stored files', () => {
       /non-HTTPS/,
     )
     await expect(urlConnector.health(ctx)).resolves.toEqual({ healthy: true })
+  })
+})
+
+describe('the failure email', () => {
+  const stand = (serverURL?: string) => {
+    const sendEmail = vi.fn(async () => undefined)
+    const payload = {
+      config: serverURL ? { serverURL } : {},
+      logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
+      findByID: vi.fn(async () => ({ id: 'u1', email: 'editor@example.org' })),
+      sendEmail,
+    }
+    return { payload, sendEmail }
+  }
+  const doc = { id: 'd1', title: 'Manifesto', createdBy: { relationTo: 'users', value: 'u1' } }
+
+  it("links to the document at the site's address", async () => {
+    const { payload, sendEmail } = stand('https://promisetracker.example.org')
+    await tellUploader(payload as never, doc as never, 'No enabled plugin reads PDF.')
+    expect(sendEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'editor@example.org',
+        text: expect.stringContaining(
+          'https://promisetracker.example.org/admin/collections/documents/d1',
+        ),
+      }),
+    )
+  })
+
+  it('falls back to a relative link when no address is set', async () => {
+    const { payload, sendEmail } = stand()
+    await tellUploader(payload as never, doc as never, 'No enabled plugin reads PDF.')
+    expect(sendEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        text: expect.stringContaining('\n/admin/collections/documents/d1'),
+      }),
+    )
   })
 })

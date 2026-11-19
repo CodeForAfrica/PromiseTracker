@@ -17,6 +17,24 @@ export function databaseUrl(env: Env = process.env): string {
 }
 
 /**
+ * The address people reach the site at, without a trailing slash, for links in
+ * emails. Empty when unset or not an http(s) address, so links stay relative.
+ */
+export function publicUrl(env: Env = process.env): string {
+  const value = env.PT_PUBLIC_URL?.trim()
+  if (!value) return ''
+  try {
+    const url = new URL(value)
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return ''
+    let path = url.pathname
+    while (path.endsWith('/')) path = path.slice(0, -1)
+    return url.origin + path
+  } catch {
+    return ''
+  }
+}
+
+/**
  * Fails at start-up, with the names of what is missing, rather than later with
  * a vaguer error from Payload or the database driver.
  */

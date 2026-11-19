@@ -79,7 +79,7 @@ export const uploadConnector: SourceConnector = {
   fetch: async (item, ctx) => {
     // The pipeline runs as the system, for whoever uploaded the file.
     const doc = await ctx.payload.findByID({
-      collection: FILES as 'users',
+      collection: FILES as never,
       id: item.id,
       depth: 0,
       overrideAccess: true,

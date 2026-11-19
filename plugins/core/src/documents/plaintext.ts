@@ -20,12 +20,18 @@ export function decodeText(data: Uint8Array): string {
 
 /** Composed form, Unix line ends, no trailing spaces, at most one blank line in a row. */
 export function normaliseText(text: string): string {
-  return text
-    .normalize('NFC')
-    .replace(/\r\n?/g, '\n')
-    .replace(/[^\S\n]+$/gm, '')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim()
+  return (
+    text
+      .normalize('NFC')
+      .replace(/\r\n?/g, '\n')
+      // Line by line, not with a pattern: /[^\S\n]+$/gm takes quadratic time on a
+      // long run of spaces that does not end its line.
+      .split('\n')
+      .map((line) => line.trimEnd())
+      .join('\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
+  )
 }
 
 /** Page furniture and things that are not text. Everything inside is left out. */

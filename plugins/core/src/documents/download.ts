@@ -44,9 +44,22 @@ export type Download = {
   finalUrl: string
 }
 
+/**
+ * The link's last path segment, decoded. A malformed escape such as `%E0%A4%A`,
+ * which URL accepts, keeps the segment as written rather than failing.
+ */
+export function lastSegment(url: URL, fallback: string): string {
+  const raw = url.pathname.split('/').filter(Boolean).at(-1) ?? fallback
+  try {
+    return decodeURIComponent(raw)
+  } catch {
+    return raw
+  }
+}
+
 /** A file name from the link's last path segment, with an extension for its type. */
 export function filenameFor(url: URL, type: DocumentType): string {
-  const last = decodeURIComponent(url.pathname.split('/').filter(Boolean).at(-1) ?? '')
+  const last = lastSegment(url, '')
   const stem =
     last
       .replace(/\.[^.]*$/, '')
@@ -194,7 +207,7 @@ export async function downloadFile(link: string, options: DownloadOptions = {}):
   // Name the file for its declared type, so the extension check compares like with like.
   const named = (DOCUMENT_TYPES as readonly string[]).includes(declared)
     ? filenameFor(finalUrl, declared as DocumentType)
-    : decodeURIComponent(finalUrl.pathname.split('/').filter(Boolean).at(-1) ?? 'download')
+    : lastSegment(finalUrl, 'download')
   const mimeType = checkFileType({ filename: named, declaredType: declared, data })
   return { filename: filenameFor(finalUrl, mimeType), mimeType, data, finalUrl: finalUrl.href }
 }
