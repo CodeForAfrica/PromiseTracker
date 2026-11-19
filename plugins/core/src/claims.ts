@@ -15,7 +15,7 @@ import { refreshTags } from './cache'
 import { isHexColour } from './contrast'
 import { countryCode, countryField, formerSlugsField, idOf, keepFormerSlug } from './places'
 import { withPublishing } from './publishing'
-import { setRatingUsage } from './ratings'
+import { setClaimTypeUsage, setRatingUsage } from './ratings'
 import { SLUG_PATTERN, slugify } from './slugs'
 
 /**
@@ -469,7 +469,14 @@ export const Claims: CollectionConfig = withPublishing(
 /** A topic has at most one level above it (section 7.7). */
 const checkTopic: CollectionBeforeChangeHook = async ({ data, originalDoc, req }) => {
   const slug = valueIn(data, originalDoc, 'slug')
-  if (typeof slug !== 'string' || !SLUG_PATTERN.test(slug)) {
+  if (typeof slug !== 'string' || !slug) {
+    // A name in a script with no Latin letters makes no slug.
+    throw new APIError(
+      'A slug cannot be made from this name. Give one in the sidebar, such as health.',
+      400,
+    )
+  }
+  if (!SLUG_PATTERN.test(slug)) {
     throw new APIError(
       'Use lower-case letters, digits and single hyphens in the slug, such as health.',
       400,
@@ -592,4 +599,16 @@ setRatingUsage(async ({ req, scale, rating }) => {
     req: { ...req } as PayloadRequest,
   })
   return docs.map((doc) => ({ id: String(doc.id), title: String(doc.title ?? doc.slug ?? doc.id) }))
+})
+
+// A claim type keeps its scale while claims of that type exist.
+setClaimTypeUsage(async ({ req, type }) => {
+  const { totalDocs } = await req.payload.count({
+    collection: 'claims',
+    where: { type: { equals: type } },
+    // Counts the claims of a type, for whoever edits the type.
+    overrideAccess: true,
+    req: { ...req } as PayloadRequest,
+  })
+  return totalDocs
 })

@@ -273,7 +273,9 @@ known.
 It shows in the sidebar, and changes through claim updates once they arrive.
 
 The slug, in the sidebar, is made from the title. The claim's page is `/{lang}/{cc}/p/{slug}`, such
-as `/en/ke/p/build-200000-homes-a-year`. A renamed slug's old address leads to the new one.
+as `/en/ke/p/build-200000-homes-a-year`. A renamed slug's old address leads to the new one. If you
+clear the slug, it is made again from the title in the language you are editing, so clear it while
+editing in the language whose title should name the address.
 
 A claim starts on **hold**. Set it to **ready** to publish it. For now a claim is public when it is
 ready, has a title in the reader's language, and its actor and country are public. The checks that

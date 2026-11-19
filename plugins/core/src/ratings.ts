@@ -37,6 +37,16 @@ export function setRatingUsage(next: RatingUsage): void {
   ratingUsage = next
 }
 
+/** Counts the claims of a claim type. */
+export type ClaimTypeUsage = (args: { req: PayloadRequest; type: string }) => Promise<number>
+
+let claimTypeUsage: ClaimTypeUsage = async () => 0
+
+/** Sets how the claims of a claim type are counted. The claims record type calls this. */
+export function setClaimTypeUsage(next: ClaimTypeUsage): void {
+  claimTypeUsage = next
+}
+
 /** The claims that carry a rating, so it is not deleted while in use and can be re-rated when retired. */
 export function claimsWithRating(
   req: PayloadRequest,
@@ -420,6 +430,32 @@ export const RatingScales: CollectionConfig = {
   ],
 }
 
+const refOf = (value: unknown): string | null => {
+  if (typeof value === 'string' && value) return value
+  const id: unknown = value && typeof value === 'object' ? Reflect.get(value, 'id') : null
+  return typeof id === 'string' ? id : null
+}
+
+/**
+ * A claim's rating is a slug on its type's scale, so a type whose claims
+ * exist keeps its scale. A new scale is a new claim type.
+ */
+const keepTypeScale: CollectionBeforeChangeHook = async ({ data, originalDoc, req, operation }) => {
+  if (operation !== 'update' || !originalDoc) return data
+  const before = refOf(originalDoc.ratingScale)
+  const after = refOf('ratingScale' in data ? data.ratingScale : originalDoc.ratingScale)
+  if (before && after && before !== after) {
+    const claims = await claimTypeUsage({ req, type: String(originalDoc.id) })
+    if (claims > 0) {
+      throw new APIError(
+        `${claims} claim(s) of this type are rated on its scale. Add a new claim type for the other scale instead.`,
+        400,
+      )
+    }
+  }
+  return data
+}
+
 export const ClaimTypes: CollectionConfig = {
   slug: 'claim-types',
   labels: { singular: 'Claim type', plural: 'Claim types' },
@@ -429,7 +465,11 @@ export const ClaimTypes: CollectionConfig = {
     defaultColumns: ['name', 'slug', 'ratingScale', 'hasDeadline'],
   },
   access: ratingAccess,
-  hooks: { afterChange: [cacheHooks.afterChange], afterDelete: [cacheHooks.afterDelete] },
+  hooks: {
+    beforeChange: [keepTypeScale],
+    afterChange: [cacheHooks.afterChange],
+    afterDelete: [cacheHooks.afterDelete],
+  },
   fields: [
     { name: 'name', type: 'text', localized: true, required: true },
     {

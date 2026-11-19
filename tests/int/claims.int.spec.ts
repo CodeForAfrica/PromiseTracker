@@ -114,6 +114,17 @@ describe('claims and topics', () => {
   })
 
   describe('topics (section 7.7)', () => {
+    it('says when a name makes no slug', async () => {
+      await expect(
+        payload.create({
+          collection: 'topics',
+          locale: 'ar',
+          data: { name: 'صحة' },
+          overrideAccess: true,
+        }),
+      ).rejects.toThrow('A slug cannot be made from this name')
+    })
+
     it('nest one level only', async () => {
       const clinics = (
         await payload.find({ collection: 'topics', where: { slug: { equals: 'clinics' } } })
@@ -301,6 +312,22 @@ describe('claims and topics', () => {
           overrideAccess: true,
         })
         expect(changed.currentRating).toBe('unproven')
+        // While a claim of this type exists, the type keeps its scale.
+        const delivery = (
+          await payload.find({
+            collection: 'claim-types',
+            where: { slug: { equals: 'promise' } },
+            depth: 0,
+          })
+        ).docs[0]?.ratingScale
+        await expect(
+          payload.update({
+            collection: 'claim-types',
+            id: type.id,
+            data: { ratingScale: typeof delivery === 'string' ? delivery : '' },
+            overrideAccess: true,
+          }),
+        ).rejects.toThrow('Add a new claim type for the other scale instead')
         // Rated once, it keeps its rating, so it cannot move to a scale without it.
         await payload.update({
           collection: 'claims',
