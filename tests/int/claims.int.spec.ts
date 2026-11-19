@@ -219,6 +219,150 @@ describe('claims and topics', () => {
       ).rejects.toThrow()
     })
 
+    it('saves the fields its hooks set when an editor creates a claim, with access rules on', async () => {
+      const editor = await payload.create({
+        collection: 'users',
+        data: {
+          email: `editor-${crypto.randomUUID()}@example.org`,
+          password: crypto.randomUUID(),
+          roles: ['editor'],
+        },
+        overrideAccess: true,
+      })
+      const actor = (
+        await payload.find({
+          collection: 'actors',
+          where: { and: [{ country: { equals: country } }, { slug: { equals: 'juma-hassan' } }] },
+        })
+      ).docs[0]
+      try {
+        const claim = await payload.create({
+          collection: 'claims',
+          locale: 'en',
+          data: { title: 'Pave Westlands roads', actor: actor?.id ?? '', recordStatus: 'hold' },
+          user: { ...editor, collection: 'users' },
+          overrideAccess: false,
+        })
+        const saved = await payload.findByID({
+          collection: 'claims',
+          id: claim.id,
+          depth: 0,
+          overrideAccess: true,
+        })
+        expect(saved).toMatchObject({
+          country,
+          currentRating: 'unstarted',
+          updateCount: 0,
+          enteredBy: editor.id,
+          slug: 'pave-westlands-roads',
+        })
+        await payload.delete({ collection: 'claims', id: claim.id, overrideAccess: true })
+      } finally {
+        await payload.delete({ collection: 'users', id: editor.id, overrideAccess: true })
+      }
+    })
+
+    it('starts a claim on the new scale when its type changes before any rating', async () => {
+      const scale = await payload.create({
+        collection: 'rating-scales',
+        locale: 'en',
+        data: {
+          name: 'Truth',
+          bestValue: 2,
+          worstValue: 1,
+          tiers: [{ slug: 'checked', label: 'Checked', colour: '#1b4fd8' }],
+          ratings: [
+            {
+              slug: 'unproven',
+              label: 'Unproven',
+              tier: 'checked',
+              definition: 'Not yet checked.',
+              colour: '#e4e5e8',
+              textColour: '#2a2c26',
+              value: 1,
+              isStarting: true,
+            },
+          ],
+        },
+        overrideAccess: true,
+      })
+      const type = await payload.create({
+        collection: 'claim-types',
+        locale: 'en',
+        data: { name: 'Statement', slug: 'statement-test', ratingScale: scale.id },
+        overrideAccess: true,
+      })
+      const id = await claimId('clean-water-for-every-ward')
+      try {
+        const changed = await payload.update({
+          collection: 'claims',
+          id,
+          data: { type: type.id },
+          overrideAccess: true,
+        })
+        expect(changed.currentRating).toBe('unproven')
+        // Rated once, it keeps its rating, so it cannot move to a scale without it.
+        await payload.update({
+          collection: 'claims',
+          id,
+          data: { type: null },
+          overrideAccess: true,
+        })
+        expect(
+          (await payload.findByID({ collection: 'claims', id, overrideAccess: true }))
+            .currentRating,
+        ).toBe('unstarted')
+      } finally {
+        await payload.delete({ collection: 'claim-types', id: type.id, overrideAccess: true })
+        await payload.delete({ collection: 'rating-scales', id: scale.id, overrideAccess: true })
+      }
+    })
+
+    it('keeps a claim in its country when its actor changes', async () => {
+      const [otherCode = 'gw'] = (await unusedCountryCodes(payload, 2)).filter((c) => c !== code)
+      const other = await payload.create({
+        collection: 'countries',
+        locale: 'en',
+        data: { code: otherCode, recordStatus: 'hold' },
+        overrideAccess: true,
+      })
+      const stranger = await payload.create({
+        collection: 'actors',
+        data: { name: 'Elsewhere Person', kind: 'person', country: other.id, recordStatus: 'hold' },
+        overrideAccess: true,
+      })
+      try {
+        await expect(
+          payload.update({
+            collection: 'claims',
+            id: await claimId('kibra-housing'),
+            data: { actor: stranger.id },
+            overrideAccess: true,
+          }),
+        ).rejects.toThrow('A claim stays in its country')
+      } finally {
+        await payload.delete({ collection: 'actors', id: stranger.id, overrideAccess: true })
+        await payload.delete({ collection: 'countries', id: other.id, overrideAccess: true })
+      }
+    })
+
+    it('says when a title makes no slug', async () => {
+      const actor = (
+        await payload.find({
+          collection: 'actors',
+          where: { and: [{ country: { equals: country } }, { slug: { equals: 'juma-hassan' } }] },
+        })
+      ).docs[0]
+      await expect(
+        payload.create({
+          collection: 'claims',
+          locale: 'ar',
+          data: { title: 'وعد', actor: actor?.id ?? '', recordStatus: 'hold' },
+          overrideAccess: true,
+        }),
+      ).rejects.toThrow('A slug cannot be made from this title')
+    })
+
     it('tells a rating scale which claims carry a rating', async () => {
       const scale = (await payload.find({ collection: 'rating-scales', limit: 1 })).docs[0]
       const claims = await claimsWithRating(

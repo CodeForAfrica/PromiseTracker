@@ -135,13 +135,19 @@ async function defaultType(req: PayloadRequest): Promise<string | null> {
   return id === undefined ? null : String(id)
 }
 
-/** The starting rating of a claim type's scale (section 7.4). */
-async function startingRating(req: PayloadRequest, type: string): Promise<string | null> {
+/** The ratings of a claim type's scale, and the one a new claim starts on (section 7.4). */
+async function typeRatings(
+  req: PayloadRequest,
+  type: string,
+): Promise<{ starting: string | null; slugs: Set<string> }> {
   const claimType = await load(req, 'claim-types', type)
   const scale = await load(req, 'rating-scales', claimType?.ratingScale)
   const ratings = Array.isArray(scale?.ratings) ? (scale.ratings as Record<string, unknown>[]) : []
   const start = ratings.find((r) => r.isStarting === true && r.retired !== true)
-  return typeof start?.slug === 'string' ? start.slug : null
+  return {
+    starting: typeof start?.slug === 'string' ? start.slug : null,
+    slugs: new Set(ratings.map((r) => r.slug).filter((s): s is string => typeof s === 'string')),
+  }
 }
 
 /**
@@ -154,6 +160,15 @@ const checkClaim: CollectionBeforeChangeHook = async ({ data, originalDoc, req, 
   const actor = await load(req, 'actors', get('actor'))
   if (!actor) throw new APIError('Choose the actor who made this claim.', 400)
   const country = idOf(actor.country)
+  // A claim's address, its former slugs and its figures belong to its country,
+  // so a new actor must be in the same one.
+  const before = idOf(originalDoc?.country)
+  if (before && before !== country) {
+    throw new APIError(
+      'A claim stays in its country. Choose an actor in the same country, or add the claim again in the other one.',
+      400,
+    )
+  }
   const sameCountry = (ref: Ref | null, what: string) => {
     if (ref && idOf(ref.country) !== country) {
       throw new APIError(`The ${what} must be in the actor's country.`, 400)
@@ -168,7 +183,14 @@ const checkClaim: CollectionBeforeChangeHook = async ({ data, originalDoc, req, 
   }
 
   const slug = get('slug')
-  if (typeof slug !== 'string' || !SLUG_PATTERN.test(slug)) {
+  if (typeof slug !== 'string' || !slug) {
+    // A title in a script with no Latin letters makes no slug.
+    throw new APIError(
+      'A slug cannot be made from this title. Give one in the sidebar, such as kibra-housing.',
+      400,
+    )
+  }
+  if (!SLUG_PATTERN.test(slug)) {
     throw new APIError(
       'Use lower-case letters, digits and single hyphens in the slug, such as kibra-housing.',
       400,
@@ -194,11 +216,26 @@ const checkClaim: CollectionBeforeChangeHook = async ({ data, originalDoc, req, 
   if (!type) throw new APIError('Choose the claim type.', 400)
   next.type = type
   if (operation === 'create') {
-    const rating = await startingRating(req, type)
-    if (!rating) throw new APIError('The claim type’s scale has no starting rating.', 400)
-    next.currentRating = rating
+    const { starting } = await typeRatings(req, type)
+    if (!starting) throw new APIError('The claim type’s scale has no starting rating.', 400)
+    next.currentRating = starting
     next.updateCount = 0
     if (req.user) next.enteredBy = req.user.id
+  } else if (idOf(originalDoc?.type) !== type) {
+    // A new type can mean a new scale, which may not have the claim's rating.
+    const { starting, slugs } = await typeRatings(req, type)
+    const rating = originalDoc?.currentRating
+    if (typeof rating !== 'string' || !slugs.has(rating)) {
+      if (Number(originalDoc?.updateCount ?? 0) > 0) {
+        throw new APIError(
+          `This claim's rating, "${String(rating)}", is not on the new type's scale. Re-rate it through a claim update first.`,
+          400,
+        )
+      }
+      if (!starting) throw new APIError('The claim type’s scale has no starting rating.', 400)
+      // Nothing has rated it yet, so it starts on the new scale.
+      next.currentRating = starting
+    }
   }
   return next
 }
@@ -547,7 +584,9 @@ setRatingUsage(async ({ req, scale, rating }) => {
       and: [{ type: { in: types.docs.map((t) => t.id) } }, { currentRating: { equals: rating } }],
     },
     depth: 0,
-    limit: 50,
+    // Every claim, so the count an editor sees is the whole count.
+    pagination: false,
+    select: { title: true, slug: true },
     // Lists the claims carrying a rating, for the editor of the scale.
     overrideAccess: true,
     req: { ...req } as PayloadRequest,
