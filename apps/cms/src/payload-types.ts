@@ -164,6 +164,8 @@ export interface Config {
     boundaries: Boundary;
     documents: Document;
     'document-files': DocumentFile;
+    'rating-scales': RatingScale;
+    'claim-types': ClaimType;
     media: Media;
     imports: Import;
     'import-mappings': ImportMapping;
@@ -202,6 +204,8 @@ export interface Config {
     boundaries: BoundariesSelect<false> | BoundariesSelect<true>;
     documents: DocumentsSelect<false> | DocumentsSelect<true>;
     'document-files': DocumentFilesSelect<false> | DocumentFilesSelect<true>;
+    'rating-scales': RatingScalesSelect<false> | RatingScalesSelect<true>;
+    'claim-types': ClaimTypesSelect<false> | ClaimTypesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     imports: ImportsSelect<false> | ImportsSelect<true>;
     'import-mappings': ImportMappingsSelect<false> | ImportMappingsSelect<true>;
@@ -854,6 +858,115 @@ export interface DocumentFile {
   focalY?: number | null;
 }
 /**
+ * The ratings claims are given, grouped in tiers. Changing a rating changes it on every claim that carries it.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rating-scales".
+ */
+export interface RatingScale {
+  id: string;
+  name: string;
+  /**
+   * The value of the best rating, for search engines.
+   */
+  bestValue: number;
+  /**
+   * The value of the worst rating.
+   */
+  worstValue: number;
+  /**
+   * Groups of ratings, in the order the site shows them.
+   */
+  tiers?:
+    | {
+        /**
+         * Ratings name their tier by this.
+         */
+        slug: string;
+        label: string;
+        colour: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * In the order the site lists them within their tier.
+   */
+  ratings?:
+    | {
+        /**
+         * Never changes once saved, such as in-progress.
+         */
+        slug: string;
+        label: string;
+        /**
+         * The slug of one of the tiers above.
+         */
+        tier: string;
+        /**
+         * Edit the wording only. A change of meaning is a new rating. Every change is kept in the history.
+         */
+        definition: string;
+        colour: string;
+        textColour: string;
+        /**
+         * Between the worst and best values.
+         */
+        value: number;
+        /**
+         * A claim with this rating must have a deadline.
+         */
+        needsDeadline?: boolean | null;
+        /**
+         * Every new claim begins with this rating.
+         */
+        isStarting?: boolean | null;
+        /**
+         * No new claim can be given this rating.
+         */
+        retired?: boolean | null;
+        /**
+         * Re-rate each through a claim update.
+         */
+        claimsWithRating?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "claim-types".
+ */
+export interface ClaimType {
+  id: string;
+  name: string;
+  slug: string;
+  ratingScale: string | RatingScale;
+  /**
+   * Whether claims of this type usually have a deadline.
+   */
+  hasDeadline?: boolean | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Upload a CSV or Excel file. Check the mapping, then choose Preview, and Import when the preview is right.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1208,6 +1321,14 @@ export interface PayloadLockedDocument {
         value: string | DocumentFile;
       } | null)
     | ({
+        relationTo: 'rating-scales';
+        value: string | RatingScale;
+      } | null)
+    | ({
+        relationTo: 'claim-types';
+        value: string | ClaimType;
+      } | null)
+    | ({
         relationTo: 'media';
         value: string | Media;
       } | null)
@@ -1517,6 +1638,57 @@ export interface DocumentFilesSelect<T extends boolean = true> {
       };
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rating-scales_select".
+ */
+export interface RatingScalesSelect<T extends boolean = true> {
+  name?: T;
+  bestValue?: T;
+  worstValue?: T;
+  tiers?:
+    | T
+    | {
+        slug?: T;
+        label?: T;
+        colour?: T;
+        id?: T;
+      };
+  ratings?:
+    | T
+    | {
+        slug?: T;
+        label?: T;
+        tier?: T;
+        definition?: T;
+        colour?: T;
+        textColour?: T;
+        value?: T;
+        needsDeadline?: T;
+        isStarting?: T;
+        retired?: T;
+        claimsWithRating?: T;
+        id?: T;
+      };
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "claim-types_select".
+ */
+export interface ClaimTypesSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  ratingScale?: T;
+  hasDeadline?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2012,6 +2184,8 @@ export interface CollectionQueryWidget {
       | 'boundaries'
       | 'documents'
       | 'document-files'
+      | 'rating-scales'
+      | 'claim-types'
       | 'media'
       | 'imports'
       | 'import-mappings'
@@ -2047,6 +2221,8 @@ export interface ActivityWidget {
           | 'boundaries'
           | 'documents'
           | 'document-files'
+          | 'rating-scales'
+          | 'claim-types'
           | 'media'
           | 'imports'
           | 'import-mappings'

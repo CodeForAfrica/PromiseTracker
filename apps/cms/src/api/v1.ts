@@ -11,6 +11,7 @@ import type {
   Language,
   NotAvailable,
   Office,
+  RatingScale,
   SeatRef,
   SiteInfo,
   Term,
@@ -47,6 +48,7 @@ import type {
   Area as AreaDoc,
   Country as CountryDoc,
   Office as OfficeDoc,
+  RatingScale as RatingScaleDoc,
   Site,
   Term as TermDoc,
 } from '../payload-types'
@@ -83,7 +85,35 @@ const links = (items: readonly Link[] | null | undefined) =>
     return label && url ? [{ label, url }] : []
   })
 
-const toSiteInfo = (site: Site, locale: string): SiteInfo =>
+/**
+ * A scale in one language. A label not yet translated shows the slug, never
+ * another language's text (D30), and a missing definition is left out.
+ */
+const toRatingScale = (doc: RatingScaleDoc): RatingScale => ({
+  id: doc.id,
+  name: text(doc.name) ?? doc.id,
+  bestValue: doc.bestValue,
+  worstValue: doc.worstValue,
+  tiers: (doc.tiers ?? []).map((t) => ({
+    slug: t.slug,
+    label: text(t.label) ?? t.slug,
+    colour: t.colour,
+  })),
+  ratings: (doc.ratings ?? []).map((r) => ({
+    slug: r.slug,
+    label: text(r.label) ?? r.slug,
+    definition: text(r.definition),
+    tier: r.tier,
+    colour: r.colour,
+    textColour: r.textColour,
+    value: r.value,
+    needsDeadline: r.needsDeadline ?? false,
+    isStarting: r.isStarting ?? false,
+    retired: r.retired ?? false,
+  })),
+})
+
+const toSiteInfo = (site: Site, scales: readonly RatingScaleDoc[], locale: string): SiteInfo =>
   SiteInfoSchema.parse({
     name: site.name,
     locale,
@@ -94,6 +124,7 @@ const toSiteInfo = (site: Site, locale: string): SiteInfo =>
     strings: resolveStrings(locale, site.strings),
     navigation: links(site.navigation),
     footer: { about: text(site.footer?.about), links: links(site.footer?.links) },
+    ratingScales: scales.map(toRatingScale),
   })
 
 /** A published country always has a name. The standard one covers a gap all the same. */
@@ -442,10 +473,20 @@ const LARGE_LIST = 2000
 const MAX_PAGE_SIZE = 100
 
 const handlers: Record<string, Handler> = {
-  '/site': async ({ payload, locale }) =>
-    ok(
-      toSiteInfo(await payload.findGlobal({ slug: 'site', locale, overrideAccess: false }), locale),
-    ),
+  '/site': async ({ payload, locale }) => {
+    const [site, scales] = await Promise.all([
+      payload.findGlobal({ slug: 'site', locale, overrideAccess: false }),
+      payload.find({
+        collection: 'rating-scales',
+        locale,
+        sort: 'createdAt',
+        depth: 0,
+        pagination: false,
+        overrideAccess: false,
+      }),
+    ])
+    return ok(toSiteInfo(site, scales.docs, locale))
+  },
 
   '/countries': async ({ payload, locale }) => {
     const result = await payload.find({
