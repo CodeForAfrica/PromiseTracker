@@ -17,6 +17,7 @@ import { Countries } from './countries'
 import { ImportMappings, Imports, runImportTask } from './imports/collections'
 import { csvImporter, xlsxImporter } from './imports/readers'
 import { Areas, Offices } from './places'
+import { ClaimTypes, RatingScales } from './ratings'
 import { Users } from './users'
 
 export const Media: CollectionConfig = {
@@ -50,6 +51,8 @@ export const corePlugin = definePromiseTrackerPlugin({
     Areas,
     Offices,
     Boundaries,
+    RatingScales,
+    ClaimTypes,
     Media,
     Imports,
     ImportMappings,
@@ -85,8 +88,10 @@ export { ADMIN_GROUPS } from './adminGroups'
 export { afterCommit, installAfterCommit } from './afterCommit'
 export { Boundaries, geoJsonProblem, MAX_BOUNDARY_BYTES } from './boundaries'
 export * from './cache'
+export * from './contrast'
 export { Countries } from './countries'
 export * from './countryList'
+export * from './defaultRatings'
 export { privateHistory } from './history'
 export { setImporters } from './imports/collections'
 export type { ImportResult, RowError } from './imports/engine'
@@ -104,6 +109,7 @@ export * from './locales'
 export type { AreaType } from './places'
 export { AREA_PAGE, AREA_TYPES, Areas, Offices } from './places'
 export * from './publishing'
+export * from './ratings'
 export * from './roles'
 export * from './slugs'
 export { Users } from './users'

@@ -7,6 +7,7 @@
  */
 export const ADMIN_GROUPS = {
   people: 'People',
+  claims: 'Claims',
   places: 'Places',
   library: 'Media library',
   site: 'Public site',

@@ -76,6 +76,48 @@ export type Language = z.infer<typeof Language>
 const NavLink = z.object({ label: z.string().min(1), url: z.string().min(1) })
 export type NavLink = z.infer<typeof NavLink>
 
+const Colour = z.string().regex(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i)
+
+/** A group of ratings, such as "Promise kept" (section 7.4). */
+export const RatingTier = z.object({
+  slug: z.string().min(1),
+  label: z.string().min(1),
+  colour: Colour,
+})
+export type RatingTier = z.infer<typeof RatingTier>
+
+/**
+ * One rating on a scale. Its label and colours come from editors, so the
+ * site never names a rating in code (D22).
+ */
+export const Rating = z.object({
+  slug: z.string().min(1),
+  label: z.string().min(1),
+  definition: z.string().nullable(),
+  /** The slug of its tier. */
+  tier: z.string().min(1),
+  colour: Colour,
+  textColour: Colour,
+  /** Its number on the scale, for ClaimReview data (section 10.7). */
+  value: z.number(),
+  needsDeadline: z.boolean(),
+  isStarting: z.boolean(),
+  /** Kept so older claims and their history still show it. Not given to new claims. */
+  retired: z.boolean(),
+})
+export type Rating = z.infer<typeof Rating>
+
+/** A rating scale with its tiers and ratings, in the order editors set. */
+export const RatingScale = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  bestValue: z.number(),
+  worstValue: z.number(),
+  tiers: z.array(RatingTier),
+  ratings: z.array(Rating),
+})
+export type RatingScale = z.infer<typeof RatingScale>
+
 /** `GET /api/v1/site`: what every page of the default site needs. */
 export const SiteInfo = z.object({
   name: z.string().min(1),
@@ -91,6 +133,8 @@ export const SiteInfo = z.object({
   strings: Strings,
   navigation: z.array(NavLink),
   footer: z.object({ about: z.string().nullable(), links: z.array(NavLink) }),
+  /** Every rating scale, so any page can show any claim's rating. */
+  ratingScales: z.array(RatingScale),
 })
 export type SiteInfo = z.infer<typeof SiteInfo>
 

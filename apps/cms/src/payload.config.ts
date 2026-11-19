@@ -5,6 +5,7 @@ import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { defineFinalPlugin } from '@promisetracker/kernel'
 import {
+  ensureDefaultRatings,
   installAfterCommit,
   privateHistory,
   setImporters,
@@ -91,6 +92,7 @@ export default buildConfig({
     await assertExtensions()
     await kernel.onInit(payload)
     await ensureFirstAdmin(payload)
+    await ensureDefaultRatings(payload)
   },
   // privateHistory runs after every plugin, so it covers all their record types.
   plugins: [...kernel.payloadPlugins, defineFinalPlugin('private-history', privateHistory)],
