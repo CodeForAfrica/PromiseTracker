@@ -281,6 +281,27 @@ export const Actors: CollectionConfig = withPublishing(
       },
       { name: 'biography', type: 'textarea', localized: true },
       {
+        type: 'collapsible',
+        label: 'Key claim',
+        admin: { initCollapsed: true, condition: (data) => Boolean(data?.id) },
+        fields: [
+          {
+            name: 'keyClaim',
+            type: 'relationship',
+            relationTo: 'claims',
+            // Only this actor's claims.
+            filterOptions: ({ id }) => (id ? { actor: { equals: id } } : false),
+            admin: { description: 'The claim that matters most, shown first on the actor page.' },
+          },
+          {
+            name: 'keyClaimNote',
+            type: 'textarea',
+            localized: true,
+            admin: { description: 'Why it matters.' },
+          },
+        ],
+      },
+      {
         name: 'links',
         type: 'array',
         admin: { initCollapsed: true },

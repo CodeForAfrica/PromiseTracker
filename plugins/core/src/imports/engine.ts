@@ -93,7 +93,7 @@ function ruleProblems(
   wholeCountry: string | null,
 ): string[] {
   if (!plan.slug) return []
-  if (target === 'actors') {
+  if (target === 'actors' || target === 'claims') {
     return SLUG_PATTERN.test(plan.slug)
       ? []
       : ['Use lower-case letters, digits and single hyphens in the slug, such as achieng-wekesa.']
@@ -189,9 +189,11 @@ export async function runImportPlan(payload: Payload, input: Input): Promise<Imp
   // The other collection, whose slugs share a country's addresses. Actors
   // have addresses of their own, under /e/.
   const others =
-    input.target === 'actors'
+    input.target === 'actors' || input.target === 'claims'
       ? new Map<string, Record<string, unknown>>()
       : await existingBySlug(payload, input.target === 'areas' ? 'offices' : 'areas', input.country)
+  // The records a claim names: actors and areas in its country, topics and claim types everywhere.
+  const named = input.target === 'claims' ? await claimLookups(payload, input.country) : null
   const root = [...existing.values()].find((record) => record.type === 'country')
   let wholeCountry = root ? String(root.slug) : null
   const localized = localizedKeys(input.target)
@@ -228,6 +230,7 @@ export async function runImportPlan(payload: Payload, input: Input): Promise<Imp
         )
       }
     }
+    if (named) resolveClaimRefs(plan, named)
     plan.errors.push(...ruleProblems(input.target, plan, others, wholeCountry))
     if (plan.errors.length > 0) {
       fail(line, plan.errors.join(' '), plan.slug)
@@ -287,6 +290,57 @@ function withNames(
   }
   for (const [slug, record] of records) all.set(slug, record)
   return all
+}
+
+type Lookup = ReadonlyMap<string, Record<string, unknown>>
+type ClaimLookups = { actor: Lookup; area: Lookup; topic: Lookup; type: Lookup }
+
+/** Every record of a type, by slug and by name, for those not kept per country. */
+async function everywhereBySlug(
+  payload: Payload,
+  collection: 'topics' | 'claim-types',
+): Promise<Map<string, Record<string, unknown>>> {
+  const { docs } = await payload.find({
+    collection,
+    locale: 'all',
+    depth: 0,
+    pagination: false,
+    // An import names topics and claim types, after the person running it was checked.
+    overrideAccess: true,
+  })
+  return withNames(
+    new Map(docs.map((doc) => [String(doc.slug), { ...doc } as Record<string, unknown>])),
+  )
+}
+
+async function claimLookups(payload: Payload, country: string): Promise<ClaimLookups> {
+  const [actor, area, topic, type] = await Promise.all([
+    existingBySlug(payload, 'actors', country).then(withNames),
+    existingBySlug(payload, 'areas', country).then(withNames),
+    everywhereBySlug(payload, 'topics'),
+    everywhereBySlug(payload, 'claim-types'),
+  ])
+  return { actor, area, topic, type }
+}
+
+/**
+ * Turns the actor, topic, claim type and area a claim row names into ids.
+ * One that names nothing known is a row error, so the row is not saved.
+ */
+function resolveClaimRefs(plan: PlannedRow, named: ClaimLookups): void {
+  const hints: Record<keyof ClaimLookups, string> = {
+    actor: 'is not an actor in this country. Import the actors first.',
+    area: 'is not an area in this country.',
+    topic: 'is not a topic. Add it under Claims > Topics first.',
+    type: 'is not a claim type.',
+  }
+  for (const key of ['actor', 'area', 'topic', 'type'] as const) {
+    const slug = plan.refs[key]
+    if (!slug) continue
+    const found = named[key].get(slug)
+    if (found) plan.data[key] = idOf(found.id)
+    else plan.errors.push(`${key[0]?.toUpperCase()}${key.slice(1)} "${slug}" ${hints[key]}`)
+  }
 }
 
 const dateOf = (value: unknown): string => (typeof value === 'string' ? value.slice(0, 10) : '')

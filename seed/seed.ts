@@ -3,14 +3,15 @@ import path from 'node:path'
 
 import type { ImportRow } from '@promisetracker/kernel'
 import type { CountryCode, ImportResult, ImportTarget } from '@promisetracker/plugin-core'
-import { guessMapping, planRow, readCsv, runImportPlan } from '@promisetracker/plugin-core'
+import { guessMapping, planRow, readCsv, runImportPlan, slugify } from '@promisetracker/plugin-core'
 import type { Payload } from 'payload'
 
 /**
  * Seed data for development: real countries, their places, offices and
  * office holders, so a collaborator has something to work with from the
  * first run. Each country is a folder in `seed/data`, holding one spreadsheet
- * per record type in the format editors import.
+ * per record type in the format editors import. Topics are shared by every
+ * country, so they are one spreadsheet, `seed/data/topics.csv`.
  */
 
 /** The countries with seed data, each a folder in `seed/data`. */
@@ -20,13 +21,15 @@ export type SeedCountry = (typeof SEED_COUNTRIES)[number]
 /**
  * The order the spreadsheets load in: a record comes after the records it
  * names. Offices and areas name nothing outside their own file, so either can
- * go first. Terms name both, and actors, so they come last.
+ * go first. Terms name both, and actors. Claims name actors, areas and the
+ * shared topics, so they come last.
  */
 export const SEED_ORDER = [
   'offices',
   'areas',
   'actors',
   'terms',
+  'claims',
 ] as const satisfies readonly ImportTarget[]
 export type SeedTarget = (typeof SEED_ORDER)[number]
 
@@ -104,10 +107,13 @@ export async function seedCountry(payload: Payload, code: SeedCountry): Promise<
       rows,
       mapping: guessMapping(target, headings),
       commit: true,
-      // Actors the seed creates are ready, so they appear on the site. They
-      // save ready in one step, so an interrupted run leaves none on hold.
-      // An actor that exists keeps its status, so one an editor held stays held.
-      ...(target === 'actors' ? { onCreate: { recordStatus: 'ready' } } : {}),
+      // Actors and claims the seed creates are ready, so they appear on the
+      // site. They save ready in one step, so an interrupted run leaves none
+      // on hold. One that exists keeps its status, so one an editor held
+      // stays held.
+      ...(target === 'actors' || target === 'claims'
+        ? { onCreate: { recordStatus: 'ready' } }
+        : {}),
     })
     if (result.errors.length > 0) {
       const lines = result.errors.map((e) => `  row ${e.line}: ${e.message}`).join('\n')
@@ -116,4 +122,80 @@ export async function seedCountry(payload: Payload, code: SeedCountry): Promise<
     counts[target] = result.counts
   }
   return { counts, notes: note ? [note] : [] }
+}
+
+/** The topics every country shares, read from `seed/data/topics.csv`. */
+export function readTopics(): { name: Record<string, string>; parent: string; colour: string }[] {
+  const data = readFileSync(path.join(DATA, 'topics.csv'))
+  const { headings, rows } = readCsv({
+    filename: 'topics.csv',
+    mimeType: 'text/csv',
+    data: new Uint8Array(data),
+  })
+  const cell = (values: readonly string[], heading: string) =>
+    values[headings.indexOf(heading)]?.trim() ?? ''
+  return rows.map(({ values }) => ({
+    name: {
+      en: cell(values, 'Name'),
+      fr: cell(values, 'Name (fr)'),
+      sw: cell(values, 'Name (sw)'),
+    },
+    parent: cell(values, 'Parent'),
+    colour: cell(values, 'Colour'),
+  }))
+}
+
+/**
+ * Adds the shared topics, parents first. A topic that exists, matched by its
+ * slug, is left as it is, so an editor's changes stay.
+ */
+export async function seedTopics(payload: Payload): Promise<ImportResult['counts']> {
+  const counts = { create: 0, update: 0, skip: 0, failed: 0 }
+  const ids = new Map<string, string>()
+  // Topics with no parent come first, so a child can name its parent.
+  const topics = readTopics().sort((a, b) => Number(Boolean(a.parent)) - Number(Boolean(b.parent)))
+  for (const topic of topics) {
+    const slug = slugify(topic.name.en ?? '')
+    const { docs } = await payload.find({
+      collection: 'topics',
+      where: { slug: { equals: slug } },
+      depth: 0,
+      limit: 1,
+      // Seeding writes as the system.
+      overrideAccess: true,
+    })
+    const [found] = docs
+    if (found) {
+      ids.set(slug, found.id)
+      counts.skip += 1
+      continue
+    }
+    const parent = topic.parent ? ids.get(slugify(topic.parent)) : undefined
+    const created = await payload.create({
+      collection: 'topics',
+      locale: 'en',
+      data: {
+        name: topic.name.en ?? slug,
+        slug,
+        ...(parent ? { parent } : {}),
+        ...(topic.colour ? { colour: topic.colour } : {}),
+      },
+      overrideAccess: true,
+    })
+    for (const locale of ['fr', 'sw'] as const) {
+      const name = topic.name[locale]
+      if (name) {
+        await payload.update({
+          collection: 'topics',
+          id: created.id,
+          locale,
+          data: { name },
+          overrideAccess: true,
+        })
+      }
+    }
+    ids.set(slug, created.id)
+    counts.create += 1
+  }
+  return counts
 }

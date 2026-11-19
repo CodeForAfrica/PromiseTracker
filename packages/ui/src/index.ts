@@ -17,6 +17,21 @@ export {
 } from './actors'
 export { AreaHero, AreaSeatsOnly, SeatList } from './area'
 export { Container } from './Container'
+export {
+  ClaimFilters,
+  ClaimList,
+  ClaimView,
+  CountryFigures,
+  claimPath,
+  FiguresBlock,
+  figureFormat,
+  formatPartialDate,
+  KeyClaim,
+  ratingChoices,
+  scaleOf,
+  topicChoices,
+  topicPath,
+} from './claims'
 export { cn } from './cn'
 export { CountryHero } from './country'
 export { Disclosure } from './Disclosure'

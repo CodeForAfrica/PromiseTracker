@@ -76,6 +76,23 @@ export const Site: GlobalConfig = {
           ],
         },
         {
+          label: 'Figures',
+          fields: [
+            {
+              name: 'figuresThreshold',
+              label: 'Show percentages from',
+              type: 'number',
+              required: true,
+              defaultValue: 20,
+              min: 1,
+              admin: {
+                description:
+                  'Below this many claims, figures show as counts, such as "1 of 3 completed", rather than percentages (section 10.4).',
+              },
+            },
+          ],
+        },
+        {
           label: 'Interface text',
           description:
             'The words on buttons, menus and notices. Leave a box empty to use the default shown.',

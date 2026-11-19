@@ -10,7 +10,7 @@ import { createHttpRefresher, getPayload } from '@promisetracker/cms'
 import { setTagRefresher } from '@promisetracker/plugin-core'
 
 import type { SeedCountry } from './seed'
-import { SEED_COUNTRIES, seedCountry } from './seed'
+import { SEED_COUNTRIES, seedCountry, seedTopics } from './seed'
 
 // Seed data is for development. A production database holds an editor's work.
 if (process.env.NODE_ENV === 'production') {
@@ -50,6 +50,16 @@ const payload = await getPayload()
 setTagRefresher(async () => {})
 const refresh = createHttpRefresher()
 let failed = false
+// Topics are shared by every country, and claims name them, so they come first.
+try {
+  const topics = await seedTopics(payload)
+  console.log(`topics: ${topics.create} new, ${topics.skip} unchanged`)
+  await refresh(['topics'], { payload })
+} catch (error) {
+  console.error(`topics: ${error instanceof Error ? error.message : String(error)}`)
+  await payload.destroy()
+  process.exit(1)
+}
 for (const code of codes) {
   try {
     const { counts, notes } = await seedCountry(payload, code)
@@ -63,7 +73,10 @@ for (const code of codes) {
     console.error(`${code}: ${error instanceof Error ? error.message : String(error)}`)
   } finally {
     // Rows saved before a failure are in the database too, so the refresh always runs.
-    await refresh(['countries', `country:${code}`, `places:${code}`, `actors:${code}`], { payload })
+    await refresh(
+      ['countries', `country:${code}`, `places:${code}`, `actors:${code}`, `claims:${code}`],
+      { payload },
+    )
   }
 }
 await payload.destroy()

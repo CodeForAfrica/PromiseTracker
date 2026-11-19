@@ -24,6 +24,7 @@ const PERMISSION: Record<ImportTarget, Permission> = {
   offices: 'manageStructure',
   actors: 'editRecords',
   terms: 'editRecords',
+  claims: 'createClaims',
 }
 
 let importers: readonly StructuredImporter[] = [csvImporter, xlsxImporter]

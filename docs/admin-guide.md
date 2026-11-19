@@ -12,10 +12,11 @@ explains the rules behind each step.
 4. Countries
 5. Areas and offices
 6. Actors and terms
-7. Importing from a spreadsheet
-8. Area outlines
-9. Site settings
-10. When changes appear on the site
+7. Claims and topics
+8. Importing from a spreadsheet
+9. Area outlines
+10. Site settings
+11. When changes appear on the site
 
 The admin's menu groups record types by what they are for:
 
@@ -108,7 +109,7 @@ is added, by import or by hand.
 
 **Areas** are a country's places, nested: the country, then its counties, then their
 constituencies, and so on. **Offices** are its titles, such as Governor or Member of Parliament.
-Importing them from a spreadsheet is quickest (section 7). Only super-admins manage them.
+Importing them from a spreadsheet is quickest (section 8). Only super-admins manage them.
 
 ### An area by hand
 
@@ -158,7 +159,7 @@ such as `/en/ke/president`.
 
 **Actors** are the people, parties and institutions the site tracks. **Terms** are an actor's time
 in a seat: an office, and the area for offices that have one. Editors, contributors and
-super-admins add them. Importing them from a spreadsheet is quickest (section 7).
+super-admins add them. Importing them from a spreadsheet is quickest (section 8).
 
 ### An actor by hand
 
@@ -235,13 +236,71 @@ page, marked as a former office holder, with the closing summary and a link to t
   once a term has ended.
 - **Area pages** name each seat's holders.
 
-## 7. Importing from a spreadsheet
+## 7. Claims and topics
+
+**Claims** are what an actor said they would do. Each is rated on its claim type's scale, which
+starts as the Delivery scale. **Topics**, such as Health, label claims, and every country shares
+them.
+
+### A topic
+
+Claims > Topics > Create New. Give it a name in each language, and optionally a description and a
+colour. **Parent** puts it under a broader topic, such as Universal health coverage under Health.
+Topics go one level deep: a topic with a parent cannot have topics under it. The slug, in the
+sidebar, is made from the name, and the topic's page is `/{lang}/topics/{slug}`, such as
+`/en/topics/health`.
+
+### A claim by hand
+
+Claims > Claims > Create New.
+
+| Field                            | What to enter                                                            |
+| -------------------------------- | ------------------------------------------------------------------------ |
+| Title                            | The headline, such as "Build 200,000 homes a year". One per language     |
+| Statement                        | The exact words, in the language they were said. Never translated        |
+| Summary                          | Context for readers. One per language                                    |
+| Actor, Co-actors                 | Who made it, and anyone alongside, such as their party                   |
+| Term, Area                       | The term it belongs to, and the area when narrower than the actor's seat |
+| Topic, Type                      | Leave the type empty for a Promise                                       |
+| Said at, Said on                 | Where and when, such as a rally in Kisumu, 2022-06                       |
+| Deadline, Deadline in words      | When it is due, and the same in words, such as "End of term"             |
+| Source link, Where in the source | A link readers can follow, and the page or section                       |
+
+**Dates** can be a year, a month or a day: `2027`, `2027-08` or `2027-08-09`. Give only what is
+known.
+
+**The rating** starts on the starting rating of the claim type's scale, Unstarted for a Promise.
+It shows in the sidebar, and changes through claim updates once they arrive.
+
+The slug, in the sidebar, is made from the title. The claim's page is `/{lang}/{cc}/p/{slug}`, such
+as `/en/ke/p/build-200000-homes-a-year`. A renamed slug's old address leads to the new one.
+
+A claim starts on **hold**. Set it to **ready** to publish it. For now a claim is public when it is
+ready, has a title in the reader's language, and its actor and country are public. The checks that
+it is verified and has a source arrive in later releases.
+
+### The key claim
+
+On an actor, the collapsed **Key claim** section picks the claim that matters most, with a note on
+why. It shows first on the actor's page.
+
+### What appears on the site
+
+- **The claim page** shows the claim, who made it, where, when and by when, and its rating.
+- **The actor page** shows the key claim, the record so far, and their claims, which readers can
+  filter by rating and topic.
+- **The topic page** shows the topic's figures in each country, and its claims.
+
+**Counts or percentages.** Below 20 claims, figures show as counts, such as "1 of 3", not
+percentages. Change the number in Public site > Site settings > Figures.
+
+## 8. Importing from a spreadsheet
 
 Imports > Imports > Create New.
 
 1. **Upload** a CSV or Excel file, up to 5 MB and 10,000 rows. Excel files are read from their first
    sheet.
-2. Choose the **Country** and what **The file holds**: areas, offices, actors or terms.
+2. Choose the **Country** and what **The file holds**: areas, offices, actors, terms or claims.
 3. **Save.** The file is read, and the **Mapping** fills in: which column fills each field. It comes
    from a saved mapping whose columns all appear in the file, or from column headings named like the
    fields, such as "Name", "Type", "Parent", "Area type" or "Name (fr)".
@@ -308,10 +367,20 @@ A term row matches an existing term by its actor, office, area and start date, s
 same file again updates rather than duplicates. Imported actors start on **hold**: set each to
 **ready** to publish it.
 
-`tests/fixtures/kenya-areas.csv`, `kenya-offices.csv`, `kenya-actors.csv` and `kenya-terms.csv` in
-the repository are full examples. The people in them are fictional.
+Claims, one row per claim. Import the actors and add the topics first. Name the actor, topic and
+area by name or slug. Dates can be a year, a month or a day:
 
-## 8. Area outlines
+| Title                     | Actor          | Topic   | Said on | Deadline | Deadline in words |
+| ------------------------- | -------------- | ------- | ------- | -------- | ----------------- |
+| Build 5000 homes in Kibra | Achieng Wekesa | Housing | 2022-07 | 2027     | End of term       |
+
+A claim row matches an existing claim by its slug, made from the title unless a Slug column gives
+one. Imported claims start on **hold**.
+
+`tests/fixtures/kenya-areas.csv`, `kenya-offices.csv`, `kenya-actors.csv`, `kenya-terms.csv` and
+`kenya-claims.csv` in the repository are full examples. The people in them are fictional.
+
+## 9. Area outlines
 
 An outline is the shape of an area on a map, kept for the maps in version 2. It is a **GeoJSON**
 file, usually ending in `.geojson`, not an image. Boundary data comes from sources such as a
@@ -326,7 +395,7 @@ country's electoral commission or OpenStreetMap, and many need crediting.
 The Map section also holds the area's centre, as latitude and longitude, and its bounds. All of it
 is optional.
 
-## 9. Site settings
+## 10. Site settings
 
 Public site > Site settings. Editors and super-admins can change these.
 
@@ -339,7 +408,7 @@ Public site > Site settings. Editors and super-admins can change these.
 These are per language: switch language at the top right to edit another. Interface text in a
 language with no translation shows in English.
 
-## 10. When changes appear on the site
+## 11. When changes appear on the site
 
 A saved change appears on the site at once: the pages it affects are refreshed when the save
 completes. If a page still shows old content, reload it once.

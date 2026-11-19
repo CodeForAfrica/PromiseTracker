@@ -18,6 +18,8 @@ export type Seed = {
   englishOnly: { id: string; code: string; en: string }
   /** A super-admin to sign in to the admin as. */
   admin: { id: string; email: string; password: string }
+  /** Topics the seed added, to remove again. */
+  topics: string[]
 }
 
 const file = path.resolve(import.meta.dirname, '.seed.json')
@@ -27,12 +29,21 @@ if (process.argv.includes('--remove')) {
   if (existsSync(file)) {
     const seed = JSON.parse(readFileSync(file, 'utf8')) as Seed
     // Test set-up writes as the system, and removes only what it added.
-    for (const collection of ['terms', 'actors', 'areas', 'offices'] as const) {
+    await payload.update({
+      collection: 'actors',
+      where: { country: { equals: seed.full.id } },
+      data: { keyClaim: null },
+      overrideAccess: true,
+    })
+    for (const collection of ['claims', 'terms', 'actors', 'areas', 'offices'] as const) {
       await payload.delete({
         collection,
         where: { country: { equals: seed.full.id } },
         overrideAccess: true,
       })
+    }
+    for (const id of seed.topics ?? []) {
+      await payload.delete({ collection: 'topics', id, overrideAccess: true })
     }
     await payload.delete({
       collection: 'countries',
@@ -72,14 +83,32 @@ if (process.argv.includes('--remove')) {
       overrideAccess: true,
     })
   }
-  // The Kenyan areas and offices, so the full country has area pages, and
-  // fictional office holders, one of whom has left office.
+  // The topics the claims below name.
+  const topics: string[] = []
+  for (const name of ['Health', 'Housing']) {
+    const { docs } = await payload.find({
+      collection: 'topics',
+      where: { slug: { equals: name.toLowerCase() } },
+      overrideAccess: true,
+    })
+    if (docs.length > 0) continue
+    const topic = await payload.create({
+      collection: 'topics',
+      locale: 'en',
+      data: { name },
+      overrideAccess: true,
+    })
+    topics.push(topic.id)
+  }
+  // The Kenyan areas and offices, so the full country has area pages,
+  // fictional office holders, one of whom has left office, and their claims.
   const fixtures = path.resolve(import.meta.dirname, '../fixtures')
   for (const [target, name] of [
     ['offices', 'kenya-offices.csv'],
     ['areas', 'kenya-areas.csv'],
     ['actors', 'kenya-actors.csv'],
     ['terms', 'kenya-terms.csv'],
+    ['claims', 'kenya-claims.csv'],
   ] as const) {
     const content = {
       filename: name,
@@ -111,11 +140,28 @@ if (process.argv.includes('--remove')) {
     })
     if (errors.length) throw new Error(`Seeding ${name} failed: ${JSON.stringify(errors)}`)
   }
-  // An editor releases each actor. The seed releases them all.
+  // An editor releases each actor and claim. The seed releases them all.
+  for (const collection of ['actors', 'claims'] as const) {
+    await payload.update({
+      collection,
+      where: { country: { equals: a.id } },
+      data: { recordStatus: 'ready' },
+      overrideAccess: true,
+    })
+  }
+  // The governor's key claim, as an editor would choose it.
+  const [keyClaim] = (
+    await payload.find({
+      collection: 'claims',
+      where: { and: [{ country: { equals: a.id } }, { slug: { equals: 'kibra-housing' } }] },
+      overrideAccess: true,
+    })
+  ).docs
   await payload.update({
     collection: 'actors',
-    where: { country: { equals: a.id } },
-    data: { recordStatus: 'ready' },
+    where: { and: [{ country: { equals: a.id } }, { slug: { equals: 'achieng-wekesa' } }] },
+    locale: 'en',
+    data: { keyClaim: keyClaim?.id ?? null, keyClaimNote: 'Her flagship housing pledge.' },
     overrideAccess: true,
   })
   const admin = {
@@ -131,6 +177,7 @@ if (process.argv.includes('--remove')) {
     full: { id: a.id, code: full, en: countryName(full, 'en'), fr: countryName(full, 'fr') },
     englishOnly: { id: b.id, code: englishOnly, en: countryName(englishOnly, 'en') },
     admin: { id: user.id, ...admin },
+    topics,
   }
   writeFileSync(file, JSON.stringify(seed, null, 2))
 }

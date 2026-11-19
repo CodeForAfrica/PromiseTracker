@@ -76,12 +76,15 @@ export function RatingLegend({
   counts,
   hideEmpty = false,
   leader = false,
+  format = String,
   className,
 }: {
   scale: RatingScale
   counts: RatingCounts
   hideEmpty?: boolean
   leader?: boolean
+  /** How a count is written, such as "1 of 3" or "33%" (section 10.4). */
+  format?: (count: number) => string
   className?: string
 }) {
   return (
@@ -91,7 +94,7 @@ export function RatingLegend({
           <RatingDot rating={r} />
           {r.label}
           <span className={cn('flex-1', leader && 'border-b border-dotted border-line')} />
-          <span className="text-ink-2">{countOf(counts, r.slug)}</span>
+          <span className="text-ink-2">{format(countOf(counts, r.slug))}</span>
         </li>
       ))}
     </ul>

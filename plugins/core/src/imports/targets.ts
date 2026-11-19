@@ -1,12 +1,13 @@
 import type { Payload } from 'payload'
 
 import { ACTOR_KINDS, GENDERS, INSTITUTION_TYPES } from '../actors'
+import { partialDatePrecision } from '../claims'
 import { REGISTERED_LOCALES } from '../locales'
 import { AREA_PAGE, AREA_TYPES } from '../places'
 import { slugify } from '../slugs'
 
 /** What an import can create or update (section 9.6). Others join with their issues. */
-export const IMPORT_TARGETS = ['areas', 'offices', 'actors', 'terms'] as const
+export const IMPORT_TARGETS = ['areas', 'offices', 'actors', 'terms', 'claims'] as const
 export type ImportTarget = (typeof IMPORT_TARGETS)[number]
 
 /** A field a column can fill. A localized field also has one per language, as `name:fr`. */
@@ -22,6 +23,8 @@ export type TargetField = {
   date?: boolean
   /** Another record, named by its slug or its name. */
   reference?: boolean
+  /** A partial date: 2027, 2027-08 or 2027-08-09. */
+  partialDate?: boolean
 }
 
 const FIELDS: Record<ImportTarget, readonly TargetField[]> = {
@@ -62,6 +65,22 @@ const FIELDS: Record<ImportTarget, readonly TargetField[]> = {
     { key: 'endsOn', label: 'Ends on', date: true },
     { key: 'successor', label: 'Successor', reference: true },
     { key: 'closingSummary', label: 'Closing summary', localized: true },
+  ],
+  claims: [
+    { key: 'title', label: 'Title', required: true, localized: true },
+    { key: 'slug', label: 'Slug' },
+    { key: 'actor', label: 'Actor', required: true, reference: true },
+    { key: 'topic', label: 'Topic', reference: true },
+    { key: 'type', label: 'Claim type', reference: true },
+    { key: 'area', label: 'Area', reference: true },
+    { key: 'statement', label: 'Statement' },
+    { key: 'summary', label: 'Summary', localized: true },
+    { key: 'saidAt', label: 'Said at' },
+    { key: 'saidOn', label: 'Said on', partialDate: true },
+    { key: 'deadline', label: 'Deadline', partialDate: true },
+    { key: 'deadlineText', label: 'Deadline in words', localized: true },
+    { key: 'sourceUrl', label: 'Source link' },
+    { key: 'sourceLocator', label: 'Where in the source' },
   ],
 }
 
@@ -155,6 +174,10 @@ export function planRow(
       if (field.required) errors.push(`${field.label} is empty.`)
     } else if (field.reference) {
       refs[field.key] = slugify(raw)
+    } else if (field.partialDate) {
+      if (partialDatePrecision(raw)) data[field.key] = raw
+      else
+        errors.push(`${field.label} "${raw}" is not a date written as 2027, 2027-08 or 2027-08-09.`)
     } else if (field.date) {
       // Noon UTC, as the admin's date picker saves a day.
       if (isDate(raw)) data[field.key] = `${raw}T12:00:00.000Z`
@@ -179,7 +202,9 @@ export function planRow(
       }
     }
   }
-  const name = typeof data.name === 'string' ? data.name : ''
+  // A claim's slug comes from its title, as it does in the admin.
+  const named = data.name ?? data.title
+  const name = typeof named === 'string' ? named : ''
   // A term has no slug: it is found by its actor, office, area and start.
   const slug = target === 'terms' ? '' : cell('slug') || slugify(name)
   if (!slug && name) errors.push('The slug cannot be made from the name. Add a slug column.')
@@ -193,15 +218,18 @@ export async function existingBySlug(
   target: Exclude<ImportTarget, 'terms'>,
   country: string,
 ): Promise<Map<string, Record<string, unknown>>> {
-  const { docs } = await payload.find({
-    collection: target,
-    joins: false,
+  const query = {
     where: { country: { equals: country } },
     locale: 'all',
     depth: 0,
     pagination: false,
     // An import reads the records it may update, after the person running it was checked.
     overrideAccess: true,
-  })
+  } as const
+  // Claims list nothing that points at them, so only the others skip their joins.
+  const { docs } =
+    target === 'claims'
+      ? await payload.find({ collection: target, ...query })
+      : await payload.find({ collection: target, joins: false, ...query })
   return new Map(docs.map((doc) => [String(doc.slug), { ...doc } as Record<string, unknown>]))
 }
