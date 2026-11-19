@@ -1,10 +1,8 @@
 import type {
   AnalyticsProvider,
   CaptchaProvider,
-  ContentExtractor,
   NewsletterProvider,
   SearchProvider,
-  SourceConnector,
   VerificationProvider,
 } from '@promisetracker/kernel'
 
@@ -25,26 +23,7 @@ export const nativeVerification: VerificationProvider = {
   pull: notYet('native verification', '#650 (V1-12)'),
 }
 
-export const uploadConnector: SourceConnector = {
-  id: 'upload',
-  mode: 'manual',
-  health: healthy,
-  fetch: notYet('upload connector', '#652 (V1-14)'),
-}
-
-const decoder = new TextDecoder('utf-8')
-
-/** Reads plain text as it is. Other formats come from plugin-tika. */
-export const plaintextExtractor: ContentExtractor = {
-  id: 'plaintext',
-  accepts: ['text/plain', 'text/markdown', 'text/csv'],
-  health: healthy,
-  extract: async (content) => ({
-    text: decoder.decode(content.data),
-    pageCount: null,
-    metadata: {},
-  }),
-}
+export { plaintextExtractor, uploadConnector, urlConnector } from './documents/connectors'
 
 export const payloadSearch: SearchProvider = {
   id: 'payload-search',

@@ -9,6 +9,8 @@ const strict = { lines: 85, statements: 85, functions: 85, branches: 85 }
 const strictPaths = [
   // Plugin loading, ports and start-up checks.
   'packages/kernel/src/**',
+  // The document pipeline: connectors, file checks, extraction and jobs.
+  'plugins/core/src/documents/**',
 ]
 
 export default defineConfig({

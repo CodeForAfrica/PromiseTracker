@@ -7,7 +7,9 @@ import { defineFinalPlugin } from '@promisetracker/kernel'
 import {
   installAfterCommit,
   privateHistory,
+  setFileReader,
   setImporters,
+  setPipelineAdapters,
   setTagRefresher,
 } from '@promisetracker/plugin-core'
 import { buildConfig } from 'payload'
@@ -21,7 +23,7 @@ import { defaultLocale, registeredLocales } from './locales'
 import { loggerConfig } from './logger'
 import { migrations } from './migrations'
 import { reportError } from './sentry'
-import { storageAdapters } from './storage'
+import { s3FileReader, storageAdapters } from './storage'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -33,6 +35,19 @@ const email = emailAdapter()
 setTagRefresher(createHttpRefresher())
 // Imports read files with every enabled plugin's readers (section 4.1).
 setImporters(kernel.adapters.structuredImporter)
+// Documents come in and are read with every enabled plugin's connectors and
+// extractors, each given its own plugin's settings (section 4.2).
+const ownerOf = (adapter: object): string =>
+  kernel.manifests.find((m) =>
+    Object.values(m.provides ?? {}).some((list) => (list as readonly object[]).includes(adapter)),
+  )?.slug ?? 'core'
+setPipelineAdapters({
+  connectors: kernel.adapters.sourceConnector,
+  extractors: kernel.adapters.contentExtractor,
+  context: (payload, adapter, signal) => kernel.context(payload, ownerOf(adapter), signal),
+})
+const s3Reader = s3FileReader()
+if (s3Reader) setFileReader(s3Reader)
 
 const inUse = new Set(kernel.locales.map((l) => l.code))
 
@@ -81,6 +96,9 @@ export default buildConfig({
     // processing token and lease before running it, so no two workers run the
     // same job.
     autoRun: role === 'worker' ? [{ cron: '* * * * *', allQueues: true }] : [],
+    // Finished jobs stay until the hourly cleanupJobs, so the admin can show
+    // what ran. Failed ones stay 7 days (sections 9.8 and 13.9).
+    deleteJobOnComplete: false,
   },
   logger: loggerConfig(),
   // Start-up checks that need a running Payload (section 4.4). Payload applies

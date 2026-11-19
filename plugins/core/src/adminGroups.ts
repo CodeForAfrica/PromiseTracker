@@ -8,6 +8,7 @@
 export const ADMIN_GROUPS = {
   people: 'People',
   places: 'Places',
+  sources: 'Sources',
   library: 'Media library',
   site: 'Public site',
   imports: 'Imports',

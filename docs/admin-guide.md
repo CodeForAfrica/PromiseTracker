@@ -14,8 +14,9 @@ explains the rules behind each step.
 6. Actors and terms
 7. Importing from a spreadsheet
 8. Area outlines
-9. Site settings
-10. When changes appear on the site
+9. Documents
+10. Site settings
+11. When changes appear on the site
 
 The admin's menu groups record types by what they are for:
 
@@ -23,6 +24,7 @@ The admin's menu groups record types by what they are for:
 | -------------- | ------------------------------------------------- |
 | People         | Actors, Terms                                     |
 | Places         | Countries, Areas, Offices, Boundaries             |
+| Sources        | Documents, Source files                           |
 | Media library  | Images, such as actor photos                      |
 | Imports        | Imports, Saved mappings                           |
 | Administration | Users, and plugin settings once a plugin has some |
@@ -326,7 +328,49 @@ country's electoral commission or OpenStreetMap, and many need crediting.
 The Map section also holds the area's centre, as latitude and longitude, and its bounds. All of it
 is optional.
 
-## 9. Site settings
+## 9. Documents
+
+Documents hold source material, such as a manifesto, a speech, a budget or a report. Only signed-in
+staff can see them. Their text is read in the background, ready for finding claims.
+
+Sources > Documents > Create New.
+
+1. Fill in the **Title** and **Country**, and if you know them the **Actors**, **Language**,
+   **Publisher** and **Date**. **Type** says whether claims come from it or it is evidence about
+   them.
+2. Choose how to **Bring it in**:
+   - **Uploading a file.** Under **File**, upload a PDF, Word, Excel, PowerPoint, OpenDocument,
+     RTF, EPUB, text, Markdown or HTML file, or choose one already uploaded. **Link** is optional,
+     and is only shown, never fetched.
+   - **Fetching a link.** Paste an `https://` link in **Link**. The server fetches it once and keeps
+     the file, so the document stays even if the page changes or goes.
+3. **Save.** The **Status** in the sidebar moves through **Waiting**, **Fetching**, **Fetched**,
+   **Reading** and **Read**. Reload the page to see it change. Once it says **Read**, the **Text**
+   holds the document's text, with every accent and character kept.
+
+The Documents list shows each document's status and message, so you can see which need attention.
+
+**A file is checked before it is kept.** Its first bytes, its type and its extension must agree:
+a picture renamed `.pdf` is refused, and so is any SVG file. The message says why.
+
+**A file is stored once.** Uploading a file that is already stored is refused with the name it is
+stored under: choose that one instead. Two links to the same file share one stored copy. The files
+are under Sources > Source files, where you can add a **Credit** for a file. Replacing a file keeps
+the one before it in the file's version history.
+
+**Links are fetched safely.** Only `https://` links are fetched, never addresses inside a private
+network, and each redirect is checked the same way. A file must arrive within 5 minutes.
+
+**When a step fails**, **Status** says **Failed** and **Message** says why. A link that is gone, or
+a file nothing can read, fails at once. A site that is down or asks us to wait is tried again
+later, up to 3 runs, and the message says when. When a document fails for good, whoever added it
+gets an email. Fix the file or link and save to start again. Changing only the title or other
+details does not start it again.
+
+PDF, Word and the other office formats need the Tika plugin, which comes later. Until then, those
+documents fail with a message saying no plugin reads them.
+
+## 10. Site settings
 
 Public site > Site settings. Editors and super-admins can change these.
 
@@ -339,7 +383,7 @@ Public site > Site settings. Editors and super-admins can change these.
 These are per language: switch language at the top right to edit another. Interface text in a
 language with no translation shows in English.
 
-## 10. When changes appear on the site
+## 11. When changes appear on the site
 
 A saved change appears on the site at once: the pages it affects are refreshed when the save
 completes. If a page still shows old content, reload it once.

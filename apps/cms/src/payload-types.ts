@@ -162,6 +162,8 @@ export interface Config {
     areas: Area;
     offices: Office;
     boundaries: Boundary;
+    documents: Document;
+    'document-files': DocumentFile;
     media: Media;
     imports: Import;
     'import-mappings': ImportMapping;
@@ -198,6 +200,8 @@ export interface Config {
     areas: AreasSelect<false> | AreasSelect<true>;
     offices: OfficesSelect<false> | OfficesSelect<true>;
     boundaries: BoundariesSelect<false> | BoundariesSelect<true>;
+    documents: DocumentsSelect<false> | DocumentsSelect<true>;
+    'document-files': DocumentFilesSelect<false> | DocumentFilesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     imports: ImportsSelect<false> | ImportsSelect<true>;
     'import-mappings': ImportMappingsSelect<false> | ImportMappingsSelect<true>;
@@ -238,12 +242,17 @@ export interface Config {
   jobs: {
     tasks: {
       runImport: TaskRunImport;
+      fetchDocument: TaskFetchDocument;
+      extractText: TaskExtractText;
+      cleanupJobs: TaskCleanupJobs;
       inline: {
         input: unknown;
         output: unknown;
       };
     };
-    workflows: unknown;
+    workflows: {
+      processDocument: WorkflowProcessDocument;
+    };
   };
 }
 export interface UserAuthOperations {
@@ -732,6 +741,119 @@ export interface Office {
   createdAt: string;
 }
 /**
+ * Upload a file or paste a link. The text is read in the background, and the status shows each step.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "documents".
+ */
+export interface Document {
+  id: string;
+  title: string;
+  country: string | Country;
+  /**
+   * A manifesto or speech claims come from, or evidence about them.
+   */
+  type?: ('claims' | 'evidence') | null;
+  actors?: (string | Actor)[] | null;
+  language?: ('en' | 'fr' | 'pt' | 'ar' | 'sw') | null;
+  publisher?: string | null;
+  date?: string | null;
+  connector: 'upload' | 'url';
+  /**
+   * PDF, Word, Excel, PowerPoint, OpenDocument, RTF, EPUB, text, Markdown or HTML.
+   */
+  file?: (string | null) | DocumentFile;
+  /**
+   * Where the document was published. With “Fetching a link”, the server fetches it once and stores the file. Otherwise it is only shown.
+   */
+  sourceUrl?: string | null;
+  status?:
+    | (
+        | 'pending'
+        | 'fetching'
+        | 'fetched'
+        | 'extracting'
+        | 'extracted'
+        | 'analysing'
+        | 'analysed'
+        | 'imported'
+        | 'completed'
+        | 'failed'
+        | 'needs-review'
+      )
+    | null;
+  statusMessage?: string | null;
+  retryCount?: number | null;
+  lastAttemptAt?: string | null;
+  detectedType?: string | null;
+  pageCount?: number | null;
+  /**
+   * Read from the file. Every character is kept.
+   */
+  text?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Files behind documents. Each is stored once, and only staff can open them.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "document-files".
+ */
+export interface DocumentFile {
+  id: string;
+  /**
+   * Who made or published the file, if it should be credited.
+   */
+  credit?: string | null;
+  /**
+   * SHA-256 of the file, so it is stored once.
+   */
+  checksum?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  prefix?: string | null;
+  _objectKey?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  _stored?: boolean | null;
+  _transforms?: UploadTransforms;
+  original?: {
+    filename?: string | null;
+    url?: string | null;
+    mimeType?: string | null;
+    filesize?: number | null;
+    width?: number | null;
+    height?: number | null;
+    prefix?: string | null;
+    _objectKey?: string | null;
+    _stored?: boolean | null;
+  };
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
  * Upload a CSV or Excel file. Check the mapping, then choose Preview, and Import when the preview is right.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -996,7 +1118,7 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'runImport';
+        taskSlug: 'inline' | 'runImport' | 'fetchDocument' | 'extractText' | 'cleanupJobs';
         taskID: string;
         input:
           | {
@@ -1027,13 +1149,14 @@ export interface PayloadJob {
           | boolean
           | null;
         parent?: {
-          taskSlug?: ('inline' | 'runImport') | null;
+          taskSlug?: ('inline' | 'runImport' | 'fetchDocument' | 'extractText' | 'cleanupJobs') | null;
           taskID?: string | null;
         };
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'runImport') | null;
+  workflowSlug?: 'processDocument' | null;
+  taskSlug?: ('inline' | 'runImport' | 'fetchDocument' | 'extractText' | 'cleanupJobs') | null;
   queue?: string | null;
   waitUntil?: string | null;
   processingUntil?: string | null;
@@ -1075,6 +1198,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'boundaries';
         value: string | Boundary;
+      } | null)
+    | ({
+        relationTo: 'documents';
+        value: string | Document;
+      } | null)
+    | ({
+        relationTo: 'document-files';
+        value: string | DocumentFile;
       } | null)
     | ({
         relationTo: 'media';
@@ -1324,6 +1455,71 @@ export interface BoundariesSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "documents_select".
+ */
+export interface DocumentsSelect<T extends boolean = true> {
+  title?: T;
+  country?: T;
+  type?: T;
+  actors?: T;
+  language?: T;
+  publisher?: T;
+  date?: T;
+  connector?: T;
+  file?: T;
+  sourceUrl?: T;
+  status?: T;
+  statusMessage?: T;
+  retryCount?: T;
+  lastAttemptAt?: T;
+  detectedType?: T;
+  pageCount?: T;
+  text?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "document-files_select".
+ */
+export interface DocumentFilesSelect<T extends boolean = true> {
+  credit?: T;
+  checksum?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  prefix?: T;
+  _objectKey?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  _stored?: T;
+  _transforms?: T;
+  original?:
+    | T
+    | {
+        filename?: T;
+        url?: T;
+        mimeType?: T;
+        filesize?: T;
+        width?: T;
+        height?: T;
+        prefix?: T;
+        _objectKey?: T;
+        _stored?: T;
+      };
+  focalX?: T;
+  focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media_select".
  */
 export interface MediaSelect<T extends boolean = true> {
@@ -1512,6 +1708,7 @@ export interface PayloadJobsSelect<T extends boolean = true> {
             };
         id?: T;
       };
+  workflowSlug?: T;
   taskSlug?: T;
   queue?: T;
   waitUntil?: T;
@@ -1813,6 +2010,8 @@ export interface CollectionQueryWidget {
       | 'areas'
       | 'offices'
       | 'boundaries'
+      | 'documents'
+      | 'document-files'
       | 'media'
       | 'imports'
       | 'import-mappings'
@@ -1846,6 +2045,8 @@ export interface ActivityWidget {
           | 'areas'
           | 'offices'
           | 'boundaries'
+          | 'documents'
+          | 'document-files'
           | 'media'
           | 'imports'
           | 'import-mappings'
@@ -1861,7 +2062,7 @@ export interface ActivityWidget {
  */
 export interface UploadDropzoneWidget {
   data?: {
-    excludedCollections?: ('boundaries' | 'media' | 'imports')[] | null;
+    excludedCollections?: ('boundaries' | 'document-files' | 'media' | 'imports')[] | null;
   };
   width: 'x-small' | 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }
@@ -1874,6 +2075,47 @@ export interface TaskRunImport {
     importId: string;
   };
   output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskFetchDocument".
+ */
+export interface TaskFetchDocument {
+  input: {
+    documentId: string;
+  };
+  output: {
+    ok?: boolean | null;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskExtractText".
+ */
+export interface TaskExtractText {
+  input: {
+    documentId: string;
+  };
+  output: {
+    ok?: boolean | null;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskCleanupJobs".
+ */
+export interface TaskCleanupJobs {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WorkflowProcessDocument".
+ */
+export interface WorkflowProcessDocument {
+  input: {
+    documentId: string;
+  };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
