@@ -12,13 +12,18 @@ export function findQuote(text: string, statement: string, context = 240): Quote
   const body = squash(text)
   const quote = squash(statement)
   if (!body || !quote) return null
-  const at = body.toLowerCase().indexOf(quote.toLowerCase())
-  if (at < 0) return null
+  // Matched in the text itself, without lowercasing it first: some letters,
+  // such as İ, change length when lowercased, which would shift the highlight.
+  const pattern = new RegExp(quote.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'iu')
+  const found = pattern.exec(body)
+  if (!found) return null
+  const at = found.index
+  const length = found[0].length
   const start = Math.max(0, at - context)
-  const end = Math.min(body.length, at + quote.length + context)
+  const end = Math.min(body.length, at + length + context)
   return {
     before: (start > 0 ? '…' : '') + body.slice(start, at),
-    quote: body.slice(at, at + quote.length),
-    after: body.slice(at + quote.length, end) + (end < body.length ? '…' : ''),
+    quote: body.slice(at, at + length),
+    after: body.slice(at + length, end) + (end < body.length ? '…' : ''),
   }
 }

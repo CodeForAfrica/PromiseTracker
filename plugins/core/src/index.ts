@@ -163,4 +163,5 @@ export {
   AWAITING_VERIFICATION,
   ensureVerificationQueue,
   VERIFICATION_QUEUE,
+  whereToQuery,
 } from './verificationQueue'

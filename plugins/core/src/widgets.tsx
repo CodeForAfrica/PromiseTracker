@@ -1,7 +1,7 @@
 import { Card } from '@payloadcms/ui'
 import type { WidgetServerProps } from 'payload'
 
-import { AWAITING_VERIFICATION } from './verificationQueue'
+import { AWAITING_VERIFICATION, whereToQuery } from './verificationQueue'
 
 /**
  * Admin dashboard widgets. They run on the server, as signed-in users, and
@@ -20,8 +20,8 @@ export async function AwaitingVerification({ req }: WidgetServerProps) {
     overrideAccess: false,
     req,
   })
-  const queue =
-    '/admin/collections/claims?where[and][0][verification.verdict][equals]=unverified&where[and][1][recordStatus][not_equals]=archived'
+  // The same filter as the saved view, under the admin's configured route.
+  const queue = `${req.payload.config.routes.admin}/collections/claims?${whereToQuery(AWAITING_VERIFICATION)}`
   const title =
     totalDocs === 0
       ? 'No claims awaiting verification'

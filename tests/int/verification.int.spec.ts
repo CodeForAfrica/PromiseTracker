@@ -144,6 +144,54 @@ describe('built-in verification', () => {
     expect(typeof by === 'object' ? by?.id : by).toBe(users.reviewer.id)
   })
 
+  it('dates each new verdict, even when the form sends back the old date', async () => {
+    const doc = await claim('bridges')
+    const set = (verdict: string, date?: string) =>
+      payload.update({
+        collection: 'claims',
+        id: doc.id,
+        data: { verification: { verdict, ...(date ? { date } : {}) } } as never,
+        overrideAccess: false,
+        user: as('reviewer'),
+      })
+    // A date chosen on purpose is kept.
+    const first = await set('verified', '2026-01-15T12:00:00.000Z')
+    expect(first.verification?.date?.slice(0, 10)).toBe('2026-01-15')
+    // The admin sends the whole group back, old date and all. A new verdict gets today.
+    const second = await set('misleading', first.verification?.date ?? undefined)
+    expect(second.verification?.date?.slice(0, 10)).toBe(new Date().toISOString().slice(0, 10))
+    // A cleared verdict is unverified, so the claim is back in the queue.
+    const cleared = await payload.update({
+      collection: 'claims',
+      id: doc.id,
+      data: { verification: { verdict: null } } as never,
+      overrideAccess: true,
+    })
+    expect(cleared.verification?.verdict).toBe('unverified')
+  })
+
+  it('refuses a reviewer moving a claim to the trash', async () => {
+    const doc = await claim('ferries')
+    // Trashing needs the right to delete, which a reviewer does not have.
+    await expect(
+      payload.update({
+        collection: 'claims',
+        id: doc.id,
+        data: { deletedAt: new Date().toISOString(), verification: { verdict: 'verified' } },
+        overrideAccess: false,
+        user: as('reviewer'),
+        trash: true,
+      }),
+    ).rejects.toThrow()
+    const after = await payload.findByID({
+      collection: 'claims',
+      id: doc.id,
+      overrideAccess: true,
+      trash: true,
+    })
+    expect(after.deletedAt ?? null).toBeNull()
+  })
+
   it('lets only reviewers, editors and super-admins set a verdict', async () => {
     const doc = await payload.create({
       collection: 'claims',
@@ -240,6 +288,6 @@ describe('built-in verification', () => {
       where: { and: [{ country: { equals: country } }, AWAITING_VERIFICATION] },
       overrideAccess: true,
     })
-    expect(waiting.docs.map((d) => d.slug)).toEqual(['water'])
+    expect(waiting.docs.map((d) => d.slug).sort()).toEqual(['bridges', 'ferries', 'water'])
   })
 })

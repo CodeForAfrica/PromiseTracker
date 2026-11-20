@@ -1,6 +1,12 @@
 import type { PluginManifest } from '@promisetracker/kernel'
 import { applyManifest } from '@promisetracker/kernel'
-import { Claims, findQuote, verdictOf } from '@promisetracker/plugin-core'
+import {
+  AWAITING_VERIFICATION,
+  Claims,
+  findQuote,
+  verdictOf,
+  whereToQuery,
+} from '@promisetracker/plugin-core'
 import type { Config, Field } from 'payload'
 import { describe, expect, it } from 'vitest'
 
@@ -58,8 +64,26 @@ in Kibra by 2027. Then it moves on to roads and water.`
     })
   })
 
+  it('keeps the highlight in place after letters that change length when lowercased', () => {
+    const match = findQuote(
+      'İİİ İstanbul said: we will pave the road. Then more.',
+      'WE WILL PAVE',
+      8,
+    )
+    expect(match?.quote).toBe('we will pave')
+    expect(match?.before).toBe('…l said: ')
+  })
+
   it('says when the statement is not in the text', () => {
     expect(findQuote(text, 'We will build ten thousand homes')).toBeNull()
     expect(findQuote('', 'Anything')).toBeNull()
+  })
+})
+
+describe('the verification queue (section 5.1)', () => {
+  it('links to the same filter the saved view uses', () => {
+    expect(whereToQuery(AWAITING_VERIFICATION)).toBe(
+      'where[and][0][verification.verdict][equals]=unverified&where[and][1][recordStatus][not_equals]=archived',
+    )
   })
 })

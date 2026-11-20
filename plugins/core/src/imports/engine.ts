@@ -59,7 +59,6 @@ const idOf = (value: unknown): string | null => {
 const inLocale = (value: unknown, locale: string): unknown =>
   value && typeof value === 'object' ? Reflect.get(value, locale) : value
 
-/** Whether a row would change nothing on the record it matches. */
 /** Import columns that fill a field inside a group, by the group's name. */
 const GROUPED: Readonly<Record<string, string>> = {
   verdict: 'verification',
@@ -85,6 +84,7 @@ const storedValue = (record: Record<string, unknown>, key: string): unknown => {
   return values && typeof values === 'object' ? Reflect.get(values, key) : undefined
 }
 
+/** Whether a row would change nothing on the record it matches. */
 function unchanged(
   current: Record<string, unknown>,
   plan: PlannedRow,

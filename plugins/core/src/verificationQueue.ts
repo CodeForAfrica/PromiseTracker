@@ -11,6 +11,23 @@ export const AWAITING_VERIFICATION: Where = {
 export const VERIFICATION_QUEUE = 'Awaiting verification'
 
 /**
+ * A query as the admin's list view reads it from its address, such as
+ * `where[and][0][verification.verdict][equals]=unverified`.
+ */
+export function whereToQuery(where: Where, prefix = 'where'): string {
+  const parts: string[] = []
+  const walk = (value: unknown, path: string) => {
+    if (value && typeof value === 'object') {
+      for (const [key, inner] of Object.entries(value)) walk(inner, `${path}[${key}]`)
+    } else {
+      parts.push(`${path}=${encodeURIComponent(String(value))}`)
+    }
+  }
+  walk(where, prefix)
+  return parts.join('&')
+}
+
+/**
  * The saved view reviewers work from (section 5.1): claims with no verdict,
  * not archived. Shared with everyone, and created at start-up when missing.
  * Nobody but the system changes or deletes it, so it is always there.
@@ -28,6 +45,21 @@ export async function ensureVerificationQueue(payload: Payload): Promise<void> {
     overrideAccess: true,
   })
   if (totalDocs > 0) return
+  try {
+    await create(payload, collection)
+  } catch (error) {
+    // Two servers starting together may both find none. One creates it, and
+    // the other's create fails or makes a second, which the count shows.
+    const again = await payload.count({
+      collection,
+      where: { title: { equals: VERIFICATION_QUEUE } },
+      overrideAccess: true,
+    })
+    if (again.totalDocs === 0) throw error
+  }
+}
+
+async function create(payload: Payload, collection: never): Promise<void> {
   await payload.create({
     collection,
     data: {

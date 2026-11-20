@@ -362,9 +362,12 @@ const verificationField: Field = {
 const reviewersOnlyVerify: CollectionBeforeChangeHook = ({ data, originalDoc, req, operation }) => {
   if (operation !== 'update' || !req.user || !originalDoc) return data
   if (userCan(req.user, 'editRecords') || !userCan(req.user, 'setVerdict')) return data
-  const kept: Record<string, unknown> = { ...data }
-  for (const key of Object.keys(kept)) {
-    if (key !== 'verification' && key in originalDoc) kept[key] = originalDoc[key]
+  // Everything but the verification comes from the stored record. A key the
+  // record does not have, such as a trash date, is dropped.
+  const kept: Record<string, unknown> = {}
+  for (const key of Object.keys(data)) {
+    if (key === 'verification') kept[key] = data[key]
+    else if (key in originalDoc) kept[key] = originalDoc[key]
   }
   return kept
 }
@@ -388,16 +391,23 @@ function editorsOnly(fields: Field[]): Field[] {
 
 /** A changed verdict records when, and who set it. */
 const stampVerification: CollectionBeforeChangeHook = ({ data, originalDoc, req }) => {
-  const before = verdictOf(asRecordOf(originalDoc))
+  const stored = asRecordOf(asRecordOf(originalDoc).verification)
   const incoming = asRecordOf(data.verification)
   if (!('verdict' in incoming)) return data
-  const after = verdictOf(data)
-  if (after === before) return data
+  // A cleared verdict is unverified, so the claim stays in the queue.
+  const verdict = verdictOf(data)
+  const before = verdictOf(asRecordOf(originalDoc))
+  if (verdict === before) return { ...data, verification: { ...incoming, verdict } }
+  // Payload fills a field the save left out from the stored record before
+  // this runs, so a date equal to the stored one was not chosen by anyone:
+  // the new verdict gets today's date. A different date was.
+  const chosen = incoming.date && incoming.date !== stored.date ? incoming.date : null
   return {
     ...data,
     verification: {
       ...incoming,
-      date: incoming.date ?? new Date().toISOString(),
+      verdict,
+      date: chosen ?? new Date().toISOString(),
       verifiedBy: req.user ? req.user.id : null,
     },
   }

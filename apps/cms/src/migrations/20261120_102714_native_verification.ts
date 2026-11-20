@@ -82,6 +82,9 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
 
 export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
+   -- Mapping rows that use the verdict columns go first: the old types do not have those values.
+  DELETE FROM "imports_mapping" WHERE "field"::text ~ '^(verdict|rationale)(:|$)';
+  DELETE FROM "_imports_v_version_mapping" WHERE "field"::text ~ '^(verdict|rationale)(:|$)';
    ALTER TABLE "payload_query_presets" DISABLE ROW LEVEL SECURITY;
   ALTER TABLE "payload_query_presets_rels" DISABLE ROW LEVEL SECURITY;
   DROP TABLE "payload_query_presets" CASCADE;
