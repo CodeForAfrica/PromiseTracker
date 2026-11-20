@@ -7,6 +7,7 @@ import * as migration_20261119_070155_rating_scales from './20261119_070155_rati
 import * as migration_20261119_100042_claims_topics from './20261119_100042_claims_topics'
 import * as migration_20261120_071500_documents from './20261120_071500_documents'
 import * as migration_20261120_083653_publishing_cascade from './20261120_083653_publishing_cascade'
+import * as migration_20261120_102714_native_verification from './20261120_102714_native_verification'
 
 export const migrations = [
   {
@@ -53,5 +54,10 @@ export const migrations = [
     up: migration_20261120_083653_publishing_cascade.up,
     down: migration_20261120_083653_publishing_cascade.down,
     name: '20261120_083653_publishing_cascade',
+  },
+  {
+    up: migration_20261120_102714_native_verification.up,
+    down: migration_20261120_102714_native_verification.down,
+    name: '20261120_102714_native_verification',
   },
 ]

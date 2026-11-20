@@ -1,3 +1,4 @@
+import type { Verdict } from '@promisetracker/kernel'
 import type {
   CollectionAfterChangeHook,
   CollectionAfterDeleteHook,
@@ -5,13 +6,14 @@ import type {
   CollectionBeforeDeleteHook,
   CollectionBeforeValidateHook,
   CollectionConfig,
+  Field,
   Payload,
   PayloadRequest,
   Where,
 } from 'payload'
 import { APIError } from 'payload'
 
-import { can, signedIn } from './access'
+import { can, signedIn, userCan } from './access'
 import { ADMIN_GROUPS } from './adminGroups'
 import { refreshTags } from './cache'
 import { isHexColour } from './contrast'
@@ -256,14 +258,206 @@ const checkClaim: CollectionBeforeChangeHook = async ({ data, originalDoc, req, 
   return next
 }
 
+/** A fact-checker's finding on a claim (section 7.5). Only verified claims are published. */
+export const VERDICTS = [
+  'unverified',
+  'verified',
+  'false',
+  'misleading',
+] as const satisfies readonly Verdict[]
+
+/** The claim's verdict, unverified until someone sets one. */
+export const verdictOf = (claim: Record<string, unknown>): Verdict => {
+  const verdict: unknown = asRecordOf(claim.verification).verdict
+  return (VERDICTS as readonly unknown[]).includes(verdict) ? (verdict as Verdict) : 'unverified'
+}
+
+const asRecordOf = (value: unknown): Record<string, unknown> =>
+  value && typeof value === 'object' ? (value as Record<string, unknown>) : {}
+
+const FOUND_FALSE: readonly Verdict[] = ['false', 'misleading']
+
+/** Only reviewers, editors and super-admins set a verdict (section 13.2). */
+const verdictAccess = { create: can.setVerdict, update: can.setVerdict }
+
 /**
- * The checks a claim must pass to be published (section 8.1). The verdict
- * arrives with built-in verification (#650), source documents with #652 and
- * evidence with claim updates (#651). Each is checked once its field exists.
+ * The verification (sections 5.1 and 7.5). Its verdict, date and rationale are
+ * named so a verification plugin can take them over through `takesOver`, as
+ * `verification.verdict`, `verification.date` and `verification.rationale`.
+ * Who verified a claim is internal: only staff read it (section 13).
+ */
+const verificationField: Field = {
+  name: 'verification',
+  type: 'group',
+  admin: {
+    description: 'Check the statement against the source, then set the verdict.',
+  },
+  fields: [
+    {
+      name: 'quote',
+      type: 'ui',
+      admin: { components: { Field: '@promisetracker/plugin-core/client#SourceQuote' } },
+    },
+    {
+      type: 'row',
+      fields: [
+        {
+          name: 'verdict',
+          type: 'select',
+          // Not required: a claim with none is unverified, which the default says too.
+          defaultValue: 'unverified',
+          index: true,
+          options: VERDICTS.map((value) => ({ label: value, value })),
+          access: verdictAccess,
+          admin: { width: '50%' },
+        },
+        {
+          name: 'date',
+          type: 'date',
+          access: verdictAccess,
+          admin: {
+            width: '50%',
+            date: { pickerAppearance: 'dayOnly', displayFormat: 'd MMM yyyy' },
+            description: 'Set when the verdict changes.',
+          },
+        },
+      ],
+    },
+    {
+      name: 'rationale',
+      type: 'textarea',
+      localized: true,
+      access: verdictAccess,
+      admin: { description: 'How the claim was checked. Shown on the claim page.' },
+    },
+    {
+      name: 'reportUrl',
+      label: 'Report',
+      type: 'text',
+      access: verdictAccess,
+      validate: (value: unknown) =>
+        value === null ||
+        value === undefined ||
+        value === '' ||
+        (typeof value === 'string' && /^https:\/\/\S+$/.test(value))
+          ? true
+          : 'Give a full web address, starting with https://.',
+      admin: { description: 'A published fact-check report, if there is one.' },
+    },
+    {
+      name: 'verifiedBy',
+      type: 'relationship',
+      relationTo: 'users',
+      admin: { readOnly: true, description: 'Set when the verdict changes.' },
+      // Internal: only staff read it, and only the system writes it (section 13).
+      access: { read: signedIn, create: () => false, update: () => false },
+    },
+  ],
+}
+
+/**
+ * A reviewer may set a claim's verdict but not edit the claim (section 13.2).
+ * Their save keeps every other field as it was.
+ */
+const reviewersOnlyVerify: CollectionBeforeChangeHook = ({ data, originalDoc, req, operation }) => {
+  if (operation !== 'update' || !req.user || !originalDoc) return data
+  if (userCan(req.user, 'editRecords') || !userCan(req.user, 'setVerdict')) return data
+  // Everything but the verification comes from the stored record. A key the
+  // record does not have, such as a trash date, is dropped.
+  const kept: Record<string, unknown> = {}
+  for (const key of Object.keys(data)) {
+    if (key === 'verification') kept[key] = data[key]
+    else if (key in originalDoc) kept[key] = originalDoc[key]
+  }
+  return kept
+}
+
+/**
+ * Every field but the verification is editable only by those who edit
+ * records. A reviewer sees the rest of the claim read-only, and can set only
+ * its verdict (section 13.2).
+ */
+function editorsOnly(fields: Field[]): Field[] {
+  return fields.map((field): Field => {
+    if (field.type === 'ui' || ('name' in field && field.name === 'verification')) return field
+    if ('name' in field) {
+      const own = field as Field & { access?: Record<string, unknown> }
+      return { ...own, access: { update: can.editRecords, ...own.access } } as Field
+    }
+    if ('fields' in field) return { ...field, fields: editorsOnly(field.fields) } as Field
+    return field
+  })
+}
+
+/** A changed verdict records when, and who set it. */
+const stampVerification: CollectionBeforeChangeHook = ({ data, originalDoc, req }) => {
+  const stored = asRecordOf(asRecordOf(originalDoc).verification)
+  const incoming = asRecordOf(data.verification)
+  if (!('verdict' in incoming)) return data
+  // A cleared verdict is unverified, so the claim stays in the queue.
+  const verdict = verdictOf(data)
+  const before = verdictOf(asRecordOf(originalDoc))
+  if (verdict === before) return { ...data, verification: { ...incoming, verdict } }
+  // Payload fills a field the save left out from the stored record before
+  // this runs, so a date equal to the stored one was not chosen by anyone:
+  // the new verdict gets today's date. A different date was.
+  const chosen = incoming.date && incoming.date !== stored.date ? incoming.date : null
+  return {
+    ...data,
+    verification: {
+      ...incoming,
+      verdict,
+      date: chosen ?? new Date().toISOString(),
+      verifiedBy: req.user ? req.user.id : null,
+    },
+  }
+}
+
+/** A claim found false or misleading is never deleted: it stays on the record (section 5.1). */
+const neverDeleteFoundFalse: CollectionBeforeDeleteHook = async ({ id, req }) => {
+  const { docs } = await req.payload.find({
+    collection: 'claims',
+    where: { id: { equals: id } },
+    select: { verification: true },
+    depth: 0,
+    limit: 1,
+    trash: true,
+    // Reads the verdict, whoever deletes the claim.
+    overrideAccess: true,
+    req: { ...req } as PayloadRequest,
+  })
+  const [claim] = docs
+  if (claim && FOUND_FALSE.includes(verdictOf(claim))) {
+    throw new APIError(
+      'A claim found false or misleading is never deleted. Archive it instead.',
+      400,
+    )
+  }
+}
+
+/** Nor is it moved to the trash. */
+const keepFoundFalse: CollectionBeforeChangeHook = ({ data, originalDoc }) => {
+  const trashing = Boolean(data.deletedAt) && !originalDoc?.deletedAt
+  if (trashing && FOUND_FALSE.includes(verdictOf({ ...asRecordOf(originalDoc), ...data }))) {
+    throw new APIError(
+      'A claim found false or misleading is never deleted. Archive it instead.',
+      400,
+    )
+  }
+  return data
+}
+
+/**
+ * The checks a claim must pass to be published (section 8.1): verified, a
+ * topic, a source, and a deadline if its rating needs one. Evidence arrives
+ * with claim updates (#651), and counts as a source once its field exists.
  */
 const claimChecks: PublishingCheck = async (claim, { payload, req }) => {
   const problems: string[] = []
-  if ('verdict' in claim && claim.verdict !== 'verified') {
+  const verdict = verdictOf(claim)
+  if (verdict === 'false' || verdict === 'misleading') {
+    problems.push(`It was found ${verdict}. Such claims are never published.`)
+  } else if (verdict !== 'verified') {
     problems.push('It is not verified yet.')
   }
   if (!idOf(claim.topic)) problems.push('It needs a topic.')
@@ -335,20 +529,30 @@ export const Claims: CollectionConfig = withPublishing(
       useAsTitle: 'title',
       defaultColumns: ['title', 'actor', 'currentRating', 'topic', 'recordStatus'],
     },
+    // Saved views, such as "Awaiting verification" (section 5.1).
+    enableQueryPresets: true,
     access: {
       read: readClaims,
       create: can.createClaims,
-      update: can.editRecords,
+      // Reviewers update a claim only to set its verdict (section 5.1).
+      update: ({ req }) => can.editRecords({ req }) || can.setVerdict({ req }),
       delete: can.deleteRecords,
     },
     indexes: [{ fields: ['country', 'slug'], unique: true }],
     hooks: {
       beforeValidate: [slugFromTitle],
-      beforeChange: [checkClaim, keepFormerSlug],
+      beforeChange: [
+        reviewersOnlyVerify,
+        checkClaim,
+        keepFormerSlug,
+        stampVerification,
+        keepFoundFalse,
+      ],
+      beforeDelete: [neverDeleteFoundFalse],
       afterChange: [refreshOnClaimChange],
       afterDelete: [refreshOnClaimDelete],
     },
-    fields: [
+    fields: editorsOnly([
       {
         name: 'title',
         type: 'text',
@@ -458,6 +662,7 @@ export const Claims: CollectionConfig = withPublishing(
           },
         ],
       },
+      verificationField,
       {
         type: 'row',
         fields: [
@@ -543,7 +748,7 @@ export const Claims: CollectionConfig = withPublishing(
           },
         ],
       },
-    ],
+    ]),
   },
   ['title'],
   {

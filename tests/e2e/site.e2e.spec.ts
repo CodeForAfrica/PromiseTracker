@@ -233,6 +233,10 @@ test('a claim page shows the claim, who made it, when it is due and its rating',
   await expect(page.getByText('We will build five thousand homes in Kibra.')).toBeVisible()
   await expect(page.getByRole('link', { name: 'Achieng Wekesa' })).toBeVisible()
   await expect(page.getByText('2027', { exact: true })).toBeVisible()
+  // How it was checked, credited to PromiseTracker, never to a person (section 13).
+  const checked = page.getByRole('region', { name: 'How it was checked' })
+  await expect(checked).toContainText('Verified by PromiseTracker on')
+  await expect(checked).toContainText('Checked against the fictional manifesto.')
   await expectAccessible(page)
 })
 

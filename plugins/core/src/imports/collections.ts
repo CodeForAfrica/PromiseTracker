@@ -138,6 +138,11 @@ const runSteps: CollectionBeforeChangeHook = async ({
   const headings: string[] = data.headings ?? originalDoc?.headings ?? []
   const rows: ImportRow[] = data.rows ?? originalDoc?.rows ?? []
   const mapping = toRecord(data.mapping ?? originalDoc?.mapping)
+  // Setting a verdict needs the right to set one, whoever may import claims (section 13.2).
+  const setsVerdict = Object.keys(mapping).some((key) => /^(verdict|rationale)(:|$)/.test(key))
+  if (setsVerdict && req.user && !userCan(req.user, 'setVerdict')) {
+    throw new APIError('You cannot import verdicts. Remove the Verdict and Rationale columns.', 403)
+  }
   const missing = Object.entries(mapping).filter(([, column]) => !headings.includes(column))
   if (missing.length > 0) {
     throw new APIError(

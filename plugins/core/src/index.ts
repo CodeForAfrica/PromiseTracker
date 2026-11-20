@@ -81,6 +81,14 @@ export const corePlugin = definePromiseTrackerPlugin({
     dailyPublishingTask as never,
   ],
   workflows: [processDocumentWorkflow as never],
+  widgets: [
+    {
+      slug: 'awaiting-verification',
+      Component: '@promisetracker/plugin-core/widgets#AwaitingVerification',
+      minWidth: 'small',
+      maxWidth: 'medium',
+    },
+  ],
   provides: {
     verification: [nativeVerification],
     sourceConnector: [uploadConnector, urlConnector],
@@ -137,13 +145,23 @@ export {
 
 import { cascadePublishingTask, dailyPublishingTask, recomputePublishingTask } from './publishing'
 
+export { VERDICTS, verdictOf } from './claims'
 export type { ImportTarget } from './imports/targets'
 export { guessMapping, IMPORT_TARGETS, mappingKeys, planRow } from './imports/targets'
 export * from './locales'
 export type { AreaType } from './places'
 export { AREA_PAGE, AREA_TYPES, Areas, Offices } from './places'
 export * from './publishing'
+export { findQuote } from './quote'
 export * from './ratings'
 export * from './roles'
 export * from './slugs'
 export { Users } from './users'
+// Widgets are loaded by the admin through `@promisetracker/plugin-core/widgets`, never from
+// here: they import Payload's admin components, which the public site must not ship.
+export {
+  AWAITING_VERIFICATION,
+  ensureVerificationQueue,
+  VERIFICATION_QUEUE,
+  whereToQuery,
+} from './verificationQueue'

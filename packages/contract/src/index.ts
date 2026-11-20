@@ -69,6 +69,9 @@ export const STRING_KEYS = [
   'figuresByCountry',
   'claimsOnTopic',
   'filterCountry',
+  'verifiedOn',
+  'verifiedTitle',
+  'verifiedReport',
   'notFoundTitle',
   'notFoundBody',
   'backHome',
@@ -369,6 +372,16 @@ export const Claim = ClaimSummary.extend({
   ratedOn: z.string().nullable(),
   lastReviewedAt: z.string().nullable(),
   image: Image.nullable(),
+  /**
+   * How the claim was checked (section 7.5). A published claim is always
+   * verified. Who verified it is internal and never here (section 13).
+   */
+  verification: z.object({
+    /** YYYY-MM-DD. */
+    date: z.string().nullable(),
+    rationale: z.string().nullable(),
+    reportUrl: z.string().nullable(),
+  }),
 })
 export type Claim = z.infer<typeof Claim>
 

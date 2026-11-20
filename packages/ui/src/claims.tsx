@@ -270,6 +270,7 @@ export function ClaimView({ site, claim }: { site: SiteInfo; claim: Claim }) {
               {claim.summary}
             </p>
           )}
+          <Verification site={site} claim={claim} />
           {claim.sourceUrl && (
             <p className="text-[14px]">
               {t.claimSource}:{' '}
@@ -306,6 +307,44 @@ export function ClaimView({ site, claim }: { site: SiteInfo; claim: Claim }) {
         </dl>
       </Container>
     </>
+  )
+}
+
+/**
+ * How the claim was checked: credited to PromiseTracker, with the date, the
+ * rationale and any report. Never the name of who checked it (section 13).
+ */
+function Verification({ site, claim }: { site: SiteInfo; claim: Claim }) {
+  const { date, rationale, reportUrl } = claim.verification
+  if (!date && !rationale && !reportUrl) return null
+  const t = site.strings
+  const on = date
+    ? new Intl.DateTimeFormat(site.locale, {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'UTC',
+      }).format(new Date(date))
+    : null
+  return (
+    <section aria-labelledby="verification" className="rounded-lg bg-surface px-5 py-4">
+      <h2 id="verification" className="mb-2 text-[13px] font-semibold text-ink">
+        {t.verifiedTitle}
+      </h2>
+      {on && <p className="text-[13px] text-ink-2">{fill(t.verifiedOn, { date: on })}</p>}
+      {rationale && (
+        <p className="mt-2 max-w-[64ch] text-[15px] leading-[1.6] whitespace-pre-line text-ink-2">
+          {rationale}
+        </p>
+      )}
+      {reportUrl && (
+        <p className="mt-2 text-[14px]">
+          <a href={reportUrl} rel="noopener noreferrer nofollow" className="underline">
+            {t.verifiedReport}
+          </a>
+        </p>
+      )}
+    </section>
   )
 }
 
