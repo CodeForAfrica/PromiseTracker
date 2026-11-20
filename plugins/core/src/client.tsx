@@ -1,6 +1,6 @@
 'use client'
 
-import { useFormFields, useRowLabel } from '@payloadcms/ui'
+import { Banner, FieldDescription, FieldLabel, useFormFields, useRowLabel } from '@payloadcms/ui'
 import type { UIFieldClientProps } from 'payload'
 import { useEffect, useState } from 'react'
 
@@ -121,36 +121,65 @@ export function SourceQuote() {
     return () => controller.abort()
   }, [source, statement])
 
-  const box = {
-    border: '1px solid var(--theme-elevation-150)',
-    borderRadius: 4,
-    padding: '12px 16px',
-    margin: '0 0 24px',
-    lineHeight: 1.6,
-  } as const
+  const label = <FieldLabel label="In the source document" />
   if (state.kind === 'none') {
     return (
-      <p style={{ ...box, color: 'var(--theme-elevation-600)' }}>
-        Choose a source document to see the statement in it.
-      </p>
+      <div className="field-type">
+        {label}
+        <FieldDescription
+          path="verification.quote"
+          description="Choose a source document to see the statement in it."
+        />
+      </div>
     )
   }
-  if (state.kind === 'loading') return <p style={box}>Reading the source document…</p>
+  if (state.kind === 'loading') {
+    return (
+      <div className="field-type">
+        {label}
+        <FieldDescription path="verification.quote" description="Reading the source document…" />
+      </div>
+    )
+  }
   if (state.kind === 'missing') {
     return (
-      <p style={box}>
-        <strong>{state.title}.</strong> {state.reason}
-      </p>
+      <div className="field-type">
+        {label}
+        <Banner type="warning">
+          {state.title}: {state.reason}
+        </Banner>
+      </div>
     )
   }
   return (
-    <figure style={{ ...box, marginInline: 0 }}>
-      <figcaption style={{ fontWeight: 600, marginBottom: 8 }}>In {state.title}</figcaption>
-      <blockquote style={{ margin: 0 }}>
+    <div className="field-type">
+      {label}
+      <blockquote
+        style={{
+          margin: 0,
+          padding: 'var(--spacer-2) var(--spacer-2-5)',
+          background: 'var(--color-bg-secondary)',
+          border: 'var(--stroke-width-small) solid var(--color-border)',
+          borderRadius: 'var(--radius-medium)',
+          color: 'var(--color-text-secondary)',
+          fontSize: 'var(--text-body-medium-font-size)',
+          lineHeight: 'var(--text-body-medium-line-height)',
+        }}
+      >
         {state.match.before}
-        <mark>{state.match.quote}</mark>
+        <mark
+          style={{
+            background: 'var(--color-bg-warning-tertiary)',
+            color: 'var(--color-text)',
+            borderRadius: 'var(--radius-small)',
+            padding: '0 2px',
+          }}
+        >
+          {state.match.quote}
+        </mark>
         {state.match.after}
       </blockquote>
-    </figure>
+      <FieldDescription path="verification.quote" description={`From ${state.title}.`} />
+    </div>
   )
 }

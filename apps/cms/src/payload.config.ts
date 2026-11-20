@@ -61,7 +61,7 @@ export default buildConfig({
     dashboard: {
       // Payload's own layout, with the verification queue first (section 5.1).
       defaultLayout: [
-        { widgetSlug: 'awaiting-verification', width: 'small' },
+        { widgetSlug: 'awaiting-verification', width: 'medium' },
         { widgetSlug: 'welcome', width: 'full' },
         { widgetSlug: 'activity', width: 'full' },
         { widgetSlug: 'collections', width: 'full' },

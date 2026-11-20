@@ -1,3 +1,4 @@
+import { Card } from '@payloadcms/ui'
 import type { Where, WidgetServerProps } from 'payload'
 
 /**
@@ -14,7 +15,10 @@ export const AWAITING_VERIFICATION: Where = {
   ],
 }
 
-/** How many claims wait for verification, with a link to the queue (section 5.1). */
+/**
+ * How many claims wait for verification, linking to the queue (section 5.1).
+ * Built like Payload's own collections widget: a group heading over a card.
+ */
 export async function AwaitingVerification({ req }: WidgetServerProps) {
   const { totalDocs } = await req.payload.count({
     collection: 'claims' as never,
@@ -24,11 +28,19 @@ export async function AwaitingVerification({ req }: WidgetServerProps) {
   })
   const queue =
     '/admin/collections/claims?where[and][0][verification.verdict][equals]=unverified&where[and][1][recordStatus][not_equals]=archived'
+  const title =
+    totalDocs === 0
+      ? 'No claims awaiting verification'
+      : `${totalDocs} ${totalDocs === 1 ? 'claim' : 'claims'} awaiting verification`
   return (
-    <div className="card" style={{ padding: 20 }}>
-      <h3 style={{ margin: 0 }}>Awaiting verification</h3>
-      <p style={{ fontSize: 32, fontWeight: 600, margin: '8px 0' }}>{totalDocs}</p>
-      <a href={queue}>{totalDocs === 1 ? 'Review the claim' : 'Review the claims'}</a>
+    <div className="collections__group">
+      <h2 className="collections__label">Verification</h2>
+      <Card
+        id="card-awaiting-verification"
+        title={title}
+        href={queue}
+        buttonAriaLabel="Show the claims awaiting verification"
+      />
     </div>
   )
 }

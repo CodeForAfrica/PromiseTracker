@@ -369,6 +369,23 @@ const reviewersOnlyVerify: CollectionBeforeChangeHook = ({ data, originalDoc, re
   return kept
 }
 
+/**
+ * Every field but the verification is editable only by those who edit
+ * records. A reviewer sees the rest of the claim read-only, and can set only
+ * its verdict (section 13.2).
+ */
+function editorsOnly(fields: Field[]): Field[] {
+  return fields.map((field): Field => {
+    if (field.type === 'ui' || ('name' in field && field.name === 'verification')) return field
+    if ('name' in field) {
+      const own = field as Field & { access?: Record<string, unknown> }
+      return { ...own, access: { update: can.editRecords, ...own.access } } as Field
+    }
+    if ('fields' in field) return { ...field, fields: editorsOnly(field.fields) } as Field
+    return field
+  })
+}
+
 /** A changed verdict records when, and who set it. */
 const stampVerification: CollectionBeforeChangeHook = ({ data, originalDoc, req }) => {
   const before = verdictOf(asRecordOf(originalDoc))
@@ -525,7 +542,7 @@ export const Claims: CollectionConfig = withPublishing(
       afterChange: [refreshOnClaimChange],
       afterDelete: [refreshOnClaimDelete],
     },
-    fields: [
+    fields: editorsOnly([
       {
         name: 'title',
         type: 'text',
@@ -721,7 +738,7 @@ export const Claims: CollectionConfig = withPublishing(
           },
         ],
       },
-    ],
+    ]),
   },
   ['title'],
   {
