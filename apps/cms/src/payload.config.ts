@@ -6,6 +6,7 @@ import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { defineFinalPlugin } from '@promisetracker/kernel'
 import {
   ensureDefaultRatings,
+  ensureVerificationQueue,
   installAfterCommit,
   privateHistory,
   setFileReader,
@@ -57,6 +58,16 @@ const serverURL = publicUrl()
 export default buildConfig({
   admin: {
     user: 'users',
+    dashboard: {
+      // Payload's own layout, with the verification queue first (section 5.1).
+      defaultLayout: [
+        { widgetSlug: 'awaiting-verification', width: 'small' },
+        { widgetSlug: 'welcome', width: 'full' },
+        { widgetSlug: 'activity', width: 'full' },
+        { widgetSlug: 'collections', width: 'full' },
+      ],
+      widgets: [],
+    },
     importMap: {
       baseDir: dirname,
       importMapFile: path.resolve(dirname, '../../site/src/app/(payload)/admin/importMap.js'),
@@ -114,6 +125,7 @@ export default buildConfig({
     await kernel.onInit(payload)
     await ensureFirstAdmin(payload)
     await ensureDefaultRatings(payload)
+    await ensureVerificationQueue(payload)
   },
   // privateHistory runs after every plugin, so it covers all their record types.
   plugins: [...kernel.payloadPlugins, defineFinalPlugin('private-history', privateHistory)],

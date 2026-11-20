@@ -60,6 +60,31 @@ const inLocale = (value: unknown, locale: string): unknown =>
   value && typeof value === 'object' ? Reflect.get(value, locale) : value
 
 /** Whether a row would change nothing on the record it matches. */
+/** Import columns that fill a field inside a group, by the group's name. */
+const GROUPED: Readonly<Record<string, string>> = {
+  verdict: 'verification',
+  rationale: 'verification',
+}
+
+/** A row's values, with grouped columns moved into their group. */
+function nest(values: Readonly<Record<string, unknown>>): Record<string, unknown> {
+  const out: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(values)) {
+    const group = GROUPED[key]
+    if (group) out[group] = { ...(out[group] as Record<string, unknown> | undefined), [key]: value }
+    else out[key] = value
+  }
+  return out
+}
+
+/** A stored value for an import column, looking inside its group. */
+const storedValue = (record: Record<string, unknown>, key: string): unknown => {
+  const group = GROUPED[key]
+  if (!group) return record[key]
+  const values: unknown = record[group]
+  return values && typeof values === 'object' ? Reflect.get(values, key) : undefined
+}
+
 function unchanged(
   current: Record<string, unknown>,
   plan: PlannedRow,
@@ -67,12 +92,13 @@ function unchanged(
   localized: ReadonlySet<string>,
 ): boolean {
   for (const [key, value] of Object.entries(plan.data)) {
-    const before = localized.has(key) ? inLocale(current[key], DEFAULT_LOCALE) : current[key]
+    const stored = storedValue(current, key)
+    const before = localized.has(key) ? inLocale(stored, DEFAULT_LOCALE) : stored
     if (before !== value) return false
   }
   for (const [locale, values] of Object.entries(plan.translations)) {
     for (const [key, value] of Object.entries(values ?? {})) {
-      if (inLocale(current[key], locale) !== value) return false
+      if (inLocale(storedValue(current, key), locale) !== value) return false
     }
   }
   return plan.parent === null || idOf(current.parent) === parentId
@@ -142,14 +168,14 @@ async function saveRow(
           collection: target,
           id,
           locale: DEFAULT_LOCALE,
-          data: data as never,
+          data: nest(data) as never,
           overrideAccess: true,
           req,
         })
       : await payload.create({
           collection: target,
           locale: DEFAULT_LOCALE,
-          data: data as never,
+          data: nest(data) as never,
           overrideAccess: true,
           req,
         })
@@ -161,7 +187,7 @@ async function saveRow(
         id: saved,
         // planRow takes languages only from the registered list.
         locale: locale as TypedLocale,
-        data: values as never,
+        data: nest(values) as never,
         overrideAccess: true,
         req,
       })

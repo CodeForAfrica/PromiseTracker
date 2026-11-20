@@ -177,6 +177,7 @@ export interface Config {
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
+    'payload-query-presets': PayloadQueryPreset;
     'payload-llm-instructions': PayloadLlmInstruction;
   };
   collectionsJoins: {
@@ -219,6 +220,7 @@ export interface Config {
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
+    'payload-query-presets': PayloadQueryPresetsSelect<false> | PayloadQueryPresetsSelect<true>;
     'payload-llm-instructions': PayloadLlmInstructionsSelect<false> | PayloadLlmInstructionsSelect<true>;
   };
   db: {
@@ -240,6 +242,7 @@ export interface Config {
   };
   locale: 'en' | 'fr' | 'pt' | 'ar' | 'sw';
   widgets: {
+    'awaiting-verification': AwaitingVerificationWidget;
     welcome: WelcomeWidget;
     collections: CollectionsWidget;
     'collection-query': CollectionQueryWidget;
@@ -506,6 +509,28 @@ export interface Claim {
    * Where in the source, such as page 12.
    */
   sourceLocator?: string | null;
+  /**
+   * Check the statement against the source, then set the verdict.
+   */
+  verification?: {
+    verdict?: ('unverified' | 'verified' | 'false' | 'misleading') | null;
+    /**
+     * Set when the verdict changes.
+     */
+    date?: string | null;
+    /**
+     * How the claim was checked. Shown on the claim page.
+     */
+    rationale?: string | null;
+    /**
+     * A published fact-check report, if there is one.
+     */
+    reportUrl?: string | null;
+    /**
+     * Set when the verdict changes.
+     */
+    verifiedBy?: (string | null) | User;
+  };
   image?: (string | null) | Media;
   imageCredit?: string | null;
   /**
@@ -1218,7 +1243,13 @@ export interface Import {
           | 'deadlineText:ar'
           | 'deadlineText:sw'
           | 'sourceUrl'
-          | 'sourceLocator';
+          | 'sourceLocator'
+          | 'verdict'
+          | 'rationale'
+          | 'rationale:fr'
+          | 'rationale:pt'
+          | 'rationale:ar'
+          | 'rationale:sw';
         column: string;
         id?: string | null;
       }[]
@@ -1618,6 +1649,55 @@ export interface PayloadMigration {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-query-presets".
+ */
+export interface PayloadQueryPreset {
+  id: string;
+  title: string;
+  groupBy?: string | null;
+  columns?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  where?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  isShared?: boolean | null;
+  access?: {
+    read?: {
+      constraint?: ('everyone' | 'onlyMe' | 'specificUsers') | null;
+      users?: (string | User)[] | null;
+    };
+    update?: {
+      constraint?: ('everyone' | 'onlyMe' | 'specificUsers') | null;
+      users?: (string | User)[] | null;
+    };
+    delete?: {
+      constraint?: ('everyone' | 'onlyMe' | 'specificUsers') | null;
+      users?: (string | User)[] | null;
+    };
+  };
+  relatedCollection: 'claims';
+  /**
+   * This is a temporary field used to determine if updating the preset would remove the user's access to it. When `true`, this record will be deleted after running the preset's `validate` function.
+   */
+  isTemp?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-llm-instructions".
  */
 export interface PayloadLlmInstruction {
@@ -1910,6 +1990,15 @@ export interface ClaimsSelect<T extends boolean = true> {
   source?: T;
   sourceUrl?: T;
   sourceLocator?: T;
+  verification?:
+    | T
+    | {
+        verdict?: T;
+        date?: T;
+        rationale?: T;
+        reportUrl?: T;
+        verifiedBy?: T;
+      };
   image?: T;
   imageCredit?: T;
   slug?: T;
@@ -2237,6 +2326,43 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-query-presets_select".
+ */
+export interface PayloadQueryPresetsSelect<T extends boolean = true> {
+  title?: T;
+  groupBy?: T;
+  columns?: T;
+  where?: T;
+  isShared?: T;
+  access?:
+    | T
+    | {
+        read?:
+          | T
+          | {
+              constraint?: T;
+              users?: T;
+            };
+        update?:
+          | T
+          | {
+              constraint?: T;
+              users?: T;
+            };
+        delete?:
+          | T
+          | {
+              constraint?: T;
+              users?: T;
+            };
+      };
+  relatedCollection?: T;
+  isTemp?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-llm-instructions_select".
  */
 export interface PayloadLlmInstructionsSelect<T extends boolean = true> {
@@ -2352,6 +2478,9 @@ export interface Site {
     figuresByCountry?: string | null;
     claimsOnTopic?: string | null;
     filterCountry?: string | null;
+    verifiedOn?: string | null;
+    verifiedTitle?: string | null;
+    verifiedReport?: string | null;
     notFoundTitle?: string | null;
     notFoundBody?: string | null;
     backHome?: string | null;
@@ -2477,6 +2606,9 @@ export interface SiteSelect<T extends boolean = true> {
         figuresByCountry?: T;
         claimsOnTopic?: T;
         filterCountry?: T;
+        verifiedOn?: T;
+        verifiedTitle?: T;
+        verifiedReport?: T;
         notFoundTitle?: T;
         notFoundBody?: T;
         backHome?: T;
@@ -2499,6 +2631,16 @@ export interface PayloadJobsStatsSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "awaiting-verification_widget".
+ */
+export interface AwaitingVerificationWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'small' | 'medium';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

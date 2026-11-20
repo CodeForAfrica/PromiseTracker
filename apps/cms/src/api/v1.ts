@@ -1202,6 +1202,12 @@ const handlers: Record<string, Handler> = {
         ratedOn: day(doc.ratedOn),
         lastReviewedAt: day(doc.lastReviewedAt),
         image: mediaImage(doc.image, summary.title, text(doc.imageCredit)),
+        // Who verified it stays internal (section 13).
+        verification: {
+          date: day(doc.verification?.date),
+          rationale: text(doc.verification?.rationale),
+          reportUrl: text(doc.verification?.reportUrl),
+        },
       }),
     )
   },
