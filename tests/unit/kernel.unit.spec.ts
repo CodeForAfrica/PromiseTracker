@@ -100,7 +100,7 @@ describe('the default set-up', () => {
   it("uses core's adapters", () => {
     expect(kernel.ports()).toEqual({
       verification: ['native'],
-      sourceConnector: ['upload'],
+      sourceConnector: ['upload', 'url'],
       contentExtractor: ['plaintext'],
       structuredImporter: ['csv', 'xlsx'],
       llm: [],

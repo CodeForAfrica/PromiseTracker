@@ -1,4 +1,4 @@
-import { assertRuntimeEnv, databaseUrl } from '@promisetracker/cms/env'
+import { assertRuntimeEnv, databaseUrl, publicUrl } from '@promisetracker/cms/env'
 import { describe, expect, it } from 'vitest'
 
 describe('databaseUrl', () => {
@@ -29,5 +29,22 @@ describe('assertRuntimeEnv', () => {
   it('needs only the secret outside production', () => {
     expect(() => assertRuntimeEnv({ PAYLOAD_SECRET: 'x' })).not.toThrow()
     expect(() => assertRuntimeEnv({})).toThrow('Missing settings: PAYLOAD_SECRET.')
+  })
+})
+
+describe('publicUrl', () => {
+  it('is the address without a trailing slash', () => {
+    expect(publicUrl({ PT_PUBLIC_URL: 'https://promisetracker.example.org/' })).toBe(
+      'https://promisetracker.example.org',
+    )
+    expect(publicUrl({ PT_PUBLIC_URL: ' https://example.org/pt// ' })).toBe(
+      'https://example.org/pt',
+    )
+  })
+
+  it('is empty when unset or not a web address', () => {
+    for (const value of [undefined, '', 'not a url', 'ftp://example.org']) {
+      expect(publicUrl({ PT_PUBLIC_URL: value })).toBe('')
+    }
   })
 })

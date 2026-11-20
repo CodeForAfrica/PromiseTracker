@@ -2,8 +2,10 @@ import { access, mkdir } from 'node:fs/promises'
 import path from 'node:path'
 
 import type { S3ClientConfig } from '@aws-sdk/client-s3'
-import { HeadBucketCommand, S3Client } from '@aws-sdk/client-s3'
+import { GetObjectCommand, HeadBucketCommand, S3Client } from '@aws-sdk/client-s3'
 import { s3Storage } from '@payloadcms/storage-s3'
+import type { FileReader } from '@promisetracker/plugin-core'
+import { storedPath } from '@promisetracker/plugin-core'
 
 /**
  * File storage. Any S3-compatible store when `S3_BUCKET` is set (RustFS in
@@ -49,10 +51,26 @@ export function storageAdapters() {
       enabled: Boolean(s3),
       bucket: s3?.bucket ?? '',
       // Imported spreadsheets are kept too, and served only to staff.
-      collections: { media: true, imports: true, boundaries: true },
+      collections: { media: true, imports: true, boundaries: true, 'document-files': true },
       config: s3?.config ?? {},
     }),
   ]
+}
+
+/**
+ * Reads a stored file back from S3, for the document pipeline. Null when
+ * files are kept in a local folder, which the pipeline reads itself.
+ */
+export function s3FileReader(): FileReader | null {
+  const s3 = readS3Env()
+  if (!s3) return null
+  const client = new S3Client(s3.config)
+  return async (_payload, _collection, file) => {
+    const key = storedPath(file)
+    const res = await client.send(new GetObjectCommand({ Bucket: s3.bucket, Key: key }))
+    if (!res.Body) throw new Error(`The stored file ${key} is empty.`)
+    return res.Body.transformToByteArray()
+  }
 }
 
 export async function checkStorage(): Promise<{ kind: string }> {

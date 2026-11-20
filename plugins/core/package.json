@@ -25,6 +25,7 @@
   "dependencies": {
     "@promisetracker/kernel": "workspace:*",
     "csv-parse": "catalog:",
+    "htmlparser2": "catalog:",
     "read-excel-file": "catalog:"
   }
 }
