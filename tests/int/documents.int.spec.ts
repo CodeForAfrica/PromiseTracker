@@ -299,9 +299,16 @@ describe('documents and the processing pipeline', () => {
         { timeout: 20_000, interval: 100 },
       )
       expect(waiting.status).toBe('pending')
-      const jobs = await jobsFor(doc.id)
-      const next = jobs.find((j) => !j.completedAt)
-      expect(next?.waitUntil).toBeTruthy()
+      // The message is saved before the first job is marked done, so the job
+      // that waits is looked for until it is the one left open.
+      const next = await vi.waitFor(
+        async () => {
+          const open = (await jobsFor(doc.id)).find((j) => !j.completedAt)
+          expect(open?.waitUntil).toBeTruthy()
+          return open
+        },
+        { timeout: 20_000, interval: 100 },
+      )
       expect(new Date(next?.waitUntil ?? 0).getTime()).toBeGreaterThanOrEqual(before + 119_000)
     })
   })
