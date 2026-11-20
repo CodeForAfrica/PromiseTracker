@@ -17,7 +17,7 @@ explains the rules behind each step.
 9. Area outlines
 10. Documents
 11. Site settings
-12. When changes appear on the site
+12. Publishing: what is public, and when
 
 The admin's menu groups record types by what they are for:
 
@@ -101,9 +101,8 @@ Only super-admins manage countries. Places > Countries > Create New.
 Once saved, the country cannot be changed, because its code is part of every address, such as
 `/en/ke`. The code and region show in the sidebar.
 
-**Published In,** in the sidebar, shows the languages the country is live in. The system works it
-out on every save: a country is live in a language when it is ready and has a name in that
-language. Clearing the name in one language takes the country off the site in that language.
+**Published in,** in the sidebar, shows the languages the country is live in. Section 12 explains
+how it is worked out, and what holding a country does to everything in it.
 
 **Root Area,** in the sidebar, is the area for the whole country. It is set for you when that area
 is added, by import or by hand.
@@ -281,9 +280,10 @@ as `/en/ke/p/build-200000-homes-a-year`. A renamed slug's old address leads to t
 clear the slug, it is made again from the title in the language you are editing, so clear it while
 editing in the language whose title should name the address.
 
-A claim starts on **hold**. Set it to **ready** to publish it. For now a claim is public when it is
-ready, has a title in the reader's language, and its actor and country are public. The checks that
-it is verified and has a source arrive in later releases.
+A claim starts on **hold**. Set it to **ready** to publish it. It is public only once it passes its
+checks: it has a **topic**, a **source** (a link to where it was said, or a source document), and a
+**deadline** if its rating needs one. Until then **Why it is not public**, in the sidebar, says what
+is missing. Once built-in verification arrives, a claim must also be verified.
 
 ### The key claim
 
@@ -456,13 +456,67 @@ Public site > Site settings. Editors and super-admins can change these.
 These are per language: switch language at the top right to edit another. Interface text in a
 language with no translation shows in English.
 
-## 12. When changes appear on the site
+## 12. Publishing: what is public, and when
+
+Every country, actor and claim has two things in the sidebar.
+
+- **Record Status** is what you want: **ready**, **hold** or **archived**. New records start on
+  hold.
+- **Published in** is what the system works out: the languages the record is live in.
+
+A record is live in a language when all of these hold:
+
+1. It is **ready**.
+2. It is **published in that language** (see "Saving and publishing" below).
+3. Its required text has a value in that language, such as a claim's title.
+4. Everything above it is live in that language. A country is above its areas, actors and claims,
+   and an actor is above their claims.
+5. It passes its own checks: a claim needs a topic, a source, and a deadline if its rating needs
+   one. A person needs a term that has started.
+
+### Saving and publishing
+
+Countries, actors and claims are saved one language at a time. The language menu at the top right
+chooses which.
+
+- **Save Draft** keeps your changes without putting them on the site.
+- **Publish in English**, or the language you are in, makes this language's text live.
+- The arrow beside it has **Publish in all languages**, for when every translation is ready.
+
+A record published in English and saved only as a draft in French is live in English only. A reader
+on the French page sees a short "not available in this language" notice with a link to English.
+
+### Holding and releasing
+
+Setting a record to **hold** takes it off the site, and with it everything under it. Hold a country
+and all its actors and claims leave the site within seconds. Hold an actor and their claims leave
+with them.
+
+Setting it back to **ready** brings back only what was not held on its own. A claim you held
+yourself stays held when its country is released.
+
+### Archiving, the trash and emails
+
+**Archived** is for records that should stay in the system but not on the site, such as a
+withdrawn claim. Delete only what was added by mistake.
+
+**Delete** moves a record to the **trash**, where it is off the site and can be restored.
+Each record type's list has a trash view. Only a super-admin can delete a record for good, from the
+trash.
+
+Editors and super-admins get an email when a record is archived or restored, and when a country is
+put on hold.
+
+### When something is not public
+
+Look at **Why it is not public** in the sidebar of a claim, then at **Published in** on its actor
+and country. If a whole country seems missing, check its record status first.
+
+### When changes appear on the site
 
 A saved change appears on the site at once: the pages it affects are refreshed when the save
-completes. If a page still shows old content, reload it once.
+completes. If a page still shows old content, reload it once. Pages that name office holders also
+refresh every hour, so a term that starts or ends on its date shows within the hour.
 
-A country appears only when it is **ready** and published in the visitor's language. Its areas and
-offices appear wherever the country does, in each language they have a name in.
-
-Pages that name office holders also refresh every hour, so a term that starts or ends on its date
-shows within the hour without anyone saving it.
+A developer can work out every record's published status again with `pnpm publishing:recompute`,
+after changing the languages the site runs in.

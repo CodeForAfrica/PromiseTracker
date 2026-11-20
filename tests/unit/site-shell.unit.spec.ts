@@ -3,12 +3,15 @@ import { STRING_KEYS } from '@promisetracker/contract'
 import {
   COUNTRY_CODES,
   Countries,
+  childrenOf,
   computePublishedIn,
   countryDefaults,
   countryName,
   countryNames,
   isLocaleCode,
+  publishedTypes,
   REGIONS,
+  statusEvent,
 } from '@promisetracker/plugin-core'
 import { DEFAULT_STRINGS, resolveStrings } from '@promisetracker/plugin-site'
 import { localePath, withoutLocale } from '@promisetracker/ui'
@@ -219,5 +222,30 @@ describe('the country list', () => {
       defaultLanguage: 'en',
     })
     expect(run({ code: 'not-a-country' })).toEqual({ code: 'not-a-country' })
+  })
+})
+
+describe('status emails (section 14)', () => {
+  it('names an archive, a restore and a country put on hold, and nothing else', () => {
+    expect(statusEvent('claims', 'ready', 'archived')).toBe('archived')
+    expect(statusEvent('actors', 'archived', 'ready')).toBe('restored')
+    expect(statusEvent('countries', 'ready', 'hold')).toBe('countryHeld')
+    expect(statusEvent('claims', 'ready', 'hold')).toBeNull()
+    expect(statusEvent('countries', 'hold', 'hold')).toBeNull()
+    expect(statusEvent('claims', undefined, 'archived')).toBeNull()
+  })
+})
+
+describe('the parents table (section 8.1)', () => {
+  it('lists parents before children, and what sits under each record type', () => {
+    const order = publishedTypes()
+    expect(order.indexOf('countries')).toBeLessThan(order.indexOf('actors'))
+    expect(order.indexOf('actors')).toBeLessThan(order.indexOf('claims'))
+    expect(childrenOf('actors')).toEqual([{ collection: 'claims', field: 'actor' }])
+    expect(
+      childrenOf('countries')
+        .map((c) => c.collection)
+        .sort(),
+    ).toEqual(['actors', 'areas', 'claims'])
   })
 })

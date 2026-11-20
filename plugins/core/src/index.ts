@@ -76,6 +76,9 @@ export const corePlugin = definePromiseTrackerPlugin({
     fetchDocumentTask as never,
     extractTextTask as never,
     cleanupJobsTask as never,
+    cascadePublishingTask as never,
+    recomputePublishingTask as never,
+    dailyPublishingTask as never,
   ],
   workflows: [processDocumentWorkflow as never],
   provides: {
@@ -131,6 +134,9 @@ export {
   readCsv,
   xlsxImporter,
 } from './imports/readers'
+
+import { cascadePublishingTask, dailyPublishingTask, recomputePublishingTask } from './publishing'
+
 export type { ImportTarget } from './imports/targets'
 export { guessMapping, IMPORT_TARGETS, mappingKeys, planRow } from './imports/targets'
 export * from './locales'

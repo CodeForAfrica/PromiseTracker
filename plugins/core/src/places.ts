@@ -15,6 +15,7 @@ import { afterCommit } from './afterCommit'
 import { refreshTags } from './cache'
 import { related, relatedSection } from './joins'
 import { DEFAULT_LOCALE } from './locales'
+import { withPublishing, withTrash } from './publishing'
 import { slugify, slugProblem } from './slugs'
 import { termTitle } from './termTitle'
 
@@ -351,122 +352,131 @@ export const slugField = {
 } as const
 
 /** A country's nested list of places (section 7.2). */
-export const Areas: CollectionConfig = {
-  slug: 'areas',
-  admin: {
-    group: ADMIN_GROUPS.places,
-    useAsTitle: 'name',
-    defaultColumns: ['name', 'type', 'slug', 'country'],
-  },
-  // Payload keeps the parent links and refuses a parent chain that loops.
-  hierarchy: { parentFieldName: 'parent', slugField: 'slug' },
-  access: {
-    read: readPlaces,
-    create: can.manageStructure,
-    update: can.manageStructure,
-    delete: can.manageStructure,
-  },
-  indexes: [{ fields: ['country', 'slug'], unique: true }],
-  hooks: {
-    beforeValidate: [slugFromName],
-    beforeChange: [checkAreaSlug, checkAreaPlace, keepFormerSlug],
-    beforeDelete: [keepWhileNamedInTerms('area')],
-    afterChange: [linkRootArea, refreshPlaces],
-    afterDelete: [refreshPlaces],
-  },
-  fields: [
-    { name: 'name', type: 'text', localized: true, required: true },
-    slugField,
-    {
-      name: 'type',
-      type: 'select',
-      required: true,
-      options: AREA_TYPES.map((value) => ({ label: value, value })),
+export const Areas: CollectionConfig = withPublishing(
+  {
+    slug: 'areas',
+    admin: {
+      group: ADMIN_GROUPS.places,
+      useAsTitle: 'name',
+      defaultColumns: ['name', 'type', 'slug', 'country'],
     },
-    {
-      name: 'parent',
-      type: 'relationship',
-      relationTo: 'areas',
-      hasMany: false,
-      index: true,
-      admin: { description: 'The area it sits in.' },
+    // Payload keeps the parent links and refuses a parent chain that loops.
+    hierarchy: { parentFieldName: 'parent', slugField: 'slug' },
+    access: {
+      read: readPlaces,
+      create: can.manageStructure,
+      update: can.manageStructure,
+      delete: can.manageStructure,
     },
-    {
-      name: 'page',
-      type: 'select',
-      required: true,
-      defaultValue: 'automatic',
-      options: AREA_PAGE.map((value) => ({ label: value, value })),
-      admin: {
-        description: 'Automatic gives the area a page when two or more seats answer for it.',
+    indexes: [{ fields: ['country', 'slug'], unique: true }],
+    hooks: {
+      beforeValidate: [slugFromName],
+      beforeChange: [checkAreaSlug, checkAreaPlace, keepFormerSlug],
+      beforeDelete: [keepWhileNamedInTerms('area')],
+      afterChange: [linkRootArea, refreshPlaces],
+      afterDelete: [refreshPlaces],
+    },
+    fields: [
+      { name: 'name', type: 'text', localized: true, required: true },
+      slugField,
+      {
+        name: 'type',
+        type: 'select',
+        required: true,
+        options: AREA_TYPES.map((value) => ({ label: value, value })),
       },
-    },
-    countryField,
-    { name: 'externalCode', type: 'text', admin: { position: 'sidebar' } },
-    formerSlugsField,
-    {
-      // Collapsed: maps arrive in version 2, and most editors never need these.
-      type: 'collapsible',
-      label: 'Map',
-      admin: { initCollapsed: true, description: 'For the maps in version 2.' },
-      fields: [
-        {
-          name: 'geo',
-          type: 'group',
-          label: false,
-          fields: [
-            {
-              type: 'row',
-              fields: [
-                { name: 'latitude', type: 'number', min: -90, max: 90 },
-                { name: 'longitude', type: 'number', min: -180, max: 180 },
-              ],
-            },
-            {
-              name: 'bounds',
-              type: 'json',
-              admin: {
-                description:
-                  'West, south, east and north, in degrees, such as [36.6, -1.45, 37.1, -1.16].',
-              },
-            },
-            {
-              name: 'outline',
-              type: 'upload',
-              relationTo: 'boundaries',
-              admin: {
-                description:
-                  'A GeoJSON file from Boundaries, which records its source and licence.',
-              },
-            },
-          ],
+      {
+        name: 'parent',
+        type: 'relationship',
+        relationTo: 'areas',
+        hasMany: false,
+        index: true,
+        admin: { description: 'The area it sits in.' },
+      },
+      {
+        name: 'page',
+        type: 'select',
+        required: true,
+        defaultValue: 'automatic',
+        options: AREA_PAGE.map((value) => ({ label: value, value })),
+        admin: {
+          description: 'Automatic gives the area a page when two or more seats answer for it.',
         },
-      ],
-    },
-    relatedSection(
-      related({
-        name: 'children',
-        label: 'Areas in it',
-        collection: 'areas',
-        on: 'parent',
-        // Payload cannot sort a join by a field with a value per language, such as the name.
-        defaultSort: 'slug',
-        columns: ['name', 'type', 'slug'],
-      }),
-      related({
-        name: 'terms',
-        label: 'Terms',
-        collection: 'terms',
-        on: 'area',
-        defaultSort: '-startsOn',
-        columns: ['title', 'party', 'startsOn', 'endsOn'],
-      }),
-    ),
-  ],
-}
+      },
+      countryField,
+      { name: 'externalCode', type: 'text', admin: { position: 'sidebar' } },
+      formerSlugsField,
+      {
+        // Collapsed: maps arrive in version 2, and most editors never need these.
+        type: 'collapsible',
+        label: 'Map',
+        admin: { initCollapsed: true, description: 'For the maps in version 2.' },
+        fields: [
+          {
+            name: 'geo',
+            type: 'group',
+            label: false,
+            fields: [
+              {
+                type: 'row',
+                fields: [
+                  { name: 'latitude', type: 'number', min: -90, max: 90 },
+                  { name: 'longitude', type: 'number', min: -180, max: 180 },
+                ],
+              },
+              {
+                name: 'bounds',
+                type: 'json',
+                admin: {
+                  description:
+                    'West, south, east and north, in degrees, such as [36.6, -1.45, 37.1, -1.16].',
+                },
+              },
+              {
+                name: 'outline',
+                type: 'upload',
+                relationTo: 'boundaries',
+                admin: {
+                  description:
+                    'A GeoJSON file from Boundaries, which records its source and licence.',
+                },
+              },
+            ],
+          },
+        ],
+      },
+      relatedSection(
+        related({
+          name: 'children',
+          label: 'Areas in it',
+          collection: 'areas',
+          on: 'parent',
+          // Payload cannot sort a join by a field with a value per language, such as the name.
+          defaultSort: 'slug',
+          columns: ['name', 'type', 'slug'],
+        }),
+        related({
+          name: 'terms',
+          label: 'Terms',
+          collection: 'terms',
+          on: 'area',
+          defaultSort: '-startsOn',
+          columns: ['title', 'party', 'startsOn', 'endsOn'],
+        }),
+      ),
+    ],
+  },
+  ['name'],
+  {
+    // An area has no status of its own: it is live wherever its country is (section 8.1).
+    status: false,
+    drafts: false,
+    parents: [{ field: 'country', collection: 'countries' }],
+  },
+)
 
 /** A country's list of offices, such as Governor or Member of Parliament (section 7.2). */
-export const Offices: CollectionConfig = {
+export const Offices: CollectionConfig = withTrash({
   slug: 'offices',
   admin: {
     group: ADMIN_GROUPS.places,
@@ -529,4 +539,4 @@ export const Offices: CollectionConfig = {
       }),
     ),
   ],
-}
+})

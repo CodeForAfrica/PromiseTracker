@@ -1779,6 +1779,14 @@ codemods, and passes the full test suite before merging.
 | D55 | A partial date is written `2027`, `2027-08` or `2027-08-09` and stored as text, so it keeps its precision and sorts in date order |
 | D56 | Until the publishing checks of section 8.1 arrive, a claim is public when it is ready, has a title in the language, and its actor and country are public. The verdict fields and the source document arrive with their own record types |
 | D57 | Figures are worked out from the matching claims on each request, and use the threshold in Site settings, 20 by default |
+| D58 | A record is live only in the languages its parents are live in, not merely when they are ready. A French claim needs its actor and country live in French |
+| D59 | The rule that a person needs a started term is one of the actor's publishing checks. A daily job publishes people whose first term starts that day, and their claims follow |
+| D60 | A save without `draft`, such as an import, a seed or the system's own, publishes the language it saves, and every language when a record type has no required text. Editors choose in the admin |
+| D61 | Areas have no record status. An area is live wherever its country is, in the languages it has a name in |
+| D62 | Deleting moves a record to Payload's trash. Whoever may delete a record may trash it. Only a super-admin deletes for good |
+| D63 | Status emails go to every editor and super-admin, through Payload's email adapter. In development they go to Mailpit |
+| D64 | The published status, and why a claim is not public, are written to the live record by the system, not saved as an edit, so they add no version. The admin reads them from the live record |
+| D65 | Until documents arrive (#652), a claim's parents are its country and actor. The source document joins them as an optional parent. This replaces D56 |
 
 ### 20.2 Why
 
