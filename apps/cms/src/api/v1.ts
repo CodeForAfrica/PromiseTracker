@@ -576,9 +576,8 @@ const partial = (value: string | null | undefined): PartialDate | null => {
 }
 
 /**
- * Claims a guest may see in this language, in a published country: ready,
- * with a title in it, and made by an actor who is public (section 8.1). The
- * cascade and the rest of the claim's publishing checks arrive with #649.
+ * Claims a guest may see in this language: those published in it. Their
+ * published status folds in their actor, country and checks (section 8.1).
  */
 async function publicClaims(
   payload: Payload,
@@ -586,25 +585,11 @@ async function publicClaims(
   locale: TypedLocale,
   extra?: Where,
 ): Promise<ClaimDoc[]> {
-  const actors = await payload.find({
-    collection: 'actors',
-    joins: false,
-    where: publicActors(country, locale, new Date()),
-    depth: 0,
-    pagination: false,
-    overrideAccess: false,
-  })
+  // A claim's published status already folds in its actor and country (section 8.1).
   const { docs } = await payload.find({
     collection: 'claims',
     where: {
-      and: [
-        { country: { equals: country } },
-        publishedInLocale(locale),
-        actors.docs.length > 0
-          ? { actor: { in: actors.docs.map((a) => a.id) } }
-          : { id: { exists: false } },
-        ...(extra ? [extra] : []),
-      ],
+      and: [{ country: { equals: country } }, publishedInLocale(locale), ...(extra ? [extra] : [])],
     },
     locale,
     depth: 0,
@@ -789,6 +774,7 @@ const handlers: Record<string, Handler> = {
       where: {
         and: [
           { country: { equals: country.id } },
+          publishedInLocale(locale),
           parent ? { parent: { equals: parent } } : { parent: { exists: false } },
         ],
       },
@@ -818,8 +804,8 @@ const handlers: Record<string, Handler> = {
     const [doc] = docs
     if (!doc) return notFound()
     const name = nameIn(doc.name, locale)
-    if (!name)
-      return notAvailable((country.publishedIn ?? []).filter((code) => nameIn(doc.name, code)))
+    if (!name || !(doc.publishedIn ?? []).includes(locale))
+      return notAvailable(doc.publishedIn ?? [])
     const family = await areaFamily(payload, doc.id)
     const above = family.ancestors.length
       ? (
