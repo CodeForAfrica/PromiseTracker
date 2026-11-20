@@ -1,0 +1,13 @@
+Name,Name (fr),Name (sw),Parent,Colour
+Health,Santé,Afya,,#17694e
+Universal health coverage,Couverture santé universelle,Huduma ya afya kwa wote,Health,
+Education,Éducation,Elimu,,#1b4fd8
+Housing,Logement,Makazi,,#6b5b95
+Affordable housing,Logement abordable,Nyumba nafuu,Housing,
+Agriculture,Agriculture,Kilimo,,#4d7c0f
+Economy and jobs,Économie et emploi,Uchumi na ajira,,#b45309
+Infrastructure,Infrastructures,Miundombinu,,#475569
+Energy,Énergie,Nishati,,#ca8a04
+Water and sanitation,Eau et assainissement,Maji na usafi,,#0369a1
+Governance,Gouvernance,Utawala,,#9f1239
+Natural resources,Ressources naturelles,Maliasili,Economy and jobs,

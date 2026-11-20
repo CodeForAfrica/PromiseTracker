@@ -1,9 +1,10 @@
 import { createLocalTransport, getPayload } from '@promisetracker/cms'
+import { slugify } from '@promisetracker/plugin-core'
 import { createSdk } from '@promisetracker/sdk'
 import type { Payload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import { SEED_COUNTRIES, seedCountry } from '../../seed/seed'
+import { readTopics, SEED_COUNTRIES, seedCountry, seedTopics } from '../../seed/seed'
 
 /**
  * The seed data loads into an empty database, loads again without changing
@@ -24,15 +25,29 @@ describe('seed data', () => {
       })
     ).docs
 
+  const seedTopicSlugs = readTopics().map((topic) => slugify(topic.name.en ?? ''))
+  // Topics another test made stay; the ones this test adds go again.
+  let topicsBefore = new Set<string>()
+
   beforeAll(async () => {
     payload = await getPayload()
     // The test database starts without them, so everything below is this test's to remove.
     expect(await seedCountries()).toEqual([])
+    const { docs } = await payload.find({
+      collection: 'topics',
+      where: { slug: { in: seedTopicSlugs } },
+      pagination: false,
+      overrideAccess: true,
+    })
+    topicsBefore = new Set(docs.map((doc) => String(doc.slug)))
+    const topics = await seedTopics(payload)
+    expect(topics.create).toBe(seedTopicSlugs.length - topicsBefore.size)
+    expect((await seedTopics(payload)).create).toBe(0)
   })
 
   afterAll(async () => {
     for (const { id } of await seedCountries()) {
-      for (const collection of ['terms', 'actors', 'areas', 'offices'] as const) {
+      for (const collection of ['claims', 'terms', 'actors', 'areas', 'offices'] as const) {
         await payload.delete({
           collection,
           where: { country: { equals: id } },
@@ -40,6 +55,15 @@ describe('seed data', () => {
         })
       }
       await payload.delete({ collection: 'countries', id, overrideAccess: true })
+    }
+    // Children first, so no topic is left pointing at a deleted parent.
+    for (const slug of [...seedTopicSlugs].reverse()) {
+      if (topicsBefore.has(slug)) continue
+      await payload.delete({
+        collection: 'topics',
+        where: { slug: { equals: slug } },
+        overrideAccess: true,
+      })
     }
   })
 
@@ -135,5 +159,18 @@ describe('seed data', () => {
       holders: [{ slug: 'bassirou-diomaye-faye' }],
     })
     expect((await sdk.getAreas('fr', 'sn', 'senegal')).total).toBe(14)
+    const claims = await sdk.getClaims('fr', 'sn')
+    expect(claims.total).toBe(2)
+    expect(claims.items[0]?.topic?.name).toBeTruthy()
+  })
+
+  it('gives Kenya claims on shared topics, with their figures', async () => {
+    const claims = await sdk.getClaims('en', 'ke', { actor: 'william-ruto' })
+    expect(claims.total).toBe(5)
+    expect(claims.figures).toMatchObject({ total: 5, form: 'counts' })
+    expect(await sdk.getTopic('en', 'housing')).toMatchObject({
+      children: [{ slug: 'affordable-housing' }],
+      countries: [{ country: { code: 'ke' }, figures: { total: 1 } }],
+    })
   })
 })

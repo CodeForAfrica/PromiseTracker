@@ -52,6 +52,23 @@ export const STRING_KEYS = [
   'showResults',
   'noMatches',
   'nextPage',
+  'claims',
+  'recordSoFar',
+  'keyClaim',
+  'claimWho',
+  'claimWhere',
+  'claimWhen',
+  'claimByWhen',
+  'claimRating',
+  'claimSaid',
+  'claimSource',
+  'filterRating',
+  'filterTopic',
+  'noClaims',
+  'figureOf',
+  'figuresByCountry',
+  'claimsOnTopic',
+  'filterCountry',
   'notFoundTitle',
   'notFoundBody',
   'backHome',
@@ -279,6 +296,96 @@ export const Term = SeatRef.extend({
 export type Term = z.infer<typeof Term>
 
 /** `GET /api/v1/countries/{cc}/actors/{slug}`. */
+/**
+ * A date that may be only a year or a month (section 7.5), written `2027`,
+ * `2027-08` or `2027-08-09`.
+ */
+export const PartialDate = z.object({
+  value: z.string().regex(/^\d{4}(-\d{2}(-\d{2})?)?$/),
+  precision: z.enum(['year', 'month', 'day']),
+})
+export type PartialDate = z.infer<typeof PartialDate>
+
+/**
+ * Rating figures, the same shape everywhere (section 12.2): counts by rating
+ * and by tier, the total, and whether to show counts or percentages. Below the
+ * threshold in Settings a page shows "1 of 3", not "33%" (section 10.4).
+ */
+export const Figures = z.object({
+  total: z.number().int().nonnegative(),
+  form: z.enum(['counts', 'percentages']),
+  byRating: z.record(z.string(), z.number().int().nonnegative()),
+  byTier: z.record(z.string(), z.number().int().nonnegative()),
+})
+export type Figures = z.infer<typeof Figures>
+
+/** A topic, such as Health, with the broader one it sits under. */
+export const TopicSummary = z.object({
+  slug: z.string().min(1),
+  name: z.string().min(1),
+  colour: z.string().nullable(),
+  parent: z.object({ slug: z.string().min(1), name: z.string().min(1) }).nullable(),
+})
+export type TopicSummary = z.infer<typeof TopicSummary>
+
+/** A claim in a list. Its rating comes with its scale's id, to look up in the site's scales. */
+export const ClaimSummary = z.object({
+  slug: z.string().min(1),
+  title: z.string().min(1),
+  country: z.string().length(2),
+  actor: ActorRef,
+  topic: TopicSummary.nullable(),
+  rating: Rating.nullable(),
+  ratingScale: z.string().nullable(),
+  saidOn: PartialDate.nullable(),
+  deadline: PartialDate.nullable(),
+  deadlineText: z.string().nullable(),
+})
+export type ClaimSummary = z.infer<typeof ClaimSummary>
+
+/** `GET /api/v1/countries/{cc}/claims`, with the figures of every claim that matches. */
+export const ClaimList = z.object({
+  items: z.array(ClaimSummary),
+  total: z.number().int().nonnegative(),
+  nextCursor: z.string().nullable(),
+  figures: Figures,
+})
+export type ClaimList = z.infer<typeof ClaimList>
+
+/** `GET /api/v1/countries/{cc}/claims/{slug}` (section 7.5). */
+export const Claim = ClaimSummary.extend({
+  /** The exact words, in the language they were said. */
+  statement: z.string().nullable(),
+  summary: z.string().nullable(),
+  type: z.object({ slug: z.string().min(1), name: z.string().min(1) }).nullable(),
+  coActors: z.array(ActorRef),
+  /** The seat of the term the claim belongs to. */
+  seat: SeatRef.nullable(),
+  /** Where it applies, when narrower than the seat. */
+  area: AreaSummary.nullable(),
+  saidAt: z.string().nullable(),
+  sourceUrl: z.string().nullable(),
+  sourceLocator: z.string().nullable(),
+  ratedOn: z.string().nullable(),
+  lastReviewedAt: z.string().nullable(),
+  image: Image.nullable(),
+})
+export type Claim = z.infer<typeof Claim>
+
+/** `GET /api/v1/topics`: every topic, with how many published claims it has. */
+export const TopicList = z.object({
+  items: z.array(TopicSummary.extend({ claims: z.number().int().nonnegative() })),
+})
+export type TopicList = z.infer<typeof TopicList>
+
+/** `GET /api/v1/topics/{slug}`: a topic, the ones under it, and figures by country. */
+export const Topic = TopicSummary.extend({
+  description: z.string().nullable(),
+  children: z.array(TopicSummary),
+  countries: z.array(z.object({ country: CountrySummary, figures: Figures })),
+})
+export type Topic = z.infer<typeof Topic>
+
 export const Actor = ActorSummary.extend({
   shortName: z.string().nullable(),
   honorific: z.string().nullable(),
@@ -287,6 +394,10 @@ export const Actor = ActorSummary.extend({
   links: z.array(z.object({ type: z.string(), url: z.string() })),
   /** Every term, the latest first. Terms not yet started are left out. */
   terms: z.array(Term),
+  /** The claim an editor marked as the one that matters most, and why. */
+  keyClaim: z.object({ claim: ClaimSummary, note: z.string().nullable() }).nullable(),
+  /** The figures of every published claim the actor made. */
+  record: Figures,
 })
 export type Actor = z.infer<typeof Actor>
 

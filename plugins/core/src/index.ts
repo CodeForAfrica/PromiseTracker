@@ -14,6 +14,7 @@ import {
 } from './adapters'
 import { ADMIN_GROUPS } from './adminGroups'
 import { Boundaries } from './boundaries'
+import { Claims, Topics } from './claims'
 import { Countries } from './countries'
 import { DocumentFiles, Documents } from './documents/collections'
 import {
@@ -61,6 +62,8 @@ export const corePlugin = definePromiseTrackerPlugin({
     Boundaries,
     Documents,
     DocumentFiles,
+    Claims,
+    Topics,
     RatingScales,
     ClaimTypes,
     Media,
@@ -104,6 +107,8 @@ export { ADMIN_GROUPS } from './adminGroups'
 export { afterCommit, installAfterCommit } from './afterCommit'
 export { Boundaries, geoJsonProblem, MAX_BOUNDARY_BYTES } from './boundaries'
 export * from './cache'
+export type { DatePrecision } from './claims'
+export { Claims, EXTRACTIONS, PARTIAL_DATE, partialDatePrecision, Topics } from './claims'
 export * from './contrast'
 export { Countries } from './countries'
 export * from './countryList'
