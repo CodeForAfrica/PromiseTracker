@@ -162,6 +162,8 @@ export interface Config {
     areas: Area;
     offices: Office;
     boundaries: Boundary;
+    claims: Claim;
+    topics: Topic;
     'rating-scales': RatingScale;
     'claim-types': ClaimType;
     media: Media;
@@ -200,6 +202,8 @@ export interface Config {
     areas: AreasSelect<false> | AreasSelect<true>;
     offices: OfficesSelect<false> | OfficesSelect<true>;
     boundaries: BoundariesSelect<false> | BoundariesSelect<true>;
+    claims: ClaimsSelect<false> | ClaimsSelect<true>;
+    topics: TopicsSelect<false> | TopicsSelect<true>;
     'rating-scales': RatingScalesSelect<false> | RatingScalesSelect<true>;
     'claim-types': ClaimTypesSelect<false> | ClaimTypesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
@@ -283,6 +287,14 @@ export interface Actor {
   image?: (string | null) | Media;
   imageCredit?: string | null;
   biography?: string | null;
+  /**
+   * The claim that matters most, shown first on the actor page.
+   */
+  keyClaim?: (string | null) | Claim;
+  /**
+   * Why it matters.
+   */
+  keyClaimNote?: string | null;
   links?:
     | {
         type: 'website' | 'facebook' | 'x' | 'instagram' | 'youtube' | 'tiktok' | 'linkedin' | 'other';
@@ -423,6 +435,184 @@ export interface User {
     | null;
   password?: string | null;
   collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "claims".
+ */
+export interface Claim {
+  id: string;
+  /**
+   * The headline, such as "Build 200,000 homes a year".
+   */
+  title: string;
+  /**
+   * The exact words, in the language they were said. Never translated.
+   */
+  statement?: string | null;
+  summary?: string | null;
+  actor: string | Actor;
+  coActors?: (string | Actor)[] | null;
+  term?: (string | null) | Term;
+  /**
+   * Only when narrower than the actor’s seat.
+   */
+  area?: (string | null) | Area;
+  topic?: (string | null) | Topic;
+  type?: (string | null) | ClaimType;
+  tags?: string[] | null;
+  /**
+   * Where, such as a rally in Kisumu.
+   */
+  saidAt?: string | null;
+  /**
+   * When it was said.
+   */
+  saidOn?: string | null;
+  /**
+   * When it is due.
+   */
+  deadline?: string | null;
+  /**
+   * The deadline in words, such as "End of term".
+   */
+  deadlineText?: string | null;
+  /**
+   * Shown as a link. The server never opens it.
+   */
+  sourceUrl?: string | null;
+  /**
+   * Where in the source, such as page 12.
+   */
+  sourceLocator?: string | null;
+  image?: (string | null) | Media;
+  imageCredit?: string | null;
+  /**
+   * Made from the title when you save. Used in addresses, such as /en/ke/p/kibra-housing.
+   */
+  slug?: string | null;
+  /**
+   * The actor’s country.
+   */
+  country?: (string | null) | Country;
+  formerSlugs?: string[] | null;
+  /**
+   * From the latest published update. A new claim starts on its scale’s starting rating.
+   */
+  currentRating?: string | null;
+  ratedOn?: string | null;
+  lastReviewedAt?: string | null;
+  updateCount?: number | null;
+  extraction?: ('manual' | 'import' | 'ai') | null;
+  confidence?: number | null;
+  enteredBy?: (string | null) | User;
+  /**
+   * Ready makes it public in each language that has its required fields.
+   */
+  recordStatus: 'ready' | 'hold' | 'archived';
+  /**
+   * Worked out on save. The languages this record is live in.
+   */
+  publishedIn?: string[] | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "terms".
+ */
+export interface Term {
+  id: string;
+  actor: string | Actor;
+  office: string | Office;
+  /**
+   * Empty for an office that answers for the whole country.
+   */
+  area?: (string | null) | Area;
+  /**
+   * The party during this term.
+   */
+  party?: (string | null) | Actor;
+  electedOn?: string | null;
+  startsOn: string;
+  /**
+   * Empty while in office.
+   */
+  endsOn?: string | null;
+  stage?: string | null;
+  /**
+   * What the term delivered. Written when it ends.
+   */
+  closingSummary?: string | null;
+  /**
+   * Who took the seat next.
+   */
+  successor?: (string | null) | Actor;
+  title?: string | null;
+  /**
+   * The actor’s country.
+   */
+  country?: (string | null) | Country;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "offices".
+ */
+export interface Office {
+  id: string;
+  name: string;
+  shortName?: string | null;
+  /**
+   * Made from the name when you save. Used in addresses, such as /en/ke/nairobi-county.
+   */
+  slug?: string | null;
+  /**
+   * The kind of area it answers for. Country for national offices, empty for offices with no area.
+   */
+  areaType?: ('country' | 'region' | 'county' | 'constituency' | 'ward' | 'city' | 'other') | null;
+  /**
+   * More than one for seats with several members.
+   */
+  holdersPerSeat: number;
+  /**
+   * Lower comes first. Put the highest office first.
+   */
+  order: number;
+  country: string | Country;
+  formerSlugs?: string[] | null;
+  terms?: {
+    docs?: (string | Term)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -648,40 +838,21 @@ export interface Boundary {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "terms".
+ * via the `definition` "topics".
  */
-export interface Term {
+export interface Topic {
   id: string;
-  actor: string | Actor;
-  office: string | Office;
   /**
-   * Empty for an office that answers for the whole country.
+   * The broader topic it sits under, if any.
    */
-  area?: (string | null) | Area;
+  parent?: (string | null) | Topic;
+  name: string;
+  description?: string | null;
+  colour?: string | null;
   /**
-   * The party during this term.
+   * Made from the name when you save. Used in addresses, such as /en/topics/health.
    */
-  party?: (string | null) | Actor;
-  electedOn?: string | null;
-  startsOn: string;
-  /**
-   * Empty while in office.
-   */
-  endsOn?: string | null;
-  stage?: string | null;
-  /**
-   * What the term delivered. Written when it ends.
-   */
-  closingSummary?: string | null;
-  /**
-   * Who took the seat next.
-   */
-  successor?: (string | null) | Actor;
-  title?: string | null;
-  /**
-   * The actor’s country.
-   */
-  country?: (string | null) | Country;
+  slug?: string | null;
   createdBy?: {
     relationTo: 'users';
     value: string | User;
@@ -692,38 +863,22 @@ export interface Term {
   } | null;
   updatedAt: string;
   createdAt: string;
+  _h_slugPath?: string | null;
+  _h_titlePath?: string | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "offices".
+ * via the `definition` "claim-types".
  */
-export interface Office {
+export interface ClaimType {
   id: string;
   name: string;
-  shortName?: string | null;
+  slug: string;
+  ratingScale: string | RatingScale;
   /**
-   * Made from the name when you save. Used in addresses, such as /en/ke/nairobi-county.
+   * Whether claims of this type usually have a deadline.
    */
-  slug?: string | null;
-  /**
-   * The kind of area it answers for. Country for national offices, empty for offices with no area.
-   */
-  areaType?: ('country' | 'region' | 'county' | 'constituency' | 'ward' | 'city' | 'other') | null;
-  /**
-   * More than one for seats with several members.
-   */
-  holdersPerSeat: number;
-  /**
-   * Lower comes first. Put the highest office first.
-   */
-  order: number;
-  country: string | Country;
-  formerSlugs?: string[] | null;
-  terms?: {
-    docs?: (string | Term)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
+  hasDeadline?: boolean | null;
   createdBy?: {
     relationTo: 'users';
     value: string | User;
@@ -821,30 +976,6 @@ export interface RatingScale {
   createdAt: string;
 }
 /**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "claim-types".
- */
-export interface ClaimType {
-  id: string;
-  name: string;
-  slug: string;
-  ratingScale: string | RatingScale;
-  /**
-   * Whether claims of this type usually have a deadline.
-   */
-  hasDeadline?: boolean | null;
-  createdBy?: {
-    relationTo: 'users';
-    value: string | User;
-  } | null;
-  updatedBy?: {
-    relationTo: 'users';
-    value: string | User;
-  } | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
  * Upload a CSV or Excel file. Check the mapping, then choose Preview, and Import when the preview is right.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -853,7 +984,7 @@ export interface ClaimType {
 export interface Import {
   id: string;
   country: string | Country;
-  recordType: 'areas' | 'offices' | 'actors' | 'terms';
+  recordType: 'areas' | 'offices' | 'actors' | 'terms' | 'claims';
   /**
    * Runs when you save.
    */
@@ -904,7 +1035,29 @@ export interface Import {
           | 'closingSummary:fr'
           | 'closingSummary:pt'
           | 'closingSummary:ar'
-          | 'closingSummary:sw';
+          | 'closingSummary:sw'
+          | 'title'
+          | 'title:fr'
+          | 'title:pt'
+          | 'title:ar'
+          | 'title:sw'
+          | 'topic'
+          | 'statement'
+          | 'summary'
+          | 'summary:fr'
+          | 'summary:pt'
+          | 'summary:ar'
+          | 'summary:sw'
+          | 'saidAt'
+          | 'saidOn'
+          | 'deadline'
+          | 'deadlineText'
+          | 'deadlineText:fr'
+          | 'deadlineText:pt'
+          | 'deadlineText:ar'
+          | 'deadlineText:sw'
+          | 'sourceUrl'
+          | 'sourceLocator';
         column: string;
         id?: string | null;
       }[]
@@ -1007,7 +1160,7 @@ export interface Import {
 export interface ImportMapping {
   id: string;
   name: string;
-  recordType: 'areas' | 'offices' | 'actors' | 'terms';
+  recordType: 'areas' | 'offices' | 'actors' | 'terms' | 'claims';
   /**
    * Field to column heading.
    */
@@ -1190,6 +1343,14 @@ export interface PayloadLockedDocument {
         value: string | Boundary;
       } | null)
     | ({
+        relationTo: 'claims';
+        value: string | Claim;
+      } | null)
+    | ({
+        relationTo: 'topics';
+        value: string | Topic;
+      } | null)
+    | ({
         relationTo: 'rating-scales';
         value: string | RatingScale;
       } | null)
@@ -1291,6 +1452,8 @@ export interface ActorsSelect<T extends boolean = true> {
   image?: T;
   imageCredit?: T;
   biography?: T;
+  keyClaim?: T;
+  keyClaimNote?: T;
   links?:
     | T
     | {
@@ -1442,6 +1605,63 @@ export interface BoundariesSelect<T extends boolean = true> {
       };
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "claims_select".
+ */
+export interface ClaimsSelect<T extends boolean = true> {
+  title?: T;
+  statement?: T;
+  summary?: T;
+  actor?: T;
+  coActors?: T;
+  term?: T;
+  area?: T;
+  topic?: T;
+  type?: T;
+  tags?: T;
+  saidAt?: T;
+  saidOn?: T;
+  deadline?: T;
+  deadlineText?: T;
+  sourceUrl?: T;
+  sourceLocator?: T;
+  image?: T;
+  imageCredit?: T;
+  slug?: T;
+  country?: T;
+  formerSlugs?: T;
+  currentRating?: T;
+  ratedOn?: T;
+  lastReviewedAt?: T;
+  updateCount?: T;
+  extraction?: T;
+  confidence?: T;
+  enteredBy?: T;
+  recordStatus?: T;
+  publishedIn?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "topics_select".
+ */
+export interface TopicsSelect<T extends boolean = true> {
+  parent?: T;
+  name?: T;
+  description?: T;
+  colour?: T;
+  slug?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _h_slugPath?: T;
+  _h_titlePath?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1779,6 +1999,10 @@ export interface Site {
         }[]
       | null;
   };
+  /**
+   * Below this many claims, figures show as counts, such as "1 of 3 completed", rather than percentages (section 10.4).
+   */
+  figuresThreshold: number;
   strings?: {
     skipToContent?: string | null;
     home?: string | null;
@@ -1821,6 +2045,23 @@ export interface Site {
     showResults?: string | null;
     noMatches?: string | null;
     nextPage?: string | null;
+    claims?: string | null;
+    recordSoFar?: string | null;
+    keyClaim?: string | null;
+    claimWho?: string | null;
+    claimWhere?: string | null;
+    claimWhen?: string | null;
+    claimByWhen?: string | null;
+    claimRating?: string | null;
+    claimSaid?: string | null;
+    claimSource?: string | null;
+    filterRating?: string | null;
+    filterTopic?: string | null;
+    noClaims?: string | null;
+    figureOf?: string | null;
+    figuresByCountry?: string | null;
+    claimsOnTopic?: string | null;
+    filterCountry?: string | null;
     notFoundTitle?: string | null;
     notFoundBody?: string | null;
     backHome?: string | null;
@@ -1884,6 +2125,7 @@ export interface SiteSelect<T extends boolean = true> {
               id?: T;
             };
       };
+  figuresThreshold?: T;
   strings?:
     | T
     | {
@@ -1928,6 +2170,23 @@ export interface SiteSelect<T extends boolean = true> {
         showResults?: T;
         noMatches?: T;
         nextPage?: T;
+        claims?: T;
+        recordSoFar?: T;
+        keyClaim?: T;
+        claimWho?: T;
+        claimWhere?: T;
+        claimWhen?: T;
+        claimByWhen?: T;
+        claimRating?: T;
+        claimSaid?: T;
+        claimSource?: T;
+        filterRating?: T;
+        filterTopic?: T;
+        noClaims?: T;
+        figureOf?: T;
+        figuresByCountry?: T;
+        claimsOnTopic?: T;
+        filterCountry?: T;
         notFoundTitle?: T;
         notFoundBody?: T;
         backHome?: T;
@@ -1985,6 +2244,8 @@ export interface CollectionQueryWidget {
       | 'areas'
       | 'offices'
       | 'boundaries'
+      | 'claims'
+      | 'topics'
       | 'rating-scales'
       | 'claim-types'
       | 'media'
@@ -2020,6 +2281,8 @@ export interface ActivityWidget {
           | 'areas'
           | 'offices'
           | 'boundaries'
+          | 'claims'
+          | 'topics'
           | 'rating-scales'
           | 'claim-types'
           | 'media'

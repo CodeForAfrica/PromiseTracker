@@ -19,6 +19,11 @@ when `DATABASE_URL` points at another machine, unless you add `--remote`.
 | Kenya, `ke`   | The country and its 47 counties, with their official codes and French and Swahili names | President, Deputy President, Governor, Senator, Woman Representative | The President and Deputy President since 2022, and their predecessors since 2013. The governor of each county, elected in August 2022 |
 | Senegal, `sn` | The country and its 14 regions, with French names                                       | President of the Republic                                            | President Bassirou Diomaye Faye, and Macky Sall before him                                                                            |
 
+Both countries also have claims: Kenya's President and Nairobi's governor, and Senegal's President,
+each with a title, summary, topic and deadline. They name 12 topics shared by every country, such
+as Health and Affordable housing, in `seed/data/topics.csv`. The statements, the exact words, are
+left empty, since the seed cannot vouch for a quote.
+
 Kenya has past holders, so the site shows archived records, successors and "Past administrations".
 Senegal is French first, so it shows the site in French. Actors the seed creates are marked ready,
 so they appear on the site at once.
@@ -31,7 +36,7 @@ wrong. Senators, Woman Representatives and MPs are not seeded yet.
 ## How it works
 
 Each country is a folder in `seed/data`, holding one spreadsheet per record type:
-`offices.csv`, `areas.csv`, `actors.csv` and `terms.csv`. They are in the format editors import
+`offices.csv`, `areas.csv`, `actors.csv`, `terms.csv` and `claims.csv`. They are in the format editors import
 (`docs/admin-guide.md`, section 7), and `pnpm seed` loads them through the same import, so they are
 checked the way an editor's file is.
 
@@ -43,8 +48,8 @@ checked the way an editor's file is.
   in the same step, so an interrupted run never leaves one on hold. An actor that exists keeps its
   status, so one you held stays held. Records you added by hand are left alone. To start again, empty the database: `pnpm services:down`, remove
   the Postgres volume, then `pnpm services` and `pnpm migrate`.
-- **It loads in order:** offices, then areas, then actors, then terms, because each names records
-  loaded before it.
+- **It loads in order:** the shared topics first, then for each country offices, areas, actors,
+  terms and claims, because each names records loaded before it.
 
 `seed/seed.ts` holds the loader. `tests/unit/seed.unit.spec.ts` checks every row without a
 database, and `tests/int/seed.int.spec.ts` loads it all into the test database.

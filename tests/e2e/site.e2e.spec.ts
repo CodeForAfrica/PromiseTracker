@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
+import { gzipSync } from 'node:zlib'
 
 import AxeBuilder from '@axe-core/playwright'
 import type { Page } from '@playwright/test'
@@ -218,4 +219,65 @@ test('seat addresses answer with a real redirect, not a page', async ({ request 
   expect(seat.headers().location).toBe(`/en/${full.code}/e/juma-hassan`)
   const national = await visit(`/en/${full.code}/president`)
   expect(national.status()).toBe(307)
+})
+
+test('a claim page shows the claim, who made it, when it is due and its rating', async ({
+  page,
+}) => {
+  const { full } = seed()
+  await page.goto(`/en/${full.code}/p/kibra-housing`)
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Build 5000 homes in Kibra' }),
+  ).toBeVisible()
+  await expect(page.getByText('Unstarted', { exact: true }).first()).toBeVisible()
+  await expect(page.getByText('We will build five thousand homes in Kibra.')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Achieng Wekesa' })).toBeVisible()
+  await expect(page.getByText('2027', { exact: true })).toBeVisible()
+  await expectAccessible(page)
+})
+
+test('an actor page lists their claims, the key claim and their record so far', async ({
+  page,
+}) => {
+  const { full } = seed()
+  await page.goto(`/en/${full.code}/e/achieng-wekesa`)
+  await expect(page.getByRole('region', { name: 'Key claim' })).toContainText(
+    'Her flagship housing pledge.',
+  )
+  await expect(page.getByRole('region', { name: 'Record so far' })).toContainText('2 of 2')
+  const claims = page.getByRole('region', { name: 'Claims' })
+  await expect(claims.getByRole('link')).toHaveCount(2)
+  await expectAccessible(page)
+
+  await claims.getByLabel('Topic').selectOption('housing')
+  await claims.getByRole('button', { name: 'Show' }).click()
+  await expect(page).toHaveURL(/topic=housing/)
+  await expect(page.getByRole('region', { name: 'Claims' }).getByRole('link')).toHaveCount(1)
+})
+
+test('a topic page shows its claims, with figures by country', async ({ page }) => {
+  const { full } = seed()
+  await page.goto('/en/topics/health')
+  await expect(page.getByRole('heading', { level: 1, name: 'Health' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'By country' })).toContainText(full.en)
+  // Other countries may have claims on Health too, so only this country's are checked.
+  await expect(page.getByRole('region', { name: 'Claims on this topic' })).toContainText(
+    'Clean water for every ward',
+  )
+  await expectAccessible(page)
+})
+
+test('a claim page ships under 150 KB of JavaScript, compressed (section 17)', async ({ page }) => {
+  // Only a production build is measured: a development server ships its tools too.
+  test.skip(!process.env.PT_E2E_URL, 'Needs a production build, named in PT_E2E_URL.')
+  const { full } = seed()
+  const sizes: Promise<number>[] = []
+  page.on('response', (response) => {
+    if (response.request().resourceType() === 'script') {
+      sizes.push(response.body().then((body) => gzipSync(body).length))
+    }
+  })
+  await page.goto(`/en/${full.code}/p/kibra-housing`, { waitUntil: 'networkidle' })
+  const total = (await Promise.all(sizes)).reduce((sum, n) => sum + n, 0)
+  expect(total).toBeLessThan(150 * 1024)
 })

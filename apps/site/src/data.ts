@@ -1,7 +1,7 @@
 import 'server-only'
 
 import type { CountrySummary, SiteInfo } from '@promisetracker/contract'
-import type { ActorQuery } from '@promisetracker/sdk'
+import type { ActorQuery, ClaimQuery } from '@promisetracker/sdk'
 import { BadRequestError, NotFoundError } from '@promisetracker/sdk'
 import { unstable_cache } from 'next/cache'
 import { notFound, permanentRedirect, redirect } from 'next/navigation'
@@ -38,8 +38,20 @@ export const getCountries = (locale: string) =>
 /** How long a read that names office holders is kept, in seconds. */
 const HOLDERS_TTL = 3600
 
-/** The tags of every read about a country's people and places. */
-const peopleTags = (code: string) => [`actors:${code}`, `places:${code}`, `country:${code}`]
+/**
+ * The tags of every read about a country's people, places and claims. An
+ * actor's page shows their claims, and a claim names its actor, so they share
+ * them. Figures also depend on the rating scales and the threshold in Settings.
+ */
+const peopleTags = (code: string) => [
+  `actors:${code}`,
+  `places:${code}`,
+  `country:${code}`,
+  `claims:${code}`,
+  'topics',
+  'ratings',
+  'site',
+]
 
 /** A country's areas and offices change together, so they share one tag. */
 export const getArea = (locale: string, code: string, area: string) =>
@@ -89,6 +101,34 @@ export async function getAllActors(locale: string, code: string, query: ActorQue
 export const getActor = (locale: string, code: string, slug: string) =>
   unstable_cache(() => sdk.getActor(locale, code, slug), [RUN, 'actor', locale, code, slug], {
     tags: peopleTags(code),
+    revalidate: HOLDERS_TTL,
+  })()
+
+export const getClaims = (locale: string, code: string, query: ClaimQuery = {}) =>
+  unstable_cache(
+    () => sdk.getClaims(locale, code, query),
+    [RUN, 'claims', locale, code, JSON.stringify(query)],
+    { tags: peopleTags(code), revalidate: HOLDERS_TTL },
+  )()
+
+export const getClaim = (locale: string, code: string, slug: string) =>
+  unstable_cache(() => sdk.getClaim(locale, code, slug), [RUN, 'claim', locale, code, slug], {
+    tags: peopleTags(code),
+    revalidate: HOLDERS_TTL,
+  })()
+
+/** Topics span every country, so any country's change can move their figures. */
+const topicTags = ['topics', 'countries', 'ratings', 'site']
+
+export const getTopics = (locale: string) =>
+  unstable_cache(() => sdk.getTopics(locale), [RUN, 'topics', locale], {
+    tags: topicTags,
+    revalidate: HOLDERS_TTL,
+  })()
+
+export const getTopic = (locale: string, slug: string) =>
+  unstable_cache(() => sdk.getTopic(locale, slug), [RUN, 'topic', locale, slug], {
+    tags: topicTags,
     revalidate: HOLDERS_TTL,
   })()
 
