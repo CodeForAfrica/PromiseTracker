@@ -14,7 +14,7 @@ catalogMode: strict
 catalog:
   "@axe-core/playwright": 4.14.0
   "@aws-sdk/client-s3": 3.1169.0
-  "@biomejs/biome": 2.6.6
+  "@biomejs/biome": 2.6.7
   "@biomejs/js-api": 6.1.0
   "@biomejs/wasm-nodejs": 2.6.6
   "@next/env": 16.4.6
