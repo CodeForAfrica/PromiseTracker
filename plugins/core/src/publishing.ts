@@ -174,7 +174,11 @@ export async function computePublishing(
     rules.required.map((name) => [name, asRecord(doc[name]) as PerLocale]),
   )
   let languages = computePublishedIn('ready', required, locales)
-  if (rules.drafts) {
+  // A record type with no required text, such as an actor, has nothing to
+  // publish per language: it is live wherever its parents are. Payload's
+  // "publish all languages" covers only the languages switched on today, so
+  // its status would leave out a language switched on later.
+  if (rules.drafts && rules.required.length > 0) {
     const published = payloadPublished(doc, locales)
     languages = languages.filter((locale) => published.includes(locale))
   }
@@ -215,7 +219,14 @@ export async function recomputePublishing(
   slug: string,
   id: string,
   req: Partial<PayloadRequest> = {},
-): Promise<{ before: string[]; after: string[]; problems: string[]; changed: boolean }> {
+): Promise<{
+  before: string[]
+  after: string[]
+  problems: string[]
+  changed: boolean
+  /** The record's country, to refresh its pages. */
+  country: string | null
+}> {
   const doc = await findByID(payload)({
     collection: slug,
     id,
@@ -227,7 +238,9 @@ export async function recomputePublishing(
     trash: true,
     // Reads the record to work out where it is live, whoever saved it.
     overrideAccess: true,
-    req,
+    // A copy: reading every language would switch the save itself to every
+    // language. The copy shares the transaction.
+    req: { ...req },
   })
   const before = Array.isArray(doc.publishedIn) ? (doc.publishedIn as string[]) : []
   const { publishedIn, problems } = await computePublishing(payload, slug, doc, req)
@@ -244,7 +257,8 @@ export async function recomputePublishing(
       returning: false,
     })
   }
-  return { before, after: publishedIn, problems, changed }
+  const country = slug === 'countries' ? idOf(doc.id) : idOf(doc.country)
+  return { before, after: publishedIn, problems, changed, country }
 }
 
 /** The tags of every page a country's records appear on (section 17). */
@@ -301,11 +315,21 @@ export async function cascadePublishing(
   })
   const tags = await countryTags(payload, root.collection, rootDoc)
   const queue = [root]
+  // A record changed by several parents, such as a claim under a held country
+  // and its actor, passes its change on once.
+  const queued = new Set([`${root.collection}:${root.id}`])
+  const order = publishedTypes()
   let recomputed = 0
   let changed = 0
   for (let next = queue.shift(); next; next = queue.shift()) {
-    for (const child of childrenOf(next.collection)) {
+    // Parents first, so a claim is worked out after its actor has been.
+    const children = childrenOf(next.collection).sort(
+      (a, b) => order.indexOf(a.collection) - order.indexOf(b.collection),
+    )
+    for (const child of children) {
       for (let page = 1; ; page += 1) {
+        // Paged by id, which no recompute changes, so no record is skipped or
+        // seen twice while the batches before it are written.
         const { docs, hasNextPage } = await find(payload)({
           collection: child.collection,
           where: { [child.field]: { equals: next.id } },
@@ -326,9 +350,13 @@ export async function cascadePublishing(
             if (!id) continue
             const result = await recomputePublishing(payload, child.collection, id, req)
             recomputed += 1
+            const key = `${child.collection}:${id}`
             if (result.changed) {
               changed += 1
-              queue.push({ collection: child.collection, id })
+              if (!queued.has(key)) {
+                queued.add(key)
+                queue.push({ collection: child.collection, id })
+              }
             }
           }
           await commitTransaction(req)
@@ -382,6 +410,7 @@ export async function recomputeAll(
     if (only && !only.includes(slug)) continue
     const counts = { recomputed: 0, changed: 0 }
     for (let page = 1; ; page += 1) {
+      // Paged by id, which no recompute changes.
       const { docs, hasNextPage } = await find(payload)({
         collection: slug,
         select: { id: true },
@@ -396,18 +425,28 @@ export async function recomputeAll(
       })
       const req: Partial<PayloadRequest> & { payload: Payload } = outer ?? { payload }
       if (!outer) await initTransaction(req)
+      const countries = new Set<string>()
       try {
         for (const doc of docs) {
           const id = idOf(doc.id)
           if (!id) continue
-          const { changed } = await recomputePublishing(payload, slug, id, req)
+          const { changed, country } = await recomputePublishing(payload, slug, id, req)
           counts.recomputed += 1
-          if (changed) counts.changed += 1
+          if (changed) {
+            counts.changed += 1
+            if (country) countries.add(country)
+          }
         }
         if (!outer) await commitTransaction(req)
       } catch (error) {
         if (!outer) await killTransaction(req).catch(() => undefined)
         throw error
+      }
+      // Records changed without a save, so their pages are refreshed here. Once
+      // the batch commits, or with the migration that started it.
+      for (const country of countries) {
+        const tags = await countryTags(payload, 'countries', { id: country }, req)
+        if (tags.length > 0) await refreshTags(tags, req as PayloadRequest)
       }
       if (!hasNextPage) break
     }

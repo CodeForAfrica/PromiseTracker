@@ -210,7 +210,7 @@ describe('publishing rules and the cascade', () => {
       overrideAccess: true,
       context: { [PIPELINE_SAVE]: true },
     })
-    expect(document.publishedIn).toEqual(['en', 'fr', 'pt', 'ar', 'sw'])
+    expect(document.publishedIn).toEqual(await publishedIn('countries', country))
     await payload.update({
       collection: 'claims',
       id: claims.roads ?? '',
@@ -285,14 +285,20 @@ describe('publishing rules and the cascade', () => {
     await expect(
       payload.delete({ collection: 'claims', id: doc.id, overrideAccess: false, user: editor }),
     ).rejects.toThrow()
-    await payload.update({
-      collection: 'claims',
-      id: doc.id,
-      data: { deletedAt: new Date().toISOString() },
-      overrideAccess: false,
-      user: editor,
-      trash: true,
-    })
+    const trash = (deletedAt: string | null) =>
+      payload.update({
+        collection: 'claims',
+        id: doc.id,
+        data: { deletedAt },
+        overrideAccess: false,
+        user: editor,
+        trash: true,
+      })
+    // An editor trashes a record, restores it, and trashes it again.
+    await trash(new Date().toISOString())
+    const restored = await trash(null)
+    expect(restored.deletedAt ?? null).toBeNull()
+    await trash(new Date().toISOString())
     await payload.delete({
       collection: 'claims',
       id: doc.id,
@@ -339,13 +345,62 @@ describe('publishing rules and the cascade', () => {
     }
   })
 
+  it('puts a person on the record on the day their first term starts, by the daily job', async () => {
+    const office = await payload.create({
+      collection: 'offices',
+      locale: 'en',
+      data: { name: 'Governor', areaType: null, holdersPerSeat: 1, order: 2, country },
+      overrideAccess: true,
+    })
+    const person = await payload.create({
+      collection: 'actors',
+      data: { name: 'Tumaini Wafula', kind: 'person', country, recordStatus: 'ready' },
+      overrideAccess: true,
+    })
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+    await payload.create({
+      collection: 'terms',
+      data: { actor: person.id, office: office.id, startsOn: `${tomorrow}T12:00:00.000Z` },
+      overrideAccess: true,
+    })
+    expect(await publishedIn('actors', person.id)).toEqual([])
+    // A day passes: the first term now starts today, and no one has saved anything.
+    const today = new Date().toISOString().slice(0, 10)
+    await payload.db.updateOne({
+      collection: 'actors',
+      id: person.id,
+      data: { onRecordSince: `${today}T00:00:00.000Z` },
+    })
+    expect(await publishedIn('actors', person.id)).toEqual([])
+    // The worker runs it at 00:05 UTC. The test runs it as the system, at once.
+    const job = await payload.jobs.queue({
+      task: 'dailyPublishing',
+      input: {},
+      overrideAccess: true,
+    })
+    await payload.jobs.runByID({ id: job.id, overrideAccess: true })
+    // Live wherever the country is.
+    expect(await publishedIn('actors', person.id)).toEqual(await publishedIn('countries', country))
+    expect(await publishedIn('actors', person.id)).not.toEqual([])
+    await payload.delete({
+      collection: 'terms',
+      where: { actor: { equals: person.id } },
+      overrideAccess: true,
+    })
+    await payload.delete({ collection: 'actors', id: person.id, overrideAccess: true })
+    await payload.delete({ collection: 'offices', id: office.id, overrideAccess: true })
+  })
+
   it('works out every record again on request, as after a change to the languages', async () => {
     const id = claims.roads ?? ''
     // As if the rules had changed since it was saved.
     await payload.db.updateOne({ collection: 'claims', id, data: { publishedIn: [] } })
     expect(await publishedIn('claims', id)).toEqual([])
+    refreshed.length = 0
     const result = await recomputeAll(payload, ['claims'])
     expect(result.claims?.changed).toBeGreaterThanOrEqual(1)
+    // Changed without a save, so the pages are refreshed by the recompute itself.
+    expect(refreshed.some((tags) => tags.includes(`claims:${code}`))).toBe(true)
     expect(await publishedIn('claims', id)).toEqual(['en', 'fr'])
   })
 })

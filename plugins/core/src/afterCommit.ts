@@ -31,7 +31,15 @@ export function installAfterCommit(payload: Payload): void {
     await commit(id)
     const work = queue.get(id) ?? []
     queue.delete(id)
-    for (const run of work) await run()
+    for (const run of work) {
+      // The save is committed by now, so work after it never fails it: a
+      // failure is logged, and a queued job is still there for the worker.
+      try {
+        await run()
+      } catch (error) {
+        payload.logger.error({ err: error, msg: 'Work after a save failed' })
+      }
+    }
   }
   db.rollbackTransaction = async (incoming) => {
     const id = await settle(incoming)

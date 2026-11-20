@@ -1788,6 +1788,7 @@ codemods, and passes the full test suite before merging.
 | D64 | The published status, and why a claim is not public, are written to the live record by the system, not saved as an edit, so they add no version. The admin reads them from the live record |
 | D65 | A claim's source document, its `source`, is one of its parents, so holding a document hides its claims. Documents have a record status and start ready, since they are never public themselves. This replaces D56 |
 | D66 | A source link counts as a claim's source, alongside a source document or evidence. Many pledges are reported in news articles that the server never fetches, and the claim page shows the link |
+| D67 | A record type with no required text, such as an actor, is live in every language its parents are live in. Payload's per-language publish status only gates text that must exist in a language, and its "publish all languages" covers only the languages switched on at the time |
 
 ### 20.2 Why
 
