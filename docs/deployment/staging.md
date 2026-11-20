@@ -11,9 +11,11 @@ Code for Africa's development server, `ui-1.dev.codeforafrica.org`, beside v2's 
    Docker Hub as `codeforafrica/promisetracker-v3`.
 3. The `staging` job in `.github/workflows/ci.yml` tells Dokku to run that image, by digest.
 4. Dokku starts a new web process and a new worker beside the old ones. Each applies pending
-   migrations as it starts, one at a time, under a lock. The new web process takes traffic only
+   migrations as it starts. A Postgres advisory lock (`apps/cms/src/startup.ts`) makes the second
+   wait for the first, so a migration never runs twice. The new web process takes traffic only
    once `/api/health/ready` passes (`docker/app.json`). If it never does, the old version keeps
-   serving and the job fails.
+   serving and the job fails. The worker has no such check, so a worker that fails to start does
+   not fail the job: see "When something goes wrong".
 5. The job checks `/api/health/ready` on the public address.
 
 The job runs only once the repository variable `STAGING_URL` is set, so `main` stays green until
@@ -64,17 +66,26 @@ dokku postgres:link promisetracker-v3 promisetracker-v3
 
 `postgres:link` sets `DATABASE_URL` on the app.
 
+Postgres 18 images keep their data in `/var/lib/postgresql`, not `/var/lib/postgresql/data` as
+earlier versions did. Check the server's Dokku Postgres plugin mounts the right one before any
+real data goes in: add a row, run `dokku postgres:restart promisetracker-v3`, and check the row is
+still there.
+
 ### File storage
 
 ```bash
 dokku apps:create promisetracker-v3-storage
 dokku network:set promisetracker-v3-storage attach-post-create promisetracker-v3
 dokku proxy:disable promisetracker-v3-storage
-dokku storage:ensure-directory promisetracker-v3-storage
+# RustFS runs as uid 10001, so its folder must belong to it.
+dokku storage:ensure-directory --chown 10001 promisetracker-v3-storage
 dokku storage:mount promisetracker-v3-storage /var/lib/dokku/data/storage/promisetracker-v3-storage:/data
 dokku config:set --no-restart promisetracker-v3-storage RUSTFS_ACCESS_KEY=… RUSTFS_SECRET_KEY=…
 dokku git:from-image promisetracker-v3-storage rustfs/rustfs:1.0.5
 ```
+
+Choose one access key and one secret key for the store. They are used three times: here, to create
+the bucket below, and as the app's `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY`.
 
 Then create the bucket, as `storage-init` does in Compose:
 
@@ -141,7 +152,8 @@ dokku ps:scale promisetracker-v3 web=1 worker=1
 ```
 
 Check `dokku ports:report promisetracker-v3` maps port 80, and 443 after Let's Encrypt, to 3000,
-where the image listens. Then:
+where the image listens. Check `dokku ps:report promisetracker-v3` shows one web and one worker
+running: Dokku passes each `Procfile` command (`web`, `worker`) to the image's entrypoint. Then:
 
 ```bash
 curl -fsS https://promisetracker-v3.dev.codeforafrica.org/api/health/ready
@@ -201,10 +213,15 @@ dokku postgres:destroy promisetracker-v3-restore-check
 
 - **A deploy fails its readiness check.** The old version keeps serving. Read the new one's logs
   with `dokku logs promisetracker-v3 --tail 200`.
+- **The worker is down.** Jobs stop and cached pages stop refreshing, but the deploy job still
+  passes, as only the web process is checked. After a deploy, `dokku ps:report promisetracker-v3`
+  should show the worker running. If not, read its logs with
+  `dokku logs promisetracker-v3 --ps worker --tail 200`.
 - **A migration fails.** The new version never takes traffic. Fix the migration in a pull
   request; the next merge deploys it.
 - **Roll back.** `dokku git:from-image promisetracker-v3 codeforafrica/promisetracker-v3:sha-<short sha>`,
-  with an earlier commit on `main`. A rollback does not undo migrations, so only roll back past
+  with an earlier commit on `main`. CI tags each image `sha-` and the commit's first seven
+  characters (`type=sha,format=short` in `ci.yml`). A rollback does not undo migrations, so only roll back past
   ones that remove nothing.
 - **Read the staging mailbox.** Mailpit has no public address. To open it, give it one behind a
   password: `dokku domains:set promisetracker-v3-mail <address>`, `dokku proxy:enable`,

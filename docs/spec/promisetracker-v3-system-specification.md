@@ -1513,8 +1513,8 @@ than one needs a shared cache first.
 
 A staging environment runs the image built from `main` from the first public page onward, so
 editors can review each piece as it lands. Each push to `main` deploys there once the
-browser tests pass. Staging sets `PT_NOINDEX`, so every response tells search engines not to
-index it.
+browser tests pass. Staging sets `PT_NOINDEX`, so its pages and admin tell search engines not
+to index them.
 
 Images are published to Docker Hub as `codeforafrica/promisetracker-v3`, following v2's
 `codeforafrica/promisetracker-v2`.

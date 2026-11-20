@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs'
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { config, NOINDEX, noindexFrom, proxy } from '../../apps/site/src/proxy'
+import { NOINDEX, noindexFrom } from '../../apps/site/src/noindex'
+import { config, proxy } from '../../apps/site/src/proxy'
 
 const read = (path: string) => readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8')
 
@@ -27,13 +28,19 @@ describe('PT_NOINDEX', () => {
     expect(proxy().headers.get('X-Robots-Tag')).toBeNull()
   })
 
-  it('covers pages, the admin and the API, but not built files', () => {
+  it('covers pages and the admin, but not the API or built files', () => {
     // This matcher is also a valid regular expression, read the same way.
     const matcher = new RegExp(`^${config.matcher[0]}$`)
-    for (const path of ['/', '/en/ke', '/admin', '/api/v1/countries', '/robots.txt']) {
+    for (const path of ['/', '/en/ke', '/admin', '/admin/collections/documents', '/robots.txt']) {
       expect(matcher.test(path), path).toBe(true)
     }
-    for (const path of ['/_next/static/chunks/a.js', '/_next/image']) {
+    // Uploads go to the API. Next.js would cut any body the proxy sees at 10 MB.
+    for (const path of [
+      '/api/media',
+      '/api/v1/countries',
+      '/_next/static/chunks/a.js',
+      '/_next/image',
+    ]) {
       expect(matcher.test(path), path).toBe(false)
     }
   })
