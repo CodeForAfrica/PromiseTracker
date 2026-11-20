@@ -744,7 +744,7 @@ claim updates. Retiring a rating lists the claims that carry it so editors can r
 | `area` | Where it applies, if narrower than the actor's seat |
 | `topic` | Required to publish |
 | `tags` | Payload tags, free-form |
-| `source`, `sourceLocator` | The source document and page. A source document or at least one piece of evidence is required to publish |
+| `source`, `sourceLocator` | The source document and page. A source document, a source link, or at least one piece of evidence is required to publish (D66) |
 | `sourceUrl` | Shown as a link. Never fetched by the server |
 | `saidAt`, `saidOn` | Where and when it was said. `saidOn` is a partial date |
 | `deadline`, `deadlineText` | A partial date, and the written form such as "End of term". A partial date is a year, a month or a day, written `2027`, `2027-08` or `2027-08-09` (D55) |
@@ -1787,6 +1787,7 @@ codemods, and passes the full test suite before merging.
 | D63 | Status emails go to every editor and super-admin, through Payload's email adapter. In development they go to Mailpit |
 | D64 | The published status, and why a claim is not public, are written to the live record by the system, not saved as an edit, so they add no version. The admin reads them from the live record |
 | D65 | A claim's source document, its `source`, is one of its parents, so holding a document hides its claims. Documents have a record status and start ready, since they are never public themselves. This replaces D56 |
+| D66 | A source link counts as a claim's source, alongside a source document or evidence. Many pledges are reported in news articles that the server never fetches, and the claim page shows the link |
 
 ### 20.2 Why
 
