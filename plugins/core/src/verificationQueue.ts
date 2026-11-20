@@ -1,6 +1,12 @@
-import type { Payload } from 'payload'
+import type { Payload, Where } from 'payload'
 
-import { AWAITING_VERIFICATION } from './widgets'
+/** Claims waiting for a verdict, not archived (section 5.1). */
+export const AWAITING_VERIFICATION: Where = {
+  and: [
+    { 'verification.verdict': { equals: 'unverified' } },
+    { recordStatus: { not_equals: 'archived' } },
+  ],
+}
 
 export const VERIFICATION_QUEUE = 'Awaiting verification'
 

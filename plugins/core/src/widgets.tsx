@@ -1,19 +1,13 @@
 import { Card } from '@payloadcms/ui'
-import type { Where, WidgetServerProps } from 'payload'
+import type { WidgetServerProps } from 'payload'
+
+import { AWAITING_VERIFICATION } from './verificationQueue'
 
 /**
  * Admin dashboard widgets. They run on the server, as signed-in users, and
  * Payload loads them by path, such as
  * `@promisetracker/plugin-core/widgets#AwaitingVerification`.
  */
-
-/** Claims waiting for a verdict, not archived (section 5.1). */
-export const AWAITING_VERIFICATION: Where = {
-  and: [
-    { 'verification.verdict': { equals: 'unverified' } },
-    { recordStatus: { not_equals: 'archived' } },
-  ],
-}
 
 /**
  * How many claims wait for verification, linking to the queue (section 5.1).

@@ -157,5 +157,10 @@ export * from './ratings'
 export * from './roles'
 export * from './slugs'
 export { Users } from './users'
-export { ensureVerificationQueue, VERIFICATION_QUEUE } from './verificationQueue'
-export { AWAITING_VERIFICATION } from './widgets'
+// Widgets are loaded by the admin through `@promisetracker/plugin-core/widgets`, never from
+// here: they import Payload's admin components, which the public site must not ship.
+export {
+  AWAITING_VERIFICATION,
+  ensureVerificationQueue,
+  VERIFICATION_QUEUE,
+} from './verificationQueue'
