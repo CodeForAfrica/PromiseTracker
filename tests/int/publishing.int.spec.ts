@@ -364,12 +364,14 @@ describe('publishing rules and the cascade', () => {
       overrideAccess: true,
     })
     expect(await publishedIn('actors', person.id)).toEqual([])
-    // A day passes: the first term now starts today, and no one has saved anything.
+    // A day passes: the first term now starts today, and no one has saved
+    // anything. It is stored later in the day, as the admin's date picker
+    // saves noon, and the whole day counts.
     const today = new Date().toISOString().slice(0, 10)
     await payload.db.updateOne({
       collection: 'actors',
       id: person.id,
-      data: { onRecordSince: `${today}T00:00:00.000Z` },
+      data: { onRecordSince: `${today}T23:59:00.000Z` },
     })
     expect(await publishedIn('actors', person.id)).toEqual([])
     // The worker runs it at 00:05 UTC. The test runs it as the system, at once.
@@ -389,6 +391,57 @@ describe('publishing rules and the cascade', () => {
     })
     await payload.delete({ collection: 'actors', id: person.id, overrideAccess: true })
     await payload.delete({ collection: 'offices', id: office.id, overrideAccess: true })
+  })
+
+  it('repairs, every day, a record a cascade missed', async () => {
+    const id = claims.roads ?? ''
+    // As if a held claim's cascade never ran: it is still marked live.
+    await setStatus('claims', id, 'hold')
+    await payload.db.updateOne({ collection: 'claims', id, data: { publishedIn: ['en'] } })
+    const job = await payload.jobs.queue({
+      task: 'dailyPublishing',
+      input: {},
+      overrideAccess: true,
+    })
+    await payload.jobs.runByID({ id: job.id, overrideAccess: true })
+    expect(await publishedIn('claims', id)).toEqual([])
+    await setStatus('claims', id, 'ready')
+  })
+
+  it('answers a save with the new status in the admin’s fields', async () => {
+    const editor = await payload.create({
+      collection: 'users',
+      data: {
+        email: `answer-${code}@example.org`,
+        password: 'a-test-password-only',
+        name: 'Answer test editor',
+        roles: ['editor'],
+      },
+      overrideAccess: true,
+    })
+    const user = { ...editor, collection: 'users' } as never
+    try {
+      const saved = await payload.update({
+        collection: 'claims',
+        id: claims.clinics ?? '',
+        data: { topic: null },
+        overrideAccess: false,
+        user,
+      })
+      expect(saved.liveIn).toBe('Nowhere yet')
+      expect(saved.whyNotPublic).toBe('It needs a topic.')
+      const fixed = await payload.update({
+        collection: 'claims',
+        id: claims.clinics ?? '',
+        data: { topic },
+        overrideAccess: false,
+        user,
+      })
+      expect(fixed.liveIn).toBe('en')
+      expect(fixed.whyNotPublic).toBeNull()
+    } finally {
+      await payload.delete({ collection: 'users', id: editor.id, overrideAccess: true })
+    }
   })
 
   it('works out every record again on request, as after a change to the languages', async () => {

@@ -364,7 +364,8 @@ export async function cascadePublishing(
           await killTransaction(req).catch(() => undefined)
           throw error
         }
-        // The batch is committed, so the site can read it. Refreshed now, not at the end.
+        // The batch is committed, so the site can read it. Refreshed now, not at
+        // the end. The refresh reads only `req.payload` and the transaction.
         if (tags.length > 0) await refreshTags(tags, req as PayloadRequest)
         if (!hasNextPage) break
       }
@@ -481,6 +482,8 @@ export const recomputePublishingTask = {
 const checkStatus =
   (defaultValue: RecordStatus): FieldHook =>
   ({ value, previousValue, req, operation }) => {
+    // A default of ready, as documents have, is a deliberate grant: anyone who
+    // may create the record may create it ready.
     if (operation === 'create' && value === defaultValue) return value
     if (req.user && value !== previousValue && typeof value === 'string') {
       if (!maySetRecordStatus(req.user, value as RecordStatus)) {
@@ -738,7 +741,13 @@ export async function recomputeAndCascade(
   }
 }
 
-/** Every day, people whose first term starts that day come onto the record (section 7.3). */
+/**
+ * Every day, every record is worked out again, parents first (section 8.2).
+ * People whose first term starts that day come onto the record, and their
+ * claims with them, by the same whole-day rule a save uses. It also repairs
+ * anything a cascade missed, such as one whose job could not be queued. At
+ * version 1's size, a few thousand records, it takes seconds.
+ */
 export const dailyPublishingTask = {
   slug: 'dailyPublishing',
   inputSchema: [],
@@ -746,23 +755,7 @@ export const dailyPublishingTask = {
   // Just after midnight UTC, when a term's first day begins.
   schedule: [{ cron: '5 0 * * *', queue: 'default' }],
   handler: async ({ req }: { req: PayloadRequest }) => {
-    const { payload } = req
-    const { docs } = await payload.find({
-      collection: 'actors',
-      where: {
-        and: [
-          { kind: { equals: 'person' } },
-          { recordStatus: { equals: 'ready' } },
-          { onRecordSince: { less_than_equal: new Date().toISOString() } },
-          { publishedIn: { exists: false } },
-        ],
-      },
-      depth: 0,
-      pagination: false,
-      // The system's own daily work.
-      overrideAccess: true,
-    })
-    for (const actor of docs) await recomputeAndCascade(req, 'actors', String(actor.id))
+    await recomputeAll(req.payload)
     return { output: {} }
   },
 }
@@ -827,10 +820,20 @@ const recomputeOnSave: CollectionAfterChangeHook = async ({
   if (operation === 'update' && !context[SYSTEM_SAVE]) {
     await notifyStatusChange(req, slug, doc, asRecord(previousDoc))
   }
+  // The admin's fields read the live record before this hook runs, so the
+  // save's answer would show the old status. They are set from the new one.
+  liveReads.get(req)?.delete(`${slug}:${String(doc.id)}`)
+  const problemText = problems.length > 0 ? problems.join('\n') : null
   return {
     ...doc,
     publishedIn: after,
-    publishingProblems: problems.length > 0 ? problems.join('\n') : null,
+    publishingProblems: problemText,
+    ...(req.user
+      ? {
+          liveIn: after.length > 0 ? after.join(', ') : 'Nowhere yet',
+          ...(RULES.get(slug)?.checks ? { whyNotPublic: problemText } : {}),
+        }
+      : {}),
   }
 }
 
