@@ -15,15 +15,18 @@ explains the rules behind each step.
 7. Claims and topics
 8. Importing from a spreadsheet
 9. Area outlines
-10. Site settings
-11. When changes appear on the site
+10. Documents
+11. Site settings
+12. Publishing: what is public, and when
 
 The admin's menu groups record types by what they are for:
 
 | Group          | Holds                                             |
 | -------------- | ------------------------------------------------- |
 | People         | Actors, Terms                                     |
+| Claims         | Claims, Topics, Rating scales, Claim types        |
 | Places         | Countries, Areas, Offices, Boundaries             |
+| Sources        | Documents, Source files                           |
 | Media library  | Images, such as actor photos                      |
 | Imports        | Imports, Saved mappings                           |
 | Administration | Users, and plugin settings once a plugin has some |
@@ -103,9 +106,8 @@ Only super-admins manage countries. Places > Countries > Create New.
 Once saved, the country cannot be changed, because its code is part of every address, such as
 `/en/ke`. The code and region show in the sidebar.
 
-**Published In,** in the sidebar, shows the languages the country is live in. The system works it
-out on every save: a country is live in a language when it is ready and has a name in that
-language. Clearing the name in one language takes the country off the site in that language.
+**Published in,** in the sidebar, shows the languages the country is live in. Section 12 explains
+how it is worked out, and what holding a country does to everything in it.
 
 **Root Area,** in the sidebar, is the area for the whole country. It is set for you when that area
 is added, by import or by hand.
@@ -283,9 +285,10 @@ as `/en/ke/p/build-200000-homes-a-year`. A renamed slug's old address leads to t
 clear the slug, it is made again from the title in the language you are editing, so clear it while
 editing in the language whose title should name the address.
 
-A claim starts on **hold**. Set it to **ready** to publish it. For now a claim is public when it is
-ready, has a title in the reader's language, and its actor and country are public. The checks that
-it is verified and has a source arrive in later releases.
+A claim starts on **hold**. Set it to **ready** to publish it. It is public only once it passes its
+checks: it has a **topic**, a **source** (a link to where it was said, or a source document), and a
+**deadline** if its rating needs one. Until then **Why it is not public**, in the sidebar, says what
+is missing. Once built-in verification arrives, a claim must also be verified.
 
 ### The key claim
 
@@ -403,7 +406,49 @@ country's electoral commission or OpenStreetMap, and many need crediting.
 The Map section also holds the area's centre, as latitude and longitude, and its bounds. All of it
 is optional.
 
-## 10. Site settings
+## 10. Documents
+
+Documents hold source material, such as a manifesto, a speech, a budget or a report. Only signed-in
+staff can see them. Their text is read in the background, ready for finding claims.
+
+Sources > Documents > Create New.
+
+1. Fill in the **Title** and **Country**, and if you know them the **Actors**, **Language**,
+   **Publisher** and **Date**. **Type** says whether claims come from it or it is evidence about
+   them.
+2. Choose how to **Bring it in**:
+   - **Uploading a file.** Under **File**, upload a PDF, Word, Excel, PowerPoint, OpenDocument,
+     RTF, EPUB, text, Markdown or HTML file, or choose one already uploaded. **Link** is optional,
+     and is only shown, never fetched.
+   - **Fetching a link.** Paste an `https://` link in **Link**. The server fetches it once and keeps
+     the file, so the document stays even if the page changes or goes.
+3. **Save.** The **Status** in the sidebar moves through **Waiting**, **Fetching**, **Fetched**,
+   **Reading** and **Read**. Reload the page to see it change. Once it says **Read**, the **Text**
+   holds the document's text, with every accent and character kept.
+
+The Documents list shows each document's status and message, so you can see which need attention.
+
+**A file is checked before it is kept.** Its first bytes, its type and its extension must agree:
+a picture renamed `.pdf` is refused, and so is any SVG file. The message says why.
+
+**A file is stored once.** Uploading a file that is already stored is refused with the name it is
+stored under: choose that one instead. Two links to the same file share one stored copy. The files
+are under Sources > Source files, where you can add a **Credit** for a file. Replacing a file keeps
+the one before it in the file's version history.
+
+**Links are fetched safely.** Only `https://` links are fetched, never addresses inside a private
+network, and each redirect is checked the same way. A file must arrive within 5 minutes.
+
+**When a step fails**, **Status** says **Failed** and **Message** says why. A link that is gone, or
+a file nothing can read, fails at once. A site that is down or asks us to wait is tried again
+later, up to 3 runs, and the message says when. When a document fails for good, whoever added it
+gets an email. Fix the file or link and save to start again. Changing only the title or other
+details does not start it again.
+
+PDF, Word and the other office formats need the Tika plugin, which comes later. Until then, those
+documents fail with a message saying no plugin reads them.
+
+## 11. Site settings
 
 Public site > Site settings. Editors and super-admins can change these.
 
@@ -416,13 +461,70 @@ Public site > Site settings. Editors and super-admins can change these.
 These are per language: switch language at the top right to edit another. Interface text in a
 language with no translation shows in English.
 
-## 11. When changes appear on the site
+## 12. Publishing: what is public, and when
+
+Every country, actor and claim has two things in the sidebar.
+
+- **Record Status** is what you want: **ready**, **hold** or **archived**. New records start on
+  hold.
+- **Published in** is what the system works out: the languages the record is live in.
+
+A record is live in a language when all of these hold:
+
+1. It is **ready**.
+2. It is **published in that language** (see "Saving and publishing" below).
+3. Its required text has a value in that language, such as a claim's title.
+4. Everything above it is live in that language. A country is above its areas, actors, documents
+   and claims. An actor is above their claims, and a claim's source document is above it.
+5. It passes its own checks: a claim needs a topic, a source, and a deadline if its rating needs
+   one. A person needs a term that has started.
+
+### Saving and publishing
+
+Countries, actors and claims are saved one language at a time. The language menu at the top right
+chooses which.
+
+- **Save Draft** keeps your changes without putting them on the site.
+- **Publish in English**, or the language you are in, makes this language's text live.
+- The arrow beside it has **Publish in all languages**, for when every translation is ready.
+
+A record published in English and saved only as a draft in French is live in English only. A reader
+on the French page sees a short "not available in this language" notice with a link to English.
+
+### Holding and releasing
+
+Setting a record to **hold** takes it off the site, and with it everything under it. Hold a country
+and all its actors and claims leave the site within seconds. Hold an actor and their claims leave
+with them.
+
+Setting it back to **ready** brings back only what was not held on its own. A claim you held
+yourself stays held when its country is released.
+
+Documents start **ready**, since they are never public themselves. Hold a document, such as a
+manifesto found to be fake, and every claim drawn from it leaves the site.
+
+### Archiving, the trash and emails
+
+**Archived** is for records that should stay in the system but not on the site, such as a
+withdrawn claim. Delete only what was added by mistake.
+
+**Delete** moves a record to the **trash**, where it is off the site and can be restored.
+Each record type's list has a trash view. Only a super-admin can delete a record for good, from the
+trash.
+
+Editors and super-admins get an email when a record is archived or restored, and when a country is
+put on hold.
+
+### When something is not public
+
+Look at **Why it is not public** in the sidebar of a claim, then at **Published in** on its actor
+and country. If a whole country seems missing, check its record status first.
+
+### When changes appear on the site
 
 A saved change appears on the site at once: the pages it affects are refreshed when the save
-completes. If a page still shows old content, reload it once.
+completes. If a page still shows old content, reload it once. Pages that name office holders also
+refresh every hour, so a term that starts or ends on its date shows within the hour.
 
-A country appears only when it is **ready** and published in the visitor's language. Its areas and
-offices appear wherever the country does, in each language they have a name in.
-
-Pages that name office holders also refresh every hour, so a term that starts or ends on its date
-shows within the hour without anyone saving it.
+A developer can work out every record's published status again with `pnpm publishing:recompute`,
+after changing the languages the site runs in.

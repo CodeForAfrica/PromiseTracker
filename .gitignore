@@ -16,6 +16,9 @@ media/
 /apps/site/imports/
 /boundaries/
 /apps/site/boundaries/
+# Source files behind documents, when files are stored locally.
+/document-files/
+/apps/site/document-files/
 
 # Tests
 coverage/

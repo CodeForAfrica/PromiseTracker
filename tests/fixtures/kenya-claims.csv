@@ -1,4 +1,4 @@
-Title,Title (fr),Slug,Actor,Topic,Claim type,Statement,Summary,Said on,Deadline,Deadline in words
-Build 5000 homes in Kibra,Construire 5 000 logements à Kibra,kibra-housing,Achieng Wekesa,Housing,promise,"We will build five thousand homes in Kibra.",A fictional pledge for the tests.,2022-07,2027,End of term
-Clean water for every ward,,,Achieng Wekesa,Health,,,,2022-08-15,2025-06,
-A clinic in every county,Une clinique dans chaque comté,,amani-otieno,health,,,,2022,,By the next election
+Title,Title (fr),Slug,Actor,Topic,Claim type,Statement,Summary,Said on,Deadline,Deadline in words,Source link
+Build 5000 homes in Kibra,Construire 5 000 logements à Kibra,kibra-housing,Achieng Wekesa,Housing,promise,"We will build five thousand homes in Kibra.",A fictional pledge for the tests.,2022-07,2027,End of term,https://example.org/manifesto#housing
+Clean water for every ward,,,Achieng Wekesa,Health,,,,2022-08-15,2025-06,,https://example.org/speech-2022-08-15
+A clinic in every county,Une clinique dans chaque comté,,amani-otieno,health,,,,2022,,By the next election,https://example.org/manifesto#health

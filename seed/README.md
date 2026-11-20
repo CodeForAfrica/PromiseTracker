@@ -24,6 +24,10 @@ each with a title, summary, topic and deadline. They name 12 topics shared by ev
 as Health and Affordable housing, in `seed/data/topics.csv`. The statements, the exact words, are
 left empty, since the seed cannot vouch for a quote.
 
+Each claim links its source: the news report of the pledge, or the manifesto. A claim needs a
+source to be public (section 8.1 of the specification), so a claim added here needs one too. Every
+link was opened and checked to report the pledge before it was added.
+
 Kenya has past holders, so the site shows archived records, successors and "Past administrations".
 Senegal is French first, so it shows the site in French. Actors the seed creates are marked ready,
 so they appear on the site at once.

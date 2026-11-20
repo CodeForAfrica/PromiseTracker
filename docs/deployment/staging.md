@@ -108,6 +108,7 @@ dokku config:set --no-restart promisetracker-v3 \
   PAYLOAD_SECRET="$(openssl rand -hex 32)" \
   PT_NOINDEX=true \
   PT_LOCALES=en,fr \
+  PT_PUBLIC_URL=https://promisetracker-v3.dev.codeforafrica.org \
   PT_WEB_URL=https://promisetracker-v3.dev.codeforafrica.org \
   S3_BUCKET=promisetracker \
   S3_REGION=us-east-1 \
@@ -123,6 +124,7 @@ dokku config:set --no-restart promisetracker-v3 \
 ```
 
 - `PT_NOINDEX=true` keeps staging out of search engines.
+- `PT_PUBLIC_URL` makes links in emails absolute, such as a failed document's or a password reset.
 - `PT_WEB_URL` is where the worker asks the web process to refresh cached pages. The request is
   signed with `PAYLOAD_SECRET`, so the public address is safe to use.
 - `PT_ADMIN_EMAIL` and `PT_ADMIN_PASSWORD` create the first super-admin at the first start (D48).

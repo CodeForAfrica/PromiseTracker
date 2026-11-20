@@ -24,7 +24,7 @@ import {
   slugField,
   slugFromName,
 } from './places'
-import { withPublishing } from './publishing'
+import { recomputeAndCascade, withPublishing, withTrash } from './publishing'
 import { SLUG_PATTERN } from './slugs'
 import { termTitle } from './termTitle'
 
@@ -243,6 +243,31 @@ const keepActorWithTerms: CollectionBeforeDeleteHook = async ({ id, req }) => {
   }
 }
 
+/** The start of an actor's earliest term, or null. */
+async function firstTermStart(req: PayloadRequest, actorId: string): Promise<string | null> {
+  const { docs } = await req.payload.find({
+    collection: 'terms',
+    where: { actor: { equals: actorId } },
+    sort: 'startsOn',
+    limit: 1,
+    depth: 0,
+    // Reads the actor's earliest term, whoever saved it.
+    overrideAccess: true,
+    req,
+  })
+  return docs[0]?.startsOn ?? null
+}
+
+/**
+ * Every save of an actor works `onRecordSince` out from their terms. With
+ * drafts, Payload builds a save from the latest version, which does not have
+ * the date the terms' hook wrote, so it would otherwise be lost.
+ */
+const keepOnRecordSince: CollectionBeforeChangeHook = async ({ data, originalDoc, req }) => {
+  const id = idOf(originalDoc?.id)
+  return id ? { ...data, onRecordSince: await firstTermStart(req, id) } : data
+}
+
 /** People, parties and institutions (section 7.3). */
 export const Actors: CollectionConfig = withPublishing(
   {
@@ -261,7 +286,7 @@ export const Actors: CollectionConfig = withPublishing(
     indexes: [{ fields: ['country', 'slug'], unique: true }],
     hooks: {
       beforeValidate: [slugFromName],
-      beforeChange: [checkActorSlug, keepFormerSlug, checkKeyClaim],
+      beforeChange: [checkActorSlug, keepFormerSlug, checkKeyClaim, keepOnRecordSince],
       beforeDelete: [keepActorWithTerms],
       afterChange: [refreshOnActorChange, retitleOnRename('actor')],
       afterDelete: [refreshOnDelete],
@@ -386,6 +411,16 @@ export const Actors: CollectionConfig = withPublishing(
     ],
   },
   [],
+  {
+    parents: [{ field: 'country', collection: 'countries' }],
+    // A person is public once their first term has started (sections 7.3 and
+    // 8.1). The daily job works this out again as the dates pass.
+    checks: (actor) =>
+      actor.kind === 'person' &&
+      (typeof actor.onRecordSince !== 'string' || dayOf(actor.onRecordSince) > dayOf(new Date()))
+        ? ['No term has started yet. A person appears once their first term starts.']
+        : [],
+  },
 )
 
 /**
@@ -572,6 +607,8 @@ async function updateOnRecordSince(req: PayloadRequest, actorId: string): Promis
     req,
     returning: false,
   })
+  // Whether the person is on the record may have changed, and with it their claims.
+  await recomputeAndCascade(req, 'actors', actorId)
 }
 
 const afterTermChange: CollectionAfterChangeHook = async ({ doc, previousDoc, req }) => {
@@ -589,7 +626,7 @@ const afterTermDelete: CollectionAfterDeleteHook = async ({ doc, req }) => {
 }
 
 /** An actor's time in a seat (section 7.3). */
-export const Terms: CollectionConfig = {
+export const Terms: CollectionConfig = withTrash({
   slug: 'terms',
   admin: {
     group: ADMIN_GROUPS.people,
@@ -699,4 +736,4 @@ export const Terms: CollectionConfig = {
       access: { create: () => false, update: () => false },
     },
   ],
-}
+})

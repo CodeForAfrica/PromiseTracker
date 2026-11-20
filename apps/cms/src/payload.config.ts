@@ -8,13 +8,15 @@ import {
   ensureDefaultRatings,
   installAfterCommit,
   privateHistory,
+  setFileReader,
   setImporters,
+  setPipelineAdapters,
   setTagRefresher,
 } from '@promisetracker/plugin-core'
 import { buildConfig } from 'payload'
 import { createHttpRefresher } from './cache'
 import { emailAdapter } from './email'
-import { databaseUrl } from './env'
+import { databaseUrl, publicUrl } from './env'
 import { assertExtensions } from './extensions'
 import { ensureFirstAdmin } from './firstAdmin'
 import { kernel } from './kernel'
@@ -22,7 +24,7 @@ import { defaultLocale, registeredLocales } from './locales'
 import { loggerConfig } from './logger'
 import { migrations } from './migrations'
 import { reportError } from './sentry'
-import { storageAdapters } from './storage'
+import { s3FileReader, storageAdapters } from './storage'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -34,8 +36,23 @@ const email = emailAdapter()
 setTagRefresher(createHttpRefresher())
 // Imports read files with every enabled plugin's readers (section 4.1).
 setImporters(kernel.adapters.structuredImporter)
+// Documents come in and are read with every enabled plugin's connectors and
+// extractors, each given its own plugin's settings (section 4.2).
+const ownerOf = (adapter: object): string =>
+  kernel.manifests.find((m) =>
+    Object.values(m.provides ?? {}).some((list) => (list as readonly object[]).includes(adapter)),
+  )?.slug ?? 'core'
+setPipelineAdapters({
+  connectors: kernel.adapters.sourceConnector,
+  extractors: kernel.adapters.contentExtractor,
+  context: (payload, adapter, signal) => kernel.context(payload, ownerOf(adapter), signal),
+})
+const s3Reader = s3FileReader()
+if (s3Reader) setFileReader(s3Reader)
 
 const inUse = new Set(kernel.locales.map((l) => l.code))
+// Makes links in emails, such as a failed document's or a password reset, absolute.
+const serverURL = publicUrl()
 
 export default buildConfig({
   admin: {
@@ -57,6 +74,7 @@ export default buildConfig({
   }),
   editor: lexicalEditor(),
   ...(email ? { email } : {}),
+  ...(serverURL ? { serverURL } : {}),
   localization: {
     // Every registered language is in the schema, so PT_LOCALES never needs a
     // migration. The admin shows only the ones PT_LOCALES switches on (D45).
@@ -82,6 +100,9 @@ export default buildConfig({
     // processing token and lease before running it, so no two workers run the
     // same job.
     autoRun: role === 'worker' ? [{ cron: '* * * * *', allQueues: true }] : [],
+    // Finished jobs stay until the hourly cleanupJobs, so the admin can show
+    // what ran. Failed ones stay 7 days (sections 9.8 and 13.9).
+    deleteJobOnComplete: false,
   },
   logger: loggerConfig(),
   // Start-up checks that need a running Payload (section 4.4). Payload applies

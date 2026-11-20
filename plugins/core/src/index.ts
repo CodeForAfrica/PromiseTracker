@@ -10,11 +10,19 @@ import {
   payloadSearch,
   plaintextExtractor,
   uploadConnector,
+  urlConnector,
 } from './adapters'
 import { ADMIN_GROUPS } from './adminGroups'
 import { Boundaries } from './boundaries'
 import { Claims, Topics } from './claims'
 import { Countries } from './countries'
+import { DocumentFiles, Documents } from './documents/collections'
+import {
+  cleanupJobsTask,
+  extractTextTask,
+  fetchDocumentTask,
+  processDocumentWorkflow,
+} from './documents/pipeline'
 import { ImportMappings, Imports, runImportTask } from './imports/collections'
 import { csvImporter, xlsxImporter } from './imports/readers'
 import { Areas, Offices } from './places'
@@ -52,6 +60,8 @@ export const corePlugin = definePromiseTrackerPlugin({
     Areas,
     Offices,
     Boundaries,
+    Documents,
+    DocumentFiles,
     Claims,
     Topics,
     RatingScales,
@@ -61,10 +71,19 @@ export const corePlugin = definePromiseTrackerPlugin({
     ImportMappings,
     Users,
   ],
-  tasks: [runImportTask as never],
+  tasks: [
+    runImportTask as never,
+    fetchDocumentTask as never,
+    extractTextTask as never,
+    cleanupJobsTask as never,
+    cascadePublishingTask as never,
+    recomputePublishingTask as never,
+    dailyPublishingTask as never,
+  ],
+  workflows: [processDocumentWorkflow as never],
   provides: {
     verification: [nativeVerification],
-    sourceConnector: [uploadConnector],
+    sourceConnector: [uploadConnector, urlConnector],
     contentExtractor: [plaintextExtractor],
     structuredImporter: [csvImporter, xlsxImporter],
     search: [payloadSearch],
@@ -97,6 +116,13 @@ export * from './contrast'
 export { Countries } from './countries'
 export * from './countryList'
 export * from './defaultRatings'
+export { DocumentFiles, Documents } from './documents/collections'
+export * from './documents/connectors'
+export * from './documents/download'
+export * from './documents/fileType'
+export * from './documents/pipeline'
+export * from './documents/plaintext'
+export * from './documents/ssrf'
 export { privateHistory } from './history'
 export { setImporters } from './imports/collections'
 export type { ImportResult, RowError } from './imports/engine'
@@ -108,6 +134,9 @@ export {
   readCsv,
   xlsxImporter,
 } from './imports/readers'
+
+import { cascadePublishingTask, dailyPublishingTask, recomputePublishingTask } from './publishing'
+
 export type { ImportTarget } from './imports/targets'
 export { guessMapping, IMPORT_TARGETS, mappingKeys, planRow } from './imports/targets'
 export * from './locales'

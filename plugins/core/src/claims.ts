@@ -5,6 +5,7 @@ import type {
   CollectionBeforeDeleteHook,
   CollectionBeforeValidateHook,
   CollectionConfig,
+  Payload,
   PayloadRequest,
   Where,
 } from 'payload'
@@ -15,7 +16,8 @@ import { ADMIN_GROUPS } from './adminGroups'
 import { refreshTags } from './cache'
 import { isHexColour } from './contrast'
 import { countryCode, countryField, formerSlugsField, idOf, keepFormerSlug } from './places'
-import { withPublishing } from './publishing'
+import type { PublishingCheck } from './publishing'
+import { withPublishing, withTrash } from './publishing'
 import { setClaimTypeUsage, setRatingUsage } from './ratings'
 import { SLUG_PATTERN, slugify } from './slugs'
 
@@ -254,6 +256,55 @@ const checkClaim: CollectionBeforeChangeHook = async ({ data, originalDoc, req, 
   return next
 }
 
+/**
+ * The checks a claim must pass to be published (section 8.1). The verdict
+ * arrives with built-in verification (#650), source documents with #652 and
+ * evidence with claim updates (#651). Each is checked once its field exists.
+ */
+const claimChecks: PublishingCheck = async (claim, { payload, req }) => {
+  const problems: string[] = []
+  if ('verdict' in claim && claim.verdict !== 'verified') {
+    problems.push('It is not verified yet.')
+  }
+  if (!idOf(claim.topic)) problems.push('It needs a topic.')
+  const hasSource =
+    (typeof claim.sourceUrl === 'string' && claim.sourceUrl.trim() !== '') ||
+    Boolean(idOf(claim.source)) ||
+    (Array.isArray(claim.evidence) && claim.evidence.length > 0)
+  if (!hasSource) problems.push('It needs a source: a link to where it was said, or a document.')
+  if (!claim.deadline && (await ratingNeedsDeadline(payload, req, claim))) {
+    problems.push('Its rating needs a deadline.')
+  }
+  return problems
+}
+
+/** Whether the claim's current rating, on its type's scale, needs a deadline. */
+async function ratingNeedsDeadline(
+  payload: Payload,
+  req: Partial<PayloadRequest>,
+  claim: Record<string, unknown>,
+): Promise<boolean> {
+  const typeId = idOf(claim.type)
+  if (!typeId || typeof claim.currentRating !== 'string') return false
+  // Reads the claim's type and scale, to check its rating, whoever saved it.
+  const type = await payload.find({
+    collection: 'claim-types',
+    where: { id: { equals: typeId } },
+    depth: 1,
+    limit: 1,
+    overrideAccess: true,
+    req,
+  })
+  const scale: unknown = type.docs[0]?.ratingScale
+  const ratings: unknown =
+    scale && typeof scale === 'object' ? Reflect.get(scale, 'ratings') : undefined
+  if (!Array.isArray(ratings)) return false
+  const rating: unknown = ratings.find(
+    (r: unknown) => r && typeof r === 'object' && Reflect.get(r, 'slug') === claim.currentRating,
+  )
+  return Boolean(rating && typeof rating === 'object' && Reflect.get(rating, 'needsDeadline'))
+}
+
 /** A change to a claim refreshes its country's claim pages, and the topic pages (section 17). */
 const refreshClaims = async (req: PayloadRequest, ...countries: unknown[]) => {
   const codes = new Set<string>()
@@ -378,6 +429,14 @@ export const Claims: CollectionConfig = withPublishing(
         ],
       },
       {
+        name: 'source',
+        label: 'Source document',
+        type: 'relationship',
+        relationTo: 'documents',
+        index: true,
+        admin: { description: 'The manifesto, speech or report the claim comes from.' },
+      },
+      {
         type: 'row',
         fields: [
           {
@@ -487,6 +546,15 @@ export const Claims: CollectionConfig = withPublishing(
     ],
   },
   ['title'],
+  {
+    parents: [
+      { field: 'country', collection: 'countries' },
+      { field: 'actor', collection: 'actors' },
+      // Holding a document hides the claims drawn from it (section 8.1).
+      { field: 'source', collection: 'documents', optional: true },
+    ],
+    checks: claimChecks,
+  },
 )
 
 /** A topic has at most one level above it (section 7.7). */
@@ -557,7 +625,7 @@ const refreshTopicsOnDelete: CollectionAfterDeleteHook = async ({ doc, req }) =>
 }
 
 /** Subjects shared by every country, such as Health, one level deep (section 7.7). */
-export const Topics: CollectionConfig = {
+export const Topics: CollectionConfig = withTrash({
   slug: 'topics',
   admin: {
     group: ADMIN_GROUPS.claims,
@@ -616,7 +684,7 @@ export const Topics: CollectionConfig = {
       },
     },
   ],
-}
+})
 
 // Claims carry ratings by slug, on their type's scale. This tells the rating
 // scales which claims carry a rating, so one in use is not deleted.

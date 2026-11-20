@@ -235,8 +235,12 @@ describe('countries and languages', () => {
 
     it('refreshes the country’s cached pages on every change', () => {
       expect(refreshed.length).toBeGreaterThanOrEqual(3)
+      // A save refreshes the country's own pages. The cascade after a status
+      // change refreshes every page of the country.
       for (const tags of refreshed) {
-        expect(tags).toEqual([expect.stringMatching(/^country:[a-z]{2}$/), 'countries'])
+        expect(tags).toEqual(
+          expect.arrayContaining([expect.stringMatching(/^country:[a-z]{2}$/), 'countries']),
+        )
       }
     })
   })
