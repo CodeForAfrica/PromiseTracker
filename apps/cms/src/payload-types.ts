@@ -253,6 +253,9 @@ export interface Config {
       fetchDocument: TaskFetchDocument;
       extractText: TaskExtractText;
       cleanupJobs: TaskCleanupJobs;
+      cascadePublishing: TaskCascadePublishing;
+      recomputePublishing: TaskRecomputePublishing;
+      dailyPublishing: TaskDailyPublishing;
       inline: {
         input: unknown;
         output: unknown;
@@ -332,13 +335,16 @@ export interface Actor {
     totalDocs?: number;
   };
   /**
-   * Ready makes it public in each language that has its required fields.
+   * Ready makes it public in each language it is published in.
    */
   recordStatus: 'ready' | 'hold' | 'archived';
+  publishedIn?: string[] | null;
   /**
    * Worked out on save. The languages this record is live in.
    */
-  publishedIn?: string[] | null;
+  liveIn?: string | null;
+  publishingProblems?: string | null;
+  whyNotPublic?: string | null;
   createdBy?: {
     relationTo: 'users';
     value: string | User;
@@ -349,6 +355,8 @@ export interface Actor {
   } | null;
   updatedAt: string;
   createdAt: string;
+  deletedAt?: string | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -487,6 +495,10 @@ export interface Claim {
    */
   deadlineText?: string | null;
   /**
+   * The manifesto, speech or report the claim comes from.
+   */
+  source?: (string | null) | Document;
+  /**
    * Shown as a link. The server never opens it.
    */
   sourceUrl?: string | null;
@@ -516,13 +528,16 @@ export interface Claim {
   confidence?: number | null;
   enteredBy?: (string | null) | User;
   /**
-   * Ready makes it public in each language that has its required fields.
+   * Ready makes it public in each language it is published in.
    */
   recordStatus: 'ready' | 'hold' | 'archived';
+  publishedIn?: string[] | null;
   /**
    * Worked out on save. The languages this record is live in.
    */
-  publishedIn?: string[] | null;
+  liveIn?: string | null;
+  publishingProblems?: string | null;
+  whyNotPublic?: string | null;
   createdBy?: {
     relationTo: 'users';
     value: string | User;
@@ -533,6 +548,8 @@ export interface Claim {
   } | null;
   updatedAt: string;
   createdAt: string;
+  deletedAt?: string | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -580,6 +597,7 @@ export interface Term {
   } | null;
   updatedAt: string;
   createdAt: string;
+  deletedAt?: string | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -622,6 +640,7 @@ export interface Office {
   } | null;
   updatedAt: string;
   createdAt: string;
+  deletedAt?: string | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -710,13 +729,14 @@ export interface Country {
     totalDocs?: number;
   };
   /**
-   * Ready makes it public in each language that has its required fields.
+   * Ready makes it public in each language it is published in.
    */
   recordStatus: 'ready' | 'hold' | 'archived';
+  publishedIn?: string[] | null;
   /**
    * Worked out on save. The languages this record is live in.
    */
-  publishedIn?: string[] | null;
+  liveIn?: string | null;
   createdBy?: {
     relationTo: 'users';
     value: string | User;
@@ -727,6 +747,8 @@ export interface Country {
   } | null;
   updatedAt: string;
   createdAt: string;
+  deletedAt?: string | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -781,6 +803,11 @@ export interface Area {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
+  publishedIn?: string[] | null;
+  /**
+   * Worked out on save. The languages this record is live in.
+   */
+  liveIn?: string | null;
   createdBy?: {
     relationTo: 'users';
     value: string | User;
@@ -791,6 +818,7 @@ export interface Area {
   } | null;
   updatedAt: string;
   createdAt: string;
+  deletedAt?: string | null;
   _h_slugPath?: string | null;
   _h_titlePath?: string | null;
 }
@@ -872,6 +900,7 @@ export interface Topic {
   } | null;
   updatedAt: string;
   createdAt: string;
+  deletedAt?: string | null;
   _h_slugPath?: string | null;
   _h_titlePath?: string | null;
 }
@@ -1035,6 +1064,15 @@ export interface Document {
    * Read from the file. Every character is kept.
    */
   text?: string | null;
+  /**
+   * Ready makes it public in each language it is published in.
+   */
+  recordStatus: 'ready' | 'hold' | 'archived';
+  publishedIn?: string[] | null;
+  /**
+   * Worked out on save. The languages this record is live in.
+   */
+  liveIn?: string | null;
   createdBy?: {
     relationTo: 'users';
     value: string | User;
@@ -1045,6 +1083,7 @@ export interface Document {
   } | null;
   updatedAt: string;
   createdAt: string;
+  deletedAt?: string | null;
 }
 /**
  * Files behind documents. Each is stored once, and only staff can open them.
@@ -1384,7 +1423,15 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'runImport' | 'fetchDocument' | 'extractText' | 'cleanupJobs';
+        taskSlug:
+          | 'inline'
+          | 'runImport'
+          | 'fetchDocument'
+          | 'extractText'
+          | 'cleanupJobs'
+          | 'cascadePublishing'
+          | 'recomputePublishing'
+          | 'dailyPublishing';
         taskID: string;
         input:
           | {
@@ -1415,14 +1462,36 @@ export interface PayloadJob {
           | boolean
           | null;
         parent?: {
-          taskSlug?: ('inline' | 'runImport' | 'fetchDocument' | 'extractText' | 'cleanupJobs') | null;
+          taskSlug?:
+            | (
+                | 'inline'
+                | 'runImport'
+                | 'fetchDocument'
+                | 'extractText'
+                | 'cleanupJobs'
+                | 'cascadePublishing'
+                | 'recomputePublishing'
+                | 'dailyPublishing'
+              )
+            | null;
           taskID?: string | null;
         };
         id?: string | null;
       }[]
     | null;
   workflowSlug?: 'processDocument' | null;
-  taskSlug?: ('inline' | 'runImport' | 'fetchDocument' | 'extractText' | 'cleanupJobs') | null;
+  taskSlug?:
+    | (
+        | 'inline'
+        | 'runImport'
+        | 'fetchDocument'
+        | 'extractText'
+        | 'cleanupJobs'
+        | 'cascadePublishing'
+        | 'recomputePublishing'
+        | 'dailyPublishing'
+      )
+    | null;
   queue?: string | null;
   waitUntil?: string | null;
   processingUntil?: string | null;
@@ -1600,10 +1669,15 @@ export interface ActorsSelect<T extends boolean = true> {
   partyTerms?: T;
   recordStatus?: T;
   publishedIn?: T;
+  liveIn?: T;
+  publishingProblems?: T;
+  whyNotPublic?: T;
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;
   createdAt?: T;
+  deletedAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1626,6 +1700,7 @@ export interface TermsSelect<T extends boolean = true> {
   updatedBy?: T;
   updatedAt?: T;
   createdAt?: T;
+  deletedAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1645,10 +1720,13 @@ export interface CountriesSelect<T extends boolean = true> {
   actors?: T;
   recordStatus?: T;
   publishedIn?: T;
+  liveIn?: T;
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;
   createdAt?: T;
+  deletedAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1673,10 +1751,13 @@ export interface AreasSelect<T extends boolean = true> {
       };
   children?: T;
   terms?: T;
+  publishedIn?: T;
+  liveIn?: T;
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;
   createdAt?: T;
+  deletedAt?: T;
   _h_slugPath?: T;
   _h_titlePath?: T;
 }
@@ -1698,6 +1779,7 @@ export interface OfficesSelect<T extends boolean = true> {
   updatedBy?: T;
   updatedAt?: T;
   createdAt?: T;
+  deletedAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1759,10 +1841,14 @@ export interface DocumentsSelect<T extends boolean = true> {
   detectedType?: T;
   pageCount?: T;
   text?: T;
+  recordStatus?: T;
+  publishedIn?: T;
+  liveIn?: T;
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;
   createdAt?: T;
+  deletedAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1821,6 +1907,7 @@ export interface ClaimsSelect<T extends boolean = true> {
   saidOn?: T;
   deadline?: T;
   deadlineText?: T;
+  source?: T;
   sourceUrl?: T;
   sourceLocator?: T;
   image?: T;
@@ -1837,10 +1924,15 @@ export interface ClaimsSelect<T extends boolean = true> {
   enteredBy?: T;
   recordStatus?: T;
   publishedIn?: T;
+  liveIn?: T;
+  publishingProblems?: T;
+  whyNotPublic?: T;
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;
   createdAt?: T;
+  deletedAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1856,6 +1948,7 @@ export interface TopicsSelect<T extends boolean = true> {
   updatedBy?: T;
   updatedAt?: T;
   createdAt?: T;
+  deletedAt?: T;
   _h_slugPath?: T;
   _h_titlePath?: T;
 }
@@ -2544,6 +2637,38 @@ export interface TaskExtractText {
  * via the `definition` "TaskCleanupJobs".
  */
 export interface TaskCleanupJobs {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskCascadePublishing".
+ */
+export interface TaskCascadePublishing {
+  input: {
+    collection: string;
+    id: string;
+  };
+  output: {
+    recomputed?: number | null;
+    changed?: number | null;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskRecomputePublishing".
+ */
+export interface TaskRecomputePublishing {
+  input: {
+    collections?: string[] | null;
+  };
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskDailyPublishing".
+ */
+export interface TaskDailyPublishing {
   input?: unknown;
   output?: unknown;
 }

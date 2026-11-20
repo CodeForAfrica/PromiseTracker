@@ -107,6 +107,8 @@ export type PublishingRules = {
   status?: boolean
   /** Payload's drafts, so each language is published on its own (section 8.1). */
   drafts?: boolean
+  /** The status a new record starts with. Hold, unless the record type is never public itself. */
+  defaultStatus?: RecordStatus
 }
 
 /** The parents table: every record type with publishing rules, and what sits above it. */
@@ -432,28 +434,35 @@ export const recomputePublishingTask = {
   },
 }
 
-/** Refuses a status the user may not set. A contributor may only hold (section 13.2). */
-const checkStatus: FieldHook = ({ value, previousValue, req }) => {
-  if (req.user && value !== previousValue && typeof value === 'string') {
-    if (!maySetRecordStatus(req.user, value as RecordStatus)) {
-      throw new APIError(`You cannot set this record to ${value}.`, 403)
+/**
+ * Refuses a status the user may not set. A contributor may only hold (section
+ * 13.2). A new record keeping its type's default is no choice of theirs, so a
+ * contributor may upload a document, which starts ready.
+ */
+const checkStatus =
+  (defaultValue: RecordStatus): FieldHook =>
+  ({ value, previousValue, req, operation }) => {
+    if (operation === 'create' && value === defaultValue) return value
+    if (req.user && value !== previousValue && typeof value === 'string') {
+      if (!maySetRecordStatus(req.user, value as RecordStatus)) {
+        throw new APIError(`You cannot set this record to ${value}.`, 403)
+      }
     }
+    return value
   }
-  return value
-}
 
-const statusField = (): Field => ({
+const statusField = (defaultValue: RecordStatus): Field => ({
   name: 'recordStatus',
   type: 'select',
   required: true,
-  defaultValue: 'hold',
+  defaultValue,
   options: RECORD_STATUSES.map((value) => ({ label: value, value })),
   index: true,
   admin: {
     position: 'sidebar',
     description: 'Ready makes it public in each language it is published in.',
   },
-  hooks: { beforeChange: [checkStatus] },
+  hooks: { beforeChange: [checkStatus(defaultValue)] },
 })
 
 /** The live record's published status, read once per request for the admin's two fields. */
@@ -829,7 +838,7 @@ export function withPublishing(
     ...(versions === undefined ? {} : { versions }),
     fields: [
       ...collection.fields,
-      ...(full.status === false ? [] : [statusField()]),
+      ...(full.status === false ? [] : [statusField(full.defaultStatus ?? 'hold')]),
       ...computedFields(collection.slug, Boolean(full.checks)),
     ],
     hooks: {

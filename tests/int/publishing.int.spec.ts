@@ -1,6 +1,6 @@
 import { createLocalTransport, getPayload, handleV1 } from '@promisetracker/cms'
 import type { CountryCode } from '@promisetracker/plugin-core'
-import { recomputeAll, setTagRefresher } from '@promisetracker/plugin-core'
+import { PIPELINE_SAVE, recomputeAll, setTagRefresher } from '@promisetracker/plugin-core'
 import { createSdk } from '@promisetracker/sdk'
 import type { Payload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -194,6 +194,54 @@ describe('publishing rules and the cascade', () => {
     expect(Date.now() - started).toBeLessThan(5000)
     await setStatus('actors', actor, 'ready')
     expect(await listed()).toEqual(['clinics', 'roads', 'schools'])
+  })
+
+  it('takes a document’s claims off the API within seconds when the document is held', async () => {
+    // Saved as the pipeline does, so the link is not fetched in the test.
+    const document = await payload.create({
+      collection: 'documents',
+      data: {
+        title: 'A fictional manifesto',
+        country,
+        connector: 'url',
+        sourceUrl: 'https://example.org/manifesto.pdf',
+        recordStatus: 'ready',
+      },
+      overrideAccess: true,
+      context: { [PIPELINE_SAVE]: true },
+    })
+    expect(document.publishedIn).toEqual(['en', 'fr', 'pt', 'ar', 'sw'])
+    await payload.update({
+      collection: 'claims',
+      id: claims.roads ?? '',
+      data: { source: document.id },
+      overrideAccess: true,
+    })
+    const started = Date.now()
+    await payload.update({
+      collection: 'documents',
+      id: document.id,
+      data: { recordStatus: 'hold' },
+      overrideAccess: true,
+      context: { [PIPELINE_SAVE]: true },
+    })
+    expect(await listed()).toEqual(['clinics', 'schools'])
+    expect(Date.now() - started).toBeLessThan(5000)
+    await payload.update({
+      collection: 'documents',
+      id: document.id,
+      data: { recordStatus: 'ready' },
+      overrideAccess: true,
+      context: { [PIPELINE_SAVE]: true },
+    })
+    expect(await listed()).toEqual(['clinics', 'roads', 'schools'])
+    await payload.update({
+      collection: 'claims',
+      id: claims.roads ?? '',
+      data: { source: null },
+      overrideAccess: true,
+    })
+    await payload.delete({ collection: 'documents', id: document.id, overrideAccess: true })
   })
 
   it('moves a deleted record to the trash, where it is live nowhere and can be restored', async () => {

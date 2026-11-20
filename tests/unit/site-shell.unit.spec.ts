@@ -246,6 +246,7 @@ describe('the parents table (section 8.1)', () => {
       childrenOf('countries')
         .map((c) => c.collection)
         .sort(),
-    ).toEqual(['actors', 'areas', 'claims'])
+    ).toEqual(['actors', 'areas', 'claims', 'documents'])
+    expect(childrenOf('documents')).toEqual([{ collection: 'claims', field: 'source' }])
   })
 })

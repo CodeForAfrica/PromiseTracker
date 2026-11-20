@@ -13,6 +13,7 @@ import { ADMIN_GROUPS } from '../adminGroups'
 import { afterCommit } from '../afterCommit'
 import { REGISTERED_LOCALES } from '../locales'
 import { idOf } from '../places'
+import { withPublishing } from '../publishing'
 import { FILES } from './connectors'
 import { checkFileType } from './fileType'
 import { DOCUMENTS, PIPELINE_SAVE, PROCESSING_STATES, queueProcessing } from './pipeline'
@@ -207,156 +208,169 @@ const STATE_LABELS: Record<(typeof PROCESSING_STATES)[number], string> = {
 }
 
 /** Source material: a manifesto, a speech, a budget, a report (section 7.8). */
-export const Documents: CollectionConfig = {
-  slug: DOCUMENTS,
-  labels: { singular: 'Document', plural: 'Documents' },
-  admin: {
-    group: ADMIN_GROUPS.sources,
-    useAsTitle: 'title',
-    defaultColumns: ['title', 'country', 'status', 'statusMessage', 'lastAttemptAt'],
-    listSearchableFields: ['title', 'publisher'],
-    description:
-      'Upload a file or paste a link. The text is read in the background, and the status shows each step.',
+export const Documents: CollectionConfig = withPublishing(
+  {
+    slug: DOCUMENTS,
+    labels: { singular: 'Document', plural: 'Documents' },
+    admin: {
+      group: ADMIN_GROUPS.sources,
+      useAsTitle: 'title',
+      defaultColumns: ['title', 'country', 'status', 'statusMessage', 'lastAttemptAt'],
+      listSearchableFields: ['title', 'publisher'],
+      description:
+        'Upload a file or paste a link. The text is read in the background, and the status shows each step.',
+    },
+    access: {
+      read: signedIn,
+      create: can.editRecords,
+      update: can.editRecords,
+      delete: can.deleteRecords,
+    },
+    hooks: { beforeChange: [startProcessing], afterChange: [queueJob] },
+    // The work queue is read by status, oldest attempt first (section 7.11).
+    indexes: [{ fields: ['status', 'lastAttemptAt'] }],
+    fields: [
+      { name: 'title', type: 'text', required: true },
+      {
+        type: 'row',
+        fields: [
+          {
+            name: 'country',
+            type: 'relationship',
+            relationTo: 'countries',
+            required: true,
+            index: true,
+          },
+          {
+            name: 'type',
+            type: 'select',
+            defaultValue: 'claims',
+            options: [
+              { label: 'A source of claims', value: 'claims' },
+              { label: 'Evidence', value: 'evidence' },
+            ],
+            admin: {
+              description: 'A manifesto or speech claims come from, or evidence about them.',
+            },
+          },
+        ],
+      },
+      { name: 'actors', type: 'relationship', relationTo: 'actors', hasMany: true },
+      {
+        type: 'row',
+        fields: [
+          {
+            name: 'language',
+            type: 'select',
+            options: REGISTERED_LOCALES.map((l) => ({ label: l.label, value: l.code })),
+          },
+          { name: 'publisher', type: 'text' },
+          { name: 'date', type: 'date', admin: { date: { pickerAppearance: 'dayOnly' } } },
+        ],
+      },
+      {
+        name: 'connector',
+        label: 'Bring it in by',
+        type: 'radio',
+        required: true,
+        defaultValue: 'upload',
+        options: [
+          { label: 'Uploading a file', value: 'upload' },
+          { label: 'Fetching a link', value: 'url' },
+        ],
+      },
+      {
+        name: 'file',
+        type: 'upload',
+        relationTo: FILES as never,
+        admin: {
+          condition: (data) => data?.connector !== 'url' || Boolean(data?.file),
+          description:
+            'PDF, Word, Excel, PowerPoint, OpenDocument, RTF, EPUB, text, Markdown or HTML.',
+        },
+      },
+      {
+        name: 'sourceUrl',
+        label: 'Link',
+        type: 'text',
+        validate: (value: unknown) => {
+          if (!value) return true
+          try {
+            return new URL(String(value)).protocol === 'https:' || 'Use an https:// link.'
+          } catch {
+            return 'This is not a link.'
+          }
+        },
+        admin: {
+          description:
+            'Where the document was published. With “Fetching a link”, the server fetches it once and stores the file. Otherwise it is only shown.',
+        },
+      },
+      {
+        type: 'collapsible',
+        label: 'Processing',
+        admin: { position: 'sidebar' },
+        fields: [
+          {
+            name: 'status',
+            type: 'select',
+            defaultValue: 'pending',
+            index: true,
+            options: PROCESSING_STATES.map((value) => ({ label: STATE_LABELS[value], value })),
+            admin: { readOnly: true },
+          },
+          {
+            name: 'statusMessage',
+            label: 'Message',
+            type: 'textarea',
+            admin: { readOnly: true, condition: (data) => Boolean(data?.statusMessage) },
+          },
+          {
+            name: 'retryCount',
+            label: 'Runs retried',
+            type: 'number',
+            defaultValue: 0,
+            admin: { readOnly: true },
+          },
+          {
+            name: 'lastAttemptAt',
+            label: 'Last attempt',
+            type: 'date',
+            admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } },
+          },
+          {
+            name: 'detectedType',
+            label: 'File type',
+            type: 'text',
+            admin: { readOnly: true, condition: (data) => Boolean(data?.detectedType) },
+          },
+          {
+            name: 'pageCount',
+            label: 'Pages',
+            type: 'number',
+            admin: { readOnly: true, condition: (data) => typeof data?.pageCount === 'number' },
+          },
+        ],
+      },
+      {
+        name: 'text',
+        label: 'Text',
+        type: 'textarea',
+        admin: {
+          readOnly: true,
+          condition: (data) => Boolean(data?.text),
+          description: 'Read from the file. Every character is kept.',
+        },
+      },
+    ],
   },
-  access: {
-    read: signedIn,
-    create: can.editRecords,
-    update: can.editRecords,
-    delete: can.deleteRecords,
+  [],
+  {
+    // Documents are never public, so they need no drafts. A document starts
+    // ready: holding one, such as a fake manifesto, is the exception, and
+    // takes its claims off the site (section 8.1).
+    drafts: false,
+    defaultStatus: 'ready',
+    parents: [{ field: 'country', collection: 'countries' }],
   },
-  hooks: { beforeChange: [startProcessing], afterChange: [queueJob] },
-  // The work queue is read by status, oldest attempt first (section 7.11).
-  indexes: [{ fields: ['status', 'lastAttemptAt'] }],
-  fields: [
-    { name: 'title', type: 'text', required: true },
-    {
-      type: 'row',
-      fields: [
-        {
-          name: 'country',
-          type: 'relationship',
-          relationTo: 'countries',
-          required: true,
-          index: true,
-        },
-        {
-          name: 'type',
-          type: 'select',
-          defaultValue: 'claims',
-          options: [
-            { label: 'A source of claims', value: 'claims' },
-            { label: 'Evidence', value: 'evidence' },
-          ],
-          admin: { description: 'A manifesto or speech claims come from, or evidence about them.' },
-        },
-      ],
-    },
-    { name: 'actors', type: 'relationship', relationTo: 'actors', hasMany: true },
-    {
-      type: 'row',
-      fields: [
-        {
-          name: 'language',
-          type: 'select',
-          options: REGISTERED_LOCALES.map((l) => ({ label: l.label, value: l.code })),
-        },
-        { name: 'publisher', type: 'text' },
-        { name: 'date', type: 'date', admin: { date: { pickerAppearance: 'dayOnly' } } },
-      ],
-    },
-    {
-      name: 'connector',
-      label: 'Bring it in by',
-      type: 'radio',
-      required: true,
-      defaultValue: 'upload',
-      options: [
-        { label: 'Uploading a file', value: 'upload' },
-        { label: 'Fetching a link', value: 'url' },
-      ],
-    },
-    {
-      name: 'file',
-      type: 'upload',
-      relationTo: FILES as never,
-      admin: {
-        condition: (data) => data?.connector !== 'url' || Boolean(data?.file),
-        description:
-          'PDF, Word, Excel, PowerPoint, OpenDocument, RTF, EPUB, text, Markdown or HTML.',
-      },
-    },
-    {
-      name: 'sourceUrl',
-      label: 'Link',
-      type: 'text',
-      validate: (value: unknown) => {
-        if (!value) return true
-        try {
-          return new URL(String(value)).protocol === 'https:' || 'Use an https:// link.'
-        } catch {
-          return 'This is not a link.'
-        }
-      },
-      admin: {
-        description:
-          'Where the document was published. With “Fetching a link”, the server fetches it once and stores the file. Otherwise it is only shown.',
-      },
-    },
-    {
-      type: 'collapsible',
-      label: 'Processing',
-      admin: { position: 'sidebar' },
-      fields: [
-        {
-          name: 'status',
-          type: 'select',
-          defaultValue: 'pending',
-          index: true,
-          options: PROCESSING_STATES.map((value) => ({ label: STATE_LABELS[value], value })),
-          admin: { readOnly: true },
-        },
-        {
-          name: 'statusMessage',
-          label: 'Message',
-          type: 'textarea',
-          admin: { readOnly: true, condition: (data) => Boolean(data?.statusMessage) },
-        },
-        {
-          name: 'retryCount',
-          label: 'Runs retried',
-          type: 'number',
-          defaultValue: 0,
-          admin: { readOnly: true },
-        },
-        {
-          name: 'lastAttemptAt',
-          label: 'Last attempt',
-          type: 'date',
-          admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } },
-        },
-        {
-          name: 'detectedType',
-          label: 'File type',
-          type: 'text',
-          admin: { readOnly: true, condition: (data) => Boolean(data?.detectedType) },
-        },
-        {
-          name: 'pageCount',
-          label: 'Pages',
-          type: 'number',
-          admin: { readOnly: true, condition: (data) => typeof data?.pageCount === 'number' },
-        },
-      ],
-    },
-    {
-      name: 'text',
-      label: 'Text',
-      type: 'textarea',
-      admin: {
-        readOnly: true,
-        condition: (data) => Boolean(data?.text),
-        description: 'Read from the file. Every character is kept.',
-      },
-    },
-  ],
-}
+)

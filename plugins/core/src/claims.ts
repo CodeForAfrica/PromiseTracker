@@ -269,7 +269,7 @@ const claimChecks: PublishingCheck = async (claim, { payload, req }) => {
   if (!idOf(claim.topic)) problems.push('It needs a topic.')
   const hasSource =
     (typeof claim.sourceUrl === 'string' && claim.sourceUrl.trim() !== '') ||
-    Boolean(idOf(claim.document)) ||
+    Boolean(idOf(claim.source)) ||
     (Array.isArray(claim.evidence) && claim.evidence.length > 0)
   if (!hasSource) problems.push('It needs a source: a link to where it was said, or a document.')
   if (!claim.deadline && (await ratingNeedsDeadline(payload, req, claim))) {
@@ -429,6 +429,14 @@ export const Claims: CollectionConfig = withPublishing(
         ],
       },
       {
+        name: 'source',
+        label: 'Source document',
+        type: 'relationship',
+        relationTo: 'documents',
+        index: true,
+        admin: { description: 'The manifesto, speech or report the claim comes from.' },
+      },
+      {
         type: 'row',
         fields: [
           {
@@ -542,6 +550,8 @@ export const Claims: CollectionConfig = withPublishing(
     parents: [
       { field: 'country', collection: 'countries' },
       { field: 'actor', collection: 'actors' },
+      // Holding a document hides the claims drawn from it (section 8.1).
+      { field: 'source', collection: 'documents', optional: true },
     ],
     checks: claimChecks,
   },

@@ -469,8 +469,8 @@ A record is live in a language when all of these hold:
 1. It is **ready**.
 2. It is **published in that language** (see "Saving and publishing" below).
 3. Its required text has a value in that language, such as a claim's title.
-4. Everything above it is live in that language. A country is above its areas, actors and claims,
-   and an actor is above their claims.
+4. Everything above it is live in that language. A country is above its areas, actors, documents
+   and claims. An actor is above their claims, and a claim's source document is above it.
 5. It passes its own checks: a claim needs a topic, a source, and a deadline if its rating needs
    one. A person needs a term that has started.
 
@@ -494,6 +494,9 @@ with them.
 
 Setting it back to **ready** brings back only what was not held on its own. A claim you held
 yourself stays held when its country is released.
+
+Documents start **ready**, since they are never public themselves. Hold a document, such as a
+manifesto found to be fake, and every claim drawn from it leaves the site.
 
 ### Archiving, the trash and emails
 

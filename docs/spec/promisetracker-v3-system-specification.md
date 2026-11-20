@@ -1786,7 +1786,7 @@ codemods, and passes the full test suite before merging.
 | D62 | Deleting moves a record to Payload's trash. Whoever may delete a record may trash it. Only a super-admin deletes for good |
 | D63 | Status emails go to every editor and super-admin, through Payload's email adapter. In development they go to Mailpit |
 | D64 | The published status, and why a claim is not public, are written to the live record by the system, not saved as an edit, so they add no version. The admin reads them from the live record |
-| D65 | Until documents arrive (#652), a claim's parents are its country and actor. The source document joins them as an optional parent. This replaces D56 |
+| D65 | A claim's source document, its `source`, is one of its parents, so holding a document hides its claims. Documents have a record status and start ready, since they are never public themselves. This replaces D56 |
 
 ### 20.2 Why
 
