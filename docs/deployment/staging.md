@@ -29,7 +29,7 @@ address.
 | Dokku app                            | Image                             | Reached at, inside the network              |
 | ------------------------------------ | --------------------------------- | ------------------------------------------- |
 | `promisetracker-v3`                  | `codeforafrica/promisetracker-v3` | Public, through Dokku's proxy               |
-| Postgres service `promisetracker-v3` | `postgres:18.7-alpine`            | `DATABASE_URL`, set by `postgres:link`      |
+| Postgres service `promisetracker-v3` | `postgres:18.7`                   | `DATABASE_URL`, set by `postgres:link`      |
 | `promisetracker-v3-storage`          | `rustfs/rustfs:1.0.5`             | `http://promisetracker-v3-storage.web:9000` |
 | `promisetracker-v3-tika`             | `apache/tika:3.2.3.0-full`        | `http://promisetracker-v3-tika.web:9998`    |
 | `promisetracker-v3-mail`             | `axllent/mailpit:v1.33.0`         | `promisetracker-v3-mail.web`, port 1025     |
@@ -38,12 +38,25 @@ The app runs two processes from the `Procfile` in the image: `web` and `worker`.
 one web process (section 17), so keep `web=1`.
 
 No email provider is chosen yet (D40), so staging sends to Mailpit, which keeps every message and
-delivers none. The versions match `docker/compose.yaml`; keep them in step.
+delivers none. The versions match `docker/compose.yaml`; keep them in step. Postgres is the same
+version on Debian rather than Alpine, for the Dokku plugin (below).
 
 ## Setting up the server, once
 
 Run these on the server as a user who can run `dokku`. Replace each `…` with a value from a
 password manager, never one written here.
+
+The server is arm64. CI publishes the image for amd64 and arm64 as one image, and Docker pulls the
+arm64 one. Every other image here has an arm64 build too.
+
+### The Postgres plugin
+
+The server's Dokku had the MongoDB, MySQL and Redis service plugins but not Postgres. Version
+2.7.0 is the first that mounts Postgres 18's data folder, `/var/lib/postgresql`.
+
+```bash
+sudo dokku plugin:install https://github.com/dokku/dokku-postgres.git --committish 2.7.0 --name postgres
+```
 
 ### The network and the app
 
@@ -57,19 +70,25 @@ dokku domains:set promisetracker-v3 promisetracker-v3.dev.codeforafrica.org
 
 ### Postgres
 
-The official image includes `unaccent` and `pg_trgm` (section 16.2).
+The official image includes `unaccent` and `pg_trgm` (section 16.2). Use the Debian image, not
+`-alpine`: the plugin makes the service's TLS certificate with `openssl` inside the image and gives
+it to uid 999, and the Alpine image has no `openssl` and another uid.
 
 ```bash
-dokku postgres:create promisetracker-v3 --image postgres --image-version 18.7-alpine
+dokku postgres:create promisetracker-v3 --image postgres --image-version 18.7
 dokku postgres:link promisetracker-v3 promisetracker-v3
 ```
 
 `postgres:link` sets `DATABASE_URL` on the app.
 
-Postgres 18 images keep their data in `/var/lib/postgresql`, not `/var/lib/postgresql/data` as
-earlier versions did. Check the server's Dokku Postgres plugin mounts the right one before any
-real data goes in: add a row, run `dokku postgres:restart promisetracker-v3`, and check the row is
-still there.
+Check data survives a restart before any real data goes in:
+
+```bash
+dokku postgres:enter promisetracker-v3 psql -U postgres -d promisetracker_v3 -c "CREATE TABLE restart_check (x int); INSERT INTO restart_check VALUES (1);"
+dokku postgres:restart promisetracker-v3
+dokku postgres:enter promisetracker-v3 psql -U postgres -d promisetracker_v3 -c "SELECT x FROM restart_check;"
+dokku postgres:enter promisetracker-v3 psql -U postgres -d promisetracker_v3 -c "DROP TABLE restart_check;"
+```
 
 ### File storage
 
@@ -203,7 +222,7 @@ The last line takes one now, to check it works. Give the bucket a rule that remo
 30 days. Every quarter, restore the latest into a scratch database and check it opens:
 
 ```bash
-dokku postgres:create promisetracker-v3-restore-check --image postgres --image-version 18.7-alpine
+dokku postgres:create promisetracker-v3-restore-check --image postgres --image-version 18.7
 # Download the latest backup from the bucket, then:
 dokku postgres:import promisetracker-v3-restore-check < backup.dump
 dokku postgres:destroy promisetracker-v3-restore-check
@@ -212,17 +231,17 @@ dokku postgres:destroy promisetracker-v3-restore-check
 ## When something goes wrong
 
 - **A deploy fails its readiness check.** The old version keeps serving. Read the new one's logs
-  with `dokku logs promisetracker-v3 --tail 200`.
+  with `dokku logs promisetracker-v3 -p web -n 200`.
 - **The worker is down.** Jobs stop and cached pages stop refreshing, but the deploy job still
   passes, as only the web process is checked. After a deploy, `dokku ps:report promisetracker-v3`
   should show the worker running. If not, read its logs with
-  `dokku logs promisetracker-v3 --ps worker --tail 200`.
+  `dokku logs promisetracker-v3 -p worker -n 200`.
 - **A migration fails.** The new version never takes traffic. Fix the migration in a pull
   request; the next merge deploys it.
 - **Roll back.** `dokku git:from-image promisetracker-v3 codeforafrica/promisetracker-v3:sha-<short sha>`,
   with an earlier commit on `main`. CI tags each image `sha-` and the commit's first seven
-  characters (`type=sha,format=short` in `ci.yml`). A rollback does not undo migrations, so only roll back past
-  ones that remove nothing.
+  characters (`type=sha,format=short` in `ci.yml`). A rollback does not undo migrations, so only
+  roll back past ones that remove nothing.
 - **Read the staging mailbox.** Mailpit has no public address. To open it, give it one behind a
   password: `dokku domains:set promisetracker-v3-mail <address>`, `dokku proxy:enable`,
   `dokku ports:set promisetracker-v3-mail http:80:8025` and `dokku http-auth:enable`.
