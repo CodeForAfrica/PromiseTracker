@@ -5,9 +5,12 @@ on:
   push:
     branches: [main]
 
+# A pull request's newer push cancels its older run. On main a running run is
+# never cancelled, so a publish or deploy is never cut off halfway. A run still
+# waiting is replaced by a newer one, so the newest commit always wins.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -76,6 +79,8 @@ jobs:
     needs: checks
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      digest: ${{ steps.publish.outputs.digest }}
     env:
       # The stack's own database, created by Postgres in Compose on first start.
       PT_POSTGRES_DB: promisetracker_e2e_test
@@ -141,6 +146,7 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
       - if: github.event_name == 'push'
+        id: publish
         name: Publish the image
         # Only main publishes, and only after the browser tests pass. The build
         # comes from the cache filled above.
@@ -152,3 +158,42 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
+
+  staging:
+    name: Deploy to staging
+    needs: image
+    # Only main deploys, and only once STAGING_URL is set, after the server is
+    # set up as docs/deployment/staging.md describes.
+    if: github.event_name == 'push' && vars.STAGING_URL != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_URL }}
+    # A deploy is never cut off halfway by the next push. It waits, then runs.
+    concurrency:
+      group: staging
+      cancel-in-progress: false
+    steps:
+      - name: Deploy the image to Dokku
+        # Dokku pulls the image by digest, so staging runs exactly what was
+        # tested. The new web process applies pending migrations as it starts,
+        # and takes traffic only after /api/health/ready passes (docker/app.json).
+        # Only the digest crosses between jobs. v2 found GitHub empties a job
+        # output holding the full image name, which matches a secret's value.
+        # Pinned to v1.7.0's commit: this step holds a key that can deploy to a shared server.
+        uses: dokku/github-action@130f400079c51a38a02389708538d85d39f834ec # v1.7.0
+        with:
+          git_remote_url: ${{ vars.STAGING_DOKKU_REMOTE }}
+          ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          deploy_docker_image: codeforafrica/promisetracker-v3@${{ needs.image.outputs.digest }}
+      - name: Check staging is ready
+        env:
+          STAGING_URL: ${{ vars.STAGING_URL }}
+        run: |
+          for i in $(seq 1 30); do
+            curl -fsS --max-time 5 "$STAGING_URL/api/health/ready" && exit 0
+            sleep 10
+          done
+          echo "::error::Staging did not report ready within five minutes."
+          exit 1
