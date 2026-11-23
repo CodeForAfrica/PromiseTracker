@@ -1,23 +1,13 @@
-import { getPayload, handleV1 } from '@promisetracker/cms'
+import { getPayload, respondV1 } from '@promisetracker/cms'
 
-// Responses are not cached yet. Caching comes with the public API work.
+// Every request is answered fresh. Each response carries Cache-Control and an
+// ETag, so a cache in front checks back and gets a 304 when nothing changed.
 export const dynamic = 'force-dynamic'
-const headers = { 'Cache-Control': 'no-store' }
 
 type Args = { params: Promise<{ path: string[] }> }
 
+/** `/api/v1` (section 12). The answers come from `@promisetracker/cms`, which tests them. */
 export async function GET(request: Request, { params }: Args) {
   const { path } = await params
-  const route = `/${path.join('/')}`
-  try {
-    const result = await handleV1(await getPayload(), route, new URL(request.url).searchParams)
-    if (result === undefined) {
-      return Response.json({ error: 'not-found' }, { status: 404, headers })
-    }
-    return Response.json(result.body, { status: result.status, headers })
-  } catch (error) {
-    // The public contract always answers in JSON. Details go to the log only.
-    console.error(`GET /api/v1${route} failed`, error)
-    return Response.json({ error: 'Internal server error' }, { status: 500, headers })
-  }
+  return respondV1(request, `/${path.join('/')}`, getPayload)
 }

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { areaFamily, createLocalTransport, getPayload } from '@promisetracker/cms'
+import { areaFamily, getPayload } from '@promisetracker/cms'
 import type { CountryCode, ImportTarget } from '@promisetracker/plugin-core'
 import { csvImporter, runImportPlan } from '@promisetracker/plugin-core'
 import { createSdk } from '@promisetracker/sdk'
@@ -9,6 +9,7 @@ import type { Payload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { unusedCountryCodes } from '../countries'
+import { testTransport } from './transport'
 
 /**
  * Areas, offices and spreadsheet import (sections 7.2, 9.6, 11.2 and 16.2),
@@ -20,7 +21,7 @@ describe('areas, offices and import', () => {
   let country: string
   const users: string[] = []
   const boundaries: string[] = []
-  const sdk = createSdk(createLocalTransport())
+  const sdk = createSdk(testTransport())
 
   const file = (name: string) =>
     readFileSync(path.resolve(import.meta.dirname, '../fixtures', name))

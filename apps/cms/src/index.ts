@@ -5,7 +5,8 @@ import { handleV1 } from './api/v1'
 import { getPayload } from './getPayload'
 import { getHealth as checkHealth } from './health'
 
-export { handleV1, languages, matchRoute } from './api/v1'
+export { etagOf, matches, READ_CACHE, respondV1 } from './api/http'
+export { handleV1, languages, matchRoute, V1_PATTERNS } from './api/v1'
 export type { AreaFamily } from './areaTree'
 export { areaFamily } from './areaTree'
 export {

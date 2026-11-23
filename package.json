@@ -23,7 +23,7 @@
     "typecheck": "pnpm -r --parallel typecheck && tsc -p tsconfig.json",
     "test": "pnpm test:unit && pnpm test:int && pnpm test:e2e",
     "test:unit": "vitest run --project unit",
-    "test:int": "vitest run --project int",
+    "test:int": "vitest run --project int --project int-http",
     "test:e2e": "playwright test",
     "test:coverage": "vitest run --coverage",
     "seed": "tsx seed/run.ts",

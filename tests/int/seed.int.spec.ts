@@ -1,10 +1,12 @@
-import { createLocalTransport, getPayload } from '@promisetracker/cms'
+import { getPayload } from '@promisetracker/cms'
+import { NotAvailable, V1_ENDPOINTS } from '@promisetracker/contract'
 import { slugify } from '@promisetracker/plugin-core'
 import { createSdk } from '@promisetracker/sdk'
 import type { Payload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { readTopics, SEED_COUNTRIES, seedCountry, seedTopics } from '../../seed/seed'
+import { testTransport } from './transport'
 
 /**
  * The seed data loads into an empty database, loads again without changing
@@ -14,7 +16,7 @@ import { readTopics, SEED_COUNTRIES, seedCountry, seedTopics } from '../../seed/
  */
 describe('seed data', () => {
   let payload: Payload
-  const sdk = createSdk(createLocalTransport())
+  const sdk = createSdk(testTransport())
 
   const seedCountries = async () =>
     (
@@ -172,5 +174,43 @@ describe('seed data', () => {
       children: [{ slug: 'affordable-housing' }],
       countries: [{ country: { code: 'ke' }, figures: { total: 1 } }],
     })
+  })
+
+  it("answers every endpoint in the contract's shape (section 15, rule 3)", async () => {
+    const transport = testTransport()
+    const [claim] = (await sdk.getClaims('en', 'ke', { actor: 'william-ruto', limit: 1 })).items
+    if (!claim) throw new Error('The seed has no claim by William Ruto')
+    // One call for each endpoint in the contract, on seeded records.
+    const calls: [endpoint: string, path: string, query?: Record<string, string>][] = [
+      ['/site', '/site'],
+      ['/countries', '/countries'],
+      ['/countries/{code}', '/countries/ke'],
+      ['/countries/{code}/offices', '/countries/ke/offices'],
+      ['/countries/{code}/areas', '/countries/ke/areas', { parent: 'kenya' }],
+      ['/countries/{code}/areas/{area}', '/countries/ke/areas/nairobi-county'],
+      ['/countries/{code}/seats/{office}', '/countries/ke/seats/president'],
+      ['/countries/{code}/seats/{area}/{office}', '/countries/ke/seats/nairobi-county/governor'],
+      ['/countries/{code}/actors', '/countries/ke/actors', { stage: 'current', limit: '5' }],
+      ['/countries/{code}/actors/{slug}', '/countries/ke/actors/william-ruto'],
+      ['/countries/{code}/claims', '/countries/ke/claims', { sort: 'deadline' }],
+      ['/countries/{code}/claims/{slug}', `/countries/ke/claims/${claim.slug}`],
+      ['/topics', '/topics'],
+      ['/topics/{slug}', '/topics/housing'],
+      ['/redirects', '/redirects', { path: '/ke/president' }],
+    ]
+    expect(new Set(calls.map(([endpoint]) => endpoint))).toEqual(
+      new Set(V1_ENDPOINTS.map((e) => e.path)),
+    )
+    for (const [endpoint, path, query] of calls) {
+      const { status, body } = await transport.get(path, { locale: 'en', ...query })
+      expect(status, path).toBe(200)
+      const schema = V1_ENDPOINTS.find((e) => e.path === endpoint)?.response
+      expect(schema?.safeParse(body).error, path).toBeUndefined()
+    }
+    // A claim not published in Arabic, which the tests switch on, answers in the
+    // contract's "not available" shape (section 8.3).
+    const missing = await transport.get(`/countries/ke/claims/${claim.slug}`, { locale: 'ar' })
+    expect(missing.status).toBe(404)
+    expect(NotAvailable.safeParse(missing.body).error).toBeUndefined()
   })
 })
