@@ -7,6 +7,7 @@ import { Flag } from './Flag'
 import { LangToggle } from './LangToggle'
 import { MobileMenu } from './MobileMenu'
 import { localePath } from './paths'
+import { SearchIcon, searchPath } from './search'
 
 export type ShellData = {
   site: SiteInfo
@@ -186,6 +187,14 @@ export function SiteHeader({ overlay = false, ...data }: ShellData & { overlay?:
           </nav>
         )}
         <div className="ms-auto flex min-w-0 items-center gap-2 sm:gap-3 nav:ms-0">
+          <Link
+            href={searchPath(site.locale)}
+            aria-label={t.search}
+            title={t.search}
+            className="flex size-10 flex-none items-center justify-center rounded-full text-ink hover:bg-tile hover:text-ink"
+          >
+            <SearchIcon size={18} />
+          </Link>
           <LangToggle locale={site.locale} languages={site.languages} label={t.language} />
           {hasNav && (
             <MobileMenu

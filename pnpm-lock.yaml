@@ -33,6 +33,9 @@ catalogs:
     '@payloadcms/next':
       specifier: 4.0.0-beta.9
       version: 4.0.0-beta.9
+    '@payloadcms/plugin-search':
+      specifier: 4.0.0-beta.9
+      version: 4.0.0-beta.9
     '@payloadcms/richtext-lexical':
       specifier: 4.0.0-beta.9
       version: 4.0.0-beta.9
@@ -232,7 +235,7 @@ importers:
         version: link:../../packages/sdk
       '@sentry/nextjs':
         specifier: 'catalog:'
-        version: 11.10.0(next@16.4.6(@babel/core@7.29.13(supports-color@8.1.1))(@opentelemetry/api@1.10.0)(@playwright/test@1.65.1)(@types/node@24.19.2)(babel-plugin-macros@3.1.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.77.4))(react@19.3.1)(vite@8.3.8(@types/node@24.19.2)(esbuild@0.25.12)(jiti@2.7.0)(sass@1.77.4)(tsx@4.23.15))
+        version: 11.10.0(next@16.4.6(@babel/core@7.29.13(supports-color@8.1.1))(@opentelemetry/api@1.10.0)(@playwright/test@1.65.1)(@types/node@24.19.2)(babel-plugin-macros@3.1.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.77.4))(react@19.3.1)(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.77.4)(tsx@4.23.15))
       graphql:
         specifier: 'catalog:'
         version: 16.15.0
@@ -262,6 +265,9 @@ importers:
         specifier: 'catalog:'
         version: 16.4.6
       '@payloadcms/next':
+        specifier: 'catalog:'
+        version: 4.0.0-beta.9(@types/react@19.3.0)(graphql@16.15.0)(monaco-editor@0.57.0)(next@16.4.6(@babel/core@7.29.13(supports-color@8.1.1))(@opentelemetry/api@1.10.0)(@playwright/test@1.65.1)(@types/node@24.19.2)(babel-plugin-macros@3.1.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.77.4))(payload@4.0.0-beta.9(graphql@16.15.0)(supports-color@8.1.1)(typescript@6.0.3))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(supports-color@8.1.1)(typescript@6.0.3)
+      '@payloadcms/plugin-search':
         specifier: 'catalog:'
         version: 4.0.0-beta.9(@types/react@19.3.0)(graphql@16.15.0)(monaco-editor@0.57.0)(next@16.4.6(@babel/core@7.29.13(supports-color@8.1.1))(@opentelemetry/api@1.10.0)(@playwright/test@1.65.1)(@types/node@24.19.2)(babel-plugin-macros@3.1.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.77.4))(payload@4.0.0-beta.9(graphql@16.15.0)(supports-color@8.1.1)(typescript@6.0.3))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(supports-color@8.1.1)(typescript@6.0.3)
       '@payloadcms/richtext-lexical':
@@ -380,6 +386,12 @@ importers:
 
   plugins/core:
     dependencies:
+      '@payloadcms/db-postgres':
+        specifier: 'catalog:'
+        version: 4.0.0-beta.9(@opentelemetry/api@1.10.0)(payload@4.0.0-beta.9(graphql@16.15.0)(supports-color@8.1.1)(typescript@6.0.3))(supports-color@8.1.1)
+      '@payloadcms/plugin-search':
+        specifier: 'catalog:'
+        version: 4.0.0-beta.9(@types/react@19.3.0)(graphql@16.15.0)(monaco-editor@0.57.0)(next@16.4.6(@babel/core@7.29.13(supports-color@8.1.1))(@opentelemetry/api@1.10.0)(@playwright/test@1.65.1)(@types/node@24.19.2)(babel-plugin-macros@3.1.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.77.4))(payload@4.0.0-beta.9(graphql@16.15.0)(supports-color@8.1.1)(typescript@6.0.3))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(supports-color@8.1.1)(typescript@6.0.3)
       '@promisetracker/kernel':
         specifier: workspace:*
         version: link:../../packages/kernel
@@ -1892,6 +1904,13 @@ packages:
 
   '@payloadcms/plugin-cloud-storage@4.0.0-beta.9':
     resolution: {integrity: sha512-K3zoSwZwW40HYJGUK9coxQtjwjwHIk2zze/WQ6/8lgq4AamASiluKLjwvxjIvFw76AG1D0Xua1KZiuZ5VcyCTA==}
+    peerDependencies:
+      payload: 4.0.0-beta.9
+      react: ^19.3.1
+      react-dom: ^19.3.1
+
+  '@payloadcms/plugin-search@4.0.0-beta.9':
+    resolution: {integrity: sha512-ikpqz56VF5BrkGbLsnIs7rhcQQKrTlMpWbcgwtFH0nop7vgQMcQPtujvAbodPk8IA/JWEn2y8ogtfj2Uu2X/lg==}
     peerDependencies:
       payload: 4.0.0-beta.9
       react: ^19.3.1
@@ -5633,6 +5652,22 @@ snapshots:
       - supports-color
       - typescript
 
+  '@payloadcms/plugin-search@4.0.0-beta.9(@types/react@19.3.0)(graphql@16.15.0)(monaco-editor@0.57.0)(next@16.4.6(@babel/core@7.29.13(supports-color@8.1.1))(@opentelemetry/api@1.10.0)(@playwright/test@1.65.1)(@types/node@24.19.2)(babel-plugin-macros@3.1.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.77.4))(payload@4.0.0-beta.9(graphql@16.15.0)(supports-color@8.1.1)(typescript@6.0.3))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(supports-color@8.1.1)(typescript@6.0.3)':
+    dependencies:
+      '@payloadcms/next': 4.0.0-beta.9(@types/react@19.3.0)(graphql@16.15.0)(monaco-editor@0.57.0)(next@16.4.6(@babel/core@7.29.13(supports-color@8.1.1))(@opentelemetry/api@1.10.0)(@playwright/test@1.65.1)(@types/node@24.19.2)(babel-plugin-macros@3.1.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.77.4))(payload@4.0.0-beta.9(graphql@16.15.0)(supports-color@8.1.1)(typescript@6.0.3))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(supports-color@8.1.1)(typescript@6.0.3)
+      '@payloadcms/ui': 4.0.0-beta.9(@types/react@19.3.0)(monaco-editor@0.57.0)(payload@4.0.0-beta.9(graphql@16.15.0)(supports-color@8.1.1)(typescript@6.0.3))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(supports-color@8.1.1)(typescript@6.0.3)
+      payload: 4.0.0-beta.9(graphql@16.15.0)(supports-color@8.1.1)(typescript@6.0.3)
+      react: 19.3.1
+      react-dom: 19.3.1(react@19.3.1)
+    transitivePeerDependencies:
+      - '@types/react'
+      - date-fns-tz
+      - graphql
+      - monaco-editor
+      - next
+      - supports-color
+      - typescript
+
   '@payloadcms/richtext-lexical@4.0.0-beta.9(@faceless-ui/modal@3.0.2(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(@faceless-ui/scroll-info@2.0.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(@types/react@19.3.0)(monaco-editor@0.57.0)(payload@4.0.0-beta.9(graphql@16.15.0)(supports-color@8.1.1)(typescript@6.0.3))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(supports-color@8.1.1)(typescript@6.0.3)(yjs@13.6.33)':
     dependencies:
       '@faceless-ui/modal': 3.0.2(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -5925,7 +5960,7 @@ snapshots:
     optionalDependencies:
       rollup: 4.68.5
 
-  '@sentry/cloudflare@11.10.0(vite@8.3.8(@types/node@24.19.2)(esbuild@0.25.12)(jiti@2.7.0)(sass@1.77.4)(tsx@4.23.15))':
+  '@sentry/cloudflare@11.10.0(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.77.4)(tsx@4.23.15))':
     dependencies:
       '@opentelemetry/api': 1.10.0
       '@sentry/conventions': 0.29.0
@@ -5934,7 +5969,7 @@ snapshots:
       '@sentry/server-utils': 11.10.0
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 8.3.8(@types/node@24.19.2)(esbuild@0.25.12)(jiti@2.7.0)(sass@1.77.4)(tsx@4.23.15)
+      vite: 8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.77.4)(tsx@4.23.15)
 
   '@sentry/conventions@0.29.0': {}
 
@@ -5946,13 +5981,13 @@ snapshots:
     dependencies:
       '@sentry/core': 11.10.0
 
-  '@sentry/nextjs@11.10.0(next@16.4.6(@babel/core@7.29.13(supports-color@8.1.1))(@opentelemetry/api@1.10.0)(@playwright/test@1.65.1)(@types/node@24.19.2)(babel-plugin-macros@3.1.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.77.4))(react@19.3.1)(vite@8.3.8(@types/node@24.19.2)(esbuild@0.25.12)(jiti@2.7.0)(sass@1.77.4)(tsx@4.23.15))':
+  '@sentry/nextjs@11.10.0(next@16.4.6(@babel/core@7.29.13(supports-color@8.1.1))(@opentelemetry/api@1.10.0)(@playwright/test@1.65.1)(@types/node@24.19.2)(babel-plugin-macros@3.1.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.77.4))(react@19.3.1)(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.77.4)(tsx@4.23.15))':
     dependencies:
       '@opentelemetry/api': 1.10.0
       '@rollup/plugin-commonjs': 28.0.1(rollup@4.68.5)
       '@sentry/browser-utils': 11.10.0
       '@sentry/bundler-plugins': 11.10.0(rollup@4.68.5)
-      '@sentry/cloudflare': 11.10.0(vite@8.3.8(@types/node@24.19.2)(esbuild@0.25.12)(jiti@2.7.0)(sass@1.77.4)(tsx@4.23.15))
+      '@sentry/cloudflare': 11.10.0(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.77.4)(tsx@4.23.15))
       '@sentry/conventions': 0.29.0
       '@sentry/core': 11.10.0
       '@sentry/node': 11.10.0(rollup@4.68.5)
@@ -7936,22 +7971,6 @@ snapshots:
     dependencies:
       '@types/unist': 3.0.3
       unist-util-stringify-position: 4.0.0
-
-  vite@8.3.8(@types/node@24.19.2)(esbuild@0.25.12)(jiti@2.7.0)(sass@1.77.4)(tsx@4.23.15):
-    dependencies:
-      lightningcss: 1.33.0
-      picomatch: 4.0.7
-      postcss: 8.5.32
-      rolldown: 1.2.19
-      tinyglobby: 0.2.17
-    optionalDependencies:
-      '@types/node': 24.19.2
-      esbuild: 0.25.12
-      fsevents: 2.3.3
-      jiti: 2.7.0
-      sass: 1.77.4
-      tsx: 4.23.15
-    optional: true
 
   vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.77.4)(tsx@4.23.15):
     dependencies:

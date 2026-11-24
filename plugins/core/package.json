@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./client": "./src/client.tsx"
+    "./client": "./src/client.tsx",
+    "./widgets": "./src/widgets.tsx"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"
@@ -23,6 +24,8 @@
     "typescript": "catalog:"
   },
   "dependencies": {
+    "@payloadcms/db-postgres": "catalog:",
+    "@payloadcms/plugin-search": "catalog:",
     "@promisetracker/kernel": "workspace:*",
     "csv-parse": "catalog:",
     "htmlparser2": "catalog:",

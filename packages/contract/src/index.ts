@@ -75,6 +75,19 @@ export const STRING_KEYS = [
   'footerNav',
   'initiative',
   'copyright',
+  'search',
+  'searchLabel',
+  'searchPlaceholder',
+  'searchTitle',
+  'searchIntro',
+  'searchResults',
+  'searchFound',
+  'searchNothing',
+  'whoRepresents',
+  'openPlace',
+  'searchPeople',
+  'searchClaims',
+  'searchTopics',
 ] as const
 export type StringKey = (typeof STRING_KEYS)[number]
 
@@ -409,6 +422,43 @@ export type Actor = z.infer<typeof Actor>
 export const Redirect = z.object({ to: z.string().startsWith('/'), permanent: z.boolean() })
 export type Redirect = z.infer<typeof Redirect>
 
+/** A record the search index found: its title and address, so a result needs no second query. */
+export const SearchItem = z.object({
+  title: z.string().min(1),
+  /** The address without its language, such as `/ke/e/william-ruto`. */
+  url: z.string().startsWith('/'),
+  /** The country's code. Topics belong to none. */
+  country: z.string().length(2).nullable(),
+})
+export type SearchItem = z.infer<typeof SearchItem>
+
+/** A seat that answers for a place, with its holders today. */
+export const Representative = SeatRef.extend({ holders: z.array(Holder) })
+export type Representative = z.infer<typeof Representative>
+
+/**
+ * A place that matched, with every seat that answers for it, from the
+ * president down to the seats inside it, and their holders today (section 7.11).
+ */
+export const PlaceResult = z.object({
+  country: z.string().length(2),
+  area: AreaSummary,
+  representatives: z.array(Representative),
+})
+export type PlaceResult = z.infer<typeof PlaceResult>
+
+/** `GET /api/v1/search?q=&country=`: places with their representatives, then actors, claims and topics. */
+export const SearchResults = z.object({
+  query: z.string(),
+  places: z.array(PlaceResult),
+  actors: z.array(SearchItem),
+  claims: z.array(SearchItem),
+  topics: z.array(SearchItem),
+  /** Every result above, each place counted once. */
+  total: z.number().int().nonnegative(),
+})
+export type SearchResults = z.infer<typeof SearchResults>
+
 /** `GET /api/v1/countries/{cc}/areas/{area}`. */
 export const Area = AreaSummary.extend({
   /** The areas above it, the country first. */
@@ -511,10 +561,22 @@ export const RedirectQuery = LocaleQuery.extend({
   path: z.string().startsWith('/').max(500),
 })
 
+export const SearchQuery = LocaleQuery.extend({
+  /** What to look for: a place, a person, a claim or a topic. */
+  q: z.string().trim().min(2).max(100),
+  /** Only this country's results, and topics, which belong to every country. */
+  country: z
+    .string()
+    .regex(/^[a-z]{2}$/)
+    .optional(),
+})
+
 /** The filters and order of an actor list, as the SDK takes them. */
 export type ActorQuery = Omit<z.output<typeof ActorsQuery>, 'locale'>
 /** The filters and order of a claim list, as the SDK takes them. */
 export type ClaimQuery = Omit<z.output<typeof ClaimsQuery>, 'locale'>
+/** A search's scope, as the SDK takes it. */
+export type SearchScope = Omit<z.output<typeof SearchQuery>, 'locale' | 'q'>
 
 type EndpointSpec = {
   /** OpenAPI form, such as `/countries/{code}`. */
@@ -626,6 +688,13 @@ export const V1_ENDPOINTS = [
     summary: 'A topic, with figures by country',
     query: LocaleQuery,
     response: Topic,
+    notAvailable: true,
+  },
+  {
+    path: '/search',
+    summary: 'Places with everyone who represents them, then actors, claims and topics',
+    query: SearchQuery,
+    response: SearchResults,
     notAvailable: true,
   },
   {

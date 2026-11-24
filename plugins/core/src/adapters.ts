@@ -2,7 +2,6 @@ import type {
   AnalyticsProvider,
   CaptchaProvider,
   NewsletterProvider,
-  SearchProvider,
   VerificationProvider,
 } from '@promisetracker/kernel'
 
@@ -25,13 +24,7 @@ export const nativeVerification: VerificationProvider = {
 
 export { plaintextExtractor, uploadConnector, urlConnector } from './documents/connectors'
 
-export const payloadSearch: SearchProvider = {
-  id: 'payload-search',
-  health: healthy,
-  search: notYet('payload-search', '#656 (V1-18)'),
-  resolvePlace: notYet('payload-search', '#656 (V1-18)'),
-  index: notYet('payload-search', '#656 (V1-18)'),
-}
+export { payloadSearch } from './search'
 
 export const localNewsletter: NewsletterProvider = {
   id: 'local',

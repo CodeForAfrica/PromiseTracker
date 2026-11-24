@@ -56,4 +56,5 @@ export {
 export { SiteFooter } from './SiteFooter'
 export type { ShellData } from './SiteHeader'
 export { Logo, NavLinks, SiteHeader } from './SiteHeader'
+export { SearchForm, SearchIcon, SearchView, searchPath } from './search'
 export { SectionLabel } from './Text'

@@ -19,6 +19,7 @@ export {
   webUrl,
 } from './cache'
 export { assertRuntimeEnv, databaseUrl } from './env'
+export { assertExtensions, REQUIRED_EXTENSIONS } from './extensions'
 export { ensureFirstAdmin } from './firstAdmin'
 export { getPayload } from './getPayload'
 export { firstPartyPlugins, kernel } from './kernel'

@@ -14,8 +14,10 @@ import type {
   NotAvailable,
   Office,
   PartialDate,
+  PlaceResult,
   Rating,
   RatingScale,
+  Representative,
   SeatRef,
   SiteInfo,
   Term,
@@ -33,6 +35,7 @@ import {
   OfficeList as OfficeListSchema,
   PAGE_LIMIT,
   Redirect as RedirectSchema,
+  SearchResults as SearchResultsSchema,
   SeatHolders as SeatHoldersSchema,
   SiteInfo as SiteInfoSchema,
   TopicList as TopicListSchema,
@@ -43,6 +46,7 @@ import {
   countryName,
   currentTerms,
   isCountryCode,
+  logSearch,
   onRecord,
   partialDatePrecision,
   pastTerms,
@@ -53,7 +57,7 @@ import { resolveStrings } from '@promisetracker/plugin-site'
 import type { Payload, TypedLocale, Where } from 'payload'
 
 import { areaFamily } from '../areaTree'
-import { kernel } from '../kernel'
+import { kernel, ownerOf } from '../kernel'
 import { registeredLocales } from '../locales'
 import type {
   Actor as ActorDoc,
@@ -1265,6 +1269,38 @@ const handlers: Record<string, Handler> = {
     )
   },
 
+  '/search': async ({ payload, locale, query }) => {
+    // The contract has checked both: q is 2 to 100 characters, country a code.
+    const q = (query.get('q') ?? '').trim()
+    const code = query.get('country') ?? undefined
+    if (code) {
+      const country = await publishedCountry(payload, code, locale)
+      if (isResult(country)) return country
+    }
+    const search = kernel.adapters.search
+    const ctx = await kernel.context(payload, ownerOf(search))
+    const scope = { locale, ...(code ? { country: code } : {}) }
+    const [found, matches] = await Promise.all([
+      search.search(q, scope, ctx),
+      search.resolvePlace(q, scope, ctx),
+    ])
+    const now = new Date()
+    const places = (
+      await Promise.all(matches.map((match) => placeOf(payload, locale, match.id, now)))
+    ).filter((place): place is PlaceResult => place !== null)
+    const items = (kind: 'actor' | 'claim' | 'topic') =>
+      (found.groups.find((group) => group.kind === kind)?.items ?? []).map(
+        ({ title, url, country }) => ({ title, url, country }),
+      )
+    const actors = items('actor')
+    const claims = items('claim')
+    const topics = items('topic')
+    const total = places.length + actors.length + claims.length + topics.length
+    const body = SearchResultsSchema.parse({ query: q, places, actors, claims, topics, total })
+    await recordSearch(payload, { query: q, locale, country: code ?? null, results: total })
+    return ok(body)
+  },
+
   '/redirects': async ({ payload, locale, query }) => {
     const parts = (query.get('path') ?? '').split('/').filter(Boolean)
     const [code = '', ...rest] = parts
@@ -1427,6 +1463,106 @@ async function seatHandler(
       holders: await seatHolders(payload, country.id, locale, seat),
     }),
   )
+}
+
+/**
+ * A place that matched a search, with every seat that answers for it today,
+ * from the top down: national seats, the areas above it, the place itself,
+ * then the areas inside it (section 7.11). A whole country lists only its
+ * national seats, since everything is inside it.
+ */
+async function placeOf(
+  payload: Payload,
+  locale: TypedLocale,
+  id: string,
+  now: Date,
+): Promise<PlaceResult | null> {
+  const { docs } = await payload.find({
+    collection: 'areas',
+    joins: false,
+    where: { and: [{ id: { equals: id } }, publishedInLocale(locale)] },
+    locale,
+    depth: 0,
+    limit: 1,
+    overrideAccess: false,
+  })
+  const [doc] = docs
+  const area = doc ? toAreaSummary(doc) : null
+  const countryId = doc ? idOf(doc.country) : null
+  if (!doc || !area || !countryId) return null
+  const { docs: countries } = await payload.find({
+    collection: 'countries',
+    joins: false,
+    where: { and: [{ id: { equals: countryId } }, publishedInLocale(locale)] },
+    locale,
+    depth: 0,
+    limit: 1,
+    overrideAccess: false,
+  })
+  const code = countries[0]?.code
+  if (!code) return null
+  const family = await areaFamily(payload, doc.id)
+  const above = [...family.ancestors].reverse()
+  const below = doc.type === 'country' ? [] : family.descendants
+  // National seats first, then the areas above, the country first, then this
+  // place, then everything inside it.
+  const rank = new Map<string, number>([
+    ...above.map((areaId, i) => [areaId, i + 1] as const),
+    [doc.id, above.length + 1],
+    ...below.map((areaId) => [areaId, above.length + 2] as const),
+  ])
+  const ids = [...rank.keys()]
+  const [holders, offices, areas] = await Promise.all([
+    holdersBySeat(
+      payload,
+      countryId,
+      locale,
+      { or: [{ area: { in: ids } }, { area: { exists: false } }] },
+      now,
+    ),
+    officeMap(payload, countryId, locale),
+    areaMap(payload, ids, locale),
+  ])
+  const seats = [...holders.entries()].flatMap(([key, list]) => {
+    const [officeKey = '', areaKey = ''] = key.split('|')
+    const entry = offices.get(officeKey)
+    const seatArea = areaKey ? areas.get(areaKey) : null
+    if (!entry || seatArea === undefined) return []
+    const seat: Representative = { office: officeRef(entry.office), area: seatArea, holders: list }
+    return [{ seat, rank: areaKey ? (rank.get(areaKey) ?? ids.length) : 0, order: entry.order }]
+  })
+  seats.sort(
+    (a, b) =>
+      a.rank - b.rank ||
+      a.order - b.order ||
+      (a.seat.area?.name ?? '').localeCompare(b.seat.area?.name ?? ''),
+  )
+  return { country: code, area, representatives: seats.map((s) => s.seat) }
+}
+
+/**
+ * Logs a search (section 18) and tells the analytics port. A search is
+ * answered even if either fails, so a failure goes to the log only.
+ */
+async function recordSearch(
+  payload: Payload,
+  search: { query: string; locale: string; country: string | null; results: number },
+): Promise<void> {
+  try {
+    await logSearch(payload, search)
+    const analytics = kernel.adapters.analytics
+    await analytics.searchEvent(
+      {
+        query: search.query,
+        locale: search.locale,
+        ...(search.country ? { country: search.country } : {}),
+        resultCount: search.results,
+      },
+      await kernel.context(payload, ownerOf(analytics)),
+    )
+  } catch (error) {
+    payload.logger.error({ err: error, msg: 'Could not log a search' })
+  }
 }
 
 /** Every path the handlers answer, such as `/countries/:code`. */

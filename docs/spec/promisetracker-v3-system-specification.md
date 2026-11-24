@@ -1791,6 +1791,7 @@ codemods, and passes the full test suite before merging.
 | D65 | A claim's source document, its `source`, is one of its parents, so holding a document hides its claims. Documents have a record status and start ready, since they are never public themselves. This replaces D56 |
 | D66 | A source link counts as a claim's source, alongside a source document or evidence. Many pledges are reported in news articles that the server never fetches, and the claim page shows the link |
 | D67 | A record type with no required text, such as an actor, is live in every language its parents are live in. Payload's per-language publish status only gates text that must exist in a language, and its "publish all languages" covers only the languages switched on at the time |
+| D68 | A search for a place lists the seats above it, its own and those of every area inside it, except for a whole country, which lists only its national seats, since every seat is inside it. A topic, which has no record status, is in the search index in each language it has a name in. Matching uses pg_trgm's word similarity at 0.45, below its default of 0.6, so that a dropped letter in a short name, such as "Nairbi", still finds it |
 
 ### 20.2 Why
 

@@ -27,6 +27,7 @@ import { ImportMappings, Imports, runImportTask } from './imports/collections'
 import { csvImporter, xlsxImporter } from './imports/readers'
 import { Areas, Offices } from './places'
 import { ClaimTypes, RatingScales } from './ratings'
+import { SearchLog } from './search'
 import { Users } from './users'
 
 export const Media: CollectionConfig = {
@@ -69,6 +70,7 @@ export const corePlugin = definePromiseTrackerPlugin({
     Media,
     Imports,
     ImportMappings,
+    SearchLog,
     Users,
   ],
   tasks: [
@@ -81,6 +83,14 @@ export const corePlugin = definePromiseTrackerPlugin({
     dailyPublishingTask as never,
   ],
   workflows: [processDocumentWorkflow as never],
+  widgets: [
+    {
+      slug: 'empty-searches',
+      label: 'Searches that found nothing',
+      Component: '@promisetracker/plugin-core/widgets#EmptySearches',
+      minWidth: 'medium',
+    },
+  ],
   provides: {
     verification: [nativeVerification],
     sourceConnector: [uploadConnector, urlConnector],
@@ -145,5 +155,26 @@ export { AREA_PAGE, AREA_TYPES, Areas, Offices } from './places'
 export * from './publishing'
 export * from './ratings'
 export * from './roles'
+export {
+  beforeSync,
+  entryOf,
+  indexLater,
+  indexRecord,
+  liveIn,
+  logSearch,
+  MAX_QUERY,
+  PLACE_LIMIT,
+  SEARCH_LIMIT,
+  SEARCH_LOG_SLUG,
+  SEARCH_PRIORITY,
+  SEARCH_SLUG,
+  SEARCHED,
+  SearchLog,
+  searchIndex,
+  setSearchIndexer,
+  skipSync,
+} from './search'
 export * from './slugs'
 export { Users } from './users'
+export type { EmptySearch } from './widgets'
+export { EMPTY_SEARCH_DAYS, EMPTY_SEARCH_ROWS, emptySearches } from './widgets'
