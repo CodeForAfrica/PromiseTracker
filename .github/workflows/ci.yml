@@ -5,9 +5,12 @@ on:
   push:
     branches: [main]
 
+# A pull request's newer push cancels its older run. On main a running run is
+# never cancelled, so a publish or deploy is never cut off halfway. A run still
+# waiting is replaced by a newer one, so the newest commit always wins.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -76,6 +79,8 @@ jobs:
     needs: checks
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      digest: ${{ steps.publish.outputs.digest }}
     env:
       # The stack's own database, created by Postgres in Compose on first start.
       PT_POSTGRES_DB: promisetracker_e2e_test
@@ -86,15 +91,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v4
-      - id: meta
-        uses: docker/metadata-action@v6
-        with:
-          images: codeforafrica/promisetracker-v3
-          tags: |
-            type=ref,event=pr
-            type=sha,format=short
-            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
       - name: Build the image
         uses: docker/build-push-action@v7
         with:
@@ -141,14 +137,154 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
       - if: github.event_name == 'push'
-        name: Publish the image
-        # Only main publishes, and only after the browser tests pass. The build
-        # comes from the cache filled above.
+        id: publish
+        name: Push the amd64 image
+        # Only main pushes, and only after the browser tests pass. The build
+        # comes from the cache filled above. It is pushed by digest alone: the
+        # publish job tags it, with the arm64 image, as one image.
         uses: docker/build-push-action@v7
         with:
           context: .
           file: docker/Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64
+          outputs: type=image,name=codeforafrica/promisetracker-v3,push-by-digest=true,name-canonical=true,push=true
           cache-from: type=gha
+
+  image-arm64:
+    name: Docker image on arm64
+    needs: checks
+    # Built natively: v2 found an emulated arm64 build took about 45 minutes.
+    # The staging server is arm64. GitHub's arm64 runners are free for public
+    # repositories.
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
+    outputs:
+      digest: ${{ steps.publish.outputs.digest }}
+    env:
+      PT_POSTGRES_DB: promisetracker_e2e_test
+      PAYLOAD_SECRET: ci-only-not-a-real-secret
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - name: Build the image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/Dockerfile
+          load: true
+          tags: codeforafrica/promisetracker-v3:local
+          # Its own cache, so the two architectures do not overwrite each other's.
+          cache-from: type=gha,scope=arm64
+          cache-to: type=gha,scope=arm64,mode=max
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+      - name: Start the image with Compose
+        # The browser tests run on amd64. Here the same image proves it starts:
+        # the entrypoint, the migrations, the worker and file storage.
+        run: node scripts/compose.mjs --profile app up -d --no-build app worker
+      - name: Wait until the app is ready
+        run: |
+          for i in $(seq 1 90); do
+            curl -fsS http://localhost:3000/api/health/ready && exit 0
+            sleep 2
+          done
+          echo "::error::The arm64 image did not report ready within three minutes."
+          exit 1
+      - if: failure()
+        name: Logs from the stack
+        run: node scripts/compose.mjs --profile app logs --no-color
+      - if: github.event_name == 'push'
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+      - if: github.event_name == 'push'
+        id: publish
+        name: Push the arm64 image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/arm64
+          outputs: type=image,name=codeforafrica/promisetracker-v3,push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=arm64
+
+  publish:
+    name: Publish the image
+    needs: [image, image-arm64]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      digest: ${{ steps.index.outputs.digest }}
+    steps:
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: codeforafrica/promisetracker-v3
+          tags: |
+            type=sha,format=short
+            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+      - id: index
+        name: Tag both architectures as one image
+        # Docker pulls the architecture it runs on: amd64 on CI and most hosts,
+        # arm64 on the staging server.
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+          AMD64: ${{ needs.image.outputs.digest }}
+          ARM64: ${{ needs.image-arm64.outputs.digest }}
+        run: |
+          image=codeforafrica/promisetracker-v3
+          args=()
+          while read -r tag; do [ -n "$tag" ] && args+=(-t "$tag"); done <<< "$TAGS"
+          docker buildx imagetools create "${args[@]}" "$image@$AMD64" "$image@$ARM64"
+          first=$(head -n1 <<< "$TAGS")
+          digest=$(docker buildx imagetools inspect "$first" --format '{{json .Manifest}}' | jq -r .digest)
+          docker buildx imagetools inspect "$first"
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+  staging:
+    name: Deploy to staging
+    needs: publish
+    # Only main deploys, and only once STAGING_URL is set, after the server is
+    # set up as docs/deployment/staging.md describes.
+    if: github.event_name == 'push' && vars.STAGING_URL != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_URL }}
+    # A deploy is never cut off halfway by the next push. It waits, then runs.
+    concurrency:
+      group: staging
+      cancel-in-progress: false
+    steps:
+      - name: Deploy the image to Dokku
+        # Dokku pulls the image by digest, so staging runs exactly what was
+        # tested, and Docker picks its architecture from the index. The new web process applies pending migrations as it starts,
+        # and takes traffic only after /api/health/ready passes (docker/app.json).
+        # Only the digest crosses between jobs. v2 found GitHub empties a job
+        # output holding the full image name, which matches a secret's value.
+        # Pinned to v1.7.0's commit: this step holds a key that can deploy to a shared server.
+        uses: dokku/github-action@130f400079c51a38a02389708538d85d39f834ec # v1.7.0
+        with:
+          git_remote_url: ${{ vars.STAGING_DOKKU_REMOTE }}
+          ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          deploy_docker_image: codeforafrica/promisetracker-v3@${{ needs.publish.outputs.digest }}
+      - name: Check staging is ready
+        env:
+          STAGING_URL: ${{ vars.STAGING_URL }}
+        run: |
+          for i in $(seq 1 30); do
+            curl -fsS --max-time 5 "$STAGING_URL/api/health/ready" && exit 0
+            sleep 10
+          done
+          echo "::error::Staging did not report ready within five minutes."
+          exit 1

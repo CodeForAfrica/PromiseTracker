@@ -1,0 +1,17 @@
+{
+  "name": "promisetracker-v3",
+  "description": "Read by Dokku from the image. A new web process takes traffic only once /api/health/ready passes, which is after it has applied pending migrations.",
+  "healthchecks": {
+    "web": [
+      {
+        "name": "ready",
+        "type": "startup",
+        "path": "/api/health/ready",
+        "attempts": 30,
+        "initialDelay": 10,
+        "wait": 5,
+        "timeout": 5
+      }
+    ]
+  }
+}

@@ -33,6 +33,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/site/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/site/.next/static ./apps/site/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/site/public ./apps/site/public
 COPY --chmod=755 docker/entrypoint.sh /usr/local/bin/promisetracker
+# Dokku reads both from the working folder: the processes to run, and the check
+# a new web process must pass before it takes traffic.
+COPY docker/Procfile docker/app.json ./
 USER nextjs
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s \
