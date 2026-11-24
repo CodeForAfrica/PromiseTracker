@@ -23,6 +23,8 @@ describe('claim updates', () => {
     contributor: { id: '' },
   }
   const sdk = createSdk(createLocalTransport())
+  // The page tags refreshed, for the tests that check them.
+  const refreshed: string[] = []
   const as = (role: keyof typeof users) => ({ ...users[role], collection: 'users' }) as never
 
   const claim = async (slug: string) =>
@@ -82,7 +84,9 @@ describe('claim updates', () => {
   beforeAll(async () => {
     payload = await getPayload()
     // No site to refresh in these tests.
-    setTagRefresher(async () => {})
+    setTagRefresher(async (tags) => {
+      refreshed.push(...tags)
+    })
     ;[code = 'km'] = await unusedCountryCodes(payload, 1)
     // Test set-up writes as the system.
     country = (
@@ -328,6 +332,100 @@ describe('claim updates', () => {
     expect(person.latestChanges[0]?.update.title).toBe('We got the start date wrong')
     expect(person.latestChanges[0]?.claim.slug).toBe('housing')
     expect(person.latestChanges.map((c) => c.update.title)).not.toContain('Not yet public')
+  })
+
+  it('lets a draft change nothing until it is published', async () => {
+    const doc = await claim('dams')
+    const proof = await evidence(`https://example.org/${code}/dams-1`)
+    const draft = await payload.create({
+      collection: 'claim-updates',
+      locale: 'en',
+      draft: true,
+      data: {
+        claim: doc.id,
+        date: '2023-04',
+        rating: 'in-progress',
+        title: 'Work starts',
+        evidence: [proof.id],
+        recordStatus: 'ready',
+      } as never,
+      overrideAccess: false,
+      user: as('editor'),
+    })
+    const untouched = await read(doc.id)
+    expect(untouched.currentRating).toBe('unstarted')
+    expect(untouched.updateCount).toBe(0)
+    expect(await reviewsOf(doc.id)).toEqual([])
+
+    await payload.update({
+      collection: 'claim-updates',
+      id: draft.id,
+      locale: 'en',
+      data: { _status: 'published' } as never,
+      overrideAccess: false,
+      user: as('editor'),
+    })
+    expect((await read(doc.id)).currentRating).toBe('in-progress')
+    expect((await reviewsOf(doc.id)).map((r) => r.outcome)).toEqual(['changed'])
+
+    // A draft of a new rating on the published update changes nothing either.
+    const two = await evidence(`https://example.org/${code}/dams-2`)
+    await payload.update({
+      collection: 'claim-updates',
+      id: draft.id,
+      locale: 'en',
+      draft: true,
+      data: { rating: 'stalled', evidence: [proof.id, two.id] } as never,
+      overrideAccess: false,
+      user: as('editor'),
+    })
+    expect((await read(doc.id)).currentRating).toBe('in-progress')
+    expect(await reviewsOf(doc.id)).toHaveLength(1)
+  })
+
+  it('saves an unfinished draft without the checks a published update needs', async () => {
+    const doc = await claim('canals')
+    const draft = await payload.create({
+      collection: 'claim-updates',
+      locale: 'en',
+      draft: true,
+      data: { claim: doc.id, title: 'Notes so far' } as never,
+      overrideAccess: false,
+      user: as('editor'),
+    })
+    expect(draft.id).toBeTruthy()
+    expect((await read(doc.id)).updateCount).toBe(0)
+  })
+
+  it('refuses a date that does not exist', async () => {
+    const doc = await claim('ports')
+    const proof = await evidence(`https://example.org/${code}/ports-1`)
+    await expect(
+      update({ claim: doc.id, date: '2023-02-30', rating: 'in-progress', evidence: [proof.id] }),
+    ).rejects.toThrow()
+    await expect(
+      update({ claim: doc.id, date: '2023-13', rating: 'in-progress', evidence: [proof.id] }),
+    ).rejects.toThrow()
+  })
+
+  it('refreshes the claim pages that cite a piece of evidence when it changes', async () => {
+    const doc = await claim('railways')
+    const proof = await evidence(`https://example.org/${code}/railways-1`)
+    await update({ claim: doc.id, date: '2023', rating: 'in-progress', evidence: [proof.id] })
+    refreshed.length = 0
+    await payload.update({
+      collection: 'evidence',
+      id: proof.id,
+      locale: 'en',
+      data: { finding: 'A corrected finding.' },
+      overrideAccess: false,
+      user: as('editor'),
+    })
+    expect(refreshed).toContain(`claims:${code}`)
+  })
+
+  it('answers a malformed claim id with not found', async () => {
+    expect((await confirm('not-an-id', 'editor')).status).toBe(404)
   })
 
   it('keeps evidence from the public outside published updates', async () => {

@@ -13,6 +13,10 @@ describe('the rated date of an update (section 7.6)', () => {
     expect(partialDateStart('2023-08')).toBe('2023-08-01T00:00:00.000Z')
     expect(partialDateStart('2023-08-17')).toBe('2023-08-17T00:00:00.000Z')
     expect(partialDateStart('August 2023')).toBeNull()
+    // Dates that do not exist.
+    expect(partialDateStart('2023-13')).toBeNull()
+    expect(partialDateStart('2023-02-30')).toBeNull()
+    expect(partialDateStart('2024-02-29')).toBe('2024-02-29T00:00:00.000Z')
     expect(partialDateStart(null)).toBeNull()
   })
 })

@@ -338,6 +338,12 @@ To rate a claim:
 6. **Attribution** credits a citizen who sent the update in, only with their consent.
 7. Set it to **ready** and save. An update on **hold** changes nothing.
 
+An update saved as a **draft** changes nothing until you publish it. Neither does a draft of
+changes to a published update.
+
+Evidence is checked when you save an update, against the update before it by date. Adding an older
+update, or holding one, does not check the later ones again, so look at the timeline afterwards.
+
 Removing an update, or holding it, puts the rating back to the latest update left, or to the
 starting rating if none is.
 

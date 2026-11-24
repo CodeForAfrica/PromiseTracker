@@ -41,7 +41,10 @@ export function partialDateStart(value: unknown): string | null {
   const match = PARTIAL_DATE.exec(value)
   if (!match) return null
   const [, year, month = '01', day = '01'] = match
-  return `${year}-${month}-${day}T00:00:00.000Z`
+  const start = `${year}-${month}-${day}T00:00:00.000Z`
+  // A date that does not exist, such as 2027-02-30, comes back as another day.
+  const parsed = new Date(start)
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString() === start ? start : null
 }
 
 const partialDateField = (name: string, description: string, required = false): Field => ({
@@ -55,7 +58,7 @@ const partialDateField = (name: string, description: string, required = false): 
       ? required
         ? 'Give the date, even just the year.'
         : true
-      : PARTIAL_DATE.test(String(value))
+      : partialDateStart(value)
         ? true
         : 'Give a year, a year and month, or a full date: 2027, 2027-08 or 2027-08-09.',
 })
@@ -66,7 +69,41 @@ const httpsOnly = (value: unknown) =>
   value === '' ||
   (typeof value === 'string' && /^https?:\/\/\S+$/.test(value))
     ? true
-    : 'Give a full web address, starting with https://.'
+    : 'Give a full web address, starting with https:// or http://.'
+
+/**
+ * Claim pages show the evidence of their updates, so a change to a piece of
+ * evidence, or its removal, refreshes the pages of every country citing it.
+ */
+async function refreshCitingPages(req: PayloadRequest, evidence: string): Promise<void> {
+  const { docs } = await req.payload.find({
+    collection: 'claim-updates',
+    where: { evidence: { in: [evidence] } },
+    select: { country: true },
+    depth: 0,
+    pagination: false,
+    trash: true,
+    // Finds which countries' pages cite the evidence, whoever changed it.
+    overrideAccess: true,
+    req: { ...req } as PayloadRequest,
+  })
+  const codes = new Set<string>()
+  for (const doc of docs) {
+    const code = await countryCode(req, doc.country)
+    if (code) codes.add(code)
+  }
+  for (const code of codes) await refreshTags([`claims:${code}`, `actors:${code}`], req)
+}
+
+const refreshOnEvidenceChange: CollectionAfterChangeHook = async ({ doc, req }) => {
+  await refreshCitingPages(req, String(doc.id))
+  return doc
+}
+
+const refreshOnEvidenceDelete: CollectionAfterDeleteHook = async ({ doc, req }) => {
+  await refreshCitingPages(req, String(doc.id))
+  return doc
+}
 
 /** A piece of evidence: a document, dataset, social post or article (section 7.6). */
 export const Evidence: CollectionConfig = withTrash({
@@ -84,6 +121,10 @@ export const Evidence: CollectionConfig = withTrash({
     create: can.editRecords,
     update: can.editRecords,
     delete: can.deleteRecords,
+  },
+  hooks: {
+    afterChange: [refreshOnEvidenceChange],
+    afterDelete: [refreshOnEvidenceDelete],
   },
   fields: [
     { name: 'title', type: 'text', required: true },
@@ -166,19 +207,74 @@ const counting = (claim: string, except?: string): Where => ({
   ],
 })
 
-/** A claim's updates that count, newest first: by date, then by when they were recorded. */
+/** Whether Payload's draft status, in one language or by language, is published in any. */
+const publishedAnywhere = (status: unknown): boolean =>
+  typeof status === 'string'
+    ? status === 'published'
+    : Boolean(status) &&
+      typeof status === 'object' &&
+      Object.values(status as Record<string, unknown>).includes('published')
+
+/**
+ * A claim's updates that count, newest first: by date, then by when they
+ * were recorded. An update counts once it is ready and published in some
+ * language. A draft never published, or a draft of changes, changes nothing.
+ */
 async function countingUpdates(req: PayloadRequest, claim: string, except?: string) {
   const { docs } = await req.payload.find({
     collection: 'claim-updates',
     where: counting(claim, except),
     sort: ['-date', '-createdAt'],
+    // Every language's draft status, to tell a published update from a draft.
+    locale: 'all',
     depth: 0,
     pagination: false,
     // Reads the claim's updates to set its rating, whoever saves.
     overrideAccess: true,
     req: { ...req } as PayloadRequest,
   })
-  return docs
+  return docs.filter((doc) => publishedAnywhere(doc._status))
+}
+
+/** What an update is on the live record: its claim, its rating, and whether it counts. */
+type LiveUpdate = { claim: string | null; rating: string | null; counts: boolean }
+
+/**
+ * Reads an update as the live record holds it. A draft save leaves the live
+ * record as it was, so this, not the saved draft, says what the public sees.
+ */
+async function liveUpdate(req: PayloadRequest, id: string): Promise<LiveUpdate | null> {
+  const { docs } = await req.payload.find({
+    collection: 'claim-updates',
+    where: { id: { equals: id } },
+    locale: 'all',
+    depth: 0,
+    limit: 1,
+    trash: true,
+    // Reads the update's live state to set its claim's rating, whoever saves.
+    overrideAccess: true,
+    req: { ...req } as PayloadRequest,
+  })
+  const [doc] = docs
+  if (!doc) return null
+  return {
+    claim: idOf(doc.claim),
+    rating: typeof doc.rating === 'string' ? doc.rating : null,
+    counts: doc.recordStatus === 'ready' && !doc.deletedAt && publishedAnywhere(doc._status),
+  }
+}
+
+/** Each update's live state before the save under way, by request. */
+const liveBefore = new WeakMap<object, Map<string, LiveUpdate | null>>()
+
+/** Before a save: notes what the update is on the live record. */
+const rememberLive: CollectionBeforeChangeHook = async ({ data, originalDoc, req }) => {
+  const id = idOf(originalDoc?.id)
+  if (!id) return data
+  const before = liveBefore.get(req) ?? new Map<string, LiveUpdate | null>()
+  liveBefore.set(req, before)
+  before.set(id, await liveUpdate(req, id))
+  return data
 }
 
 /** The rating fields a claim takes from its updates and reviews (section 7.6). */
@@ -287,6 +383,8 @@ async function syncClaim(req: PayloadRequest, claim: string): Promise<void> {
   liveRatings.get(req)?.delete(claim)
   await recomputeAndCascade(req, 'claims', claim)
   const code = await countryCode(req, stored?.country)
+  // Refreshed now, so the change shows at once. The job does it again from
+  // the worker, with retries, since a refresh that fails here is only logged.
   if (code)
     await refreshTags([`claims:${code}`, `actors:${code}`, `country:${code}`, 'topics'], req)
   await queueRefreshCounts(req, code)
@@ -321,7 +419,13 @@ async function recordReview(
  */
 const checkUpdate: CollectionBeforeChangeHook = async ({ data, originalDoc, req }) => {
   const claimId = idOf(data.claim ?? originalDoc?.claim)
-  if (!claimId) throw new APIError('Choose the claim this update is about.', 400)
+  // A draft may be unfinished, and changes nothing until it is published,
+  // when these checks run.
+  const draft = data._status === 'draft'
+  if (!claimId) {
+    if (draft) return data
+    throw new APIError('Choose the claim this update is about.', 400)
+  }
   const { docs } = await req.payload.find({
     collection: 'claims',
     where: { id: { equals: claimId } },
@@ -334,6 +438,7 @@ const checkUpdate: CollectionBeforeChangeHook = async ({ data, originalDoc, req 
   })
   const [claim] = docs
   if (!claim) throw new APIError('Choose the claim this update is about.', 400)
+  if (draft) return { ...data, country: idOf(claim.country) }
   const ratings = await scaleOfClaim(req, claim)
   const rating = (data.rating ?? originalDoc?.rating) as unknown
   const known = ratings.find((r) => r.slug === rating)
@@ -366,28 +471,42 @@ const checkUpdate: CollectionBeforeChangeHook = async ({ data, originalDoc, req 
   return { ...data, kind, country: idOf(claim.country) }
 }
 
-const syncOnChange: CollectionAfterChangeHook = async ({ doc, previousDoc, req, operation }) => {
-  const claim = idOf(doc.claim)
+/**
+ * After a save: compares the update's live state with what it was. A
+ * review is recorded when it starts to count, or its rating changes while
+ * it does. A draft save leaves the live record alone, so it records nothing.
+ */
+const syncOnChange: CollectionAfterChangeHook = async ({ doc, req }) => {
+  const id = String(doc.id)
+  const before = liveBefore.get(req)?.get(id) ?? null
+  liveBefore.get(req)?.delete(id)
+  const now = await liveUpdate(req, id)
+  const claim = now?.claim ?? idOf(doc.claim)
   if (!claim) return doc
-  const nowCounts = doc.recordStatus === 'ready' && !doc.deletedAt
-  const counted = previousDoc?.recordStatus === 'ready' && !previousDoc?.deletedAt
-  // A review is recorded when an update starts to count, or its rating changes while it does.
-  if (nowCounts && (operation === 'create' || !counted || previousDoc?.rating !== doc.rating)) {
+  if (now?.counts && (!before?.counts || before.rating !== now.rating)) {
+    // The latest update sets the claim's rating, so it changes it; an older one only fills in.
     const latest = (await countingUpdates(req, claim))[0]
-    const outcome =
-      latest?.id === doc.id && previousDoc?.rating !== doc.rating ? 'changed' : 'updated'
-    await recordReview(req, claim, outcome, typeof doc.rating === 'string' ? doc.rating : null)
+    const outcome = latest?.id === id ? 'changed' : 'updated'
+    await recordReview(req, claim, outcome, now.rating)
   }
-  const before = idOf(previousDoc?.claim)
   await syncClaim(req, claim)
-  if (before && before !== claim) await syncClaim(req, before)
+  if (before?.claim && before.claim !== claim) await syncClaim(req, before.claim)
   return doc
+}
+
+/** The claims being deleted for good in this request. */
+const deletingClaims = (req: PayloadRequest): Set<string> => {
+  const found: unknown = req.context.deletingClaims
+  if (found instanceof Set) return found as Set<string>
+  const made = new Set<string>()
+  req.context.deletingClaims = made
+  return made
 }
 
 const syncOnDelete: CollectionAfterDeleteHook = async ({ doc, req }) => {
   const claim = idOf(doc.claim)
   // A claim being deleted takes its updates with it, and has nothing to sync.
-  if (claim && req.context.deletingClaim !== claim) await syncClaim(req, claim)
+  if (claim && !deletingClaims(req).has(claim)) await syncClaim(req, claim)
   return doc
 }
 
@@ -398,7 +517,8 @@ const syncOnDelete: CollectionAfterDeleteHook = async ({ doc, req }) => {
  */
 export const deleteClaimHistory: CollectionBeforeDeleteHook = async ({ id, req }) => {
   const claim = String(id)
-  req.context.deletingClaim = claim
+  // One request may delete several claims, so each is noted.
+  deletingClaims(req).add(claim)
   // Whoever may delete the claim may delete what belongs to it.
   await req.payload.delete({
     collection: 'claim-updates',
@@ -440,7 +560,7 @@ export const ClaimUpdates: CollectionConfig = withPublishing(
       delete: can.deleteRecords,
     },
     hooks: {
-      beforeChange: [checkUpdate],
+      beforeChange: [rememberLive, checkUpdate],
       afterChange: [syncOnChange],
       afterDelete: [syncOnDelete],
     },
@@ -548,6 +668,10 @@ export const confirmRating: Endpoint = {
       return Response.json({ error: 'You cannot confirm ratings.' }, { status: 403 })
     }
     const id = typeof req.routeParams?.id === 'string' ? req.routeParams.id : ''
+    // Ids are UUIDs. Anything else names no claim, and would fail the query.
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+      return Response.json({ error: 'There is no such claim.' }, { status: 404 })
+    }
     const { docs } = await req.payload.find({
       collection: 'claims',
       where: { id: { equals: id } },
