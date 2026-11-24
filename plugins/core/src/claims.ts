@@ -516,7 +516,7 @@ async function hasEvidence(
         { evidence: { exists: true } },
       ],
     },
-    select: { _status: true },
+    select: { _status: true, evidence: true },
     // Every language's status: a draft's evidence is not public, so it is no source.
     locale: 'all',
     depth: 0,
@@ -525,7 +525,20 @@ async function hasEvidence(
     overrideAccess: true,
     req,
   })
-  return docs.some((doc) => publishedAnywhere(doc._status))
+  const cited = docs
+    .filter((doc) => publishedAnywhere(doc._status))
+    .flatMap((doc) => (Array.isArray(doc.evidence) ? doc.evidence.map(idOf) : []))
+    .filter((e): e is string => e !== null)
+  if (cited.length === 0) return false
+  // Evidence in the trash is withdrawn: the site no longer shows it.
+  const { totalDocs } = await payload.count({
+    collection: 'evidence',
+    where: { id: { in: cited } },
+    // Counts the claim's evidence, whoever saved it.
+    overrideAccess: true,
+    req,
+  })
+  return totalDocs > 0
 }
 
 /** Whether the claim's current rating, on its type's scale, needs a deadline. */

@@ -421,6 +421,58 @@ describe('claim updates', () => {
     expect((await read(doc.id)).publishedIn).toEqual(['en'])
   })
 
+  it('checks a backdated update against the update before it by date', async () => {
+    const doc = await claim('bridges-2')
+    const proof = await evidence(`https://example.org/${code}/bridges-2-1`)
+    await update({ claim: doc.id, date: '2023-06', rating: 'in-progress', evidence: [proof.id] })
+    // Before June, the rating was the starting one, so a change then needs evidence.
+    await expect(update({ claim: doc.id, date: '2023-01', rating: 'stalled' })).rejects.toThrow(
+      /needs at least one piece of evidence/,
+    )
+    const same = await update({ claim: doc.id, date: '2023-01', rating: 'unstarted' })
+    expect(same.id).toBeTruthy()
+    expect((await read(doc.id)).currentRating).toBe('in-progress')
+  })
+
+  it('compares updates on the same date by when they were recorded', async () => {
+    const doc = await claim('tunnels')
+    const proof = await evidence(`https://example.org/${code}/tunnels-1`)
+    const first = await update({ claim: doc.id, date: '2023', rating: 'unstarted' })
+    await update({ claim: doc.id, date: '2023', rating: 'in-progress', evidence: [proof.id] })
+    // The first update came before the second, so fixing its title needs no evidence.
+    const fixed = await payload.update({
+      collection: 'claim-updates',
+      id: first.id,
+      locale: 'en',
+      data: { title: 'A corrected title' } as never,
+      overrideAccess: false,
+      user: as('editor'),
+    })
+    expect(fixed.title).toBe('A corrected title')
+  })
+
+  it('stops counting evidence that is withdrawn, and counts it again when restored', async () => {
+    const doc = await claim('quarries', { sourceUrl: null })
+    const proof = await evidence(`https://example.org/${code}/quarries-1`)
+    await update({ claim: doc.id, date: '2023', rating: 'in-progress', evidence: [proof.id] })
+    expect((await read(doc.id)).publishedIn).toEqual(['en'])
+    await payload.update({
+      collection: 'evidence',
+      id: proof.id,
+      data: { deletedAt: new Date().toISOString() } as never,
+      overrideAccess: true,
+    })
+    expect((await read(doc.id)).publishedIn).toEqual([])
+    await payload.update({
+      collection: 'evidence',
+      id: proof.id,
+      data: { deletedAt: null } as never,
+      trash: true,
+      overrideAccess: true,
+    })
+    expect((await read(doc.id)).publishedIn).toEqual(['en'])
+  })
+
   it('refuses to publish a draft whose rating is not on the scale', async () => {
     const doc = await claim('mills')
     const draft = await payload.create({

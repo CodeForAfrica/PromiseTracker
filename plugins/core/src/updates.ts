@@ -79,7 +79,7 @@ async function refreshCitingPages(req: PayloadRequest, evidence: string): Promis
   const { docs } = await req.payload.find({
     collection: 'claim-updates',
     where: { evidence: { in: [evidence] } },
-    select: { country: true },
+    select: { country: true, claim: true },
     depth: 0,
     pagination: false,
     trash: true,
@@ -92,6 +92,10 @@ async function refreshCitingPages(req: PayloadRequest, evidence: string): Promis
     const code = await countryCode(req, doc.country)
     if (code) codes.add(code)
   }
+  // Evidence can be a claim's only source, so withdrawing or restoring it can
+  // change where the claim is published.
+  const claims = new Set(docs.map((doc) => idOf(doc.claim)).filter((id) => id !== null))
+  for (const claim of claims) await recomputeAndCascade(req, 'claims', claim)
   for (const code of codes) await refreshTags([`claims:${code}`, `actors:${code}`], req)
 }
 
@@ -407,25 +411,23 @@ async function recordReview(
   claim: string,
   outcome: (typeof REVIEW_OUTCOMES)[number],
   rating: string | null,
-): Promise<void> {
+): Promise<string> {
+  const date = new Date().toISOString()
   await req.payload.create({
     collection: 'rating-reviews',
     data: {
       claim,
       outcome,
       rating,
-      date: new Date().toISOString(),
+      date,
       // An import runs as the system, and names who asked for it.
-      reviewer: req.user
-        ? req.user.id
-        : typeof req.context.requestedBy === 'string'
-          ? req.context.requestedBy
-          : null,
+      reviewer: req.user ? req.user.id : importedBy(req),
     },
     // The system records reviews. Who reviewed was checked by the save or the action.
     overrideAccess: true,
     req,
   })
+  return date
 }
 
 /**
@@ -470,10 +472,14 @@ const checkUpdate: CollectionBeforeChangeHook = async ({ data, originalDoc, req 
   if (known.retired && rating !== originalDoc?.rating) {
     throw new APIError(`"${String(rating)}" is retired. Choose a rating in use.`, 400)
   }
-  // The rating before this update: the latest other update on or before its date.
+  // The rating before this update: the latest other update before it, by
+  // date and then by when it was recorded (D77). A new update is recorded now.
   const date = String(data.date ?? originalDoc?.date ?? '')
+  const recorded = String(originalDoc?.createdAt ?? new Date().toISOString())
   const others = await countingUpdates(req, claimId, idOf(originalDoc?.id) ?? undefined)
-  const before = others.find((u) => String(u.date) <= date)
+  const before = others.find(
+    (u) => String(u.date) < date || (String(u.date) === date && String(u.createdAt) < recorded),
+  )
   const previous = before?.rating ?? ratings.find((r) => r.isStarting)?.slug ?? null
   const evidence = (data.evidence ?? originalDoc?.evidence) as unknown
   const hasEvidence = Array.isArray(evidence) && evidence.length > 0
@@ -508,6 +514,12 @@ const syncOnChange: CollectionAfterChangeHook = async ({ doc, req }) => {
   await syncClaim(req, claim)
   if (before?.claim && before.claim !== claim) await syncClaim(req, before.claim)
   return doc
+}
+
+/** Who asked for the import running this save, if one is: it runs as the system. */
+const importedBy = (req: PayloadRequest): string | null => {
+  const id: unknown = req.context.requestedBy
+  return typeof id === 'string' ? id : null
 }
 
 /** The claims being deleted for good in this request. */
@@ -704,15 +716,14 @@ export const confirmRating: Endpoint = {
     })
     const [claim] = docs
     if (!claim) return Response.json({ error: 'There is no such claim.' }, { status: 404 })
-    await recordReview(
+    const lastReviewedAt = await recordReview(
       req,
       id,
       'confirmed',
       typeof claim.currentRating === 'string' ? claim.currentRating : null,
     )
     await syncClaim(req, id)
-    const rating = await ratingFromUpdates(req, id)
-    return Response.json({ lastReviewedAt: rating.lastReviewedAt })
+    return Response.json({ lastReviewedAt })
   },
 }
 
