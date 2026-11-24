@@ -63,6 +63,9 @@ export const corePlugin = definePromiseTrackerPlugin({
     Documents,
     DocumentFiles,
     Claims,
+    ClaimUpdates,
+    Evidence,
+    RatingReviews,
     Topics,
     RatingScales,
     ClaimTypes,
@@ -79,9 +82,16 @@ export const corePlugin = definePromiseTrackerPlugin({
     cascadePublishingTask as never,
     recomputePublishingTask as never,
     dailyPublishingTask as never,
+    refreshCountsTask as never,
   ],
   workflows: [processDocumentWorkflow as never],
   widgets: [
+    {
+      slug: 'least-recently-reviewed',
+      Component: '@promisetracker/plugin-core/widgets#LeastRecentlyReviewed',
+      minWidth: 'small',
+      maxWidth: 'large',
+    },
     {
       slug: 'awaiting-verification',
       Component: '@promisetracker/plugin-core/widgets#AwaitingVerification',
@@ -165,3 +175,15 @@ export {
   VERIFICATION_QUEUE,
   whereToQuery,
 } from './verificationQueue'
+
+import { ClaimUpdates, Evidence, RatingReviews, refreshCountsTask } from './updates'
+
+export {
+  ClaimUpdates,
+  EVIDENCE_KINDS,
+  Evidence,
+  partialDateStart,
+  RatingReviews,
+  ratingFromUpdates,
+  UPDATE_KINDS,
+} from './updates'

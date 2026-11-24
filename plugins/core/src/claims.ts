@@ -22,6 +22,7 @@ import type { PublishingCheck } from './publishing'
 import { withPublishing, withTrash } from './publishing'
 import { setClaimTypeUsage, setRatingUsage } from './ratings'
 import { SLUG_PATTERN, slugify } from './slugs'
+import { confirmRating, deleteClaimHistory, fromLiveClaim, ratingFromUpdates } from './updates'
 
 /**
  * Claims and topics (sections 7.5 and 7.7). A claim is what an actor said
@@ -395,6 +396,18 @@ function editorsOnly(fields: Field[]): Field[] {
   })
 }
 
+/**
+ * Every save of a claim takes its rating fields from its updates and reviews
+ * (section 7.6). With drafts, Payload builds a save from the latest version,
+ * which does not have what the updates wrote, so it would otherwise be lost.
+ * A new claim keeps the starting rating checkClaim gave it.
+ */
+const keepRatingInStep: CollectionBeforeChangeHook = async ({ data, originalDoc, req }) => {
+  const id = idOf(originalDoc?.id)
+  if (!id) return data
+  return { ...data, ...(await ratingFromUpdates(req, id)) }
+}
+
 /** A changed verdict records when, and who set it. */
 const stampVerification: CollectionBeforeChangeHook = ({ data, originalDoc, req }) => {
   const stored = asRecordOf(asRecordOf(originalDoc).verification)
@@ -472,12 +485,36 @@ const claimChecks: PublishingCheck = async (claim, { payload, req }) => {
   const hasSource =
     (typeof claim.sourceUrl === 'string' && claim.sourceUrl.trim() !== '') ||
     Boolean(idOf(claim.source)) ||
-    (Array.isArray(claim.evidence) && claim.evidence.length > 0)
+    (await hasEvidence(payload, req, claim))
   if (!hasSource) problems.push('It needs a source: a link to where it was said, or a document.')
   if (!claim.deadline && (await ratingNeedsDeadline(payload, req, claim))) {
     problems.push('Its rating needs a deadline.')
   }
   return problems
+}
+
+/** Whether one of the claim's updates that count has evidence (section 7.6). */
+async function hasEvidence(
+  payload: Payload,
+  req: Partial<PayloadRequest>,
+  claim: Record<string, unknown>,
+): Promise<boolean> {
+  const id = idOf(claim.id)
+  if (!id) return false
+  const { totalDocs } = await payload.count({
+    collection: 'claim-updates',
+    where: {
+      and: [
+        { claim: { equals: id } },
+        { recordStatus: { equals: 'ready' } },
+        { evidence: { exists: true } },
+      ],
+    },
+    // Counts the claim's evidence, whoever saved it.
+    overrideAccess: true,
+    req,
+  })
+  return totalDocs > 0
 }
 
 /** Whether the claim's current rating, on its type's scale, needs a deadline. */
@@ -539,6 +576,7 @@ export const Claims: CollectionConfig = withPublishing(
     },
     // Saved views, such as "Awaiting verification" (section 5.1).
     enableQueryPresets: true,
+    endpoints: [confirmRating],
     access: {
       read: readClaims,
       create: can.createClaims,
@@ -555,8 +593,9 @@ export const Claims: CollectionConfig = withPublishing(
         keepFormerSlug,
         stampVerification,
         keepFoundFalse,
+        keepRatingInStep,
       ],
-      beforeDelete: [neverDeleteFoundFalse],
+      beforeDelete: [neverDeleteFoundFalse, deleteClaimHistory],
       afterChange: [refreshOnClaimChange],
       afterDelete: [refreshOnClaimDelete],
     },
@@ -698,8 +737,10 @@ export const Claims: CollectionConfig = withPublishing(
       formerSlugsField,
       {
         name: 'currentRating',
+        label: 'Current rating',
         type: 'text',
         index: true,
+        hooks: { afterRead: [fromLiveClaim('currentRating')] },
         admin: {
           position: 'sidebar',
           readOnly: true,
@@ -710,22 +751,36 @@ export const Claims: CollectionConfig = withPublishing(
       },
       {
         name: 'ratedOn',
+        label: 'Rated on',
         type: 'date',
+        hooks: { afterRead: [fromLiveClaim('ratedOn')] },
         admin: { position: 'sidebar', readOnly: true },
         access: { create: () => false, update: () => false },
       },
       {
         name: 'lastReviewedAt',
+        label: 'Last reviewed',
         type: 'date',
+        hooks: { afterRead: [fromLiveClaim('lastReviewedAt')] },
         admin: { position: 'sidebar', readOnly: true },
         access: { create: () => false, update: () => false },
       },
       {
         name: 'updateCount',
+        label: 'Updates',
         type: 'number',
         defaultValue: 0,
+        hooks: { afterRead: [fromLiveClaim('updateCount')] },
         admin: { position: 'sidebar', readOnly: true },
         access: { create: () => false, update: () => false },
+      },
+      {
+        name: 'confirmRating',
+        type: 'ui',
+        admin: {
+          position: 'sidebar',
+          components: { Field: '@promisetracker/plugin-core/client#ConfirmRating' },
+        },
       },
       {
         type: 'collapsible',

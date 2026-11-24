@@ -2,7 +2,6 @@ import type {
   Claim,
   ClaimSummary,
   Figures,
-  PartialDate,
   RatingScale,
   SiteInfo,
   TopicSummary,
@@ -13,28 +12,14 @@ import type { ReactNode } from 'react'
 import { actorPath, CountrySection, seatLabel } from './actors'
 import { Container } from './Container'
 import { fill } from './fill'
-import { localePath } from './paths'
+import { ClaimRecord, LastReviewed } from './history'
+import { formatPartialDate } from './partialDate'
+import { claimPath, localePath } from './paths'
 import { RatingChip, RatingLegend, TierBar } from './ratings'
-
-/** A claim's page: `/{lang}/{cc}/p/{claim}` (section 11.1). */
-export const claimPath = (locale: string, code: string, slug: string): string =>
-  localePath(locale, `/${code}/p/${slug}`)
 
 /** A topic's page: `/{lang}/topics/{topic}`. */
 export const topicPath = (locale: string, slug: string): string =>
   localePath(locale, `/topics/${slug}`)
-
-/** "2027", "August 2027" or "9 August 2027", as precise as the date is. */
-export function formatPartialDate(locale: string, date: PartialDate): string {
-  const when = new Date(`${date.value.padEnd(10, '-01').slice(0, 10)}T00:00:00Z`)
-  const parts: Intl.DateTimeFormatOptions =
-    date.precision === 'year'
-      ? { year: 'numeric' }
-      : date.precision === 'month'
-        ? { year: 'numeric', month: 'long' }
-        : { year: 'numeric', month: 'long', day: 'numeric' }
-  return new Intl.DateTimeFormat(locale, { ...parts, timeZone: 'UTC' }).format(when)
-}
 
 /**
  * How one figure is written: "1 of 3" below the threshold, "33%" above it
@@ -214,8 +199,8 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
 
 /**
  * The claim page's sections that have data (section 10.2): the claim, with
- * who, where, when and by when, and its rating. Evidence, the rating history
- * and the analysis join it with their issues.
+ * who, where, when and by when, its rating with the last-reviewed date, how
+ * the rating changed, and the evidence. The analysis joins it with its issue.
  */
 export function ClaimView({ site, claim }: { site: SiteInfo; claim: Claim }) {
   const t = site.strings
@@ -251,6 +236,7 @@ export function ClaimView({ site, claim }: { site: SiteInfo; claim: Claim }) {
               )}
             </div>
           )}
+          <LastReviewed site={site} claim={claim} />
         </Container>
       </section>
       <Container className="grid gap-10 pt-8 pb-12 md:grid-cols-[2fr_1fr]">
@@ -306,6 +292,7 @@ export function ClaimView({ site, claim }: { site: SiteInfo; claim: Claim }) {
           {byWhen && <Fact label={t.claimByWhen}>{byWhen}</Fact>}
         </dl>
       </Container>
+      <ClaimRecord site={site} claim={claim} />
     </>
   )
 }
@@ -402,3 +389,5 @@ export function CountryFigures({
     </ul>
   )
 }
+
+export { claimPath, formatPartialDate }

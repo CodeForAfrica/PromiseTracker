@@ -2,6 +2,7 @@ import type {
   Actor,
   Area,
   Claim,
+  ClaimHistory,
   Country,
   NotAvailable,
   Redirect,
@@ -12,6 +13,7 @@ import {
   Actor as ActorSchema,
   AreaList,
   Area as AreaSchema,
+  ClaimHistory as ClaimHistorySchema,
   ClaimList,
   Claim as ClaimSchema,
   CountryList,
@@ -171,6 +173,17 @@ export function createSdk(transport: Transport) {
     async getClaim(locale: string, code: string, slug: string): Promise<Claim | NotAvailable> {
       const result = await get(`${cc(code)}/claims/${encodeURIComponent(slug)}`, locale)
       return isNotAvailable(result) ? NotAvailableSchema.parse(result) : ClaimSchema.parse(result)
+    },
+    /** A claim's full rating history, or the languages the claim is published in. */
+    async getClaimHistory(
+      locale: string,
+      code: string,
+      slug: string,
+    ): Promise<ClaimHistory | NotAvailable> {
+      const result = await get(`${cc(code)}/claims/${encodeURIComponent(slug)}/history`, locale)
+      return isNotAvailable(result)
+        ? NotAvailableSchema.parse(result)
+        : ClaimHistorySchema.parse(result)
     },
     /** Every topic, with how many published claims it has. */
     async getTopics(locale: string): Promise<TopicList> {

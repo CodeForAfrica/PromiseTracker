@@ -25,6 +25,8 @@ const PERMISSION: Record<ImportTarget, Permission> = {
   actors: 'editRecords',
   terms: 'editRecords',
   claims: 'createClaims',
+  // An update rates its claim (section 13.2).
+  'claim-updates': 'rateClaims',
 }
 
 let importers: readonly StructuredImporter[] = [csvImporter, xlsxImporter]

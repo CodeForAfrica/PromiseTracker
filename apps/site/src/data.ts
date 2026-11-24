@@ -117,6 +117,13 @@ export const getClaim = (locale: string, code: string, slug: string) =>
     revalidate: HOLDERS_TTL,
   })()
 
+export const getClaimHistory = (locale: string, code: string, slug: string) =>
+  unstable_cache(
+    () => sdk.getClaimHistory(locale, code, slug),
+    [RUN, 'claim-history', locale, code, slug],
+    { tags: peopleTags(code), revalidate: HOLDERS_TTL },
+  )()
+
 /** Topics span every country, so any country's change can move their figures. */
 const topicTags = ['topics', 'countries', 'ratings', 'site']
 

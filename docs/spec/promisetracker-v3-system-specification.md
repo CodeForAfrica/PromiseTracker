@@ -1094,9 +1094,8 @@ After 5 failures in a row, the system stops calling an outside service for 60 se
 | `runImport` | core | An editor commits an import |
 | `submitForVerification` | check | A claim is created |
 | `pullVerdicts` | check | Every 15 minutes |
-| `recomputeClaim` | core | A claim update changes |
 | `cascadeStatus` | core | A record status changes |
-| `refreshCounts` | core | After a cascade or a rating change |
+| `refreshCounts` | core | After a cascade or a rating change. Refreshes the cached pages that show figures (D71) |
 | `cleanupJobs` | core | Hourly |
 
 The stages of one document run as one workflow, so each stage starts when the last one ends
@@ -1531,8 +1530,8 @@ check passes. Database migrations run before the new version serves traffic.
   - `pg_trgm`, so a misspelt name still matches.
 - Search runs on Payload's search plugin, section 7.11.
 - "Who represents this place" walks the area tree up and down in one recursive query.
-- Rating counts by actor, area, topic and country are grouped queries, cached and refreshed after
-  a cascade or a rating change.
+- Rating counts by actor, area, topic and country are worked out on each request (D57), and the
+  pages that show them are cached and refreshed after a cascade or a rating change (D71).
 - The cascade runs inside transactions.
 - Read replicas can be added for heavy traffic. The Postgres adapter supports them.
 - PostGIS is optional. It would add "find my area from my location" later.
@@ -1793,6 +1792,13 @@ codemods, and passes the full test suite before merging.
 | D67 | A record type with no required text, such as an actor, is live in every language its parents are live in. Payload's per-language publish status only gates text that must exist in a language, and its "publish all languages" covers only the languages switched on at the time |
 | D68 | The claim page shows the verdict's date and rationale, credited to PromiseTracker, and never who verified the claim. Section 13 keeps that internal, which #650's "who verified it" on the page would break |
 | D69 | Reviewers may update a claim only to set its verdict. Their save keeps every other field as it was |
+| D70 | A claim's rating fields are worked out from its published updates in the same transaction as the update's save, not by a `recomputeClaim` job, so the admin shows the new rating as soon as the save returns. With no update left, a claim goes back to its scale's starting rating |
+| D71 | `refreshCounts` refreshes the cached pages that show a country's figures, since the figures are worked out on each request (D57). It runs after a rating change and after a cascade that changes a record |
+| D72 | Every update that starts to count or changes its rating, and every "Confirm rating", records a rating review with who and when. A claim's `lastReviewedAt` is its latest review. Reviews are internal and nobody edits them |
+| D73 | Evidence is read by signed-in users only. The public API shows the evidence of published updates, so evidence attached to an update on hold stays internal |
+| D74 | Deleting a claim for good deletes its updates and rating reviews. Moving it to the trash keeps them, so restoring it brings its history back |
+| D75 | The claim endpoint returns its five latest updates, the evidence of all of them, and its citation: the permanent address under `PT_PUBLIC_URL` and the last-reviewed date. Without `PT_PUBLIC_URL` the address is a path, which the browser makes absolute when a reader copies it. The history endpoint returns every update |
+| D76 | A claim update's spreadsheet row names one piece of evidence by its link. Evidence with the same link is reused unchanged, otherwise it is added, in the same transaction as the update |
 | D70 | The verdict and rationale can be imported from a spreadsheet, by someone who may set a verdict |
 | D71 | The "Awaiting verification" view is a Payload query preset, shared with everyone and created at start-up. A dashboard widget counts the claims in it |
 

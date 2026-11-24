@@ -1,6 +1,17 @@
 'use client'
 
-import { Banner, FieldDescription, FieldLabel, useFormFields, useRowLabel } from '@payloadcms/ui'
+import {
+  Banner,
+  Button,
+  FieldDescription,
+  FieldLabel,
+  toast,
+  useAuth,
+  useConfig,
+  useDocumentInfo,
+  useFormFields,
+  useRowLabel,
+} from '@payloadcms/ui'
 import type { UIFieldClientProps } from 'payload'
 import { useEffect, useState } from 'react'
 
@@ -180,6 +191,52 @@ export function SourceQuote() {
         {state.match.after}
       </blockquote>
       <FieldDescription path="verification.quote" description={`From ${state.title}.`} />
+    </div>
+  )
+}
+
+/** Roles that may confirm a rating, as `rateClaims` in the access matrix (section 13.2). */
+const RATERS = ['super-admin', 'editor']
+
+/**
+ * "Confirm rating" (section 8.4): an editor who checked a claim and found
+ * nothing new records it, which moves the last-reviewed date without adding a
+ * public update.
+ */
+export function ConfirmRating() {
+  const { id } = useDocumentInfo()
+  const { user } = useAuth()
+  const { config } = useConfig()
+  const [busy, setBusy] = useState(false)
+  const roles: unknown = user ? Reflect.get(user, 'roles') : null
+  const allowed = Array.isArray(roles) && roles.some((role) => RATERS.includes(String(role)))
+  if (!id || !allowed) return null
+  const confirm = async () => {
+    setBusy(true)
+    try {
+      const res = await fetch(`${config.routes.api}/claims/${id}/confirm-rating`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      if (!res.ok) throw new Error(String(res.status))
+      toast.success('Rating confirmed. The last-reviewed date is today.')
+      // The sidebar shows the stored date, so the page reads the claim again.
+      window.location.reload()
+    } catch {
+      toast.error('The rating could not be confirmed. Try again.')
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <div className="field-type">
+      <Button buttonStyle="secondary" size="medium" onClick={confirm} disabled={busy}>
+        Confirm rating
+      </Button>
+      <FieldDescription
+        path="confirmRating"
+        description="You checked the claim and nothing has changed. Moves the last-reviewed date without a public update."
+      />
     </div>
   )
 }

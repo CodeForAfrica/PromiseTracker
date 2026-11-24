@@ -371,6 +371,15 @@ export async function cascadePublishing(
       }
     }
   }
+  // Figures follow published claims, so their pages are refreshed too (section 9.8).
+  const code = tags.find((tag) => tag.startsWith('country:'))?.slice('country:'.length)
+  if (code && changed > 0) {
+    await payload.jobs.queue({
+      task: 'refreshCounts',
+      input: { country: code },
+      overrideAccess: true,
+    })
+  }
   return { recomputed, changed }
 }
 
