@@ -138,7 +138,9 @@ const runSteps: CollectionBeforeChangeHook = async ({
   const headings: string[] = data.headings ?? originalDoc?.headings ?? []
   const rows: ImportRow[] = data.rows ?? originalDoc?.rows ?? []
   const mapping = toRecord(data.mapping ?? originalDoc?.mapping)
-  // Setting a verdict needs the right to set one, whoever may import claims (section 13.2).
+  // Setting a verdict needs the right to set one, whoever may import claims
+  // (section 13.2). Without a user it is the system, through the Local API, as
+  // above: an import created from the admin always has one.
   const setsVerdict = Object.keys(mapping).some((key) => /^(verdict|rationale)(:|$)/.test(key))
   if (setsVerdict && req.user && !userCan(req.user, 'setVerdict')) {
     throw new APIError('You cannot import verdicts. Remove the Verdict and Rationale columns.', 403)

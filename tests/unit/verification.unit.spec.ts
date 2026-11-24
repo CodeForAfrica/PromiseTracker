@@ -52,6 +52,35 @@ describe('verification', () => {
   })
 })
 
+describe('what a reviewer may change (section 13.2)', () => {
+  it('closes every claim field but the verification to a reviewer', () => {
+    const reviewer = { req: { user: { id: 'r', roles: ['reviewer'] } } } as never
+    const editor = { req: { user: { id: 'e', roles: ['editor'] } } } as never
+    const open: string[] = []
+    const walk = (fields: readonly Field[], path: string) => {
+      for (const field of fields) {
+        if (field.type === 'ui') continue
+        if ('name' in field) {
+          const name = `${path}${field.name}`
+          // Shown, never saved: only the system's status reads.
+          if (name === 'verification' || ('virtual' in field && field.virtual)) continue
+          const update = (field as { access?: { update?: (a: never) => boolean } }).access?.update
+          // Fields only the system writes are closed to everyone, which is fine.
+          if (update?.(editor) !== false && update?.(reviewer) !== false) open.push(name)
+          continue
+        }
+        if ('fields' in field) walk(field.fields, path)
+        if (field.type === 'tabs') for (const tab of field.tabs) walk(tab.fields, path)
+      }
+    }
+    walk(Claims.fields, '')
+    // Fields outside the claim's own form, which Payload adds, are left as Payload sets them.
+    expect(open.filter((name) => !['createdBy', 'updatedBy', 'deletedAt'].includes(name))).toEqual(
+      [],
+    )
+  })
+})
+
 describe('the statement in its source (section 5.1)', () => {
   const text = `The manifesto says many things.\n\nWe will   build five thousand homes
 in Kibra by 2027. Then it moves on to roads and water.`

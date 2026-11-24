@@ -385,6 +385,12 @@ function editorsOnly(fields: Field[]): Field[] {
       return { ...own, access: { update: can.editRecords, ...own.access } } as Field
     }
     if ('fields' in field) return { ...field, fields: editorsOnly(field.fields) } as Field
+    if (field.type === 'tabs') {
+      return {
+        ...field,
+        tabs: field.tabs.map((tab) => ({ ...tab, fields: editorsOnly(tab.fields) })),
+      } as Field
+    }
     return field
   })
 }
@@ -401,7 +407,9 @@ const stampVerification: CollectionBeforeChangeHook = ({ data, originalDoc, req 
   // Payload fills a field the save left out from the stored record before
   // this runs, so a date equal to the stored one was not chosen by anyone:
   // the new verdict gets today's date. A different date was.
-  const chosen = incoming.date && incoming.date !== stored.date ? incoming.date : null
+  const sameInstant = (a: unknown, b: unknown) =>
+    Boolean(a) && Boolean(b) && new Date(String(a)).getTime() === new Date(String(b)).getTime()
+  const chosen = incoming.date && !sameInstant(incoming.date, stored.date) ? incoming.date : null
   return {
     ...data,
     verification: {

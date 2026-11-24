@@ -36,25 +36,28 @@ export async function ensureVerificationQueue(payload: Payload): Promise<void> {
   // The query presets collection is Payload's own, typed by the app, so its
   // slug is cast here.
   const collection = 'payload-query-presets' as never
-  const { totalDocs } = await payload.count({
+  const queue: Where = {
+    and: [{ title: { equals: VERIFICATION_QUEUE } }, { relatedCollection: { equals: 'claims' } }],
+  }
+  const { docs } = await payload.find({
     collection,
-    where: {
-      and: [{ title: { equals: VERIFICATION_QUEUE } }, { relatedCollection: { equals: 'claims' } }],
-    },
+    where: queue,
+    sort: 'createdAt',
+    depth: 0,
+    pagination: false,
     // Start-up checks run as the system.
     overrideAccess: true,
   })
-  if (totalDocs > 0) return
+  // Two servers starting together may each have made one. The first stays.
+  for (const extra of docs.slice(1) as { id: string }[]) {
+    await payload.delete({ collection, id: extra.id, overrideAccess: true })
+  }
+  if (docs.length > 0) return
   try {
     await create(payload, collection)
   } catch (error) {
-    // Two servers starting together may both find none. One creates it, and
-    // the other's create fails or makes a second, which the count shows.
-    const again = await payload.count({
-      collection,
-      where: { title: { equals: VERIFICATION_QUEUE } },
-      overrideAccess: true,
-    })
+    // Another server may have made it in the meantime.
+    const again = await payload.count({ collection, where: queue, overrideAccess: true })
     if (again.totalDocs === 0) throw error
   }
 }

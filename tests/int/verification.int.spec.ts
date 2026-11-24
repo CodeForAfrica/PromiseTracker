@@ -1,6 +1,10 @@
 import { createLocalTransport, getPayload } from '@promisetracker/cms'
 import type { CountryCode } from '@promisetracker/plugin-core'
-import { AWAITING_VERIFICATION, VERIFICATION_QUEUE } from '@promisetracker/plugin-core'
+import {
+  AWAITING_VERIFICATION,
+  ensureVerificationQueue,
+  VERIFICATION_QUEUE,
+} from '@promisetracker/plugin-core'
 import { createSdk } from '@promisetracker/sdk'
 import type { Payload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -274,6 +278,62 @@ describe('built-in verification', () => {
       overrideAccess: false,
     })
     expect(docs[0]?.verification?.verifiedBy).toBeUndefined()
+  })
+
+  it('keeps every language as it was when a reviewer verifies in one of them', async () => {
+    const doc = await claim('markets')
+    await payload.update({
+      collection: 'claims',
+      id: doc.id,
+      locale: 'fr',
+      data: { title: 'Un engagement, marchés' },
+      overrideAccess: true,
+    })
+    await payload.update({
+      collection: 'claims',
+      id: doc.id,
+      locale: 'fr',
+      data: {
+        title: 'Autre chose',
+        verification: { verdict: 'verified', rationale: 'Vérifié.' },
+      } as never,
+      overrideAccess: false,
+      user: as('reviewer'),
+    })
+    const all = await payload.findByID({
+      collection: 'claims',
+      id: doc.id,
+      locale: 'all',
+      overrideAccess: true,
+    })
+    expect(all.title).toMatchObject({ en: 'A pledge, markets', fr: 'Un engagement, marchés' })
+    expect(all.verification?.verdict).toBe('verified')
+    expect(all.verification?.rationale).toMatchObject({ fr: 'Vérifié.' })
+  })
+
+  it('removes a duplicate of the saved view at start-up', async () => {
+    const collection = 'payload-query-presets'
+    const [first] = (
+      await payload.find({
+        collection,
+        where: { title: { equals: VERIFICATION_QUEUE } },
+        overrideAccess: true,
+      })
+    ).docs
+    // As if a second server had made one too.
+    const copy = await payload.create({
+      collection,
+      data: { ...first, id: undefined, createdAt: undefined, updatedAt: undefined } as never,
+      overrideAccess: true,
+    })
+    await ensureVerificationQueue(payload)
+    const left = await payload.find({
+      collection,
+      where: { title: { equals: VERIFICATION_QUEUE } },
+      overrideAccess: true,
+    })
+    expect(left.docs.map((d) => d.id)).toEqual([first?.id])
+    expect(left.docs.map((d) => d.id)).not.toContain(copy.id)
   })
 
   it('lists claims awaiting verification in a shared saved view', async () => {
