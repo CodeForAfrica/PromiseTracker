@@ -27,7 +27,7 @@ describe('claim updates', () => {
   const refreshed: string[] = []
   const as = (role: keyof typeof users) => ({ ...users[role], collection: 'users' }) as never
 
-  const claim = async (slug: string) =>
+  const claim = async (slug: string, extra: Record<string, unknown> = {}) =>
     payload.create({
       collection: 'claims',
       locale: 'en',
@@ -40,6 +40,7 @@ describe('claim updates', () => {
         sourceUrl: 'https://example.org/manifesto',
         recordStatus: 'ready',
         verification: { verdict: 'verified' },
+        ...extra,
       } as never,
       overrideAccess: true,
     })
@@ -383,6 +384,65 @@ describe('claim updates', () => {
     expect(await reviewsOf(doc.id)).toHaveLength(1)
   })
 
+  it('counts only published evidence as a claim’s source, and hides drafts from guests', async () => {
+    const doc = await claim('wells', { sourceUrl: null })
+    expect(doc.publishedIn).toEqual([])
+    const proof = await evidence(`https://example.org/${code}/wells-1`)
+    const draft = await payload.create({
+      collection: 'claim-updates',
+      locale: 'en',
+      draft: true,
+      data: {
+        claim: doc.id,
+        date: '2023-04',
+        rating: 'in-progress',
+        title: 'Wells dug',
+        evidence: [proof.id],
+        recordStatus: 'ready',
+      } as never,
+      overrideAccess: false,
+      user: as('editor'),
+    })
+    expect((await read(doc.id)).publishedIn).toEqual([])
+    const guest = await payload.find({
+      collection: 'claim-updates',
+      where: { claim: { equals: doc.id } },
+      overrideAccess: false,
+    })
+    expect(guest.docs).toEqual([])
+    await payload.update({
+      collection: 'claim-updates',
+      id: draft.id,
+      locale: 'en',
+      data: { _status: 'published' } as never,
+      overrideAccess: false,
+      user: as('editor'),
+    })
+    expect((await read(doc.id)).publishedIn).toEqual(['en'])
+  })
+
+  it('refuses to publish a draft whose rating is not on the scale', async () => {
+    const doc = await claim('mills')
+    const draft = await payload.create({
+      collection: 'claim-updates',
+      locale: 'en',
+      draft: true,
+      data: { claim: doc.id, date: '2023', rating: 'kept', title: 'Off the scale' } as never,
+      overrideAccess: false,
+      user: as('editor'),
+    })
+    await expect(
+      payload.update({
+        collection: 'claim-updates',
+        id: draft.id,
+        locale: 'en',
+        data: { _status: 'published', recordStatus: 'ready' } as never,
+        overrideAccess: false,
+        user: as('editor'),
+      }),
+    ).rejects.toThrow(/on the claim's scale/)
+  })
+
   it('saves an unfinished draft without the checks a published update needs', async () => {
     const doc = await claim('canals')
     const draft = await payload.create({
@@ -472,6 +532,7 @@ describe('claim updates', () => {
         mapping,
         commit,
         onCreate: { recordStatus: 'ready' },
+        requestedBy: users.editor.id,
       })
     const preview = await run(false)
     expect(preview.counts).toMatchObject({ create: 1, failed: 2 })
@@ -480,6 +541,15 @@ describe('claim updates', () => {
     expect(preview.errors[1]?.message).toMatch(/not on the claim's scale/)
     expect((await run(true)).counts).toMatchObject({ create: 1, failed: 2 })
     expect((await run(true)).counts).toMatchObject({ create: 0, update: 0, skip: 1 })
+
+    // The review the import recorded names the editor who ran it.
+    const markets = await payload.find({
+      collection: 'claims',
+      where: { and: [{ country: { equals: country } }, { slug: { equals: 'markets' } }] },
+      overrideAccess: true,
+    })
+    const reviews = await reviewsOf(markets.docs[0]?.id ?? '')
+    expect(reviews.map((r) => r.reviewer)).toEqual([users.editor.id])
 
     const found = await sdk.getClaim('en', code, 'markets')
     if (isNotAvailable(found)) throw new Error('The claim is not public.')
@@ -508,14 +578,18 @@ describe('claim updates', () => {
     expect(await reviewsOf(doc.id)).toEqual([])
   })
 
-  it('queues the job that refreshes the figures after a rating change', async () => {
+  it('queues one job that refreshes the figures after rating changes', async () => {
     const { docs } = await payload.find({
       collection: 'payload-jobs',
-      where: { taskSlug: { equals: 'refreshCounts' } },
+      where: {
+        and: [{ taskSlug: { equals: 'refreshCounts' } }, { completedAt: { exists: false } }],
+      },
       depth: 0,
       pagination: false,
       overrideAccess: true,
     })
-    expect(docs.some((job) => (job.input as { country?: string }).country === code)).toBe(true)
+    const ours = docs.filter((job) => (job.input as { country?: string }).country === code)
+    // Many rating changes above, and a newer job replaces one still waiting.
+    expect(ours).toHaveLength(1)
   })
 })

@@ -20,7 +20,12 @@ export function CopyCitation({
 }) {
   const [copied, setCopied] = useState(false)
   const copy = async () => {
-    const full = url.startsWith('/') ? text.replace(url, window.location.origin + url) : text
+    // The address comes after the title, so its last match is the address, whatever the title says.
+    const at = text.lastIndexOf(url)
+    const full =
+      url.startsWith('/') && at >= 0
+        ? text.slice(0, at) + window.location.origin + text.slice(at)
+        : text
     try {
       await navigator.clipboard.writeText(full)
       setCopied(true)

@@ -28,6 +28,8 @@ type Input = {
    * keeps its own.
    */
   onCreate?: Readonly<Record<string, unknown>>
+  /** The id of the user who asked for the import, for what it records in their name. */
+  requestedBy?: string
 }
 
 /** How many row errors an import keeps. The count covers them all. */
@@ -158,8 +160,14 @@ async function saveRow(
   plan: PlannedRow,
   /** Saves what the record points at first, in the same transaction, and returns its fields. */
   before?: (req: PayloadRequest) => Promise<Record<string, unknown>>,
+  requestedBy?: string,
 ): Promise<string> {
-  const req: Partial<PayloadRequest> & { payload: Payload } = { payload }
+  // The save runs as the system. Who asked is kept in its context, for the
+  // rating reviews an update records.
+  const req: Partial<PayloadRequest> & { payload: Payload } = {
+    payload,
+    ...(requestedBy ? { context: { requestedBy } } : {}),
+  }
   await initTransaction(req)
   try {
     const data = before ? { ...values, ...(await before(req as PayloadRequest)) } : values
@@ -682,6 +690,7 @@ async function runUpdatesPlan(payload: Payload, input: Input): Promise<ImportRes
         saved,
         plan,
         withEvidence,
+        input.requestedBy,
       )
       counts[current ? 'update' : 'create'] += 1
     } catch (error) {

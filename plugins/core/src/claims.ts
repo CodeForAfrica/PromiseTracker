@@ -22,7 +22,13 @@ import type { PublishingCheck } from './publishing'
 import { withPublishing, withTrash } from './publishing'
 import { setClaimTypeUsage, setRatingUsage } from './ratings'
 import { SLUG_PATTERN, slugify } from './slugs'
-import { confirmRating, deleteClaimHistory, fromLiveClaim, ratingFromUpdates } from './updates'
+import {
+  confirmRating,
+  deleteClaimHistory,
+  fromLiveClaim,
+  publishedAnywhere,
+  ratingFromUpdates,
+} from './updates'
 
 /**
  * Claims and topics (sections 7.5 and 7.7). A claim is what an actor said
@@ -501,7 +507,7 @@ async function hasEvidence(
 ): Promise<boolean> {
   const id = idOf(claim.id)
   if (!id) return false
-  const { totalDocs } = await payload.count({
+  const { docs } = await payload.find({
     collection: 'claim-updates',
     where: {
       and: [
@@ -510,11 +516,16 @@ async function hasEvidence(
         { evidence: { exists: true } },
       ],
     },
-    // Counts the claim's evidence, whoever saved it.
+    select: { _status: true },
+    // Every language's status: a draft's evidence is not public, so it is no source.
+    locale: 'all',
+    depth: 0,
+    pagination: false,
+    // Reads the claim's evidence, whoever saved it.
     overrideAccess: true,
     req,
   })
-  return totalDocs > 0
+  return docs.some((doc) => publishedAnywhere(doc._status))
 }
 
 /** Whether the claim's current rating, on its type's scale, needs a deadline. */

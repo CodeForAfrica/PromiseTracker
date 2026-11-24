@@ -3003,6 +3003,7 @@ export interface UploadDropzoneWidget {
 export interface TaskRunImport {
   input: {
     importId: string;
+    requestedBy?: string | null;
   };
   output?: unknown;
 }

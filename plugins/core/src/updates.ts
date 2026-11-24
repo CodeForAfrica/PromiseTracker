@@ -208,7 +208,7 @@ const counting = (claim: string, except?: string): Where => ({
 })
 
 /** Whether Payload's draft status, in one language or by language, is published in any. */
-const publishedAnywhere = (status: unknown): boolean =>
+export const publishedAnywhere = (status: unknown): boolean =>
   typeof status === 'string'
     ? status === 'published'
     : Boolean(status) &&
@@ -353,11 +353,10 @@ export const fromLiveClaim =
  * refreshes its pages.
  */
 async function syncClaim(req: PayloadRequest, claim: string): Promise<void> {
-  const rating = await ratingFromUpdates(req, claim)
   const { docs } = await req.payload.find({
     collection: 'claims',
     where: { id: { equals: claim } },
-    select: { country: true, type: true },
+    select: { country: true, type: true, updateCount: true },
     depth: 0,
     limit: 1,
     trash: true,
@@ -366,8 +365,20 @@ async function syncClaim(req: PayloadRequest, claim: string): Promise<void> {
     req: { ...req } as PayloadRequest,
   })
   const [stored] = docs
+  if (!stored) return
+  // Writing the claim first locks its row until this save commits. Two saves
+  // of the same claim's updates then take turns, and the second works out the
+  // rating with the first one's update in it, instead of overwriting it.
+  await req.payload.db.updateOne({
+    collection: 'claims',
+    id: claim,
+    data: { updateCount: stored.updateCount ?? 0 },
+    req,
+    returning: false,
+  })
+  const rating = await ratingFromUpdates(req, claim)
   // With no update left, the claim goes back to its scale's starting rating.
-  if (!rating.currentRating && stored) {
+  if (!rating.currentRating) {
     const starting = (await scaleOfClaim(req, stored)).find((r) => r.isStarting && !r.retired)
     if (starting) rating.currentRating = starting.slug
   }
@@ -382,7 +393,7 @@ async function syncClaim(req: PayloadRequest, claim: string): Promise<void> {
   })
   liveRatings.get(req)?.delete(claim)
   await recomputeAndCascade(req, 'claims', claim)
-  const code = await countryCode(req, stored?.country)
+  const code = await countryCode(req, stored.country)
   // Refreshed now, so the change shows at once. The job does it again from
   // the worker, with retries, since a refresh that fails here is only logged.
   if (code)
@@ -404,7 +415,12 @@ async function recordReview(
       outcome,
       rating,
       date: new Date().toISOString(),
-      reviewer: req.user ? req.user.id : null,
+      // An import runs as the system, and names who asked for it.
+      reviewer: req.user
+        ? req.user.id
+        : typeof req.context.requestedBy === 'string'
+          ? req.context.requestedBy
+          : null,
     },
     // The system records reviews. Who reviewed was checked by the save or the action.
     overrideAccess: true,
@@ -538,7 +554,11 @@ export const deleteClaimHistory: CollectionBeforeDeleteHook = async ({ id, req }
 /** Updates are public with their claim, once ready and published in the language. */
 const readUpdates = ({ req }: { req: PayloadRequest }): boolean | Where =>
   signedIn({ req }) || {
-    and: [{ recordStatus: { equals: 'ready' } }, { 'claim.recordStatus': { equals: 'ready' } }],
+    and: [
+      { recordStatus: { equals: 'ready' } },
+      { _status: { equals: 'published' } },
+      { 'claim.recordStatus': { equals: 'ready' } },
+    ],
   }
 
 /** A dated entry in a claim's history: the new rating, what happened, and the evidence (section 7.6). */
@@ -718,6 +738,13 @@ async function queueRefreshCounts(req: PayloadRequest, code: string | null): Pro
 export const refreshCountsTask = {
   slug: 'refreshCounts',
   inputSchema: [{ name: 'country', type: 'text' as const, required: true }],
+  // One refresh per country is enough: a new one replaces any still waiting,
+  // so an import of many rows leaves one job, not one per row.
+  concurrency: {
+    key: ({ input }: { input: { country: string } }) => `refreshCounts:${input.country}`,
+    exclusive: true,
+    supersedes: true,
+  },
   retries: 2,
   handler: async ({ input, req }: { input: { country: string }; req: PayloadRequest }) => {
     const code = input.country
