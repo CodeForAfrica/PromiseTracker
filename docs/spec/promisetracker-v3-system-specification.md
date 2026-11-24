@@ -1791,6 +1791,10 @@ codemods, and passes the full test suite before merging.
 | D65 | A claim's source document, its `source`, is one of its parents, so holding a document hides its claims. Documents have a record status and start ready, since they are never public themselves. This replaces D56 |
 | D66 | A source link counts as a claim's source, alongside a source document or evidence. Many pledges are reported in news articles that the server never fetches, and the claim page shows the link |
 | D67 | A record type with no required text, such as an actor, is live in every language its parents are live in. Payload's per-language publish status only gates text that must exist in a language, and its "publish all languages" covers only the languages switched on at the time |
+| D68 | The claim page shows the verdict's date and rationale, credited to PromiseTracker, and never who verified the claim. Section 13 keeps that internal, which #650's "who verified it" on the page would break |
+| D69 | Reviewers may update a claim only to set its verdict. Their save keeps every other field as it was |
+| D70 | The verdict and rationale can be imported from a spreadsheet, by someone who may set a verdict |
+| D71 | The "Awaiting verification" view is a Payload query preset, shared with everyone and created at start-up. A dashboard widget counts the claims in it |
 
 ### 20.2 Why
 

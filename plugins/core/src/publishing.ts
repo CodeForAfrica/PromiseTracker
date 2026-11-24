@@ -505,6 +505,11 @@ const statusField = (defaultValue: RecordStatus): Field => ({
     description: 'Ready makes it public in each language it is published in.',
   },
   hooks: { beforeChange: [checkStatus(defaultValue)] },
+  // Only those who may set a status see it editable: a reviewer, say, does not.
+  access: {
+    update: ({ req }) =>
+      userCan(req.user, 'setAnyRecordStatus') || userCan(req.user, 'holdRecords'),
+  },
 })
 
 /** The live record's published status, read once per request for the admin's two fields. */

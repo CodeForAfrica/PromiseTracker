@@ -1,7 +1,7 @@
 import type { Payload } from 'payload'
 
 import { ACTOR_KINDS, GENDERS, INSTITUTION_TYPES } from '../actors'
-import { partialDatePrecision } from '../claims'
+import { partialDatePrecision, VERDICTS } from '../claims'
 import { REGISTERED_LOCALES } from '../locales'
 import { AREA_PAGE, AREA_TYPES } from '../places'
 import { slugify } from '../slugs'
@@ -81,6 +81,9 @@ const FIELDS: Record<ImportTarget, readonly TargetField[]> = {
     { key: 'deadlineText', label: 'Deadline in words', localized: true },
     { key: 'sourceUrl', label: 'Source link' },
     { key: 'sourceLocator', label: 'Where in the source' },
+    // Only someone who may set a verdict can import these (section 13.2).
+    { key: 'verdict', label: 'Verdict', options: VERDICTS },
+    { key: 'rationale', label: 'Rationale', localized: true },
   ],
 }
 

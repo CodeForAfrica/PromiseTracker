@@ -62,14 +62,14 @@ Users, open the user, and type a new one.
 Administration > Users > Create New. Give the person a name, an email address, a password and one
 or more roles. A person can hold several roles.
 
-| Role        | Can                                                                          |
-| ----------- | ---------------------------------------------------------------------------- |
-| super-admin | Everything: users, countries, areas, offices, imports of places, settings    |
-| editor      | Decide what is public, rate claims, edit site settings and editorial content |
-| contributor | Add actors, documents and draft claims. Can hold a record, not publish it    |
-| reviewer    | Review AI candidates and set verdicts                                        |
-| moderator   | Handle citizen submissions                                                   |
-| viewer      | Read the admin, change nothing                                               |
+| Role        | Can                                                                                  |
+| ----------- | ------------------------------------------------------------------------------------ |
+| super-admin | Everything: users, countries, areas, offices, imports of places, settings            |
+| editor      | Decide what is public, rate claims, edit site settings and editorial content         |
+| contributor | Add actors, documents and draft claims. Can hold a record, not publish it            |
+| reviewer    | Review AI candidates and set verdicts. Can set a claim's verdict, not edit the claim |
+| moderator   | Handle citizen submissions                                                           |
+| viewer      | Read the admin, change nothing                                                       |
 
 Only a super-admin can give roles. The last super-admin cannot be deleted or lose the role, so the
 system always has someone who can manage users.
@@ -286,9 +286,32 @@ clear the slug, it is made again from the title in the language you are editing,
 editing in the language whose title should name the address.
 
 A claim starts on **hold**. Set it to **ready** to publish it. It is public only once it passes its
-checks: it has a **topic**, a **source** (a link to where it was said, or a source document), and a
-**deadline** if its rating needs one. Until then **Why it is not public**, in the sidebar, says what
-is missing. Once built-in verification arrives, a claim must also be verified.
+checks: it is **verified** (see below), it has a **topic**, a **source** (a link to where it was
+said, or a source document), and a **deadline** if its rating needs one. Until then **Why it is not
+public**, in the sidebar, says what is missing.
+
+### Verifying a claim
+
+Reviewers, editors and super-admins verify claims. A reviewer can set the verdict and nothing else
+on a claim.
+
+1. Open the **Awaiting verification** view: Claims, then the saved views menu above the list. The
+   dashboard's **Awaiting verification** card counts the claims in it and links there too.
+2. Open a claim. The **Verification** section shows the statement in its source document, with the
+   words highlighted. If the statement is not in the document word for word, it says so.
+3. Set the **Verdict**:
+   - **verified**: the actor said it, as the statement records.
+   - **false** or **misleading**: they did not, or not as recorded.
+   - **unverified**: not checked yet.
+4. Write the **Rationale**: how you checked it. It shows on the claim's page, in each language you
+   write it in. Add a link under **Report** if a fact-check report was published.
+5. Save.
+
+The date and who set the verdict are filled in for you. The site shows the date and the rationale,
+credited to PromiseTracker. It never shows who verified a claim.
+
+A claim found **false** or **misleading** is never published and never deleted. Archive it to put it
+away.
 
 ### The key claim
 
@@ -386,7 +409,8 @@ area by name or slug. Dates can be a year, a month or a day:
 | Build 5000 homes in Kibra | Achieng Wekesa | Housing | 2022-07 | 2027     | End of term       |
 
 A claim row matches an existing claim by its slug, made from the title unless a Slug column gives
-one. Imported claims start on **hold**.
+one. Imported claims start on **hold**. A **Verdict** column (verified, false, misleading or unverified) and a
+**Rationale** column set the verification. Only someone who may set a verdict can import them.
 
 `tests/fixtures/kenya-areas.csv`, `kenya-offices.csv`, `kenya-actors.csv`, `kenya-terms.csv` and
 `kenya-claims.csv` in the repository are full examples. The people in them are fictional.
