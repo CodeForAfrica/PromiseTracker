@@ -1297,7 +1297,9 @@ const handlers: Record<string, Handler> = {
     const topics = items('topic')
     const total = places.length + actors.length + claims.length + topics.length
     const body = SearchResultsSchema.parse({ query: q, places, actors, claims, topics, total })
-    await recordSearch(payload, { query: q, locale, country: code ?? null, results: total })
+    // Logged after the answer, so the log never slows a search down.
+    // recordSearch catches its own errors.
+    void recordSearch(payload, { query: q, locale, country: code ?? null, results: total })
     return ok(body)
   },
 
@@ -1537,8 +1539,17 @@ async function placeOf(
       a.order - b.order ||
       (a.seat.area?.name ?? '').localeCompare(b.seat.area?.name ?? ''),
   )
-  return { country: code, area, representatives: seats.map((s) => s.seat) }
+  // Seats inside a large place, such as a region with thousands of wards, are
+  // cut first: the list is in order, top first (D68).
+  return {
+    country: code,
+    area,
+    representatives: seats.slice(0, MAX_REPRESENTATIVES).map((s) => s.seat),
+  }
 }
+
+/** The most seats a place lists. A county with every constituency fits well within it. */
+const MAX_REPRESENTATIVES = 60
 
 /**
  * Logs a search (section 18) and tells the analytics port. A search is

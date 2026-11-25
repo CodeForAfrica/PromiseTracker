@@ -122,9 +122,10 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TABLE "search" CASCADE;
   DROP TABLE "search_locales" CASCADE;
   DROP TABLE "search_rels" CASCADE;
-  ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT "payload_locked_documents_rels_search_log_fk";
+  -- Dropping the tables above with CASCADE has already removed these two.
+  ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT IF EXISTS "payload_locked_documents_rels_search_log_fk";
   
-  ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT "payload_locked_documents_rels_search_fk";
+  ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT IF EXISTS "payload_locked_documents_rels_search_fk";
   
   DROP INDEX "payload_locked_documents_rels_search_log_id_idx";
   DROP INDEX "payload_locked_documents_rels_search_id_idx";

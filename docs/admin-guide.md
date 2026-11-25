@@ -560,7 +560,8 @@ already has records, rebuild it once, since the index starts empty.
 ### Searches that found nothing
 
 **Administration → Search log** lists every search: the words, the language, the country if one
-was chosen, and how many results it found. It records nothing about who searched.
+was chosen, and how many results it found. It records nothing about who searched. People sometimes
+type names or phone numbers into a search box, so only editors and super-admins can open the log.
 
 To see the searches that found nothing, add the **Searches that found nothing** widget to your
 dashboard: choose **Edit Dashboard**, then **Add Widget**. It lists the last 30 days' searches with

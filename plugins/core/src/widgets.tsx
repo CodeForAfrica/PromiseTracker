@@ -1,6 +1,8 @@
-import type { CollectionSlug, Payload, WidgetServerProps } from 'payload'
+import type { PostgresAdapter } from '@payloadcms/db-postgres'
+import { sql } from '@payloadcms/db-postgres'
+import type { Payload, PayloadRequest, WidgetServerProps } from 'payload'
 
-import { SEARCH_LOG_SLUG } from './search'
+import { readSearchLog } from './search'
 
 /**
  * Admin dashboard widgets (section 16.4). They are server components: Payload
@@ -12,47 +14,41 @@ import { SEARCH_LOG_SLUG } from './search'
 export const EMPTY_SEARCH_DAYS = 30
 /** How many searches it lists. */
 export const EMPTY_SEARCH_ROWS = 10
-/** The most log entries it reads to count them. */
-const SCAN = 2000
 
 export type EmptySearch = { query: string; times: number; last: string }
+
+type Row = { query: string; times: number | string; last: Date | string }
 
 /**
  * Searches that found nothing, most often first, with when each was last
  * tried (section 18). They test whether location search works, and list the
  * places the record is missing. Searches differing only in case or spacing
- * count as one.
+ * count as one. The database counts them, so every search in the period counts.
  */
 export async function emptySearches(
   payload: Payload,
   user: WidgetServerProps['user'],
   now: Date = new Date(),
 ): Promise<EmptySearch[]> {
+  // The log's own read rule, applied here because the count is one SQL query.
+  if (!readSearchLog({ req: { user } as PayloadRequest })) return []
   const since = new Date(now.getTime() - EMPTY_SEARCH_DAYS * 24 * 60 * 60 * 1000)
-  const { docs } = await payload.find({
-    collection: SEARCH_LOG_SLUG as CollectionSlug,
-    where: {
-      and: [{ results: { equals: 0 } }, { createdAt: { greater_than: since.toISOString() } }],
-    },
-    sort: '-createdAt',
-    limit: SCAN,
-    depth: 0,
-    // As the signed-in user: the log's own rule says who may read it.
-    overrideAccess: false,
-    ...(user ? { user } : {}),
-  })
-  const byQuery = new Map<string, EmptySearch>()
-  for (const doc of docs as unknown as { query?: unknown; createdAt?: unknown }[]) {
-    if (typeof doc.query !== 'string') continue
-    const key = doc.query.trim().replace(/\s+/g, ' ').toLowerCase()
-    const seen = byQuery.get(key)
-    const at = typeof doc.createdAt === 'string' ? doc.createdAt : ''
-    if (seen) seen.times += 1
-    else byQuery.set(key, { query: doc.query.trim(), times: 1, last: at })
-  }
-  return [...byQuery.values()]
-    .sort((a, b) => b.times - a.times || b.last.localeCompare(a.last))
-    .slice(0, EMPTY_SEARCH_ROWS)
+  const { drizzle } = payload.db as unknown as PostgresAdapter
+  const result = await drizzle.execute(sql`
+    SELECT
+      (array_agg(btrim("query") ORDER BY "created_at" DESC))[1] AS "query",
+      count(*)::int AS "times",
+      max("created_at") AS "last"
+    FROM "search_log"
+    WHERE "results" = 0 AND "created_at" > ${since.toISOString()}
+    GROUP BY lower(regexp_replace(btrim("query"), '\\s+', ' ', 'g'))
+    ORDER BY "times" DESC, "last" DESC
+    LIMIT ${EMPTY_SEARCH_ROWS}`)
+  return (result.rows as Row[]).map((row) => ({
+    query: row.query,
+    times: Number(row.times),
+    last: new Date(row.last).toISOString(),
+  }))
 }
 
 const cell = { padding: '6px 8px', borderBottom: '1px solid var(--theme-elevation-100)' }

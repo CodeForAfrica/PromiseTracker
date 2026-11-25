@@ -15,9 +15,11 @@ import type {
 } from 'payload'
 import { definePlugin } from 'payload'
 
-import { can, signedIn } from './access'
+import type { Rule } from './access'
+import { can } from './access'
 import { ADMIN_GROUPS } from './adminGroups'
 import { afterCommit } from './afterCommit'
+import { hasRole } from './roles'
 
 /**
  * Search (section 7.11, D44), on Payload's search plugin. The plugin keeps a
@@ -176,6 +178,13 @@ const ENTRY_FIELDS: Field[] = [
   },
 ]
 
+/**
+ * Who may read the search log: the editors the dashboard widget is for
+ * (section 16.4). People type names and numbers into search boxes, so the log
+ * is closed to everyone else.
+ */
+export const readSearchLog: Rule = ({ req }) => hasRole(req.user, 'super-admin', 'editor')
+
 /** Searches as they came in, for the measure in section 18. Nothing about the person. */
 export const SearchLog: CollectionConfig = {
   slug: SEARCH_LOG_SLUG,
@@ -189,7 +198,7 @@ export const SearchLog: CollectionConfig = {
       'results it found. Nothing about who searched.',
   },
   access: {
-    read: signedIn,
+    read: readSearchLog,
     // Only the API writes it. Kept for 12 months (section 15).
     create: () => false,
     update: () => false,
@@ -257,6 +266,43 @@ export async function indexRecord(
 ): Promise<void> {
   const { collection, id } = record
   if (!isSearched(collection)) return
+  if (!(await indexExists(payload))) return
+  // A save and the cascade it starts can reach the same record at once. One
+  // at a time, the second finds the first one's entry instead of adding
+  // another.
+  const key = `${collection}:${id}`
+  const previous = running.get(key) ?? Promise.resolve()
+  const next = previous.catch(() => undefined).then(() => reconcile(payload, { collection, id }))
+  running.set(key, next)
+  try {
+    await next
+  } finally {
+    if (running.get(key) === next) running.delete(key)
+  }
+}
+
+const running = new Map<string, Promise<void>>()
+const ready = new WeakSet<object>()
+
+/**
+ * Whether the index's table exists. An upgrade runs earlier migrations, such
+ * as the publishing cascade's, before the one that adds it, and they change
+ * records. Reindex fills the index once the upgrade is done.
+ */
+async function indexExists(payload: Payload): Promise<boolean> {
+  if (ready.has(payload.db)) return true
+  const { drizzle } = payload.db as unknown as PostgresAdapter
+  const result = await drizzle.execute(sql`SELECT to_regclass('search') IS NOT NULL AS found`)
+  const found = (result.rows[0] as { found?: unknown } | undefined)?.found === true
+  if (found) ready.add(payload.db)
+  return found
+}
+
+async function reconcile(
+  payload: Payload,
+  record: { collection: Searched; id: string },
+): Promise<void> {
+  const { collection, id } = record
   const locales = payload.config.localization
     ? payload.config.localization.localeCodes
     : ([] as string[])

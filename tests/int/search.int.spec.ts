@@ -11,7 +11,7 @@ import {
 } from '@promisetracker/plugin-core'
 import type { CollectionSlug, Payload, PayloadRequest } from 'payload'
 import { createPayloadRequest } from 'payload'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { unusedCountryCodes } from '../countries'
 
@@ -384,15 +384,19 @@ describe('search', () => {
       const nothing = `zzqx ${randomUUID().slice(0, 8)}`
       await search(nothing, { country: code })
       await search(nothing.toUpperCase(), { country: code })
-      const { docs } = await payload.find({
-        collection: SEARCH_LOG_SLUG as CollectionSlug,
-        where: { query: { like: nothing } },
-        sort: '-createdAt',
-        depth: 0,
-        // Reads the log as the system.
-        overrideAccess: true,
+      // The log is written after the answer.
+      const docs = await vi.waitFor(async () => {
+        const { docs } = await payload.find({
+          collection: SEARCH_LOG_SLUG as CollectionSlug,
+          where: { query: { like: nothing } },
+          sort: '-createdAt',
+          depth: 0,
+          // Reads the log as the system.
+          overrideAccess: true,
+        })
+        expect(docs).toHaveLength(2)
+        return docs
       })
-      expect(docs).toHaveLength(2)
       const [entry] = docs as unknown as Record<string, unknown>[]
       expect(entry).toMatchObject({ locale: 'en', country: code, results: 0 })
       expect(Object.keys(entry ?? {}).sort()).toEqual(
@@ -411,10 +415,20 @@ describe('search', () => {
       expect(listed.find((row) => row.query.toLowerCase() === nothing)).toMatchObject({ times: 2 })
     })
 
-    it('keeps the log closed to guests', async () => {
+    it('keeps the log closed to guests, and to signed-in people who are not editors', async () => {
       await expect(
         payload.find({ collection: SEARCH_LOG_SLUG as CollectionSlug, overrideAccess: false }),
       ).rejects.toThrow()
+      const viewer = { id: randomUUID(), roles: ['viewer'], collection: 'users' } as never
+      await expect(
+        payload.find({
+          collection: SEARCH_LOG_SLUG as CollectionSlug,
+          overrideAccess: false,
+          user: viewer,
+        }),
+      ).rejects.toThrow()
+      expect(await emptySearches(payload, viewer)).toEqual([])
+      expect(await emptySearches(payload, null)).toEqual([])
     })
   })
 
