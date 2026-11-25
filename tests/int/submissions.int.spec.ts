@@ -296,6 +296,26 @@ describe('submissions and sign-ups', () => {
       narrative: 'Paving is done.',
     })
     const anonymous = await accept({ name: 'Otieno', text: 'Work has stopped.' })
+    // A name cleared in the same save as accepting is not credited.
+    const result = await submit({ name: 'Kamau', consent: 'true' })
+    const doc = await stored(referenceOf(result))
+    const cleared = await payload.update({
+      collection: SUBMISSIONS,
+      id: doc.id,
+      data: { status: 'accepted', name: null },
+      overrideAccess: false,
+      user: as(moderator),
+    })
+    const updateId =
+      typeof cleared.claimUpdate === 'string' ? cleared.claimUpdate : cleared.claimUpdate?.id
+    const made = await payload.findByID({
+      collection: 'claim-updates',
+      id: String(updateId),
+      draft: true,
+      depth: 0,
+      overrideAccess: true,
+    })
+    expect(made.attribution ?? null).toBeNull()
     expect(anonymous.attribution ?? null).toBeNull()
   })
 

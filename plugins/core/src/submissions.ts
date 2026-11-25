@@ -117,8 +117,11 @@ const moderate: CollectionBeforeChangeHook = async ({ data, originalDoc, req, op
     req,
   })
   const text = String(data.text ?? originalDoc?.text ?? '')
-  const name = String(data.name ?? originalDoc?.name ?? '').trim()
-  const consent = Boolean(data.consent ?? originalDoc?.consent)
+  // A name or consent cleared in this same save stays cleared.
+  const latest = (field: 'name' | 'consent'): unknown =>
+    field in data ? data[field] : originalDoc?.[field]
+  const name = String(latest('name') ?? '').trim()
+  const consent = Boolean(latest('consent'))
   const kind = (data.kind ?? originalDoc?.kind) as SubmissionKind
   const locale = String(originalDoc?.locale ?? 'en')
   const update = await req.payload.create({
