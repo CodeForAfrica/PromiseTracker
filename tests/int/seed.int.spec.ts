@@ -176,6 +176,41 @@ describe('seed data', () => {
     })
   })
 
+  it('finds everyone who represents Nairobi, from the president down (section 7.11)', async () => {
+    const results = await sdk.search('en', 'Nairobi')
+    if ('error' in results) throw new Error('Search is not available in English')
+    const [place] = results.places
+    expect(place?.area.slug).toBe('nairobi-county')
+    const seats = (place?.representatives ?? []).map((seat) => ({
+      office: seat.office.slug,
+      area: seat.area?.slug ?? null,
+      holders: seat.holders.map((h) => h.slug),
+    }))
+    expect(seats.slice(0, 5)).toEqual([
+      { office: 'president', area: null, holders: ['william-ruto'] },
+      { office: 'deputy-president', area: null, holders: ['kithure-kindiki'] },
+      { office: 'governor', area: 'nairobi-county', holders: ['johnson-sakaja'] },
+      { office: 'senator', area: 'nairobi-county', holders: ['edwin-sifuna'] },
+      { office: 'woman-representative', area: 'nairobi-county', holders: ['esther-passaris'] },
+    ])
+    // Every MP whose constituency is in Nairobi: all 17 of them, and no one else.
+    const constituencies = await sdk.getAreas('en', 'ke', 'nairobi-county')
+    expect(constituencies.total).toBe(17)
+    const members = seats.slice(5)
+    expect(members.every((seat) => seat.office === 'member-of-parliament')).toBe(true)
+    expect(members.map((seat) => seat.area).sort()).toEqual(
+      constituencies.items.map((area) => area.slug).sort(),
+    )
+    expect(members.every((seat) => seat.holders.length === 1)).toBe(true)
+  })
+
+  it('finds a misspelt county, and a French place without its accents', async () => {
+    const misspelt = await sdk.search('en', 'Nairbi')
+    expect('places' in misspelt && misspelt.places[0]?.area.slug).toBe('nairobi-county')
+    const french = await sdk.search('fr', 'Senegal')
+    expect('places' in french && french.places.map((p) => p.area.name)).toContain('Sénégal')
+  })
+
   it('rates claims from their seeded updates, with evidence', async () => {
     const claim = await sdk.getClaim('en', 'ke', 'cut-the-price-of-fertiliser')
     if (isNotAvailable(claim)) throw new Error('The claim is not public.')
@@ -213,6 +248,7 @@ describe('seed data', () => {
       ['/countries/{code}/claims/{slug}/history', `/countries/ke/claims/${claim.slug}/history`],
       ['/topics', '/topics'],
       ['/topics/{slug}', '/topics/housing'],
+      ['/search', '/search', { q: 'Nairobi', country: 'ke' }],
       ['/redirects', '/redirects', { path: '/ke/president' }],
     ]
     expect(new Set(calls.map(([endpoint]) => endpoint))).toEqual(

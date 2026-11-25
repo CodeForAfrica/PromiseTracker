@@ -12,6 +12,7 @@
   "dependencies": {
     "@next/env": "catalog:",
     "@payloadcms/next": "catalog:",
+    "@payloadcms/plugin-search": "catalog:",
     "@payloadcms/richtext-lexical": "catalog:",
     "@payloadcms/ui": "catalog:",
     "@promisetracker/cms": "workspace:*",

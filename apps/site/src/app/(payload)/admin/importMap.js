@@ -6,6 +6,8 @@ import { HierarchyButton as HierarchyButton_ab83ff7e88da8d3530831f296ec4756a } f
 import { TierRowLabel as TierRowLabel_4b2483109986546830d3cc5a8828e016 } from '@promisetracker/plugin-core/client'
 import { RatingContrast as RatingContrast_4b2483109986546830d3cc5a8828e016 } from '@promisetracker/plugin-core/client'
 import { RatingRowLabel as RatingRowLabel_4b2483109986546830d3cc5a8828e016 } from '@promisetracker/plugin-core/client'
+import { LinkToDoc as LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
+import { ReindexButton as ReindexButton_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
 import { QueryPresetsHeading as QueryPresetsHeading_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
 import { QueryPresetsGroupByCell as QueryPresetsGroupByCell_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
 import { QueryPresetsGroupByField as QueryPresetsGroupByField_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
@@ -32,6 +34,7 @@ import { TagIcon as TagIcon_3817bf644402e67bfe6577f60ef982de } from '@payloadcms
 import { HierarchySidebarTabServer as HierarchySidebarTabServer_ab83ff7e88da8d3530831f296ec4756a } from '@payloadcms/ui/rsc'
 import { LeastRecentlyReviewed as LeastRecentlyReviewed_8c5b2177b2b16cd169c58df0d5f2d182 } from '@promisetracker/plugin-core/widgets'
 import { AwaitingVerification as AwaitingVerification_8c5b2177b2b16cd169c58df0d5f2d182 } from '@promisetracker/plugin-core/widgets'
+import { EmptySearches as EmptySearches_8c5b2177b2b16cd169c58df0d5f2d182 } from '@promisetracker/plugin-core/widgets'
 import { WelcomeWidget as WelcomeWidget_ab83ff7e88da8d3530831f296ec4756a } from '@payloadcms/ui/rsc'
 import { CollectionCards as CollectionCards_ab83ff7e88da8d3530831f296ec4756a } from '@payloadcms/ui/rsc'
 import { CollectionQueryWidget as CollectionQueryWidget_ab83ff7e88da8d3530831f296ec4756a } from '@payloadcms/ui/rsc'
@@ -51,6 +54,8 @@ export const importMap = {
   "@promisetracker/plugin-core/client#TierRowLabel": TierRowLabel_4b2483109986546830d3cc5a8828e016,
   "@promisetracker/plugin-core/client#RatingContrast": RatingContrast_4b2483109986546830d3cc5a8828e016,
   "@promisetracker/plugin-core/client#RatingRowLabel": RatingRowLabel_4b2483109986546830d3cc5a8828e016,
+  "@payloadcms/plugin-search/client#LinkToDoc": LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634,
+  "@payloadcms/plugin-search/client#ReindexButton": ReindexButton_aead06e4cbf6b2620c5c51c9ab283634,
   "@payloadcms/ui#QueryPresetsHeading": QueryPresetsHeading_3817bf644402e67bfe6577f60ef982de,
   "@payloadcms/ui#QueryPresetsGroupByCell": QueryPresetsGroupByCell_3817bf644402e67bfe6577f60ef982de,
   "@payloadcms/ui#QueryPresetsGroupByField": QueryPresetsGroupByField_3817bf644402e67bfe6577f60ef982de,
@@ -77,6 +82,7 @@ export const importMap = {
   "@payloadcms/ui/rsc#HierarchySidebarTabServer": HierarchySidebarTabServer_ab83ff7e88da8d3530831f296ec4756a,
   "@promisetracker/plugin-core/widgets#LeastRecentlyReviewed": LeastRecentlyReviewed_8c5b2177b2b16cd169c58df0d5f2d182,
   "@promisetracker/plugin-core/widgets#AwaitingVerification": AwaitingVerification_8c5b2177b2b16cd169c58df0d5f2d182,
+  "@promisetracker/plugin-core/widgets#EmptySearches": EmptySearches_8c5b2177b2b16cd169c58df0d5f2d182,
   "@payloadcms/ui/rsc#WelcomeWidget": WelcomeWidget_ab83ff7e88da8d3530831f296ec4756a,
   "@payloadcms/ui/rsc#CollectionCards": CollectionCards_ab83ff7e88da8d3530831f296ec4756a,
   "@payloadcms/ui/rsc#CollectionQueryWidget": CollectionQueryWidget_ab83ff7e88da8d3530831f296ec4756a,

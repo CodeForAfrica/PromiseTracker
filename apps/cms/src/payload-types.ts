@@ -174,7 +174,9 @@ export interface Config {
     media: Media;
     imports: Import;
     'import-mappings': ImportMapping;
+    'search-log': SearchLog;
     users: User;
+    search: Search;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -220,7 +222,9 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     imports: ImportsSelect<false> | ImportsSelect<true>;
     'import-mappings': ImportMappingsSelect<false> | ImportMappingsSelect<true>;
+    'search-log': SearchLogSelect<false> | SearchLogSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
+    search: SearchSelect<false> | SearchSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -252,6 +256,7 @@ export interface Config {
   widgets: {
     'least-recently-reviewed': LeastRecentlyReviewedWidget;
     'awaiting-verification': AwaitingVerificationWidget;
+    'empty-searches': EmptySearchesWidget;
     welcome: WelcomeWidget;
     collections: CollectionsWidget;
     'collection-query': CollectionQueryWidget;
@@ -1520,6 +1525,60 @@ export interface ImportMapping {
   createdAt: string;
 }
 /**
+ * Every search on the public site: the words, the language, the country and how many results it found. Nothing about who searched.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "search-log".
+ */
+export interface SearchLog {
+  id: string;
+  query: string;
+  locale: string;
+  country?: string | null;
+  results: number;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Filled in by the system: one entry for each area, actor, claim and topic, with its title in each language it is published in. "Reindex" rebuilds it.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "search".
+ */
+export interface Search {
+  id: string;
+  title?: string | null;
+  priority?: number | null;
+  doc:
+    | {
+        relationTo: 'areas';
+        value: string | Area;
+      }
+    | {
+        relationTo: 'actors';
+        value: string | Actor;
+      }
+    | {
+        relationTo: 'claims';
+        value: string | Claim;
+      }
+    | {
+        relationTo: 'topics';
+        value: string | Topic;
+      };
+  kind?: ('area' | 'actor' | 'claim' | 'topic') | null;
+  /**
+   * The country's code.
+   */
+  country?: string | null;
+  /**
+   * The address on the public site, without the language.
+   */
+  url?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -1760,8 +1819,16 @@ export interface PayloadLockedDocument {
         value: string | ImportMapping;
       } | null)
     | ({
+        relationTo: 'search-log';
+        value: string | SearchLog;
+      } | null)
+    | ({
         relationTo: 'users';
         value: string | User;
+      } | null)
+    | ({
+        relationTo: 'search';
+        value: string | Search;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -2428,6 +2495,18 @@ export interface ImportMappingsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "search-log_select".
+ */
+export interface SearchLogSelect<T extends boolean = true> {
+  query?: T;
+  locale?: T;
+  country?: T;
+  results?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
@@ -2458,6 +2537,20 @@ export interface UsersSelect<T extends boolean = true> {
         type?: T;
         metadata?: T;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "search_select".
+ */
+export interface SearchSelect<T extends boolean = true> {
+  title?: T;
+  priority?: T;
+  doc?: T;
+  kind?: T;
+  country?: T;
+  url?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2716,6 +2809,19 @@ export interface Site {
     footerNav?: string | null;
     initiative?: string | null;
     copyright?: string | null;
+    search?: string | null;
+    searchLabel?: string | null;
+    searchPlaceholder?: string | null;
+    searchTitle?: string | null;
+    searchIntro?: string | null;
+    searchResults?: string | null;
+    searchFound?: string | null;
+    searchNothing?: string | null;
+    whoRepresents?: string | null;
+    openPlace?: string | null;
+    searchPeople?: string | null;
+    searchClaims?: string | null;
+    searchTopics?: string | null;
   };
   createdBy?: {
     relationTo: 'users';
@@ -2880,6 +2986,19 @@ export interface SiteSelect<T extends boolean = true> {
         footerNav?: T;
         initiative?: T;
         copyright?: T;
+        search?: T;
+        searchLabel?: T;
+        searchPlaceholder?: T;
+        searchTitle?: T;
+        searchIntro?: T;
+        searchResults?: T;
+        searchFound?: T;
+        searchNothing?: T;
+        whoRepresents?: T;
+        openPlace?: T;
+        searchPeople?: T;
+        searchClaims?: T;
+        searchTopics?: T;
       };
   createdBy?: T;
   updatedBy?: T;
@@ -2935,6 +3054,16 @@ export interface AwaitingVerificationWidget {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "empty-searches_widget".
+ */
+export interface EmptySearchesWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'medium' | 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "welcome_widget".
  */
 export interface WelcomeWidget {
@@ -2979,7 +3108,9 @@ export interface CollectionQueryWidget {
       | 'media'
       | 'imports'
       | 'import-mappings'
-      | 'users';
+      | 'search-log'
+      | 'users'
+      | 'search';
     where?:
       | {
           [k: string]: unknown;
@@ -3021,7 +3152,9 @@ export interface ActivityWidget {
           | 'media'
           | 'imports'
           | 'import-mappings'
+          | 'search-log'
           | 'users'
+          | 'search'
         )[]
       | null;
   };

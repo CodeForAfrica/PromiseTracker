@@ -8,6 +8,8 @@ import type {
   Country,
   NotAvailable,
   Redirect,
+  SearchResults,
+  SearchScope,
   Topic,
 } from '@promisetracker/contract'
 import {
@@ -24,6 +26,7 @@ import {
   NotAvailable as NotAvailableSchema,
   OfficeList,
   Redirect as RedirectSchema,
+  SearchResults as SearchResultsSchema,
   SeatHolders,
   SiteInfo,
   TopicList,
@@ -32,7 +35,7 @@ import {
 
 // The filters and order of actor and claim lists come from the contract, which
 // the API checks them against (section 12.2).
-export type { ActorQuery, ClaimQuery }
+export type { ActorQuery, ClaimQuery, SearchScope }
 
 /** A query as the API's parameters, leaving out what is not set. */
 const params = (query: Readonly<Record<string, string | number | undefined>>) =>
@@ -183,6 +186,21 @@ export function createSdk(transport: Transport) {
     async getTopic(locale: string, slug: string): Promise<Topic | NotAvailable> {
       const result = await get(`/topics/${encodeURIComponent(slug)}`, locale)
       return isNotAvailable(result) ? NotAvailableSchema.parse(result) : TopicSchema.parse(result)
+    },
+    /**
+     * Places with everyone who represents them, then actors, claims and topics
+     * (section 7.11). In one country, the languages it is published in when it
+     * is not in this one.
+     */
+    async search(
+      locale: string,
+      q: string,
+      scope: SearchScope = {},
+    ): Promise<SearchResults | NotAvailable> {
+      const result = await get('/search', locale, params({ q, ...scope }))
+      return isNotAvailable(result)
+        ? NotAvailableSchema.parse(result)
+        : SearchResultsSchema.parse(result)
     },
     /** Where an address leads, or null when it leads nowhere else (section 11.2). */
     async getRedirect(locale: string, path: string): Promise<Redirect | null> {

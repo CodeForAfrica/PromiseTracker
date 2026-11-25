@@ -17,3 +17,9 @@ export const kernel = createKernel({
   locales: registeredLocales,
   defaultLocale,
 })
+
+/** The plugin that provides an adapter, whose settings the adapter is given (section 4.2). */
+export const ownerOf = (adapter: object): string =>
+  kernel.manifests.find((m) =>
+    Object.values(m.provides ?? {}).some((list) => (list as readonly object[]).includes(adapter)),
+  )?.slug ?? 'core'

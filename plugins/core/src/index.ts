@@ -27,6 +27,7 @@ import { ImportMappings, Imports, runImportTask } from './imports/collections'
 import { csvImporter, xlsxImporter } from './imports/readers'
 import { Areas, Offices } from './places'
 import { ClaimTypes, RatingScales } from './ratings'
+import { SearchLog } from './search'
 import { Users } from './users'
 
 export const Media: CollectionConfig = {
@@ -72,6 +73,7 @@ export const corePlugin = definePromiseTrackerPlugin({
     Media,
     Imports,
     ImportMappings,
+    SearchLog,
     Users,
   ],
   tasks: [
@@ -97,6 +99,12 @@ export const corePlugin = definePromiseTrackerPlugin({
       Component: '@promisetracker/plugin-core/widgets#AwaitingVerification',
       minWidth: 'small',
       maxWidth: 'medium',
+    },
+    {
+      slug: 'empty-searches',
+      label: 'Searches that found nothing',
+      Component: '@promisetracker/plugin-core/widgets#EmptySearches',
+      minWidth: 'medium',
     },
   ],
   provides: {
@@ -166,6 +174,29 @@ export * from './publishing'
 export { findQuote } from './quote'
 export * from './ratings'
 export * from './roles'
+export type { EmptySearch } from './search'
+export {
+  beforeSync,
+  EMPTY_SEARCH_DAYS,
+  EMPTY_SEARCH_ROWS,
+  emptySearches,
+  entryOf,
+  indexLater,
+  indexRecord,
+  liveIn,
+  logSearch,
+  MAX_QUERY,
+  PLACE_LIMIT,
+  SEARCH_LIMIT,
+  SEARCH_LOG_SLUG,
+  SEARCH_PRIORITY,
+  SEARCH_SLUG,
+  SEARCHED,
+  SearchLog,
+  searchIndex,
+  setSearchIndexer,
+  skipSync,
+} from './search'
 export * from './slugs'
 export { Users } from './users'
 // Widgets are loaded by the admin through `@promisetracker/plugin-core/widgets`, never from

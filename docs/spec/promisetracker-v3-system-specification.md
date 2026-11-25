@@ -1806,6 +1806,7 @@ codemods, and passes the full test suite before merging.
 | D81 | An update's kind is a correction when an editor says so. Otherwise the public API works it out from the order by date: a claim's earliest published update is its first rating, the rest are changes. The stored kind is set the same way when an update is saved, but is not rewritten when another update moves before it |
 | D82 | A save that changes a claim's rating without an update starting to count or changing its own rating, such as a new date, records a "changed" review. Holding or removing an update records none |
 | D83 | A claim moves to another type only if the new scale has every rating its updates give. A rating an update gave cannot be deleted from its scale, only retired, and an import may keep it on an unchanged row |
+| D84 | A search for a place lists the seats above it, its own and those of every area inside it, except for a whole country, which lists only its national seats, since every seat is inside it. A place lists at most 60 seats, top first, so a region with thousands of wards gives a page that loads. A topic, which has no record status, is in the search index in each language it has a name in. Matching uses pg_trgm's word similarity at 0.45, below its default of 0.6, so that a dropped letter in a short name, such as "Nairbi", still finds it |
 
 ### 20.2 Why
 
