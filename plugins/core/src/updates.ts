@@ -398,8 +398,27 @@ export const fromLiveClaim =
         .then(({ docs }) => ({ ...docs[0] }))
       reads.set(id, read)
     }
-    return (await read)[name] ?? value
+    const live = await read
+    // A field the system cleared, such as the rated date once no update
+    // counts, is null on the live record. That null is the answer, not the
+    // version's older value.
+    return Object.hasOwn(live, name) ? live[name] : value
   }
+
+/**
+ * Writing the claim locks its row until the save commits. Two saves of the
+ * same claim's updates then take turns: the second checks its evidence and
+ * works out the rating with the first one's update in it.
+ */
+async function lockClaim(req: PayloadRequest, claim: string, updateCount: unknown): Promise<void> {
+  await req.payload.db.updateOne({
+    collection: 'claims',
+    id: claim,
+    data: { updateCount: typeof updateCount === 'number' ? updateCount : 0 },
+    req,
+    returning: false,
+  })
+}
 
 /**
  * Sets a claim's rating fields from its updates, then works out where the
@@ -426,16 +445,7 @@ async function syncClaim(
   })
   const [stored] = docs
   if (!stored) return
-  // Writing the claim first locks its row until this save commits. Two saves
-  // of the same claim's updates then take turns, and the second works out the
-  // rating with the first one's update in it, instead of overwriting it.
-  await req.payload.db.updateOne({
-    collection: 'claims',
-    id: claim,
-    data: { updateCount: stored.updateCount ?? 0 },
-    req,
-    returning: false,
-  })
+  await lockClaim(req, claim, stored.updateCount)
   const rating = await ratingFromUpdates(req, claim)
   // With no update left, the claim goes back to its scale's starting rating.
   if (!rating.currentRating) {
@@ -567,13 +577,17 @@ const checkUpdate: CollectionBeforeChangeHook = async ({ data, originalDoc, req 
   // date and then by when it was recorded (D79). A new update is recorded now.
   const date = String(data.date ?? originalDoc?.date ?? '')
   const recorded = String(originalDoc?.createdAt ?? new Date().toISOString())
+  // Taken before reading the other updates, so two saves on one claim
+  // cannot each miss the other's.
+  await lockClaim(req, claimId, claim.updateCount)
   const others = await countingUpdates(req, claimId, idOf(originalDoc?.id) ?? undefined)
   const before = others.find(
     (u) => String(u.date) < date || (String(u.date) === date && String(u.createdAt) < recorded),
   )
   const previous = before?.rating ?? ratings.find((r) => r.isStarting)?.slug ?? null
   // Evidence in the trash is withdrawn, so it does not back a change.
-  const evidence = (data.evidence ?? originalDoc?.evidence) as unknown
+  // Cleared evidence is null in the save, which must not fall back to the stored pieces.
+  const evidence = afterSave(data, originalDoc, 'evidence')
   if (rating !== previous && (await liveEvidence(req, evidence)) === 0) {
     throw new APIError(
       'A change of rating needs at least one piece of evidence. Add it under Evidence.',

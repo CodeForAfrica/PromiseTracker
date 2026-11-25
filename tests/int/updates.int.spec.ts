@@ -975,6 +975,55 @@ describe('claim updates', () => {
     expect((await preview()).counts).toMatchObject({ create: 1, failed: 1 })
   })
 
+  it('refuses clearing the evidence of an update that changes the rating', async () => {
+    const doc = await claim('cleared')
+    const proof = await evidence(`https://example.org/${code}/cleared-1`)
+    const changed = await update({
+      claim: doc.id,
+      date: '2023',
+      rating: 'in-progress',
+      evidence: [proof.id],
+    })
+    await expect(
+      payload.update({
+        collection: 'claim-updates',
+        id: changed.id,
+        data: { evidence: null },
+        overrideAccess: false,
+        user: as('editor'),
+      }),
+    ).rejects.toThrow(/needs at least one piece of evidence/)
+  })
+
+  it('shows a cleared rated date in the admin, not the version’s older one', async () => {
+    const doc = await claim('unrated')
+    const proof = await evidence(`https://example.org/${code}/unrated-1`)
+    const only = await update({
+      claim: doc.id,
+      date: '2023',
+      rating: 'in-progress',
+      evidence: [proof.id],
+    })
+    // Saved while rated, so its latest version holds the rated date.
+    await payload.update({
+      collection: 'claims',
+      id: doc.id,
+      locale: 'en',
+      data: { title: 'A pledge, unrated, renamed' },
+      overrideAccess: true,
+    })
+    await payload.delete({ collection: 'claim-updates', id: only.id, overrideAccess: true })
+    const seen = await payload.findByID({
+      collection: 'claims',
+      id: doc.id,
+      draft: true,
+      overrideAccess: false,
+      user: as('editor'),
+    })
+    expect(seen.ratedOn ?? null).toBeNull()
+    expect(seen.currentRating).toBe('unstarted')
+  })
+
   it('deletes a claim for good with its updates and reviews', async () => {
     const doc = await claim('ferries')
     const proof = await evidence(`https://example.org/${code}/ferries-1`)

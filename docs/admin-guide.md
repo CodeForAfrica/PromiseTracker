@@ -343,8 +343,8 @@ An update saved as a **draft** changes nothing until you publish it. Neither doe
 changes to a published update.
 
 Evidence is checked when you save an update that counts, against the update before it by date.
-Evidence in the trash does not count. Adding an older update, or holding one, does not check the
-later ones again, so look at the timeline afterwards. You can always put an update on hold or move it
+Evidence in the trash does not count. Adding an older update, or changing,
+holding or removing one, does not check the later ones again, so look at the timeline afterwards. You can always put an update on hold or move it
 to the trash; it is checked again when you release or restore it.
 
 A claim moves to another claim type only if the new type's scale has every rating its updates give.
