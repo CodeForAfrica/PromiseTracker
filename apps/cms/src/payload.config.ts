@@ -16,6 +16,7 @@ import {
   setPipelineAdapters,
   setSearchIndexer,
   setTagRefresher,
+  setVerification,
 } from '@promisetracker/plugin-core'
 import { buildConfig } from 'payload'
 import { createHttpRefresher } from './cache'
@@ -53,6 +54,13 @@ setPipelineAdapters({
 configureAi({
   llm: kernel.adapters.llm,
   context: (payload, signal) => kernel.context(payload, 'ai', signal),
+})
+// Claims go out to the verification adapter the kernel chose, with its own
+// plugin's settings, and verdicts come back through it (section 5).
+setVerification({
+  adapter: kernel.adapters.verification,
+  context: (payload, signal) =>
+    kernel.context(payload, ownerOf(kernel.adapters.verification), signal),
 })
 // A change reaches the search index through the search port's adapter (section 4.2).
 setSearchIndexer(async (payload, record) =>

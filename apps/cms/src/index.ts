@@ -24,6 +24,7 @@ export { assertExtensions, REQUIRED_EXTENSIONS } from './extensions'
 export { ensureFirstAdmin } from './firstAdmin'
 export { getPayload } from './getPayload'
 export { firstPartyPlugins, kernel } from './kernel'
+export { checkWebhook } from './plugins'
 export { effectiveMethod, gateRest, guestMayCall } from './restGate'
 export { startPayload } from './startup'
 

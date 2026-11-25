@@ -29,6 +29,7 @@ import { Areas, Offices } from './places'
 import { ClaimTypes, RatingScales } from './ratings'
 import { SearchLog } from './search'
 import { Users } from './users'
+import { submitForVerificationTask } from './verification'
 
 export const Media: CollectionConfig = {
   slug: 'media',
@@ -85,6 +86,7 @@ export const corePlugin = definePromiseTrackerPlugin({
     recomputePublishingTask as never,
     dailyPublishingTask as never,
     refreshCountsTask as never,
+    submitForVerificationTask as never,
   ],
   workflows: [processDocumentWorkflow as never],
   widgets: [
@@ -219,3 +221,12 @@ export {
   ratingFromUpdates,
   UPDATE_KINDS,
 } from './updates'
+export type { VerdictOutcome } from './verification'
+export {
+  applyVerdictUpdates,
+  claimForVerification,
+  fromLiveGroup,
+  recordSync,
+  setVerification,
+  submitForVerificationTask,
+} from './verification'

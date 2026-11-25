@@ -1,0 +1,7 @@
+{
+  "data": {
+    "team": {
+      "verification_statuses": "{\"label\": \"Status\", \"default\": \"undetermined\", \"active\": \"in_progress\", \"statuses\": [{\"id\": \"false\", \"label\": \"False\", \"locales\": {\"en\": {\"label\": \"False\", \"description\": \"\"}}, \"style\": {\"color\": \"#d0021b\"}}, {\"id\": \"in_progress\", \"label\": \"In Progress\", \"locales\": {\"en\": {\"label\": \"In Progress\", \"description\": \"\"}}, \"style\": {\"color\": \"#f5a623\"}}, {\"id\": \"not_applicable\", \"label\": \"Inconclusive\", \"locales\": {\"en\": {\"label\": \"Inconclusive\", \"description\": \"\"}}, \"style\": {\"color\": \"#9b9b9b\"}}, {\"id\": \"undetermined\", \"label\": \"Unstarted\", \"locales\": {\"en\": {\"label\": \"Unstarted\", \"description\": \"\"}}, \"style\": {\"color\": \"#518fff\"}}, {\"id\": \"verified\", \"label\": \"Verified\", \"locales\": {\"en\": {\"label\": \"Verified\", \"description\": \"\"}}, \"style\": {\"color\": \"#5cae73\"}}]}"
+    }
+  }
+}

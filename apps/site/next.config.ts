@@ -25,6 +25,7 @@ const nextConfig: NextConfig = {
     '@promisetracker/contract',
     '@promisetracker/kernel',
     '@promisetracker/plugin-ai',
+    '@promisetracker/plugin-check',
     '@promisetracker/plugin-core',
     '@promisetracker/plugin-site',
     '@promisetracker/plugin-tika',

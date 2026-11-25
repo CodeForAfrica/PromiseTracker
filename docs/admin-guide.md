@@ -314,6 +314,61 @@ credited to PromiseTracker. It never shows who verified a claim.
 A claim found **false** or **misleading** is never published and never deleted. Archive it to put it
 away.
 
+### Verifying in Meedan Check
+
+When the deployment verifies in Check (`PT_PLUGINS` includes `check` and `PT_VERIFICATION=check`),
+fact-checkers work in the Check workspace, not here:
+
+- A new claim is sent to Check as an item of type Claim, starting as **Unstarted**. Its **Check**
+  section, in the sidebar, shows the item and a link to it, filled in within a minute or so.
+- When a report is published in Check, the claim takes the verdict for the item's status, the
+  report's text as its rationale, and the report's date. A report unpublished in Check makes the
+  claim unverified and puts it on **hold**, and editors get an email.
+- The **Verdict**, **Date**, **Rationale** and **Report** fields are read-only. Reviewers can no
+  longer set a verdict. Change it in Check. Only a super-admin can override it here, and that is
+  logged. While the report stays published in Check, the next sync, within 15 minutes, puts its
+  verdict back.
+- A claim put on **hold** because its report was unpublished stays on hold when someone saves it.
+  An editor releases it by setting it to **ready**.
+- The **Check** section shows the report's state and when the claim was last synced.
+
+#### Setting up Check
+
+A super-admin fills these in once, under Administration > Settings > Check. They can be filled
+in before the plugin is switched on: until then the section says it is not in use.
+
+| Field                 | What to put                                                                              |
+| --------------------- | ---------------------------------------------------------------------------------------- |
+| Workspace             | The workspace's short name, from its address: `checkmedia.org/{name}/all-items`          |
+| API key               | A key from the workspace's settings. Stored encrypted, and shown as `********`           |
+| Webhook secret        | Any long random text. Stored encrypted                                                   |
+| Statuses and verdicts | Each of the workspace's statuses with its verdict. The default workspace's are filled in |
+
+Then, in the workspace's settings in Check, add a webhook for report events to
+`{site address}/api/plugins/check/webhook`, with the webhook secret as its `Authorization` header.
+Verdicts also arrive every 15 minutes without it, so a missed webhook catches up.
+
+Statuses are managed in Check, and each workspace defines its own. Give each one the verdict that
+fits what it means in that workspace, by its id. The error at start-up names any status with no
+verdict, with its label and id. A custom status's id is a number.
+
+The PesaCheck promise workspace uses its statuses as promise ratings, so a published report there
+means the promise was checked:
+
+| Status in Check | Id               | Verdict    |
+| --------------- | ---------------- | ---------- |
+| Completed       | `verified`       | verified   |
+| In Progress     | `in_progress`    | verified   |
+| Behind Schedule | `not_applicable` | verified   |
+| Stalled         | `false`          | verified   |
+| Unstarted       | `undetermined`   | verified   |
+| Unchecked       | `1764592506934`  | unverified |
+| Unverified      | `1764591532014`  | unverified |
+
+Add a status in Check, and give it a verdict here before the next deploy: PromiseTracker refuses
+to start while a status has none. If it already refuses, take `check` out of `PT_PLUGINS`, start
+it, give the status a verdict under Settings, then put `check` back.
+
 ### Rating a claim
 
 A claim's rating changes only through a **claim update**: a dated entry in its public history.

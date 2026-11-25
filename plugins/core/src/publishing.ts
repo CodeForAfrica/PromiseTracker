@@ -650,7 +650,7 @@ const publishUnlessDraft =
   }
 
 /** The people told about status changes: editors and super-admins. */
-async function editorEmails(payload: Payload): Promise<string[]> {
+export async function editorEmails(payload: Payload): Promise<string[]> {
   const { docs } = await payload.find({
     collection: 'users',
     where: { roles: { in: ['editor', 'super-admin'] } },

@@ -21,6 +21,7 @@ COPY plugins/ai/package.json plugins/ai/
 COPY plugins/core/package.json plugins/core/
 COPY plugins/site/package.json plugins/site/
 COPY plugins/tika/package.json plugins/tika/
+COPY plugins/check/package.json plugins/check/
 RUN pnpm install --frozen-lockfile
 
 FROM deps AS builder
