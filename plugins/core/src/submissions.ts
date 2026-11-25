@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'node:crypto'
 
 import type { NewsletterProvider } from '@promisetracker/kernel'
 import type {
+  CollectionAfterDeleteHook,
   CollectionBeforeChangeHook,
   CollectionConfig,
   Payload,
@@ -142,6 +143,20 @@ const moderate: CollectionBeforeChangeHook = async ({ data, originalDoc, req, op
   return { ...decided, claimUpdate: update.id }
 }
 
+/** A deleted submission takes its files with it, so no upload outlives it (section 13.9). */
+const deleteFiles: CollectionAfterDeleteHook = async ({ doc, req }) => {
+  const list: unknown = Reflect.get(doc, 'files')
+  const files = Array.isArray(list) ? list.map(idOf).filter((id): id is string => id !== null) : []
+  if (files.length === 0) return
+  await req.payload.delete({
+    collection: SUBMISSION_FILES,
+    where: { id: { in: files } },
+    // Whoever may delete a submission may delete its files.
+    overrideAccess: true,
+    req,
+  })
+}
+
 /** The moderation queue (section 13.2). Created by the public API only. */
 export const Submissions: CollectionConfig = {
   slug: SUBMISSIONS,
@@ -163,7 +178,7 @@ export const Submissions: CollectionConfig = {
     update: can.moderateSubmissions,
     delete: can.moderateSubmissions,
   },
-  hooks: { beforeChange: [moderate] },
+  hooks: { beforeChange: [moderate], afterDelete: [deleteFiles] },
   fields: [
     {
       type: 'row',
@@ -387,17 +402,6 @@ export async function deleteOldSubmissions(payload: Payload, now = new Date()): 
     // Retention runs as the system.
     overrideAccess: true,
   })
-  const files = docs.flatMap((doc) => {
-    const list: unknown = Reflect.get(doc, 'files')
-    return Array.isArray(list) ? list.map(idOf).filter((id): id is string => id !== null) : []
-  })
-  if (files.length > 0) {
-    await payload.delete({
-      collection: SUBMISSION_FILES,
-      where: { id: { in: files } },
-      overrideAccess: true,
-    })
-  }
   return docs.length
 }
 

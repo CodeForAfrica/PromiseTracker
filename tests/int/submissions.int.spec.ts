@@ -237,6 +237,14 @@ describe('submissions and sign-ups', () => {
     expect(res.status).toBe(201)
     const doc = await stored(((await res.json()) as { reference: string }).reference)
     expect(doc.files).toHaveLength(1)
+    // Deleting the submission deletes its file.
+    await payload.delete({ collection: SUBMISSIONS, id: doc.id, overrideAccess: true })
+    const files = await payload.count({
+      collection: 'submission-files',
+      where: { id: { in: doc.files as string[] } },
+      overrideAccess: true,
+    })
+    expect(files.totalDocs).toBe(0)
 
     // A file whose bytes are not what its name says is refused.
     form.set('captcha', await solved())
