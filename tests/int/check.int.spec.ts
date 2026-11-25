@@ -283,6 +283,23 @@ describe('verification in Check', () => {
     expect((await read()).recordStatus).toBe('hold')
   })
 
+  it('leaves a released claim alone when the pause is seen again', async () => {
+    await payload.update({
+      collection: 'claims',
+      id: claimId,
+      data: { recordStatus: 'ready' },
+      overrideAccess: false,
+      user: { ...editor, collection: 'users' } as never,
+    })
+    const sendEmail = vi.spyOn(payload, 'sendEmail').mockResolvedValue(undefined as never)
+    // A later delivery of the same pause, with its own time, so not a repeat by fingerprint.
+    const later = { ...(recording('webhook-paused') as object), time: '2026-11-25T12:00:00Z' }
+    expect(await (await post(later)).json()).toMatchObject({ applied: 0 })
+    expect((await read()).recordStatus).toBe('ready')
+    expect(sendEmail).not.toHaveBeenCalled()
+    sendEmail.mockRestore()
+  })
+
   it('reconciles published reports in the poll, catching a lost webhook', async () => {
     const result = await pollCheck(deps())
     // Only item 12345 is a claim here. The rest of the recorded reports are unknown.

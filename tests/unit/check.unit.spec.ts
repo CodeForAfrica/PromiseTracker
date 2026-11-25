@@ -171,7 +171,7 @@ describe('the check adapter', () => {
     expect((await createCheckVerification().health(ctx())).healthy).toBe(true)
   })
 
-  it('polls published reports, 100 to a page, and maps each status to a verdict', async () => {
+  it('polls published and paused reports, 100 to a page, and maps each status to a verdict', async () => {
     const api = recordedCheck()
     const adapter = createCheckVerification({ ...api, sleep: noWait })
     const { updates, position } = await adapter.pull(null, ctx())
@@ -192,9 +192,22 @@ describe('the check adapter', () => {
         eslimit: 100,
         esoffset: 100,
       },
+      {
+        report_status: ['paused'],
+        sort: 'recent_activity',
+        sort_type: 'desc',
+        eslimit: 100,
+        esoffset: 0,
+      },
     ])
     expect(position).toBeNull()
-    expect(updates).toHaveLength(103)
+    expect(updates).toHaveLength(104)
+    // A pause whose webhook was lost is withdrawn by the poll.
+    expect(updates.find((u) => u.externalId === itemId(30000))).toEqual({
+      externalId: itemId(30000),
+      verdict: 'unverified',
+      withdrawn: true,
+    })
     expect(updates.find((u) => u.externalId === itemId(12345))).toEqual({
       externalId: itemId(12345),
       verdict: 'verified',
@@ -211,7 +224,10 @@ describe('the check adapter', () => {
     const api = recordedCheck({ publishedReports: () => full })
     const adapter = createCheckVerification({ ...api, sleep: noWait })
     await adapter.pull(null, ctx())
-    const offsets = api.sent.map((r) => JSON.parse(String(r.variables.query)).esoffset)
+    const offsets = api.sent
+      .map((r) => JSON.parse(String(r.variables.query)))
+      .filter((q) => q.report_status[0] === 'published')
+      .map((q) => q.esoffset)
     expect(offsets).toHaveLength(100)
     expect(offsets.at(-1)).toBe(9_900)
   })

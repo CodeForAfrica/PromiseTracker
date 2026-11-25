@@ -250,15 +250,16 @@ const PUBLISHED = `
 export const SEARCH_WINDOW = 10_000
 const MAX_PAGES = SEARCH_WINDOW / PAGE_SIZE
 
-/** Items with a published report, most recently active first, 100 per page (section 5.2). */
-export async function publishedItems(
+/** Items whose report is in a state, most recently active first, 100 per page (section 5.2). */
+export async function itemsWithReport(
   credentials: CheckCredentials,
+  state: 'published' | 'paused',
   options: CallOptions = {},
 ): Promise<CheckItem[]> {
   const items: CheckItem[] = []
   for (let page = 0; page < MAX_PAGES; page++) {
     const query = JSON.stringify({
-      report_status: ['published'],
+      report_status: [state],
       sort: 'recent_activity',
       sort_type: 'desc',
       eslimit: PAGE_SIZE,
@@ -275,6 +276,10 @@ export async function publishedItems(
   }
   return items
 }
+
+/** Items with a published report. */
+export const publishedItems = (credentials: CheckCredentials, options: CallOptions = {}) =>
+  itemsWithReport(credentials, 'published', options)
 
 const STATUSES = `
   query TeamStatuses {

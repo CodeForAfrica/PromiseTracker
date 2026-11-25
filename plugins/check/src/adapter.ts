@@ -6,7 +6,7 @@ import type {
 } from '@promisetracker/kernel'
 import { ConfigurationError, circuitBreakerFor, createLog } from '@promisetracker/kernel'
 import type { CallOptions, CheckItem, Report } from './client'
-import { createItem, getItem, itemId, publishedItems, readReport, SERVICE } from './client'
+import { createItem, getItem, itemId, itemsWithReport, readReport, SERVICE } from './client'
 import type { CheckSettings } from './settings'
 import { readCheckSettings } from './settings'
 
@@ -122,11 +122,23 @@ export function createCheckVerification(options: CallOptions = {}): Verification
 
     async pull(_since, ctx) {
       const settings = readCheckSettings(ctx.settings)
-      const items = await publishedItems(credentialsOf(settings), callOptions(ctx))
-      const updates = items
-        .map((item) => updateFrom(item, item.report, settings, ctx))
-        .filter((update): update is VerdictUpdate => update !== null)
-      // A search of every published report needs no saved position.
+      const credentials = credentialsOf(settings)
+      const published = await itemsWithReport(credentials, 'published', callOptions(ctx))
+      // A lost pause is caught too, or the claim would stay verified and public.
+      const paused = await itemsWithReport(credentials, 'paused', callOptions(ctx))
+      const updates = [
+        ...published
+          .map((item) => updateFrom(item, item.report, settings, ctx))
+          .filter((update): update is VerdictUpdate => update !== null),
+        ...paused.map(
+          (item): VerdictUpdate => ({
+            externalId: item.id,
+            verdict: 'unverified',
+            withdrawn: true,
+          }),
+        ),
+      ]
+      // A search of every report needs no saved position.
       return { updates, position: null }
     },
 

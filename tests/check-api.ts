@@ -29,7 +29,11 @@ const RECORDINGS: Record<string, Reply> = {
   projectMedia: () => recording('project_media'),
   teamStatuses: () => recording('verification_statuses'),
   publishedReports: ({ variables }: SentRequest) => {
-    const query = JSON.parse(String(variables.query)) as { esoffset?: number }
+    const query = JSON.parse(String(variables.query)) as {
+      esoffset?: number
+      report_status?: string[]
+    }
+    if (query.report_status?.includes('paused')) return recording('search-paused')
     return recording(query.esoffset ? 'search-page-2' : 'search-page-1')
   },
 }

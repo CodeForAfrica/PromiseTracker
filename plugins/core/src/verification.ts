@@ -350,7 +350,9 @@ async function applyOne(req: PayloadRequest, update: VerdictUpdate): Promise<Ver
   let verification: Doc
   let recordStatus: unknown = live.recordStatus
   if (update.withdrawn) {
-    if (stored.verdict === 'unverified' && live.recordStatus === 'hold') {
+    // Already withdrawn. An editor may have released the claim since, and a
+    // repeat, or the poll seeing the paused report again, must not hold it again.
+    if (stored.verdict === 'unverified') {
       return { externalId: update.externalId, claim: id, changed: false }
     }
     verification = { ...stored, verdict: 'unverified', date: new Date().toISOString() }

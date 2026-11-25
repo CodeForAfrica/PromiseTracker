@@ -1,0 +1,28 @@
+{
+  "data": {
+    "search": {
+      "number_of_results": 1,
+      "medias": {
+        "edges": [
+          {
+            "node": {
+              "id": "UHJvamVjdE1lZGlhLzMwMDAw",
+              "full_url": "https://checkmedia.org/promise-tracker/media/30000",
+              "status": "verified",
+              "report_status": "paused",
+              "report": {
+                "data": {
+                  "state": "paused",
+                  "options": {
+                    "language": "en",
+                    "text": "Report for item 30000."
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
