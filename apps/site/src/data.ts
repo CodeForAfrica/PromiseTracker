@@ -1,8 +1,8 @@
 import 'server-only'
 
 import type { CountrySummary, SiteInfo } from '@promisetracker/contract'
-import type { ActorQuery, ClaimQuery } from '@promisetracker/sdk'
-import { BadRequestError, NotFoundError } from '@promisetracker/sdk'
+import type { ActorQuery, ClaimQuery, SearchScope } from '@promisetracker/sdk'
+import { BadRequestError, isNotAvailable, NotFoundError } from '@promisetracker/sdk'
 import { unstable_cache } from 'next/cache'
 import { notFound, permanentRedirect, redirect } from 'next/navigation'
 
@@ -138,6 +138,21 @@ export const getTopic = (locale: string, slug: string) =>
     tags: topicTags,
     revalidate: HOLDERS_TTL,
   })()
+
+/**
+ * A search. Not cached: each one is logged (section 18), and few are asked
+ * twice. A country the site does not have in this language searches every
+ * country instead.
+ */
+export async function search(locale: string, q: string, scope: SearchScope = {}) {
+  if (scope.country) {
+    const found = await orNull(sdk.search(locale, q, scope))
+    if (found && !isNotAvailable(found)) return found
+  }
+  const everywhere = await orNotFound(sdk.search(locale, q))
+  if (isNotAvailable(everywhere)) notFound()
+  return everywhere
+}
 
 /** Where an address leads instead (section 11.2). The path has no language. */
 export const getRedirect = (locale: string, path: string) => {

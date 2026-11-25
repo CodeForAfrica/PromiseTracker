@@ -14,10 +14,10 @@ when `DATABASE_URL` points at another machine, unless you add `--remote`.
 
 ## What is in it
 
-| Country       | Places                                                                                  | Offices                                                              | Office holders                                                                                                                        |
-| ------------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Kenya, `ke`   | The country and its 47 counties, with their official codes and French and Swahili names | President, Deputy President, Governor, Senator, Woman Representative | The President and Deputy President since 2022, and their predecessors since 2013. The governor of each county, elected in August 2022 |
-| Senegal, `sn` | The country and its 14 regions, with French names                                       | President of the Republic                                            | President Bassirou Diomaye Faye, and Macky Sall before him                                                                            |
+| Country       | Places                                                                                                                   | Offices                                                                                               | Office holders                                                                                                                                                                                |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Kenya, `ke`   | The country and its 47 counties, with their official codes and French and Swahili names, and Nairobi's 17 constituencies | President, Deputy President, Governor, Senator, Woman Representative, Member of the National Assembly | The President and Deputy President since 2022, and their predecessors since 2013. The governor of each county, and Nairobi's senator, woman representative and 17 MPs, elected in August 2022 |
+| Senegal, `sn` | The country and its 14 regions, with French names                                                                        | President of the Republic                                                                             | President Bassirou Diomaye Faye, and Macky Sall before him                                                                                                                                    |
 
 Both countries also have claims: Kenya's President and Nairobi's governor, and Senegal's President,
 each with a title, summary, topic and deadline. They name 12 topics shared by every country, such
@@ -42,7 +42,9 @@ so they appear on the site at once.
 The office holders are real public officials. The list was compiled without checking each row
 against an official source, so check a name against the Independent Electoral and Boundaries
 Commission, the county's own site or the Gazette before relying on it, and fix it here if it is
-wrong. Senators, Woman Representatives and MPs are not seeded yet.
+wrong. Nairobi's senator, woman representative and MPs are seeded so a search for Nairobi
+shows everyone who represents it (section 7.11). Their parties are left empty until checked. The
+other counties' senators, woman representatives and MPs are not seeded yet.
 
 ## How it works
 

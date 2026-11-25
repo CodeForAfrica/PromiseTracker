@@ -87,6 +87,22 @@ export const DEFAULT_STRINGS: { en: Strings; fr: Strings } = {
     footerNav: 'Footer',
     initiative: 'An initiative of',
     copyright: 'Copyright 2026 Code for Africa',
+    search: 'Search',
+    searchLabel: 'Search for a place, a person or a claim',
+    searchPlaceholder: 'A county, a constituency, a name or a claim',
+    searchTitle: 'Search the record',
+    searchIntro:
+      'Search for a place to see everyone who represents it, from the president down. Or search for a person, a claim or a topic.',
+    searchResults: 'Results',
+    searchFound:
+      '{places} places, {people} people, {claims} claims and {topics} topics match “{q}”.',
+    searchNothing:
+      'Nothing on the record matches “{q}”. Check the spelling, or try the name of a county or a person.',
+    whoRepresents: 'Who represents {place}',
+    openPlace: 'Open the page for {place}',
+    searchPeople: 'People',
+    searchClaims: 'Claims',
+    searchTopics: 'Topics',
   },
   fr: {
     skipToContent: 'Aller au contenu',
@@ -169,6 +185,22 @@ export const DEFAULT_STRINGS: { en: Strings; fr: Strings } = {
     footerNav: 'Pied de page',
     initiative: 'Une initiative de',
     copyright: 'Copyright 2026 Code for Africa',
+    search: 'Rechercher',
+    searchLabel: 'Rechercher un lieu, une personne ou un engagement',
+    searchPlaceholder: 'Une région, une circonscription, un nom ou un engagement',
+    searchTitle: 'Rechercher dans le registre',
+    searchIntro:
+      'Recherchez un lieu pour voir tous ceux qui le représentent, du président jusqu’aux élus locaux. Ou recherchez une personne, un engagement ou un thème.',
+    searchResults: 'Résultats',
+    searchFound:
+      '{places} lieux, {people} personnes, {claims} engagements et {topics} thèmes correspondent à « {q} ».',
+    searchNothing:
+      'Rien dans le registre ne correspond à « {q} ». Vérifiez l’orthographe, ou essayez le nom d’une région ou d’une personne.',
+    whoRepresents: 'Qui représente {place}',
+    openPlace: 'Ouvrir la page de {place}',
+    searchPeople: 'Personnes',
+    searchClaims: 'Engagements',
+    searchTopics: 'Thèmes',
   },
 }
 

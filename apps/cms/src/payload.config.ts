@@ -10,9 +10,11 @@ import {
   ensureVerificationQueue,
   installAfterCommit,
   privateHistory,
+  searchIndex,
   setFileReader,
   setImporters,
   setPipelineAdapters,
+  setSearchIndexer,
   setTagRefresher,
 } from '@promisetracker/plugin-core'
 import { buildConfig } from 'payload'
@@ -21,7 +23,7 @@ import { emailAdapter } from './email'
 import { databaseUrl, publicUrl } from './env'
 import { assertExtensions } from './extensions'
 import { ensureFirstAdmin } from './firstAdmin'
-import { kernel } from './kernel'
+import { kernel, ownerOf } from './kernel'
 import { defaultLocale, registeredLocales } from './locales'
 import { loggerConfig } from './logger'
 import { migrations } from './migrations'
@@ -40,10 +42,6 @@ setTagRefresher(createHttpRefresher())
 setImporters(kernel.adapters.structuredImporter)
 // Documents come in and are read with every enabled plugin's connectors and
 // extractors, each given its own plugin's settings (section 4.2).
-const ownerOf = (adapter: object): string =>
-  kernel.manifests.find((m) =>
-    Object.values(m.provides ?? {}).some((list) => (list as readonly object[]).includes(adapter)),
-  )?.slug ?? 'core'
 setPipelineAdapters({
   connectors: kernel.adapters.sourceConnector,
   extractors: kernel.adapters.contentExtractor,
@@ -56,6 +54,13 @@ configureAi({
   llm: kernel.adapters.llm,
   context: (payload, signal) => kernel.context(payload, 'ai', signal),
 })
+// A change reaches the search index through the search port's adapter (section 4.2).
+setSearchIndexer(async (payload, record) =>
+  kernel.adapters.search.index(
+    record,
+    await kernel.context(payload, ownerOf(kernel.adapters.search)),
+  ),
+)
 const s3Reader = s3FileReader()
 if (s3Reader) setFileReader(s3Reader)
 
@@ -136,8 +141,13 @@ export default buildConfig({
     await ensureDefaultRatings(payload)
     await ensureVerificationQueue(payload)
   },
-  // privateHistory runs after every plugin, so it covers all their record types.
-  plugins: [...kernel.payloadPlugins, defineFinalPlugin('private-history', privateHistory)],
+  // The search index comes after every plugin's record types, and privateHistory
+  // after everything, so it covers all their record types.
+  plugins: [
+    ...kernel.payloadPlugins,
+    searchIndex(),
+    defineFinalPlugin('private-history', privateHistory),
+  ],
   secret: process.env.PAYLOAD_SECRET ?? '',
   storage: storageAdapters(),
   telemetry: false,

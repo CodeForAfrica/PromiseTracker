@@ -18,6 +18,7 @@ explains the rules behind each step.
 10. Documents
 11. Site settings
 12. Publishing: what is public, and when
+13. Search
 
 The admin's menu groups record types by what they are for:
 
@@ -29,7 +30,7 @@ The admin's menu groups record types by what they are for:
 | Sources        | Documents, Source files, Extractions                                                |
 | Media library  | Images, such as actor photos                                                        |
 | Imports        | Imports, Saved mappings                                                             |
-| Administration | Users, Settings                                                                     |
+| Administration | Users, Settings, Search index, Search log                                           |
 | Public site    | Site settings                                                                       |
 
 ## 1. Signing in
@@ -681,3 +682,41 @@ refresh every hour, so a term that starts or ends on its date shows within the h
 
 A developer can work out every record's published status again with `pnpm publishing:recompute`,
 after changing the languages the site runs in.
+
+## 13. Search
+
+The site's search, at `/en/search` and from the magnifying glass in every page's header, finds
+areas, actors, claims and topics. A search for a place lists everyone who represents it today: the
+national seats, the seats of the areas above it, its own seats, and the seats of every area inside
+it. A search for "Nairobi" shows the president, the deputy president, Nairobi's governor, senator
+and woman representative, and the MP of each of its constituencies. A search for a whole country
+shows only its national seats, since everything else is inside it.
+
+Search ignores accents, so "Senegal" finds "Sénégal", and still matches a name with a letter
+wrong or missing, such as "Nairbi". It searches in the page's language only.
+
+### What is in it
+
+**Administration → Search index** holds one entry for each area, actor, claim and topic, with its
+title in each language it is published in. You do not edit it: it follows the publishing rules in
+section 12. A record on hold, archived or in the trash has no entry, and comes back when it is
+public again. A claim with only an English title is found in English and not in French. A topic is
+found in each language it has a name in.
+
+### Rebuilding the index
+
+The index keeps up by itself. If results look out of step with the site, a super-admin can rebuild
+it: open **Search index**, choose **Reindex**, then the record types to rebuild, and confirm.
+Search may miss records for the few seconds it takes. After this release reaches a site that
+already has records, rebuild it once, since the index starts empty.
+
+### Searches that found nothing
+
+**Administration → Search log** lists every search: the words, the language, the country if one
+was chosen, and how many results it found. It records nothing about who searched. People sometimes
+type names or phone numbers into a search box, so only editors and super-admins can open the log.
+
+To see the searches that found nothing, add the **Searches that found nothing** widget to your
+dashboard: choose **Edit Dashboard**, then **Add Widget**. It lists the last 30 days' searches with
+no results, most often first. A place that keeps appearing may be missing from the record, or
+spelt another way. Add the area, or check how its name is spelt.

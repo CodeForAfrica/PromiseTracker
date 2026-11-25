@@ -1,6 +1,7 @@
 import { Card } from '@payloadcms/ui'
 import type { Where, WidgetServerProps } from 'payload'
 
+import { EMPTY_SEARCH_DAYS, emptySearches } from './search'
 import { AWAITING_VERIFICATION, whereToQuery } from './verificationQueue'
 
 /**
@@ -105,6 +106,47 @@ export async function LeastRecentlyReviewed({ req }: WidgetServerProps) {
             </li>
           ))}
         </ul>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Searches that found nothing in the last 30 days (sections 16.4 and 18). Only
+ * editors and super-admins see any: the log holds what people typed.
+ */
+const cell = { padding: '6px 8px', borderBottom: '1px solid var(--theme-elevation-100)' }
+
+export async function EmptySearches({ req, user }: WidgetServerProps) {
+  const rows = await emptySearches(req.payload, user ?? null)
+  return (
+    <div style={{ padding: 16 }}>
+      <h3 style={{ margin: '0 0 4px' }}>Searches that found nothing</h3>
+      <p style={{ margin: '0 0 12px', color: 'var(--theme-elevation-600)' }}>
+        The last {EMPTY_SEARCH_DAYS} days, most often first. A place here may be missing from the
+        record, or spelt another way.
+      </p>
+      {rows.length === 0 ? (
+        <p style={{ margin: 0 }}>Every search found something.</p>
+      ) : (
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              <th style={{ ...cell, textAlign: 'start' }}>Search</th>
+              <th style={{ ...cell, textAlign: 'end' }}>Times</th>
+              <th style={{ ...cell, textAlign: 'end' }}>Last</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.query}>
+                <td style={cell}>{row.query}</td>
+                <td style={{ ...cell, textAlign: 'end' }}>{row.times}</td>
+                <td style={{ ...cell, textAlign: 'end' }}>{row.last.slice(0, 10)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   )

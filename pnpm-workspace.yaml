@@ -35,6 +35,7 @@ catalog:
   "@payloadcms/db-postgres": 4.0.0-beta.9
   "@payloadcms/email-nodemailer": 4.0.0-beta.9
   "@payloadcms/next": 4.0.0-beta.9
+  "@payloadcms/plugin-search": 4.0.0-beta.9
   "@payloadcms/richtext-lexical": 4.0.0-beta.9
   "@payloadcms/storage-s3": 4.0.0-beta.9
   "@payloadcms/ui": 4.0.0-beta.9
