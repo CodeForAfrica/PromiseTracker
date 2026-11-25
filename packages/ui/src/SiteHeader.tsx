@@ -143,6 +143,10 @@ function MenuLinks({ site, countries, active }: Omit<ShellData, 'logo'>) {
     )
   return (
     <>
+      <Link href={searchPath(site.locale)} className={row(false)}>
+        <SearchIcon size={20} />
+        {site.strings.search}
+      </Link>
       {countries.map((c) => (
         <Link
           key={c.code}
@@ -191,7 +195,12 @@ export function SiteHeader({ overlay = false, ...data }: ShellData & { overlay?:
             href={searchPath(site.locale)}
             aria-label={t.search}
             title={t.search}
-            className="flex size-10 flex-none items-center justify-center rounded-full text-ink hover:bg-tile hover:text-ink"
+            className={cn(
+              'size-10 flex-none items-center justify-center rounded-full text-ink hover:bg-tile hover:text-ink',
+              // On a phone there is no room beside the language switch, so
+              // search is the menu's first link.
+              hasNav ? 'hidden sm:flex' : 'flex',
+            )}
           >
             <SearchIcon size={18} />
           </Link>

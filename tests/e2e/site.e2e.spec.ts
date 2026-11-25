@@ -302,6 +302,17 @@ test('a search for a place lists everyone who represents it, from the president 
   await expectAccessible(page)
 })
 
+test('on a phone, search is the first link in the menu', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/en')
+  await expect(page.getByRole('banner').getByRole('link', { name: 'Search' })).toBeHidden()
+  await page.getByRole('button', { name: 'Menu' }).click()
+  const menu = page.getByRole('dialog')
+  await expect(menu.getByRole('navigation').getByRole('link').first()).toHaveText('Search')
+  await menu.getByRole('link', { name: 'Search' }).click()
+  await expect(page).toHaveURL(/\/en\/search$/)
+})
+
 test('the header leads to search, and the address keeps the search', async ({ page }) => {
   await page.goto('/en')
   await page.getByRole('banner').getByRole('link', { name: 'Search' }).click()

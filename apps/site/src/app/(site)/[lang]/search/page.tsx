@@ -8,6 +8,13 @@ type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
+/**
+ * Rendered for each request. The language layout's empty `generateStaticParams`
+ * makes pages under it static by default, and a static page can't read the
+ * query, so the production build fails it with DYNAMIC_SERVER_USAGE.
+ */
+export const dynamic = 'force-dynamic'
+
 /** The contract's limits on `q` (section 12.2). Shorter text shows the box alone. */
 const MIN_QUERY = 2
 const MAX_QUERY = 100
