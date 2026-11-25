@@ -145,6 +145,8 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
 
 export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
+  DELETE FROM "payload_jobs_log" WHERE "task_slug"::text = 'submissionsDigest' OR "parent_task_slug"::text = 'submissionsDigest';
+  DELETE FROM "payload_jobs" WHERE "task_slug"::text = 'submissionsDigest';
    ALTER TABLE "submissions" DISABLE ROW LEVEL SECURITY;
   ALTER TABLE "submissions_rels" DISABLE ROW LEVEL SECURITY;
   ALTER TABLE "submission_files" DISABLE ROW LEVEL SECURITY;
