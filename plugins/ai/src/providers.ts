@@ -43,17 +43,24 @@ type Vendor = {
 
 const OLLAMA_URL = 'http://127.0.0.1:11434/v1'
 
+/** Drops trailing slashes. A loop, not a regular expression, which a long run of slashes would slow. */
+const trimSlashes = (value: string): string => {
+  let end = value.length
+  while (end > 0 && value[end - 1] === '/') end--
+  return value.slice(0, end)
+}
+
 /** Ollama's OpenAI-compatible API is under /v1. An address without it gets it. */
 export function ollamaUrl(given: string | undefined): string {
   if (!given) return OLLAMA_URL
   try {
     const url = new URL(given)
-    const path = url.pathname.replace(/\/+$/, '')
+    const path = trimSlashes(url.pathname)
     const v1 = path.indexOf('/v1')
     url.pathname = v1 >= 0 ? path.slice(0, v1 + 3) : `${path}/v1`
-    return url.toString().replace(/\/+$/, '')
+    return trimSlashes(url.toString())
   } catch {
-    return given.replace(/\/+$/, '')
+    return trimSlashes(given)
   }
 }
 

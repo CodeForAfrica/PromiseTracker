@@ -411,7 +411,7 @@ describe('plugin-ai', () => {
     configureAi({ llm: { adapter: openai, model: 'gpt-test' } })
     const realFetch = globalThis.fetch
     globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) =>
-      String(input).includes('api.openai.com')
+      new URL(input instanceof Request ? input.url : String(input)).host === 'api.openai.com'
         ? new Response('{"error":{"code":"insufficient_quota","message":"quota"}}', {
             status: 429,
             headers: { 'content-type': 'application/json' },
