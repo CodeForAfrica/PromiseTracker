@@ -31,7 +31,7 @@ The admin's menu groups record types by what they are for:
 | Media library  | Images, such as actor photos                                                        |
 | Imports        | Imports, Saved mappings                                                             |
 | Administration | Users, Settings, Search index, Search log                                           |
-| Public site    | Site settings                                                                       |
+| Public site    | Site settings, Themes, Articles, Pages, Partners, Sister tools                      |
 
 ## 1. Signing in
 
@@ -611,9 +611,54 @@ Public site > Site settings. Editors and super-admins can change these.
 | Explainer             | The one-line description, and the longer explanation shown collapsed on every page  |
 | Navigation and footer | Links in the header and the footer, and the footer's "about" text                   |
 | Interface text        | The words on buttons, menus and notices. Leave a box empty to use the default shown |
+| Homepage picks        | A real claim, the In focus theme, and the featured place                            |
+| Country picks         | The actors and claims each country page shows under In focus                        |
+| Sections              | Force any section on or off                                                         |
 
 These are per language: switch language at the top right to edit another. Interface text in a
 language with no translation shows in English.
+
+**Picks** show only while they are published in the reader's language. A claim on hold, or a
+theme not translated yet, is left out there until it is. Country picks must be actors and claims
+in that country.
+
+**Sections.** Each section of the homepage, country, actor and claim pages shows only when it has
+something to show: "Who is delivering" needs two or more office holders, Latest analysis needs an
+article, and so on. Under **Sections**, set one to **Always** to show it even when its rule would
+leave it out, or **Never** to hide it. A section with nothing in it never shows, even set to
+**Always**.
+
+### Themes
+
+Public site > Themes. A theme follows one subject across countries, such as water and sanitation.
+Give it a **Title**, an **Introduction**, an **Image**, the **Claims** you pick, in order, and the
+**Countries** it covers. Its page, `/{language}/themes/{slug}`, shows the claims and the figures in
+each country. Only published claims appear. On the homepage's In focus, a theme shows when it
+covers two or more countries, or the site has one country.
+
+### Articles
+
+Public site > Articles. An article is analysis of one **claim**, **actor** or **country**, chosen
+under **About**, in the article's country. It shows under Latest analysis on that claim's or
+actor's page, newest first by **Date**, and has its own page at `/{language}/{country}/a/{slug}`.
+A **Byline** is optional. Tick **Hide the byline** to keep one you entered off the site.
+
+### Pages
+
+Public site > Pages. Pages such as About or Methodology live at `/{language}/{slug}`. Choose a
+**Parent** to put one under another, such as `/en/resources/guides`, up to three deep. The order
+of the list is the order pages are shown in under their parent. A slug cannot be two letters long,
+since those are countries, or one of the site's own words, such as `topics`, `themes`, `search`
+or `officials`.
+
+A page with **Link to a sister site** set is a marked link: its address leads to that site, and
+lists of pages mark it as leaving PromiseTracker. The homepage's "How a rating is decided" links to
+the page with the slug `methodology`.
+
+### Partners and sister tools
+
+Public site > Partners lists who we work with, and Sister tools lists other tools from PesaCheck.
+Both show on the homepage, in the order of the list.
 
 ## 12. Publishing: what is public, and when
 

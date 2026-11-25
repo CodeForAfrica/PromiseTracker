@@ -9,6 +9,7 @@ import path from 'node:path'
 import { getPayload } from '@promisetracker/cms'
 import { countryName, csvImporter, guessMapping, runImportPlan } from '@promisetracker/plugin-core'
 
+import { richText } from '../../seed/seed'
 import { unusedCountryCodes } from '../countries'
 
 export type Seed = {
@@ -20,6 +21,8 @@ export type Seed = {
   admin: { id: string; email: string; password: string }
   /** Topics the seed added, to remove again. */
   topics: string[]
+  /** Editorial records the seed added, to remove again. */
+  editorial: { collection: 'themes' | 'pages' | 'partners' | 'sister-tools'; id: string }[]
 }
 
 const file = path.resolve(import.meta.dirname, '.seed.json')
@@ -34,6 +37,23 @@ if (process.argv.includes('--remove')) {
       where: { country: { equals: seed.full.id } },
       data: { keyClaim: null },
       overrideAccess: true,
+    })
+    await payload.updateGlobal({
+      slug: 'site',
+      data: {
+        picks: { featuredClaim: null, inFocus: null, featuredArea: null },
+        countryPicks: [],
+      },
+      overrideAccess: true,
+    })
+    for (const { collection, id } of seed.editorial ?? []) {
+      await payload.delete({ collection, id, overrideAccess: true, trash: true }).catch(() => {})
+    }
+    await payload.delete({
+      collection: 'articles',
+      where: { country: { equals: seed.full.id } },
+      overrideAccess: true,
+      trash: true,
     })
     for (const collection of ['claims', 'terms', 'actors', 'areas', 'offices'] as const) {
       await payload.delete({
@@ -167,6 +187,96 @@ if (process.argv.includes('--remove')) {
     data: { keyClaim: keyClaim?.id ?? null, keyClaimNote: 'Her flagship housing pledge.' },
     overrideAccess: true,
   })
+  // The editorial layer (#657): a theme across both countries, an article on
+  // the key claim, the methodology, a partner, a sister tool and the picks.
+  const editorial: Seed['editorial'] = []
+  const slugged = async (slug: string) =>
+    (
+      await payload.find({
+        collection: 'claims',
+        where: { and: [{ country: { equals: a.id } }, { slug: { equals: slug } }] },
+        overrideAccess: true,
+      })
+    ).docs[0]?.id ?? ''
+  const water = await slugged('clean-water-for-every-ward')
+  const theme = await payload.create({
+    collection: 'themes',
+    locale: 'en',
+    data: {
+      title: 'Homes and water',
+      slug: 'e2e-homes-and-water',
+      introduction: 'Housing and water pledges, followed across countries.',
+      claims: [keyClaim?.id ?? '', water].filter(Boolean),
+      countries: [a.id, b.id],
+      recordStatus: 'ready',
+    },
+    overrideAccess: true,
+  })
+  editorial.push({ collection: 'themes', id: theme.id })
+  const methodology = await payload.create({
+    collection: 'pages',
+    locale: 'en',
+    data: {
+      title: 'Methodology',
+      slug: 'methodology',
+      summary: 'How claims are checked and rated.',
+      body: richText([
+        { h2: 'Rating a claim' },
+        { p: 'An editor rates each claim against evidence.' },
+      ]),
+      recordStatus: 'ready',
+    } as never,
+    overrideAccess: true,
+  })
+  editorial.push({ collection: 'pages', id: methodology.id })
+  await payload.create({
+    collection: 'articles',
+    locale: 'en',
+    data: {
+      title: 'Why the Kibra homes are late',
+      slug: 'why-the-kibra-homes-are-late',
+      standfirst: 'The land was ready. The money was not.',
+      body: richText([{ p: 'The first phase was funded in the second budget.' }]),
+      date: '2024-05-02',
+      byline: 'A. Reporter',
+      about: { relationTo: 'claims', value: keyClaim?.id ?? '' },
+      country: a.id,
+      recordStatus: 'ready',
+    } as never,
+    overrideAccess: true,
+  })
+  const partner = await payload.create({
+    collection: 'partners',
+    data: { name: 'Code for Africa', url: 'https://codeforafrica.org' },
+    overrideAccess: true,
+  })
+  editorial.push({ collection: 'partners', id: partner.id })
+  const tool = await payload.create({
+    collection: 'sister-tools',
+    locale: 'en',
+    data: {
+      name: 'PesaCheck',
+      url: 'https://pesacheck.org',
+      description: 'Fact-checks across Africa.',
+    },
+    overrideAccess: true,
+  })
+  editorial.push({ collection: 'sister-tools', id: tool.id })
+  const wekesa = (
+    await payload.find({
+      collection: 'actors',
+      where: { and: [{ country: { equals: a.id } }, { slug: { equals: 'achieng-wekesa' } }] },
+      overrideAccess: true,
+    })
+  ).docs[0]?.id
+  await payload.updateGlobal({
+    slug: 'site',
+    data: {
+      picks: { featuredClaim: keyClaim?.id ?? null, inFocus: theme.id },
+      countryPicks: [{ country: a.id, actors: wekesa ? [wekesa] : [], claims: [water] }],
+    },
+    overrideAccess: true,
+  })
   const admin = {
     email: `e2e-admin-${crypto.randomUUID()}@example.org`,
     password: `pw-${crypto.randomUUID()}`,
@@ -181,6 +291,7 @@ if (process.argv.includes('--remove')) {
     englishOnly: { id: b.id, code: englishOnly, en: countryName(englishOnly, 'en') },
     admin: { id: user.id, ...admin },
     topics,
+    editorial,
   }
   writeFileSync(file, JSON.stringify(seed, null, 2))
 }

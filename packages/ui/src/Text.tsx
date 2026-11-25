@@ -8,14 +8,17 @@ export function SectionLabel({
   rule = false,
   className,
   id,
+  as: Heading = 'h2',
 }: {
   children: ReactNode
   rule?: boolean
   className?: string
   id?: string
+  /** A sub-heading inside a section is an h3. */
+  as?: 'h2' | 'h3'
 }) {
   return (
-    <h2
+    <Heading
       id={id}
       className={cn(
         'mb-6 text-[12px] leading-none font-semibold tracking-[.18em] text-ink uppercase',
@@ -24,6 +27,6 @@ export function SectionLabel({
       )}
     >
       {children}
-    </h2>
+    </Heading>
   )
 }

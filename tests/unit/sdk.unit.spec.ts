@@ -12,7 +12,8 @@ const country = {
   region: null,
   about: null,
   defaultLanguage: 'en',
-  counts: { currentHolders: 0, pastTerms: 0 },
+  counts: { currentHolders: 0, pastTerms: 0, articles: 0 },
+  picks: { actors: [], claims: [] },
 }
 
 describe('sdk', () => {

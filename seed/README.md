@@ -62,7 +62,10 @@ checked the way an editor's file is.
   status, so one you held stays held. Records you added by hand are left alone. To start again, empty the database: `pnpm services:down`, remove
   the Postgres volume, then `pnpm services` and `pnpm migrate`.
 - **It loads in order:** the shared topics first, then for each country offices, areas, actors,
-  terms, claims and claim updates, because each names records loaded before it.
+  terms, claims and claim updates, because each names records loaded before it. Last comes
+  `seed/data/editorial.json`: partners, sister tools, a theme, an article, the methodology page
+  and the homepage and country picks. It loads only when every country is seeded, since it names
+  claims in both. Picks an editor already set are kept.
 
 `seed/seed.ts` holds the loader. `tests/unit/seed.unit.spec.ts` checks every row without a
 database, and `tests/int/seed.int.spec.ts` loads it all into the test database.

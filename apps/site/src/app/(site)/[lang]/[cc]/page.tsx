@@ -4,14 +4,30 @@ import {
   ActorGrid,
   Container,
   CountryHero,
+  CountryInFocus,
   CountrySection,
+  listRule,
   localePath,
   NotAvailableNotice,
   OfficeLinks,
   PageShell,
+  pastRule,
+  peopleRule,
+  Snapshot,
+  shows,
 } from '@promisetracker/ui'
 import type { Metadata } from 'next'
-import { findSite, getActors, getCountry, getOffices, LOGO, loadShell, orNotFound } from '@/data'
+import {
+  findSite,
+  getActors,
+  getClaims,
+  getCountry,
+  getOffices,
+  LOGO,
+  loadShell,
+  orNotFound,
+} from '@/data'
+import { EditorPage, editorPageMetadata, isCountrySegment } from '@/editorPage'
 
 type Props = { params: Promise<{ lang: string; cc: string }> }
 
@@ -28,6 +44,7 @@ const loadCountry = (lang: string, cc: string) => orNotFound(getCountry(lang, cc
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang, cc } = await params
+  if (!isCountrySegment(cc)) return editorPageMetadata(lang, cc)
   if (!(await findSite(lang))) return {}
   const country = await loadCountry(lang, cc)
   return isNotAvailable(country) ? {} : { title: country.name }
@@ -42,26 +59,31 @@ async function PeopleSections({ site, country }: { site: SiteInfo; country: Coun
   const lang = site.locale
   const code = country.code
   const t = site.strings
+  const forced = site.sections
+  const delivering = shows('country.who-is-delivering', forced, peopleRule(currentHolders))
+  const officials = shows('country.officials', forced, peopleRule(currentHolders))
+  const former = shows('country.past-administrations', forced, pastRule(pastTerms))
   const [leaders, offices, past] = await Promise.all([
     currentHolders > 0
       ? orNotFound(getActors(lang, code, { stage: 'current', sort: 'office', limit: 4 }))
       : null,
-    currentHolders >= 2 ? orNotFound(getOffices(lang, code)) : null,
-    pastTerms > 0 ? orNotFound(getActors(lang, code, { stage: 'past', limit: 6 })) : null,
+    officials ? orNotFound(getOffices(lang, code)) : null,
+    former ? orNotFound(getActors(lang, code, { stage: 'past', limit: 6 })) : null,
   ])
   return (
     <>
-      {currentHolders === 1 && leaders && (
+      {/* With one office holder, the page leads with them (section 10.3). */}
+      {!delivering && currentHolders === 1 && leaders && (
         <Container className="pt-7">
           <ActorGrid site={site} code={code} actors={leaders.items} />
         </Container>
       )}
-      {currentHolders >= 2 && leaders && (
+      {delivering && leaders && (
         <CountrySection id="who-is-delivering" title={t.whoIsDelivering}>
           <ActorGrid site={site} code={code} actors={leaders.items} />
         </CountrySection>
       )}
-      {currentHolders >= 2 && offices && (
+      {officials && offices && (
         <CountrySection
           id="officials"
           title={t.officials}
@@ -80,12 +102,13 @@ async function PeopleSections({ site, country }: { site: SiteInfo; country: Coun
 }
 
 /**
- * A country's page (section 10.2): the country, then the people in office
- * and those who held office before. In focus and the snapshot join it with
- * claims.
+ * A country's page (section 10.2): the country, In focus, the snapshot, then
+ * the people in office and those who held office before. Any other first
+ * segment is an editor page.
  */
 export default async function CountryPage({ params }: Props) {
   const { lang, cc } = await params
+  if (!isCountrySegment(cc)) return <EditorPage lang={lang} path={cc} />
   const shell = await loadShell(lang)
   const country = await loadCountry(lang, cc)
 
@@ -97,9 +120,24 @@ export default async function CountryPage({ params }: Props) {
     )
   }
 
+  const forced = shell.site.sections
+  const { actors: pickedActors, claims: pickedClaims } = country.picks
+  // The snapshot is the figures of every published claim in the country.
+  const { figures } = await orNotFound(getClaims(lang, country.code, { limit: 1 }))
   return (
     <PageShell {...shell} logo={LOGO} active={country.code}>
       <CountryHero country={country} />
+      {shows('country.in-focus', forced, listRule(pickedActors.length + pickedClaims.length)) && (
+        <CountryInFocus
+          site={shell.site}
+          code={country.code}
+          actors={pickedActors}
+          claims={pickedClaims}
+        />
+      )}
+      {shows('country.snapshot', forced, listRule(figures.total)) && (
+        <Snapshot site={shell.site} figures={figures} />
+      )}
       <PeopleSections site={shell.site} country={country} />
     </PageShell>
   )

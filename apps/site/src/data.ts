@@ -1,7 +1,7 @@
 import 'server-only'
 
 import type { CountrySummary, SiteInfo } from '@promisetracker/contract'
-import type { ActorQuery, ClaimQuery, SearchScope } from '@promisetracker/sdk'
+import type { ActorQuery, ArticleQuery, ClaimQuery, SearchScope } from '@promisetracker/sdk'
 import { BadRequestError, isNotAvailable, NotFoundError } from '@promisetracker/sdk'
 import { unstable_cache } from 'next/cache'
 import { notFound, permanentRedirect, redirect } from 'next/navigation'
@@ -27,8 +27,14 @@ export const LOGO = '/images/promisetracker-logo.png'
  */
 const RUN = crypto.randomUUID()
 
+/**
+ * The site settings, with the homepage picks. A pick shows only while it is
+ * published, which a change to any country's records or a theme can change.
+ */
 export const getSite = (locale: string) =>
-  unstable_cache(() => sdk.getSiteInfo(locale), [RUN, 'site', locale], { tags: ['site'] })()
+  unstable_cache(() => sdk.getSiteInfo(locale), [RUN, 'site', locale], {
+    tags: ['site', 'countries', 'themes'],
+  })()
 
 export const getCountries = (locale: string) =>
   unstable_cache(() => sdk.getCountries(locale), [RUN, 'countries', locale], {
@@ -137,6 +143,39 @@ export const getTopic = (locale: string, slug: string) =>
   unstable_cache(() => sdk.getTopic(locale, slug), [RUN, 'topic', locale, slug], {
     tags: topicTags,
     revalidate: HOLDERS_TTL,
+  })()
+
+/** What the record holds, for the homepage. Any country's change can move it. */
+export const getOverview = (locale: string) =>
+  unstable_cache(() => sdk.getOverview(locale), [RUN, 'overview', locale], {
+    tags: topicTags,
+    revalidate: HOLDERS_TTL,
+  })()
+
+/** A theme spans countries, so any country's change can move its claims and figures. */
+export const getTheme = (locale: string, slug: string) =>
+  unstable_cache(() => sdk.getTheme(locale, slug), [RUN, 'theme', locale, slug], {
+    tags: ['themes', ...topicTags],
+    revalidate: HOLDERS_TTL,
+  })()
+
+export const getArticles = (locale: string, code: string, query: ArticleQuery = {}) =>
+  unstable_cache(
+    () => sdk.getArticles(locale, code, query),
+    [RUN, 'articles', locale, code, JSON.stringify(query)],
+    { tags: peopleTags(code), revalidate: HOLDERS_TTL },
+  )()
+
+export const getArticle = (locale: string, code: string, slug: string) =>
+  unstable_cache(() => sdk.getArticle(locale, code, slug), [RUN, 'article', locale, code, slug], {
+    tags: peopleTags(code),
+    revalidate: HOLDERS_TTL,
+  })()
+
+/** An editor page at an address after the language, such as `about` or `resources/guides`. */
+export const getPage = (locale: string, path: string) =>
+  unstable_cache(() => sdk.getPage(locale, path), [RUN, 'page', locale, path], {
+    tags: ['pages', 'site'],
   })()
 
 /**

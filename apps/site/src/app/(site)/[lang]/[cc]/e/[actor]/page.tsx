@@ -1,17 +1,21 @@
 import { isNotAvailable } from '@promisetracker/sdk'
 import {
   ActorHero,
+  analysisRule,
   ClaimFilters,
   ClaimList,
   ClosingSummary,
   CountrySection,
   FiguresBlock,
   KeyClaim,
+  LatestAnalysis,
   LatestChanges,
+  listRule,
   localePath,
   NotAvailableNotice,
   PageShell,
   ratingChoices,
+  shows,
   TermList,
   topicChoices,
   WhoThisIs,
@@ -81,6 +85,7 @@ export default async function ActorPage({ params, searchParams }: Props) {
     actor.record.total > 0 ? orNotFound(getTopics(lang)) : null,
   ])
   const t = shell.site.strings
+  const forced = shell.site.sections
   const next = claims?.nextCursor
     ? `${localePath(lang, `/${cc}/e/${actor.slug}`)}?${new URLSearchParams(
         Object.entries({ ...filters, cursor: claims.nextCursor }).filter(
@@ -128,9 +133,16 @@ export default async function ActorPage({ params, searchParams }: Props) {
           )}
         </CountrySection>
       )}
-      <LatestChanges site={shell.site} changes={actor.latestChanges} />
+      {shows('actor.latest-changes', forced, listRule(actor.latestChanges.length)) && (
+        <LatestChanges site={shell.site} changes={actor.latestChanges} />
+      )}
+      {shows('actor.latest-analysis', forced, analysisRule(actor.analysis.length)) && (
+        <LatestAnalysis site={shell.site} articles={actor.analysis} />
+      )}
       <TermList site={shell.site} code={cc} actor={actor} />
-      <ClosingSummary site={shell.site} code={cc} actor={actor} />
+      {forced['actor.closing-summary'] !== 'off' && (
+        <ClosingSummary site={shell.site} code={cc} actor={actor} />
+      )}
     </PageShell>
   )
 }

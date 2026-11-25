@@ -200,3 +200,325 @@ export async function seedTopics(payload: Payload): Promise<ImportResult['counts
   }
   return counts
 }
+
+// Editorial content (section 7.7): `seed/data/editorial.json`.
+
+type Localized = { en: string; fr?: string }
+type Block = { p: string } | { h2: string } | { link: { text: string; url: string } }
+type EditorialSeed = {
+  partners: { name: string; url: string }[]
+  sisterTools: { name: string; url: string; description: Localized }[]
+  themes: {
+    slug: string
+    title: Localized
+    introduction: Localized
+    countries: string[]
+    claims: [string, string][]
+  }[]
+  articles: {
+    country: string
+    slug: string
+    about: ['claims' | 'actors', string]
+    date: string
+    title: Localized
+    standfirst: Localized
+    body: { en: Block[]; fr?: Block[] }
+  }[]
+  pages: {
+    slug: string
+    title: Localized
+    summary: Localized
+    body: { en: Block[]; fr?: Block[] }
+  }[]
+  picks: { featuredClaim: [string, string]; inFocus: string; featuredArea: [string, string] }
+  countryPicks: { country: string; actors: string[]; claims: string[] }[]
+}
+
+export const readEditorial = (): EditorialSeed =>
+  JSON.parse(readFileSync(path.join(DATA, 'editorial.json'), 'utf8')) as EditorialSeed
+
+const text = (value: string) => ({
+  type: 'text',
+  text: value,
+  format: 0,
+  detail: 0,
+  mode: 'normal',
+  style: '',
+  version: 1,
+})
+
+/** Rich text, as the admin's editor saves it, from paragraphs, headings and links. */
+export function richText(blocks: readonly Block[]) {
+  const node = { format: '', indent: 0, version: 1, direction: 'ltr' as const }
+  return {
+    root: {
+      ...node,
+      type: 'root',
+      children: blocks.map((block) => {
+        if ('h2' in block)
+          return { ...node, type: 'heading', tag: 'h2', children: [text(block.h2)] }
+        if ('link' in block) {
+          return {
+            ...node,
+            type: 'paragraph',
+            textFormat: 0,
+            textStyle: '',
+            children: [
+              {
+                ...node,
+                type: 'link',
+                fields: { url: block.link.url, newTab: false, linkType: 'custom' },
+                children: [text(block.link.text)],
+              },
+            ],
+          }
+        }
+        return {
+          ...node,
+          type: 'paragraph',
+          textFormat: 0,
+          textStyle: '',
+          children: [text(block.p)],
+        }
+      }),
+    },
+  }
+}
+
+/** Seeding writes as the system. */
+const system = { overrideAccess: true, depth: 0 } as const
+
+/** A record's id by slug, in a country when given. */
+async function idBySlug(
+  payload: Payload,
+  collection: 'claims' | 'actors' | 'areas' | 'countries' | 'themes' | 'articles' | 'pages',
+  slug: string,
+  country?: string,
+): Promise<string | null> {
+  const field = collection === 'countries' ? 'code' : 'slug'
+  const { docs } = await payload.find({
+    collection,
+    where: {
+      and: [{ [field]: { equals: slug } }, ...(country ? [{ country: { equals: country } }] : [])],
+    },
+    limit: 1,
+    trash: true,
+    ...system,
+  })
+  return docs[0]?.id ?? null
+}
+
+/**
+ * Adds the editorial content: partners, sister tools, a theme, an article,
+ * the methodology page, and the homepage and country picks. Anything that
+ * exists, matched by its slug or name, is left as it is, and picks already
+ * set are kept, so an editor's changes stay.
+ */
+export async function seedEditorial(payload: Payload): Promise<ImportResult['counts']> {
+  const seed = readEditorial()
+  const counts = { create: 0, update: 0, skip: 0, failed: 0 }
+  const country = async (code: string) => {
+    const id = await idBySlug(payload, 'countries', code)
+    if (!id) throw new Error(`Seed the country ${code} before its editorial content.`)
+    return id
+  }
+  const claim = async (code: string, title: string) => {
+    const id = await idBySlug(payload, 'claims', slugify(title), await country(code))
+    if (!id) throw new Error(`The editorial seed names a claim not in ${code}: ${title}`)
+    return id
+  }
+
+  for (const [collection, list] of [
+    ['partners', seed.partners],
+    ['sister-tools', seed.sisterTools],
+  ] as const) {
+    for (const entry of list) {
+      const { totalDocs } = await payload.count({
+        collection,
+        where: { name: { equals: entry.name } },
+        overrideAccess: true,
+      })
+      if (totalDocs > 0) {
+        counts.skip += 1
+        continue
+      }
+      const description = 'description' in entry ? entry.description : null
+      const created = await payload.create({
+        collection,
+        locale: 'en',
+        data: {
+          name: entry.name,
+          url: entry.url,
+          ...(description ? { description: description.en } : {}),
+        },
+        ...system,
+      })
+      if (description?.fr) {
+        await payload.update({
+          collection,
+          id: created.id,
+          locale: 'fr',
+          data: { description: description.fr },
+          ...system,
+        })
+      }
+      counts.create += 1
+    }
+  }
+
+  /** Creates a record ready in English, then adds its French. */
+  const createReady = async (
+    collection: 'themes' | 'articles' | 'pages',
+    en: Record<string, unknown>,
+    fr: Record<string, unknown> | null,
+  ) => {
+    const created = await payload.create({
+      collection,
+      locale: 'en',
+      data: { ...en, recordStatus: 'ready' } as never,
+      ...system,
+    })
+    if (fr) {
+      await payload.update({
+        collection,
+        id: created.id,
+        locale: 'fr',
+        data: fr as never,
+        ...system,
+      })
+    }
+    counts.create += 1
+  }
+
+  for (const theme of seed.themes) {
+    if (await idBySlug(payload, 'themes', theme.slug)) {
+      counts.skip += 1
+      continue
+    }
+    const claims = []
+    for (const [code, title] of theme.claims) claims.push(await claim(code, title))
+    const countries = []
+    for (const code of theme.countries) countries.push(await country(code))
+    await createReady(
+      'themes',
+      {
+        slug: theme.slug,
+        title: theme.title.en,
+        introduction: theme.introduction.en,
+        claims,
+        countries,
+      },
+      theme.title.fr ? { title: theme.title.fr, introduction: theme.introduction.fr } : null,
+    )
+  }
+
+  for (const article of seed.articles) {
+    const countryId = await country(article.country)
+    if (await idBySlug(payload, 'articles', article.slug, countryId)) {
+      counts.skip += 1
+      continue
+    }
+    const [relationTo, name] = article.about
+    const value =
+      relationTo === 'claims'
+        ? await claim(article.country, name)
+        : await idBySlug(payload, 'actors', name, countryId)
+    if (!value)
+      throw new Error(`The editorial seed's article names an unknown ${relationTo}: ${name}`)
+    await createReady(
+      'articles',
+      {
+        slug: article.slug,
+        country: countryId,
+        about: { relationTo, value },
+        date: article.date,
+        title: article.title.en,
+        standfirst: article.standfirst.en,
+        body: richText(article.body.en),
+      },
+      article.title.fr
+        ? {
+            title: article.title.fr,
+            standfirst: article.standfirst.fr,
+            ...(article.body.fr ? { body: richText(article.body.fr) } : {}),
+          }
+        : null,
+    )
+  }
+
+  for (const page of seed.pages) {
+    if (await idBySlug(payload, 'pages', page.slug)) {
+      counts.skip += 1
+      continue
+    }
+    await createReady(
+      'pages',
+      {
+        slug: page.slug,
+        title: page.title.en,
+        summary: page.summary.en,
+        body: richText(page.body.en),
+      },
+      page.title.fr
+        ? {
+            title: page.title.fr,
+            summary: page.summary.fr,
+            ...(page.body.fr ? { body: richText(page.body.fr) } : {}),
+          }
+        : null,
+    )
+  }
+
+  const site = await payload.findGlobal({ slug: 'site', ...system })
+  const picks = site.picks ?? {}
+  const unset = !picks.featuredClaim && !picks.inFocus && !picks.featuredArea
+  const [featuredCode, featuredTitle] = seed.picks.featuredClaim
+  const [areaCode, areaSlug] = seed.picks.featuredArea
+  const known = new Set(
+    (site.countryPicks ?? []).map((p) =>
+      typeof p.country === 'string' ? p.country : p.country?.id,
+    ),
+  )
+  const countryPicks = []
+  for (const entry of seed.countryPicks) {
+    const id = await country(entry.country)
+    if (known.has(id)) continue
+    const actors = []
+    for (const slug of entry.actors) {
+      const actor = await idBySlug(payload, 'actors', slug, id)
+      if (actor) actors.push(actor)
+    }
+    const claims = []
+    for (const title of entry.claims) claims.push(await claim(entry.country, title))
+    countryPicks.push({ country: id, actors, claims })
+  }
+  if (unset || countryPicks.length > 0) {
+    await payload.updateGlobal({
+      slug: 'site',
+      data: {
+        ...(unset
+          ? {
+              picks: {
+                featuredClaim: await claim(featuredCode, featuredTitle),
+                inFocus: await idBySlug(payload, 'themes', seed.picks.inFocus),
+                featuredArea: await idBySlug(payload, 'areas', areaSlug, await country(areaCode)),
+              },
+            }
+          : {}),
+        countryPicks: [
+          ...(site.countryPicks ?? []).map((p) => ({
+            country: typeof p.country === 'string' ? p.country : p.country?.id,
+            actors: (p.actors ?? []).map((a) => (typeof a === 'string' ? a : a.id)),
+            claims: (p.claims ?? []).map((c) => (typeof c === 'string' ? c : c.id)),
+          })),
+          ...countryPicks,
+        ],
+      } as never,
+      ...system,
+    })
+    counts.update += 1
+  } else {
+    counts.skip += 1
+  }
+  return counts
+}

@@ -1,5 +1,12 @@
 import { isNotAvailable } from '@promisetracker/sdk'
-import { ClaimView, NotAvailableNotice, PageShell } from '@promisetracker/ui'
+import {
+  analysisRule,
+  ClaimView,
+  LatestAnalysis,
+  NotAvailableNotice,
+  PageShell,
+  shows,
+} from '@promisetracker/ui'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
@@ -42,6 +49,9 @@ export default async function ClaimPage({ params }: Props) {
   return (
     <PageShell {...shell} logo={LOGO} active={cc}>
       <ClaimView site={shell.site} claim={claim} />
+      {shows('claim.latest-analysis', shell.site.sections, analysisRule(claim.analysis.length)) && (
+        <LatestAnalysis site={shell.site} articles={claim.analysis} />
+      )}
     </PageShell>
   )
 }

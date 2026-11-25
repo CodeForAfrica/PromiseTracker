@@ -10,7 +10,7 @@ import { createHttpRefresher, getPayload } from '@promisetracker/cms'
 import { setTagRefresher } from '@promisetracker/plugin-core'
 
 import type { SeedCountry } from './seed'
-import { SEED_COUNTRIES, seedCountry, seedTopics } from './seed'
+import { SEED_COUNTRIES, seedCountry, seedEditorial, seedTopics } from './seed'
 
 // Seed data is for development. A production database holds an editor's work.
 if (process.env.NODE_ENV === 'production') {
@@ -77,6 +77,22 @@ for (const code of codes) {
       ['countries', `country:${code}`, `places:${code}`, `actors:${code}`, `claims:${code}`],
       { payload },
     )
+  }
+}
+// Themes, articles and picks name claims and places, so they come last.
+if (!failed && asked.length === 0) {
+  try {
+    const editorial = await seedEditorial(payload)
+    console.log(
+      `editorial: ${editorial.create} new, ${editorial.update} changed, ${editorial.skip} unchanged`,
+    )
+  } catch (error) {
+    failed = true
+    console.error(`editorial: ${error instanceof Error ? error.message : String(error)}`)
+  } finally {
+    await refresh(['site', 'themes', 'pages', 'countries', ...codes.map((c) => `claims:${c}`)], {
+      payload,
+    })
   }
 }
 await payload.destroy()

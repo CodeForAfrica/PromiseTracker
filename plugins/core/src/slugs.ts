@@ -46,3 +46,23 @@ export function slugProblem(slug: unknown): string | null {
   if (isReservedInCountry(slug)) return `"${slug}" is used by the site's own addresses.`
   return null
 }
+
+/**
+ * Words that follow `/{lang}/` for something other than an editor page, so no
+ * page may use them (section 11.2). Two-letter segments are countries.
+ */
+export const RESERVED_IN_LANGUAGE = ['topics', 'themes', 'search', 'opengraph-image'] as const
+
+/** Why an editor page cannot use a slug, or null when it can (section 11.2). */
+export function pageSlugProblem(slug: unknown): string | null {
+  if (typeof slug !== 'string' || !slug) return 'Give it a slug, such as about.'
+  if (!SLUG_PATTERN.test(slug)) {
+    return 'Use lower-case letters, digits and single hyphens, such as about-us.'
+  }
+  if (slug.length === 2) return 'A two-letter slug is kept for countries. Use a longer one.'
+  // A page under another one sits where a country's own words do, such as `/en/about/p`.
+  if ((RESERVED_IN_LANGUAGE as readonly string[]).includes(slug) || isReservedInCountry(slug)) {
+    return `"${slug}" is used by the site's own addresses.`
+  }
+  return null
+}

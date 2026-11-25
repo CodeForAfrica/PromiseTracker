@@ -103,6 +103,38 @@ export const DEFAULT_STRINGS: { en: Strings; fr: Strings } = {
     searchPeople: 'People',
     searchClaims: 'Claims',
     searchTopics: 'Topics',
+    realClaim: 'A real claim',
+    seeRecord: 'See the full record',
+    sourcesReviewed: '{n} sources · Last reviewed {date}',
+    evidenceFrom: 'Where the evidence comes from',
+    inFocus: 'In focus',
+    chosenByEditor: 'Chosen by an editor',
+    themeLabel: 'Theme',
+    acrossCountries: '{theme}, across {n} countries',
+    withinCountry: '{theme}, in {country}',
+    allOnTheme: 'All {n} claims in this theme',
+    peopleLabel: 'People',
+    featuredPlace: 'Place',
+    answeredBy: '{n} officials answer for it',
+    howRatingDecided: 'How a rating is decided',
+    howRatingTitle: 'Every rating, in its tiers',
+    howRatingBody:
+      'An editor assesses each claim against public evidence and records the rating with the date it was reviewed. Every change is kept, so the record shows when our view moved and why.',
+    readMethodology: 'Read the full methodology',
+    whatTracked: 'What we have tracked',
+    trackedClaims: 'Claims',
+    trackedActors: 'people and institutions',
+    trackedCountries: 'countries',
+    trackedSources: 'cited sources',
+    whoWeWorkWith: 'Who we work with',
+    otherTools: 'Other tools from PesaCheck',
+    leavesSite: 'Opens another site',
+    countrySnapshot: 'Snapshot',
+    latestAnalysis: 'Latest analysis',
+    byline: 'By {name}',
+    aboutLabel: 'About {name}',
+    themeClaims: 'Claims in this theme',
+    pagesBelow: 'In this section',
   },
   fr: {
     skipToContent: 'Aller au contenu',
@@ -201,14 +233,48 @@ export const DEFAULT_STRINGS: { en: Strings; fr: Strings } = {
     searchPeople: 'Personnes',
     searchClaims: 'Engagements',
     searchTopics: 'Thèmes',
+    realClaim: 'Un engagement réel',
+    seeRecord: 'Voir le dossier complet',
+    sourcesReviewed: '{n} sources · Dernier examen le {date}',
+    evidenceFrom: 'D’où viennent les preuves',
+    inFocus: 'À la une',
+    chosenByEditor: 'Choisi par un rédacteur',
+    themeLabel: 'Dossier',
+    acrossCountries: '{theme}, dans {n} pays',
+    withinCountry: '{theme}, au {country}',
+    allOnTheme: 'Les {n} engagements de ce dossier',
+    peopleLabel: 'Personnes',
+    featuredPlace: 'Lieu',
+    answeredBy: '{n} élus en répondent',
+    howRatingDecided: 'Comment une évaluation est décidée',
+    howRatingTitle: 'Chaque évaluation, par niveau',
+    howRatingBody:
+      'Un rédacteur évalue chaque engagement à partir de preuves publiques et consigne l’évaluation avec sa date d’examen. Chaque changement est conservé : le registre montre quand notre avis a changé, et pourquoi.',
+    readMethodology: 'Lire la méthodologie complète',
+    whatTracked: 'Ce que nous suivons',
+    trackedClaims: 'Engagements',
+    trackedActors: 'personnes et institutions',
+    trackedCountries: 'pays',
+    trackedSources: 'sources citées',
+    whoWeWorkWith: 'Nos partenaires',
+    otherTools: 'Autres outils de PesaCheck',
+    leavesSite: 'Ouvre un autre site',
+    countrySnapshot: 'En bref',
+    latestAnalysis: 'Dernières analyses',
+    byline: 'Par {name}',
+    aboutLabel: 'À propos de {name}',
+    themeClaims: 'Engagements de ce dossier',
+    pagesBelow: 'Dans cette rubrique',
   },
 }
 
 /** The text for one language: the editor's, then the default for that language, then English. */
-export function resolveStrings(
-  locale: string,
-  saved: Readonly<Partial<Record<keyof Strings, string | null | undefined>>> | null | undefined,
-): Strings {
+export function resolveStrings(locale: string, stored: unknown): Strings {
+  // Saved as one value per language: anything not a string under a known key is ignored.
+  const saved =
+    stored && typeof stored === 'object' && !Array.isArray(stored)
+      ? (stored as Readonly<Record<string, unknown>>)
+      : null
   const defaults: Strings = locale === 'fr' ? DEFAULT_STRINGS.fr : DEFAULT_STRINGS.en
   const english = DEFAULT_STRINGS.en
   const result = { ...english }

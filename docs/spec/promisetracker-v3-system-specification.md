@@ -1812,6 +1812,9 @@ codemods, and passes the full test suite before merging.
 | D87 | The AI health check's test request is answered from memory for 60 seconds, since each one is billed. A failed test request at start-up, such as a missing key or exhausted credit, is logged and shown as degraded, and does not stop start-up |
 | D88 | The quote check matches a quote in the document ignoring spacing and letter case, which the review screen's highlight also ignores. Accents and every other character must match, and a quote under 8 characters never passes. At most 120 sections of a document are analysed, and the second pass sees at most 220 candidates, as in v2 |
 | D89 | An accepted candidate's statement is its first quote, unless the reviewer chooses another. The claim records the reviewer as who entered it, `ai` as how it was found, and the extraction and candidate it came from. A reviewer may accept candidates though they cannot create claims by hand (section 13.2) |
+| D90 | An editor can force a section on even when its rule in section 10.3 would leave it out, but a section with nothing in it never shows, forced on or not. Forced on, Choose a country is a list even with one country |
+| D91 | The interface text in plugin-site is stored as one value per language, not a column per string. Postgres reads at most a hundred columns in one call, and the strings outnumber that. The admin still shows one box per string |
+| D92 | Articles are listed under their country, `GET /countries/{cc}/articles?about=`, with `about` as `country`, `claim:{slug}` or `actor:{slug}`, as every other record that belongs to a country is. Editor pages are read with `GET /pages?path=`, since a nested path does not fit one address segment. `GET /overview` gives the homepage's "What we have tracked". An article about a claim or actor not published in a language is left out in that language |
 
 ### 20.2 Why
 

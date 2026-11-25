@@ -1,8 +1,10 @@
+import { convertLexicalToHTML } from '@payloadcms/richtext-lexical/html'
 import type {
   ActorRef,
   ActorSummary,
   Area,
   AreaSummary,
+  ArticleSummary,
   ClaimChange,
   ClaimSummary,
   ClaimUpdate,
@@ -16,14 +18,19 @@ import type {
   Language,
   NotAvailable,
   Office,
+  PageSummary,
   PartialDate,
+  Partner,
   PlaceResult,
   Rating,
   RatingScale,
   Representative,
   SeatRef,
+  SectionId,
+  SisterTool,
   SiteInfo,
   Term,
+  ThemeSummary,
   TopicSummary,
 } from '@promisetracker/contract'
 import {
@@ -31,17 +38,23 @@ import {
   Actor as ActorSchema,
   AreaList as AreaListSchema,
   Area as AreaSchema,
+  ArticleList as ArticleListSchema,
+  Article as ArticleSchema,
   ClaimHistory as ClaimHistorySchema,
   ClaimList as ClaimListSchema,
   Claim as ClaimSchema,
   CountryList as CountryListSchema,
   Country as CountrySchema,
   OfficeList as OfficeListSchema,
+  Overview as OverviewSchema,
   PAGE_LIMIT,
+  Page as PageSchema,
   Redirect as RedirectSchema,
+  SECTION_IDS,
   SearchResults as SearchResultsSchema,
   SeatHolders as SeatHoldersSchema,
   SiteInfo as SiteInfoSchema,
+  Theme as ThemeSchema,
   TIMELINE_LENGTH,
   TopicList as TopicListSchema,
   Topic as TopicSchema,
@@ -58,7 +71,7 @@ import {
   publishedInLocale,
   termStage,
 } from '@promisetracker/plugin-core'
-import { resolveStrings } from '@promisetracker/plugin-site'
+import { resolveStrings, sectionField } from '@promisetracker/plugin-site'
 import type { Payload, TypedLocale, Where } from 'payload'
 
 import { areaFamily } from '../areaTree'
@@ -67,15 +80,18 @@ import { registeredLocales } from '../locales'
 import type {
   Actor as ActorDoc,
   Area as AreaDoc,
+  Article as ArticleDoc,
   Claim as ClaimDoc,
   ClaimUpdate as ClaimUpdateDoc,
   Country as CountryDoc,
   Evidence as EvidenceDoc,
   Media as MediaDoc,
   Office as OfficeDoc,
+  Page as PageDoc,
   RatingScale as RatingScaleDoc,
   Site,
   Term as TermDoc,
+  Theme as ThemeDoc,
   Topic as TopicDoc,
 } from '../payload-types'
 
@@ -139,8 +155,28 @@ const toRatingScale = (doc: RatingScaleDoc): RatingScale => ({
   })),
 })
 
-const toSiteInfo = (site: Site, scales: readonly RatingScaleDoc[], locale: string): SiteInfo =>
+type SiteExtras = Pick<SiteInfo, 'picks' | 'partners' | 'sisterTools'>
+
+/** The sections an editor forced on or off. The rest follow their rule. */
+const sectionsOf = (site: Site): SiteInfo['sections'] => {
+  const saved = (site.sections ?? {}) as Record<string, unknown>
+  const forced: Partial<Record<SectionId, 'on' | 'off'>> = {}
+  for (const id of SECTION_IDS) {
+    const value = saved[sectionField(id)]
+    if (value === 'on' || value === 'off') forced[id] = value
+  }
+  return forced
+}
+
+const toSiteInfo = (
+  site: Site,
+  scales: readonly RatingScaleDoc[],
+  locale: string,
+  extras: SiteExtras,
+): SiteInfo =>
   SiteInfoSchema.parse({
+    ...extras,
+    sections: sectionsOf(site),
     name: site.name,
     locale,
     defaultLanguage: kernel.defaultLocale,
@@ -163,12 +199,18 @@ const toSummary = (doc: CountryDoc, locale: TypedLocale): CountrySummary => ({
   region: doc.region ?? null,
 })
 
-const toCountry = (doc: CountryDoc, locale: TypedLocale, counts: Country['counts']): Country =>
+const toCountry = (
+  doc: CountryDoc,
+  locale: TypedLocale,
+  counts: Country['counts'],
+  picks: Country['picks'],
+): Country =>
   CountrySchema.parse({
     ...toSummary(doc, locale),
     about: text(doc.about),
     defaultLanguage: doc.defaultLanguage ?? null,
     counts,
+    picks,
   })
 
 type Context = {
@@ -457,7 +499,12 @@ async function sectionCounts(
     },
     overrideAccess: false,
   })
-  return { currentHolders: current.size, pastTerms: totalDocs }
+  const articles = await payload.count({
+    collection: 'articles',
+    where: { and: [{ country: { equals: country } }, publishedInLocale(locale)] },
+    overrideAccess: false,
+  })
+  return { currentHolders: current.size, pastTerms: totalDocs, articles: articles.totalDocs }
 }
 
 /** Finds a record by its slug in a country, or by a slug it had before (section 11.2). */
@@ -834,6 +881,377 @@ const CLAIM_SORTS = {
   title: byTitle,
 } as const satisfies Record<string, ClaimOrder>
 
+/**
+ * Actors as they appear in lists: each one's seats today, their party, and
+ * the rank of their highest office, for sorting by office.
+ */
+async function actorSummaries(
+  payload: Payload,
+  country: string,
+  locale: TypedLocale,
+  actors: ReadonlyMap<string, ActorDoc>,
+  offices: ReadonlyMap<string, OfficeEntry>,
+  now: Date,
+): Promise<{ items: ActorSummary[]; rank: Map<string, number> }> {
+  // Each actor's seats today, and their party.
+  const current = (
+    await findTerms(payload, country, locale, {
+      and: [currentTerms(now), { actor: { in: [...actors.keys()] } }],
+    })
+  ).sort(termsByOffice(offices))
+  const areas = await areaMap(
+    payload,
+    current.map((t) => idOf(t.area) ?? '').filter(Boolean),
+    locale,
+  )
+  const parties = await findActors(
+    payload,
+    publicActors(country, locale, now, idIn(current.map((t) => idOf(t.party)))),
+    locale,
+  )
+  const rank = new Map<string, number>()
+  const items: ActorSummary[] = []
+  for (const actor of actors.values()) {
+    const ref = toActorRef(actor)
+    if (!ref) continue
+    const own = current.filter((t) => idOf(t.actor) === actor.id)
+    const seats = own.flatMap((t): SeatRef[] => {
+      const entry = offices.get(idOf(t.office) ?? '')
+      if (!entry) return []
+      const area = idOf(t.area)
+      return [{ office: officeRef(entry.office), area: area ? (areas.get(area) ?? null) : null }]
+    })
+    rank.set(ref.slug, offices.get(idOf(own[0]?.office) ?? '')?.order ?? Number.MAX_SAFE_INTEGER)
+    items.push({
+      ...ref,
+      image: imageOf(actor),
+      party: toActorRef(parties.get(idOf(own[0]?.party) ?? '')),
+      stage: own.length > 0 || actor.kind !== 'person' ? 'current' : 'past',
+      seats,
+    })
+  }
+  return { items, rank }
+}
+
+// Editorial content (section 7.7)
+
+/** How many articles Latest analysis shows. */
+const ANALYSIS_LENGTH = 3
+
+/** Link addresses a reader can safely follow: the web, email, and this site's own. */
+const SAFE_HREF = /^(https?:\/\/|mailto:|\/(?!\/)|#)/i
+
+/**
+ * HTML from an editor's rich text. Payload's converter escapes the text it
+ * writes. A link to anything but the web, email or this site, such as a
+ * `javascript:` address, loses its address.
+ */
+export const htmlOf = (value: unknown): string | null => {
+  if (!value || typeof value !== 'object' || !('root' in value)) return null
+  const html = convertLexicalToHTML({ data: value as never, disableContainer: true })
+    .replace(/\shref="([^"]*)"/g, (whole, href: string) =>
+      SAFE_HREF.test(href.trim()) ? whole : ' href="#"',
+    )
+    .trim()
+  return html ? html : null
+}
+
+type AboutKind = ArticleSummary['about']['kind']
+const KIND_OF: Record<string, AboutKind> = {
+  claims: 'claim',
+  actors: 'actor',
+  countries: 'country',
+}
+
+/**
+ * Articles as they appear in lists. An article about a claim or an actor that
+ * is not published in this language is left out: its subject is not public.
+ */
+async function toArticleSummaries(
+  payload: Payload,
+  country: CountryDoc,
+  locale: TypedLocale,
+  docs: readonly ArticleDoc[],
+): Promise<ArticleSummary[]> {
+  const ids = (kind: string) =>
+    docs.filter((d) => d.about.relationTo === kind).map((d) => idOf(d.about.value) ?? '')
+  const now = new Date()
+  const [claims, actors] = await Promise.all([
+    ids('claims').length
+      ? publicClaims(payload, country.id, locale, { id: { in: ids('claims') } })
+      : [],
+    ids('actors').length
+      ? findActors(payload, publicActors(country.id, locale, now, idIn(ids('actors'))), locale)
+      : new Map<string, ActorDoc>(),
+  ])
+  const claimById = new Map(claims.map((c) => [c.id, c]))
+  return docs.flatMap((doc): ArticleSummary[] => {
+    const title = text(doc.title)
+    const date = day(doc.date)
+    const kind = KIND_OF[doc.about.relationTo]
+    const id = idOf(doc.about.value) ?? ''
+    if (!title || !doc.slug || !date || !kind) return []
+    let about: ArticleSummary['about'] | null = null
+    if (kind === 'country') about = { kind, slug: country.code, name: nameOf(country, locale) }
+    if (kind === 'claim') {
+      const claim = claimById.get(id)
+      const name = claim ? text(claim.title) : null
+      if (claim?.slug && name) about = { kind, slug: claim.slug, name }
+    }
+    if (kind === 'actor') {
+      const ref = toActorRef(actors.get(id))
+      if (ref) about = { kind, slug: ref.slug, name: ref.name }
+    }
+    if (!about) return []
+    return [
+      {
+        slug: doc.slug,
+        country: country.code,
+        title,
+        standfirst: text(doc.standfirst),
+        date,
+        image: mediaImage(doc.image, title, null),
+        // No byline is a normal state, and an editor can hide one (section 7.7).
+        byline: doc.hideByline ? null : text(doc.byline),
+        about,
+      },
+    ]
+  })
+}
+
+/** A country's published articles, the latest first, optionally about one record. */
+async function findArticles(
+  payload: Payload,
+  country: CountryDoc,
+  locale: TypedLocale,
+  about?: Where,
+): Promise<ArticleDoc[]> {
+  const { docs } = await payload.find({
+    collection: 'articles',
+    where: {
+      and: [
+        { country: { equals: country.id } },
+        publishedInLocale(locale),
+        ...(about ? [about] : []),
+      ],
+    },
+    sort: ['-date', '-createdAt'],
+    locale,
+    // The image's address. The subject is matched by id, whatever this populates.
+    depth: 1,
+    pagination: false,
+    overrideAccess: false,
+  })
+  return docs
+}
+
+const aboutWhere = (collection: string, id: string): Where => ({
+  and: [{ 'about.relationTo': { equals: collection } }, { 'about.value': { equals: id } }],
+})
+
+/** Latest analysis: the newest articles about one record (section 10.2). */
+async function articlesAbout(
+  payload: Payload,
+  country: CountryDoc,
+  locale: TypedLocale,
+  collection: 'claims' | 'actors',
+  id: string,
+): Promise<ArticleSummary[]> {
+  const docs = await findArticles(payload, country, locale, aboutWhere(collection, id))
+  return (await toArticleSummaries(payload, country, locale, docs)).slice(0, ANALYSIS_LENGTH)
+}
+
+/** A theme as it appears in a pick or a list, with the countries it covers that are public. */
+async function toThemeSummary(
+  payload: Payload,
+  doc: ThemeDoc,
+  locale: TypedLocale,
+): Promise<{ summary: ThemeSummary; countries: CountryDoc[] } | null> {
+  const title = text(doc.title)
+  if (!title || !doc.slug) return null
+  const wanted = (doc.countries ?? []).map(idOf).filter((id): id is string => Boolean(id))
+  const countries = (await publishedCountries(payload, locale)).filter((c) => wanted.includes(c.id))
+  countries.sort((a, b) => wanted.indexOf(a.id) - wanted.indexOf(b.id))
+  return {
+    summary: {
+      slug: doc.slug,
+      title,
+      introduction: text(doc.introduction),
+      image: mediaImage(doc.image, title, null),
+      countries: countries.map((c) => toSummary(c, locale)),
+    },
+    countries,
+  }
+}
+
+/** The homepage picks, each only when published in this language (section 10.6). */
+async function homePicks(
+  payload: Payload,
+  site: Site,
+  locale: TypedLocale,
+): Promise<SiteInfo['picks']> {
+  const picks = site.picks ?? {}
+  const claimId = idOf(picks.featuredClaim)
+  const themeId = idOf(picks.inFocus)
+  const areaId = idOf(picks.featuredArea)
+  const countries = await publishedCountries(payload, locale)
+  const codeOf = (id: unknown) => countries.find((c) => c.id === idOf(id))?.code ?? null
+  const [claim, theme, area] = await Promise.all([
+    claimId
+      ? payload
+          .find({
+            collection: 'claims',
+            where: { and: [{ id: { equals: claimId } }, publishedInLocale(locale)] },
+            select: { slug: true, country: true },
+            locale,
+            depth: 0,
+            limit: 1,
+            overrideAccess: false,
+          })
+          .then((r) => r.docs[0])
+      : undefined,
+    themeId
+      ? payload
+          .find({
+            collection: 'themes',
+            where: { and: [{ id: { equals: themeId } }, publishedInLocale(locale)] },
+            select: { slug: true },
+            locale,
+            depth: 0,
+            limit: 1,
+            overrideAccess: false,
+          })
+          .then((r) => r.docs[0])
+      : undefined,
+    areaId
+      ? payload
+          .find({
+            collection: 'areas',
+            joins: false,
+            where: { and: [{ id: { equals: areaId } }, publishedInLocale(locale)] },
+            select: { slug: true, country: true },
+            locale,
+            depth: 0,
+            limit: 1,
+            overrideAccess: false,
+          })
+          .then((r) => r.docs[0])
+      : undefined,
+  ])
+  const claimCountry = claim ? codeOf(claim.country) : null
+  const areaCountry = area ? codeOf(area.country) : null
+  return {
+    featuredClaim: claim?.slug && claimCountry ? { country: claimCountry, slug: claim.slug } : null,
+    inFocus: theme?.slug ?? null,
+    featuredArea: area?.slug && areaCountry ? { country: areaCountry, slug: area.slug } : null,
+  }
+}
+
+/** Who we work with, in the editors' order. */
+async function partnersOf(payload: Payload): Promise<Partner[]> {
+  const { docs } = await payload.find({
+    collection: 'partners',
+    sort: '_order',
+    depth: 1,
+    pagination: false,
+    overrideAccess: false,
+  })
+  const codes = new Map(
+    (
+      await payload.find({
+        collection: 'countries',
+        joins: false,
+        select: { code: true },
+        depth: 0,
+        pagination: false,
+        overrideAccess: false,
+      })
+    ).docs.map((c): [string, string] => [c.id, c.code]),
+  )
+  return docs.map((doc) => {
+    const logo = mediaImage(doc.logo, doc.name, null)
+    return {
+      name: doc.name,
+      url: doc.url,
+      logo: logo ? { url: logo.url, alt: logo.alt } : null,
+      countries: (doc.countries ?? [])
+        .map((c) => codes.get(idOf(c) ?? ''))
+        .filter((code): code is string => Boolean(code)),
+    }
+  })
+}
+
+/** Other tools from PesaCheck, in the editors' order. */
+async function sisterToolsOf(payload: Payload, locale: TypedLocale): Promise<SisterTool[]> {
+  const { docs } = await payload.find({
+    collection: 'sister-tools',
+    sort: '_order',
+    locale,
+    depth: 0,
+    pagination: false,
+    overrideAccess: false,
+  })
+  return docs.map((doc) => ({ name: doc.name, description: text(doc.description), url: doc.url }))
+}
+
+/** The actors and claims an editor picked for a country's In focus, published in this language. */
+async function countryPicks(
+  payload: Payload,
+  country: CountryDoc,
+  locale: TypedLocale,
+): Promise<Country['picks']> {
+  const site = await payload.findGlobal({ slug: 'site', depth: 0, overrideAccess: false })
+  const entry = (site.countryPicks ?? []).find((p) => idOf(p.country) === country.id)
+  const actorIds = (entry?.actors ?? []).map(idOf).filter((id): id is string => Boolean(id))
+  const claimIds = (entry?.claims ?? []).map(idOf).filter((id): id is string => Boolean(id))
+  if (actorIds.length === 0 && claimIds.length === 0) return { actors: [], claims: [] }
+  const now = new Date()
+  const [actors, offices, claims, book, topics] = await Promise.all([
+    actorIds.length
+      ? findActors(payload, publicActors(country.id, locale, now, idIn(actorIds)), locale)
+      : new Map<string, ActorDoc>(),
+    officeMap(payload, country.id, locale),
+    claimIds.length ? publicClaims(payload, country.id, locale, { id: { in: claimIds } }) : [],
+    ratingBook(payload, locale),
+    topicMap(payload, locale),
+  ])
+  const { items } = await actorSummaries(payload, country.id, locale, actors, offices, now)
+  const claimActors = await findActors(payload, idIn(claims.map((c) => idOf(c.actor))), locale)
+  const summaries = claims
+    .map((c) => toClaimSummary(c, country.code, claimActors, topics, book))
+    .filter((c): c is ClaimSummary => c !== null)
+  // In the editor's order.
+  const actorOrder = (slug: string) =>
+    actorIds.indexOf([...actors.values()].find((a) => a.slug === slug)?.id ?? '')
+  const claimOrder = (slug: string) =>
+    claimIds.indexOf(claims.find((c) => c.slug === slug)?.id ?? '')
+  return {
+    actors: items.sort((a, b) => actorOrder(a.slug) - actorOrder(b.slug)),
+    claims: summaries.sort((a, b) => claimOrder(a.slug) - claimOrder(b.slug)),
+  }
+}
+
+const toPageSummary = (doc: PageDoc): PageSummary | null => {
+  const title = text(doc.title)
+  return title && doc.path
+    ? { title, path: doc.path, summary: text(doc.summary), link: text(doc.link) }
+    : null
+}
+
+/** Editor pages published in this language at these addresses, keyed by address. */
+async function pagesAt(payload: Payload, locale: TypedLocale, where: Where): Promise<PageDoc[]> {
+  const { docs } = await payload.find({
+    collection: 'pages',
+    where: { and: [where, publishedInLocale(locale)] },
+    sort: '_order',
+    locale,
+    depth: 0,
+    pagination: false,
+    overrideAccess: false,
+  })
+  return docs
+}
+
 /** A list longer than this is sorted in memory with a warning in the log. */
 const LARGE_LIST = 2000
 
@@ -850,7 +1268,12 @@ const handlers: Record<string, Handler> = {
         overrideAccess: false,
       }),
     ])
-    return ok(toSiteInfo(site, scales.docs, locale))
+    const [picks, partners, sisterTools] = await Promise.all([
+      homePicks(payload, site, locale),
+      partnersOf(payload),
+      sisterToolsOf(payload, locale),
+    ])
+    return ok(toSiteInfo(site, scales.docs, locale, { picks, partners, sisterTools }))
   },
 
   '/countries': async ({ payload, locale }) => {
@@ -887,8 +1310,13 @@ const handlers: Record<string, Handler> = {
     })
     const [doc] = docs
     if (!doc) return notFound()
-    if ((doc.publishedIn ?? []).includes(locale))
-      return ok(toCountry(doc, locale, await sectionCounts(payload, doc.id, locale)))
+    if ((doc.publishedIn ?? []).includes(locale)) {
+      const [counts, picks] = await Promise.all([
+        sectionCounts(payload, doc.id, locale),
+        countryPicks(payload, doc, locale),
+      ])
+      return ok(toCountry(doc, locale, counts, picks))
+    }
     const availableIn = languages().filter((l) => (doc.publishedIn ?? []).includes(l.code))
     if (availableIn.length === 0) return notFound()
     const body: NotAvailable = { error: 'not-available', availableIn }
@@ -1056,43 +1484,7 @@ const handlers: Record<string, Handler> = {
       )
     }
 
-    // Each actor's seats today, and their party.
-    const current = (
-      await findTerms(payload, country.id, locale, {
-        and: [currentTerms(now), { actor: { in: [...actors.keys()] } }],
-      })
-    ).sort(termsByOffice(offices))
-    const areas = await areaMap(
-      payload,
-      current.map((t) => idOf(t.area) ?? '').filter(Boolean),
-      locale,
-    )
-    const parties = await findActors(
-      payload,
-      publicActors(country.id, locale, now, idIn(current.map((t) => idOf(t.party)))),
-      locale,
-    )
-    const rank = new Map<string, number>()
-    const items: ActorSummary[] = []
-    for (const actor of actors.values()) {
-      const ref = toActorRef(actor)
-      if (!ref) continue
-      const own = current.filter((t) => idOf(t.actor) === actor.id)
-      const seats = own.flatMap((t): SeatRef[] => {
-        const entry = offices.get(idOf(t.office) ?? '')
-        if (!entry) return []
-        const area = idOf(t.area)
-        return [{ office: officeRef(entry.office), area: area ? (areas.get(area) ?? null) : null }]
-      })
-      rank.set(ref.slug, offices.get(idOf(own[0]?.office) ?? '')?.order ?? Number.MAX_SAFE_INTEGER)
-      items.push({
-        ...ref,
-        image: imageOf(actor),
-        party: toActorRef(parties.get(idOf(own[0]?.party) ?? '')),
-        stage: own.length > 0 || actor.kind !== 'person' ? 'current' : 'past',
-        seats,
-      })
-    }
+    const { items, rank } = await actorSummaries(payload, country.id, locale, actors, offices, now)
     // Sorted and paged here, not in the database: the order by office needs
     // each actor's highest seat. That suits a country's few hundred office
     // holders. A country tracking thousands of ward seats would need the
@@ -1216,6 +1608,7 @@ const handlers: Record<string, Handler> = {
         keyClaim: keySummary ? { claim: keySummary, note: text(actor.keyClaimNote) } : null,
         record: figuresOf(claims, book, threshold),
         latestChanges,
+        analysis: await articlesAbout(payload, country, locale, 'actors', actor.id),
       }),
     )
   },
@@ -1374,6 +1767,7 @@ const handlers: Record<string, Handler> = {
         timeline: timeline.slice(0, TIMELINE_LENGTH),
         evidence: cited,
         citation: await citationOf(payload, locale, summary, lastReviewedAt),
+        analysis: await articlesAbout(payload, country, locale, 'claims', doc.id),
       }),
     )
   },
@@ -1491,6 +1885,179 @@ const handlers: Record<string, Handler> = {
           return child ? [child.summary] : []
         }),
         countries,
+      }),
+    )
+  },
+
+  '/countries/:code/articles': async ({ payload, params, locale, query }) => {
+    const code = params.code ?? ''
+    const country = await publishedCountry(payload, code, locale)
+    if (isResult(country)) return country
+    const empty = () => ok(ArticleListSchema.parse({ items: [], total: 0, nextCursor: null }))
+    // The contract has checked its form: `country`, or `claim:` or `actor:` and a slug.
+    const about = query.get('about')
+    let where: Where | undefined
+    if (about === 'country') where = aboutWhere('countries', country.id)
+    else if (about) {
+      const [kind = '', slug = ''] = about.split(':')
+      const collection = kind === 'claim' ? 'claims' : 'actors'
+      const { docs } = await payload.find({
+        collection,
+        where: { and: [{ country: { equals: country.id } }, { slug: { equals: slug } }] },
+        select: { slug: true },
+        depth: 0,
+        limit: 1,
+        overrideAccess: false,
+      })
+      const [found] = docs
+      if (!found) return empty()
+      where = aboutWhere(collection, found.id)
+    }
+    const items = await toArticleSummaries(
+      payload,
+      country,
+      locale,
+      await findArticles(payload, country, locale, where),
+    )
+    const { start, size } = pageOf(query)
+    const end = start + size
+    return ok(
+      ArticleListSchema.parse({
+        items: items.slice(start, end),
+        total: items.length,
+        nextCursor: end < items.length ? String(end) : null,
+      }),
+    )
+  },
+
+  '/countries/:code/articles/:slug': async ({ payload, params, locale }) => {
+    const code = params.code ?? ''
+    const country = await publishedCountry(payload, code, locale)
+    if (isResult(country)) return country
+    const { docs } = await payload.find({
+      collection: 'articles',
+      where: { and: [{ country: { equals: country.id } }, { slug: { equals: params.slug } }] },
+      locale,
+      depth: 1,
+      limit: 1,
+      overrideAccess: false,
+    })
+    const [doc] = docs
+    if (!doc) return notFound()
+    const published = doc.publishedIn ?? []
+    if (!published.includes(locale)) {
+      return notAvailable(published.filter((l) => (country.publishedIn ?? []).includes(l)))
+    }
+    const [summary] = await toArticleSummaries(payload, country, locale, [doc])
+    if (!summary) return notFound()
+    return ok(ArticleSchema.parse({ ...summary, body: htmlOf(doc.body) }))
+  },
+
+  '/themes/:slug': async ({ payload, params, locale }) => {
+    const { docs } = await payload.find({
+      collection: 'themes',
+      where: { slug: { equals: params.slug } },
+      locale,
+      depth: 1,
+      limit: 1,
+      overrideAccess: false,
+    })
+    const [doc] = docs
+    if (!doc) return notFound()
+    const published = doc.publishedIn ?? []
+    if (!published.includes(locale)) return notAvailable(published)
+    const theme = await toThemeSummary(payload, doc, locale)
+    if (!theme) return notFound()
+    const wanted = (doc.claims ?? []).map(idOf).filter((id): id is string => Boolean(id))
+    const [book, topics, threshold] = await Promise.all([
+      ratingBook(payload, locale),
+      topicMap(payload, locale),
+      figuresThreshold(payload),
+    ])
+    const perCountry = await Promise.all(
+      theme.countries.map((c) =>
+        wanted.length ? publicClaims(payload, c.id, locale, { id: { in: wanted } }) : [],
+      ),
+    )
+    const all = perCountry.flat()
+    const actors = await findActors(payload, idIn(all.map((c) => idOf(c.actor))), locale)
+    const codeOf = new Map(theme.countries.map((c) => [c.id, c.code]))
+    const claims = all
+      .sort((a, b) => wanted.indexOf(a.id) - wanted.indexOf(b.id))
+      .map((c) => toClaimSummary(c, codeOf.get(idOf(c.country) ?? '') ?? '', actors, topics, book))
+      .filter((c): c is ClaimSummary => c !== null)
+    return ok(
+      ThemeSchema.parse({
+        ...theme.summary,
+        claims,
+        figures: theme.countries.flatMap((country, i) => {
+          const own = perCountry[i] ?? []
+          return own.length
+            ? [{ country: toSummary(country, locale), figures: figuresOf(own, book, threshold) }]
+            : []
+        }),
+      }),
+    )
+  },
+
+  '/pages': async ({ payload, locale, query }) => {
+    // The contract has checked its form: slugs joined by slashes.
+    const path = query.get('path') ?? ''
+    const { docs } = await payload.find({
+      collection: 'pages',
+      where: { path: { equals: path } },
+      locale,
+      depth: 0,
+      limit: 1,
+      overrideAccess: false,
+    })
+    const [doc] = docs
+    if (!doc) return notFound()
+    const published = doc.publishedIn ?? []
+    if (!published.includes(locale)) return notAvailable(published)
+    const page = toPageSummary(doc)
+    if (!page) return notFound()
+    const parts = path.split('/')
+    const above = parts.slice(0, -1).map((_, i) => parts.slice(0, i + 1).join('/'))
+    const [parents, children] = await Promise.all([
+      above.length ? pagesAt(payload, locale, { path: { in: above } }) : [],
+      pagesAt(payload, locale, { parent: { equals: doc.id } }),
+    ])
+    const summaries = (list: readonly PageDoc[]) =>
+      list.map(toPageSummary).filter((p): p is PageSummary => p !== null)
+    return ok(
+      PageSchema.parse({
+        ...page,
+        body: page.link ? null : htmlOf(doc.body),
+        parents: summaries(parents).sort((a, b) => a.path.length - b.path.length),
+        children: summaries(children),
+      }),
+    )
+  },
+
+  '/overview': async ({ payload, locale }) => {
+    const countries = await publishedCountries(payload, locale)
+    const [book, threshold] = await Promise.all([
+      ratingBook(payload, locale),
+      figuresThreshold(payload),
+    ])
+    const claims = (
+      await Promise.all(countries.map((c) => publicClaims(payload, c.id, locale)))
+    ).flat()
+    const actors = new Set(claims.map((c) => idOf(c.actor)).filter(Boolean))
+    const updates = await publicUpdates(
+      payload,
+      claims.map((c) => c.id),
+      locale,
+    )
+    const sources = new Set(updates.flatMap((u) => (u.evidence ?? []).map((e) => idOf(e))))
+    sources.delete(null)
+    return ok(
+      OverviewSchema.parse({
+        figures: figuresOf(claims, book, threshold),
+        actors: actors.size,
+        countries: countries.length,
+        sources: sources.size,
       }),
     )
   },

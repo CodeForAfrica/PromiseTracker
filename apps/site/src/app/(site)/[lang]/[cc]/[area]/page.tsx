@@ -23,6 +23,7 @@ import {
   orNotFound,
   orNull,
 } from '@/data'
+import { EditorPage, editorPageMetadata, isCountrySegment } from '@/editorPage'
 
 type Props = { params: Promise<{ lang: string; cc: string; area: string }> }
 
@@ -40,6 +41,7 @@ async function load(lang: string, cc: string, slug: string) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang, cc, area: slug } = await params
+  if (!isCountrySegment(cc)) return editorPageMetadata(lang, `${cc}/${slug}`)
   if (!(await findSite(lang))) return {}
   const { area, seat } = await load(lang, cc, slug)
   if (area && !isNotAvailable(area)) return { title: area.name }
@@ -58,6 +60,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
  */
 export default async function AreaPage({ params }: Props) {
   const { lang, cc, area: slug } = await params
+  // A first segment that is not a country is an editor page (section 11.2).
+  if (!isCountrySegment(cc)) return <EditorPage lang={lang} path={`${cc}/${slug}`} />
   const shell = await loadShell(lang)
   const { area, seat } = await load(lang, cc, slug)
   const found = area ?? seat
