@@ -658,7 +658,14 @@ export const deleteClaimHistory: CollectionBeforeDeleteHook = async ({ id, req }
   const claim = String(id)
   // One request may delete several claims, so each is noted.
   deletingClaims(req).add(claim)
-  // Whoever may delete the claim may delete what belongs to it.
+  // Whoever may delete the claim may delete what belongs to it. Submissions
+  // go first, and take their files with them.
+  await req.payload.delete({
+    collection: 'submissions',
+    where: { claim: { equals: claim } },
+    overrideAccess: true,
+    req,
+  })
   await req.payload.delete({
     collection: 'claim-updates',
     where: { claim: { equals: claim } },

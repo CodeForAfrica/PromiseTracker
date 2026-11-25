@@ -173,3 +173,34 @@ export function checkFileType({ filename, declaredType, data }: FileClaim): Docu
   if (type === 'text/plain' && looksLikeHtml(header)) return 'text/html'
   return type
 }
+
+/** What a citizen may attach to a submission: photos and PDFs (section 13.5). */
+const SUBMISSION_KINDS = {
+  'image/jpeg': { signature: JPEG, extensions: ['.jpg', '.jpeg'] },
+  'image/png': { signature: PNG, extensions: ['.png'] },
+  'image/webp': { signature: WEBP, extensions: ['.webp'] },
+  'application/pdf': { signature: PDF, extensions: ['.pdf'] },
+} as const satisfies Record<string, { signature: Signature; extensions: readonly string[] }>
+
+export type SubmissionFileType = keyof typeof SUBMISSION_KINDS
+
+export const SUBMISSION_FILE_TYPES = Object.keys(SUBMISSION_KINDS) as SubmissionFileType[]
+
+/**
+ * A submission file's type, when its first bytes, declared type and extension
+ * all name the same photo or PDF type. Null otherwise.
+ */
+export function submissionFileType({
+  filename,
+  declaredType,
+  data,
+}: FileClaim): SubmissionFileType | null {
+  const header = data.subarray(0, HEADER_LENGTH)
+  const extension = extensionOf(filename)
+  const declared = normaliseType(declaredType)
+  const match = SUBMISSION_FILE_TYPES.find((type) => SUBMISSION_KINDS[type].signature(header))
+  if (!match) return null
+  if (!(SUBMISSION_KINDS[match].extensions as readonly string[]).includes(extension)) return null
+  if (!UNDECLARED.has(declared) && declared !== match) return null
+  return match
+}

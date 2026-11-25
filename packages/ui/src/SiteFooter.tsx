@@ -3,16 +3,32 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 import { Container } from './Container'
+import { SubscribeForm } from './forms'
+import { localePath } from './paths'
+
+/** The privacy notice (section 13.9), linked from both public forms. */
+export const privacyPath = (locale: string) => localePath(locale, '/privacy')
 
 /**
- * The footer: what the site is, the editor's links and the copyright line.
- * Partners, sister tools and the newsletter join it with the issues that add
- * them.
+ * The footer: the newsletter sign-up, what the site is, the editor's links
+ * and the copyright line. Partners and sister tools join it with the issues
+ * that add them.
  */
 export function SiteFooter({ site, logo }: { site: SiteInfo; logo: string }) {
   const t = site.strings
   return (
     <footer className="mt-auto border-t border-line">
+      <div className="border-b border-line">
+        <Container className="flex flex-wrap items-center justify-between gap-x-10 gap-y-6 py-10">
+          <div>
+            <h2 className="text-[32px] leading-[1.1] font-bold tracking-[-.025em] text-ink">
+              {t.subscribe}
+            </h2>
+            <p className="mt-2 text-[15px] leading-normal text-ink-2">{t.subscribeLine}</p>
+          </div>
+          <SubscribeForm strings={t} locale={site.locale} privacyHref={privacyPath(site.locale)} />
+        </Container>
+      </div>
       <Container className="pt-8 pb-6">
         <div className="flex flex-wrap items-start justify-between gap-x-12 gap-y-6">
           <div className="max-w-[660px] flex-[1_1_460px]">

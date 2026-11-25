@@ -52,6 +52,8 @@ const params = (query: Readonly<Record<string, string | number | undefined>>) =>
  */
 export interface Transport {
   get(path: string, query?: Record<string, string>): Promise<{ status: number; body: unknown }>
+  /** Sends a form's fields (section 12.1). */
+  post(path: string, body: Record<string, string>): Promise<{ status: number; body: unknown }>
 }
 
 export class NotFoundError extends Error {
@@ -86,6 +88,16 @@ export function createHttpTransport(
       const body: unknown = await res.json().catch(() => null)
       return { status: res.status, body }
     },
+    async post(path, fields) {
+      const res = await fetchImpl(`${root}/api/v1${path}`, {
+        ...init,
+        method: 'POST',
+        headers: { ...init.headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify(fields),
+      })
+      const body: unknown = await res.json().catch(() => null)
+      return { status: res.status, body }
+    },
   }
 }
 
@@ -110,6 +122,13 @@ export function createSdk(transport: Transport) {
   }
   const cc = (code: string) => `/countries/${encodeURIComponent(code)}`
   return {
+    /** Confirms a newsletter sign-up from its email's link. False when the link is old or used. */
+    async confirmSubscription(token: string): Promise<boolean> {
+      const { status } = await transport.post('/subscriptions/confirm', { token })
+      if (status === 200) return true
+      if (status === 404) return false
+      throw new Error(`API ${status} for /subscriptions/confirm`)
+    },
     /** Everything every page needs: languages, interface text, navigation. */
     async getSiteInfo(locale: string): Promise<SiteInfo> {
       return SiteInfo.parse(await get('/site', locale))

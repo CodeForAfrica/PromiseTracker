@@ -1,12 +1,15 @@
 import type { Health } from '@promisetracker/contract'
 import type { Transport } from '@promisetracker/sdk'
 
+import { handleForm, inputOf } from './api/forms'
 import { handleV1 } from './api/v1'
 import { getPayload } from './getPayload'
 import type { HealthScope } from './health'
 import { getHealth as checkHealth } from './health'
 
-export { etagOf, matches, READ_CACHE, respondV1 } from './api/http'
+export type { FormInput, FormResult, Sender } from './api/forms'
+export { captchaChallenge, handleForm, inputOf, inputOfFormData } from './api/forms'
+export { etagOf, matches, READ_CACHE, respondForm, respondV1 } from './api/http'
 export { handleV1, languages, matchRoute, V1_PATTERNS } from './api/v1'
 export type { AreaFamily } from './areaTree'
 export { areaFamily } from './areaTree'
@@ -52,6 +55,10 @@ export function createLocalTransport(): Transport {
   return {
     async get(path, query) {
       const result = await handleV1(await getPayload(), path, new URLSearchParams(query))
+      return result ?? { status: 404, body: { error: 'not-found' } }
+    },
+    async post(path, body) {
+      const result = await handleForm(await getPayload(), path, inputOf(body))
       return result ?? { status: 404, body: { error: 'not-found' } }
     },
   }
