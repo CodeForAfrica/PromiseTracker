@@ -94,8 +94,8 @@ catalogs:
       specifier: 19.3.1
       version: 19.3.1
     read-excel-file:
-      specifier: 9.3.14
-      version: 9.3.14
+      specifier: 9.3.19
+      version: 9.3.19
     server-only:
       specifier: 0.0.1
       version: 0.0.1
@@ -391,7 +391,7 @@ importers:
         version: 12.0.0
       read-excel-file:
         specifier: 'catalog:'
-        version: 9.3.14
+        version: 9.3.19
     devDependencies:
       '@payloadcms/ui':
         specifier: 'catalog:'
@@ -3770,8 +3770,8 @@ packages:
     resolution: {integrity: sha512-QNhWdt7nrgVWWQG58QuGsAR3jv3Hbe4mb4vz7w2csnHavciZJgda1CPNaldF6eVxv90ud3jUXpKlHL69gO38yw==}
     engines: {node: '>=0.10.0'}
 
-  read-excel-file@9.3.14:
-    resolution: {integrity: sha512-rfEpNMthm/REIpSCLnGTrQD5aW+U9rrhFuGYF+XRO8Soz+7b+rAOW1z2vJbNiEINbFPbjRW16vz0KnX41Si9qw==}
+  read-excel-file@9.3.19:
+    resolution: {integrity: sha512-dA2hfXtX1sXbdn+i8arzql+4PQZXIeklrGAATvsU/UKaj5KIi2dAuGHbH2XW+3/qf7vhwrz5tOWPuhAavUzK9g==}
     engines: {node: '>=18'}
 
   readable-stream@3.6.2:
@@ -7582,7 +7582,7 @@ snapshots:
 
   react@19.3.1: {}
 
-  read-excel-file@9.3.14:
+  read-excel-file@9.3.19:
     dependencies:
       fflate: 0.8.3
       saxen: 11.2.0
