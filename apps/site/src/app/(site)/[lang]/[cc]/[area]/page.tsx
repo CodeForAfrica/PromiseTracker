@@ -23,6 +23,7 @@ import {
   orNotFound,
   orNull,
 } from '@/data'
+import { alternates } from '@/seo'
 
 type Props = { params: Promise<{ lang: string; cc: string; area: string }> }
 
@@ -40,10 +41,12 @@ async function load(lang: string, cc: string, slug: string) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang, cc, area: slug } = await params
-  if (!(await findSite(lang))) return {}
+  const site = await findSite(lang)
+  if (!site) return {}
   const { area, seat } = await load(lang, cc, slug)
-  if (area && !isNotAvailable(area)) return { title: area.name }
-  if (seat && !isNotAvailable(seat)) return { title: seatLabel(seat) }
+  const links = { alternates: alternates(site, `/${cc}/${slug}`) }
+  if (area && !isNotAvailable(area)) return { title: area.name, ...links }
+  if (seat && !isNotAvailable(seat)) return { title: seatLabel(seat), ...links }
   return {}
 }
 

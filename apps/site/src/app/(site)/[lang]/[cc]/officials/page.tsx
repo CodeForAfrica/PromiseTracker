@@ -23,6 +23,7 @@ import {
   loadShell,
   orNotFound,
 } from '@/data'
+import { alternates } from '@/seo'
 
 type Props = {
   params: Promise<{ lang: string; cc: string }>
@@ -36,9 +37,11 @@ const slugParam = (value: string | string[] | undefined): string | undefined =>
   typeof value === 'string' && SLUG.test(value) ? value : undefined
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { lang } = await params
+  const { lang, cc } = await params
   const site = await findSite(lang)
-  return site ? { title: site.strings.officials } : {}
+  return site
+    ? { title: site.strings.officials, alternates: alternates(site, `/${cc}/officials`) }
+    : {}
 }
 
 /**

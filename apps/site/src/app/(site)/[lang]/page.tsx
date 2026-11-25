@@ -7,7 +7,20 @@ import {
   SkipLink,
 } from '@promisetracker/ui'
 
-import { LOGO, loadShell } from '@/data'
+import type { Metadata } from 'next'
+
+import { findSite, LOGO, loadShell } from '@/data'
+import { alternates } from '@/seo'
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>
+}): Promise<Metadata> {
+  const { lang } = await params
+  const site = await findSite(lang)
+  return site ? { alternates: alternates(site, '/') } : {}
+}
 
 /**
  * The homepage (section 10.2). Only sections with something to show appear

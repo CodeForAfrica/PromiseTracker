@@ -14,6 +14,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 import { findSite, getClaims, getTopic, LOGO, loadShell, orNotFound } from '@/data'
+import { alternates } from '@/seo'
 
 type Props = {
   params: Promise<{ lang: string; topic: string }>
@@ -22,9 +23,12 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang, topic } = await params
-  if (!(await findSite(lang))) return {}
+  const site = await findSite(lang)
+  if (!site) return {}
   const found = await orNotFound(getTopic(lang, topic))
-  return isNotAvailable(found) ? {} : { title: found.name }
+  return isNotAvailable(found)
+    ? {}
+    : { title: found.name, alternates: alternates(site, `/topics/${found.slug}`) }
 }
 
 /** How many of each country's latest claims a topic page lists. */
