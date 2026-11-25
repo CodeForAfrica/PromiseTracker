@@ -27,6 +27,7 @@
     "@payloadcms/storage-s3": "catalog:",
     "@promisetracker/contract": "workspace:*",
     "@promisetracker/kernel": "workspace:*",
+    "@promisetracker/plugin-ai": "workspace:*",
     "@promisetracker/plugin-check": "workspace:*",
     "@promisetracker/plugin-core": "workspace:*",
     "@promisetracker/plugin-site": "workspace:*",

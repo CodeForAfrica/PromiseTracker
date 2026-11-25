@@ -9365,6 +9365,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "ai_extraction_id": {
+          "name": "ai_extraction_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ai_candidate": {
+          "name": "ai_candidate",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
         "check_item_id": {
           "name": "check_item_id",
           "type": "varchar",
@@ -9659,6 +9671,21 @@
           "method": "btree",
           "with": {}
         },
+        "claims_ai_ai_extraction_idx": {
+          "name": "claims_ai_ai_extraction_idx",
+          "columns": [
+            {
+              "expression": "ai_extraction_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "claims_check_check_item_id_idx": {
           "name": "claims_check_check_item_id_idx",
           "columns": [
@@ -9865,6 +9892,19 @@
           "tableTo": "users",
           "columnsFrom": [
             "entered_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "claims_ai_extraction_id_extractions_id_fk": {
+          "name": "claims_ai_extraction_id_extractions_id_fk",
+          "tableFrom": "claims",
+          "tableTo": "extractions",
+          "columnsFrom": [
+            "ai_extraction_id"
           ],
           "columnsTo": [
             "id"
@@ -10457,6 +10497,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "version_ai_extraction_id": {
+          "name": "version_ai_extraction_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "version_ai_candidate": {
+          "name": "version_ai_candidate",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
         "version_check_item_id": {
           "name": "version_check_item_id",
           "type": "varchar",
@@ -10791,6 +10843,21 @@
           "method": "btree",
           "with": {}
         },
+        "_claims_v_version_ai_version_ai_extraction_idx": {
+          "name": "_claims_v_version_ai_version_ai_extraction_idx",
+          "columns": [
+            {
+              "expression": "version_ai_extraction_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "_claims_v_version_check_version_check_item_id_idx": {
           "name": "_claims_v_version_check_version_check_item_id_idx",
           "columns": [
@@ -11070,6 +11137,19 @@
           "tableTo": "users",
           "columnsFrom": [
             "version_entered_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "_claims_v_version_ai_extraction_id_extractions_id_fk": {
+          "name": "_claims_v_version_ai_extraction_id_extractions_id_fk",
+          "tableFrom": "_claims_v",
+          "tableTo": "extractions",
+          "columnsFrom": [
+            "version_ai_extraction_id"
           ],
           "columnsTo": [
             "id"
@@ -20808,6 +20888,554 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.extractions_candidates": {
+      "name": "extractions_candidates",
+      "schema": "",
+      "columns": {
+        "_order": {
+          "name": "_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "_parent_id": {
+          "name": "_parent_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "summary": {
+          "name": "summary",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "topic": {
+          "name": "topic",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "confidence": {
+          "name": "confidence",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decision": {
+          "name": "decision",
+          "type": "enum_extractions_candidates_decision",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'pending'"
+        },
+        "reason": {
+          "name": "reason",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reviewer_id": {
+          "name": "reviewer_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reviewed_at": {
+          "name": "reviewed_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "claim_id": {
+          "name": "claim_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "extractions_candidates_order_idx": {
+          "name": "extractions_candidates_order_idx",
+          "columns": [
+            {
+              "expression": "_order",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "extractions_candidates_parent_id_idx": {
+          "name": "extractions_candidates_parent_id_idx",
+          "columns": [
+            {
+              "expression": "_parent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "extractions_candidates_reviewer_idx": {
+          "name": "extractions_candidates_reviewer_idx",
+          "columns": [
+            {
+              "expression": "reviewer_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "extractions_candidates_claim_idx": {
+          "name": "extractions_candidates_claim_idx",
+          "columns": [
+            {
+              "expression": "claim_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "extractions_candidates_reviewer_id_users_id_fk": {
+          "name": "extractions_candidates_reviewer_id_users_id_fk",
+          "tableFrom": "extractions_candidates",
+          "tableTo": "users",
+          "columnsFrom": [
+            "reviewer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "extractions_candidates_claim_id_claims_id_fk": {
+          "name": "extractions_candidates_claim_id_claims_id_fk",
+          "tableFrom": "extractions_candidates",
+          "tableTo": "claims",
+          "columnsFrom": [
+            "claim_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "extractions_candidates_parent_id_fk": {
+          "name": "extractions_candidates_parent_id_fk",
+          "tableFrom": "extractions_candidates",
+          "tableTo": "extractions",
+          "columnsFrom": [
+            "_parent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.extractions": {
+      "name": "extractions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "document_id": {
+          "name": "document_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum_extractions_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'running'"
+        },
+        "message": {
+          "name": "message",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "model": {
+          "name": "model",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prompt_version": {
+          "name": "prompt_version",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sections": {
+          "name": "sections",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "input_tokens": {
+          "name": "input_tokens",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "output_tokens": {
+          "name": "output_tokens",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pending": {
+          "name": "pending",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "extractions_document_idx": {
+          "name": "extractions_document_idx",
+          "columns": [
+            {
+              "expression": "document_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "extractions_updated_at_idx": {
+          "name": "extractions_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "extractions_created_at_idx": {
+          "name": "extractions_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "extractions_document_id_documents_id_fk": {
+          "name": "extractions_document_id_documents_id_fk",
+          "tableFrom": "extractions",
+          "tableTo": "documents",
+          "columnsFrom": [
+            "document_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.extractions_texts": {
+      "name": "extractions_texts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "order": {
+          "name": "order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "path": {
+          "name": "path",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "text": {
+          "name": "text",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "extractions_texts_order_parent": {
+          "name": "extractions_texts_order_parent",
+          "columns": [
+            {
+              "expression": "order",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "parent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "extractions_texts_parent_fk": {
+          "name": "extractions_texts_parent_fk",
+          "tableFrom": "extractions_texts",
+          "tableTo": "extractions",
+          "columnsFrom": [
+            "parent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.extractions_rels": {
+      "name": "extractions_rels",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "order": {
+          "name": "order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "path": {
+          "name": "path",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "users_id": {
+          "name": "users_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "extractions_rels_order_idx": {
+          "name": "extractions_rels_order_idx",
+          "columns": [
+            {
+              "expression": "order",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "extractions_rels_parent_idx": {
+          "name": "extractions_rels_parent_idx",
+          "columns": [
+            {
+              "expression": "parent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "extractions_rels_path_idx": {
+          "name": "extractions_rels_path_idx",
+          "columns": [
+            {
+              "expression": "path",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "extractions_rels_users_id_idx": {
+          "name": "extractions_rels_users_id_idx",
+          "columns": [
+            {
+              "expression": "users_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "extractions_rels_parent_fk": {
+          "name": "extractions_rels_parent_fk",
+          "tableFrom": "extractions_rels",
+          "tableTo": "extractions",
+          "columnsFrom": [
+            "parent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "extractions_rels_users_fk": {
+          "name": "extractions_rels_users_fk",
+          "tableFrom": "extractions_rels",
+          "tableTo": "users",
+          "columnsFrom": [
+            "users_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.search": {
       "name": "search",
       "schema": "",
@@ -21939,6 +22567,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "extractions_id": {
+          "name": "extractions_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "search_id": {
           "name": "search_id",
           "type": "uuid",
@@ -22292,6 +22926,21 @@
           "method": "btree",
           "with": {}
         },
+        "payload_locked_documents_rels_extractions_id_idx": {
+          "name": "payload_locked_documents_rels_extractions_id_idx",
+          "columns": [
+            {
+              "expression": "extractions_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "payload_locked_documents_rels_search_id_idx": {
           "name": "payload_locked_documents_rels_search_id_idx",
           "columns": [
@@ -22575,6 +23224,19 @@
           "tableTo": "users",
           "columnsFrom": [
             "users_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_extractions_fk": {
+          "name": "payload_locked_documents_rels_extractions_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "extractions",
+          "columnsFrom": [
+            "extractions_id"
           ],
           "columnsTo": [
             "id"
@@ -25826,6 +26488,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "ai_api_key": {
+          "name": "ai_api_key",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ai_base_url": {
+          "name": "ai_base_url",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
         "check_workspace": {
           "name": "check_workspace",
           "type": "varchar",
@@ -27086,6 +27760,24 @@
         "viewer"
       ]
     },
+    "public.enum_extractions_candidates_decision": {
+      "name": "enum_extractions_candidates_decision",
+      "schema": "public",
+      "values": [
+        "pending",
+        "accepted",
+        "rejected"
+      ]
+    },
+    "public.enum_extractions_status": {
+      "name": "enum_extractions_status",
+      "schema": "public",
+      "values": [
+        "running",
+        "completed",
+        "failed"
+      ]
+    },
     "public.enum_search_kind": {
       "name": "enum_search_kind",
       "schema": "public",
@@ -27110,6 +27802,7 @@
         "dailyPublishing",
         "refreshCounts",
         "submitForVerification",
+        "extractCandidates",
         "pollCheck"
       ]
     },
@@ -27135,6 +27828,7 @@
         "dailyPublishing",
         "refreshCounts",
         "submitForVerification",
+        "extractCandidates",
         "pollCheck"
       ]
     },
@@ -27159,6 +27853,7 @@
         "dailyPublishing",
         "refreshCounts",
         "submitForVerification",
+        "extractCandidates",
         "pollCheck"
       ]
     },
@@ -27225,6 +27920,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "c631d294-70a2-4dfd-aa29-0c7e46b77f0b",
+  "id": "47048bb2-0a93-41d5-b40e-1f0ed21d7e6e",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

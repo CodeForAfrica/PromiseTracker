@@ -8,11 +8,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE TYPE "public"."enum__claims_v_version_check_report_state" AS ENUM('published', 'paused');
   CREATE TYPE "public"."enum__claims_v_version_check_sync_result" AS ENUM('applied', 'unchanged');
   CREATE TYPE "public"."enum_settings_check_statuses_verdict" AS ENUM('verified', 'false', 'misleading', 'unverified');
-  ALTER TYPE "public"."enum_payload_jobs_log_task_slug" ADD VALUE 'submitForVerification';
+  ALTER TYPE "public"."enum_payload_jobs_log_task_slug" ADD VALUE 'submitForVerification' BEFORE 'extractCandidates';
   ALTER TYPE "public"."enum_payload_jobs_log_task_slug" ADD VALUE 'pollCheck';
-  ALTER TYPE "public"."enum_payload_jobs_log_parent_task_slug" ADD VALUE 'submitForVerification';
+  ALTER TYPE "public"."enum_payload_jobs_log_parent_task_slug" ADD VALUE 'submitForVerification' BEFORE 'extractCandidates';
   ALTER TYPE "public"."enum_payload_jobs_log_parent_task_slug" ADD VALUE 'pollCheck';
-  ALTER TYPE "public"."enum_payload_jobs_task_slug" ADD VALUE 'submitForVerification';
+  ALTER TYPE "public"."enum_payload_jobs_task_slug" ADD VALUE 'submitForVerification' BEFORE 'extractCandidates';
   ALTER TYPE "public"."enum_payload_jobs_task_slug" ADD VALUE 'pollCheck';
   CREATE TABLE "settings_check_statuses" (
   	"_order" integer NOT NULL,
@@ -50,15 +50,15 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TABLE "settings_check_statuses" CASCADE;
   ALTER TABLE "payload_jobs_log" ALTER COLUMN "task_slug" SET DATA TYPE text;
   DROP TYPE "public"."enum_payload_jobs_log_task_slug";
-  CREATE TYPE "public"."enum_payload_jobs_log_task_slug" AS ENUM('inline', 'runImport', 'fetchDocument', 'extractText', 'cleanupJobs', 'cascadePublishing', 'recomputePublishing', 'dailyPublishing', 'refreshCounts');
+  CREATE TYPE "public"."enum_payload_jobs_log_task_slug" AS ENUM('inline', 'runImport', 'fetchDocument', 'extractText', 'cleanupJobs', 'cascadePublishing', 'recomputePublishing', 'dailyPublishing', 'refreshCounts', 'extractCandidates');
   ALTER TABLE "payload_jobs_log" ALTER COLUMN "task_slug" SET DATA TYPE "public"."enum_payload_jobs_log_task_slug" USING "task_slug"::"public"."enum_payload_jobs_log_task_slug";
   ALTER TABLE "payload_jobs_log" ALTER COLUMN "parent_task_slug" SET DATA TYPE text;
   DROP TYPE "public"."enum_payload_jobs_log_parent_task_slug";
-  CREATE TYPE "public"."enum_payload_jobs_log_parent_task_slug" AS ENUM('inline', 'runImport', 'fetchDocument', 'extractText', 'cleanupJobs', 'cascadePublishing', 'recomputePublishing', 'dailyPublishing', 'refreshCounts');
+  CREATE TYPE "public"."enum_payload_jobs_log_parent_task_slug" AS ENUM('inline', 'runImport', 'fetchDocument', 'extractText', 'cleanupJobs', 'cascadePublishing', 'recomputePublishing', 'dailyPublishing', 'refreshCounts', 'extractCandidates');
   ALTER TABLE "payload_jobs_log" ALTER COLUMN "parent_task_slug" SET DATA TYPE "public"."enum_payload_jobs_log_parent_task_slug" USING "parent_task_slug"::"public"."enum_payload_jobs_log_parent_task_slug";
   ALTER TABLE "payload_jobs" ALTER COLUMN "task_slug" SET DATA TYPE text;
   DROP TYPE "public"."enum_payload_jobs_task_slug";
-  CREATE TYPE "public"."enum_payload_jobs_task_slug" AS ENUM('inline', 'runImport', 'fetchDocument', 'extractText', 'cleanupJobs', 'cascadePublishing', 'recomputePublishing', 'dailyPublishing', 'refreshCounts');
+  CREATE TYPE "public"."enum_payload_jobs_task_slug" AS ENUM('inline', 'runImport', 'fetchDocument', 'extractText', 'cleanupJobs', 'cascadePublishing', 'recomputePublishing', 'dailyPublishing', 'refreshCounts', 'extractCandidates');
   ALTER TABLE "payload_jobs" ALTER COLUMN "task_slug" SET DATA TYPE "public"."enum_payload_jobs_task_slug" USING "task_slug"::"public"."enum_payload_jobs_task_slug";
   DROP INDEX IF EXISTS "claims_check_check_item_id_idx";
   DROP INDEX IF EXISTS "_claims_v_version_check_version_check_item_id_idx";

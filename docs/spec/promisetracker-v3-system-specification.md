@@ -383,8 +383,8 @@ item's id in Check, its link, the report state, and the time and result of the l
 
 **The API.** One GraphQL endpoint, `https://check-api.checkmedia.org/api/graphql`. Every request
 carries the `X-Check-Token` header with the workspace API key and the `X-Check-Team` header with
-the workspace's short name, which Check reads as its slug (D85). Both live in the plugin's
-settings, the key encrypted, with the webhook's shared secret (D86).
+the workspace's short name, which Check reads as its slug (D90). Both live in the plugin's
+settings, the key encrypted, with the webhook's shared secret (D91).
 
 **How a claim maps to a Check item.**
 
@@ -393,7 +393,7 @@ settings, the key encrypted, with the webhook's shared secret (D86).
 | Statement | `quote` | The exact quote. Check creates an item of type `Claim` |
 | Title and summary | `set_claim_description` | Includes a link back to the claim |
 | Topic, claim type, country | `set_tags` | |
-| Starting status | None | The workspace's default status (D91) |
+| Starting status | None | The workspace's default status (D96) |
 | Claim identity | The returned item id | Stored as `check.itemId` and used for matching |
 | Item link | The returned `full_url` | Stored as `check.itemUrl` |
 
@@ -426,7 +426,7 @@ mutation createProjectMedia($input: CreateProjectMediaInput!) {
   on report events, which Check labels `report_design`, and acknowledges all others with `200`.
   A report state of `published` applies the verdict. A state of `paused` withdraws it.
 - Poll: every 15 minutes a job searches Check for items with a published or a paused report, 100
-  per page, most recently active first, and reconciles them (D93). A push can be lost during a deploy, and the poll catches it.
+  per page, most recently active first, and reconciles them (D98). A push can be lost during a deploy, and the poll catches it.
 
 The webhook body is the one v2 already handles. The fields the plugin reads:
 
@@ -1092,7 +1092,7 @@ After 5 failures in a row, the system stops calling an outside service for 60 se
 | `extractText` | core | A document reaches fetched |
 | `extractCandidates` | ai | A document reaches extracted |
 | `runImport` | core | An editor commits an import |
-| `submitForVerification` | core | A claim is created, when the verification adapter sends claims out (D87) |
+| `submitForVerification` | core | A claim is created, when the verification adapter sends claims out (D92) |
 | `pollCheck` | check | Every 15 minutes |
 | `cascadeStatus` | core | A record status changes |
 | `refreshCounts` | core | After a cascade or a rating change. Refreshes the cached pages that show figures (D73) |
@@ -1807,16 +1807,21 @@ codemods, and passes the full test suite before merging.
 | D82 | A save that changes a claim's rating without an update starting to count or changing its own rating, such as a new date, records a "changed" review. Holding or removing an update records none |
 | D83 | A claim moves to another type only if the new scale has every rating its updates give. A rating an update gave cannot be deleted from its scale, only retired, and an import may keep it on an unchanged row |
 | D84 | A search for a place lists the seats above it, its own and those of every area inside it, except for a whole country, which lists only its national seats, since every seat is inside it. A place lists at most 60 seats, top first, so a region with thousands of wards gives a page that loads. A topic, which has no record status, is in the search index in each language it has a name in. Matching uses pg_trgm's word similarity at 0.45, below its default of 0.6, so that a dropped letter in a short name, such as "Nairbi", still finds it |
-| D85 | Check reads the `X-Check-Team` header as the workspace's slug, its short name in Check's addresses, not a number. The plugin's setting is that name. v2 sent the same value |
-| D86 | The Check webhook's shared secret lives in the plugin's settings, encrypted with the API key, not in an environment variable as in v2, so a super-admin can change it without a deploy. It uses the encrypted settings field plugin-tika brought, so neither is ever shown again once saved |
-| D87 | The core sends claims out and applies verdicts for any verification adapter that names where a claim keeps its reference, such as `check.itemId`. A new claim queues `submitForVerification`, which retries while the service is down: that is the local queue section 5.2 asks for. A verdict from outside is written to the live claim, as an update's rating is (D72), so it never publishes a claim's draft. The admin shows the live values, and a save keeps them |
-| D88 | A published report gives the item's mapped verdict, its text as the rationale in the default language, its publication time as the verification date, and its article link as the report link. The webhook carries the report but not the item's status, so the plugin reads the status from Check. A paused report sets the verdict to unverified, holds the claim and emails editors |
-| D89 | Start-up refuses only when it reads the workspace's statuses and one has no verdict. With the workspace or key not set, or Check out of reach, it logs a warning and starts, so a super-admin can fill in the settings and an outage at Check never stops a deploy. A published report whose status has no verdict is logged and skipped |
-| D90 | Webhook fingerprints are kept per process for ten minutes, as in v2. A repeat that reaches another process is applied again, which changes nothing. The poll notes a sync on a claim only when its verdict changed |
-| D91 | A claim goes to Check with no status, so it starts on the workspace's default. Each workspace defines its statuses, and `undetermined` may mean something else there: in the PesaCheck promise workspace it is "Unstarted", a rating |
-| D92 | A disabled plugin's settings stay visible and editable to super-admins, marked as not in use, unlike its other fields (D29). They can be filled in before the plugin is switched on, and a setting that stops start-up, such as an unmapped Check status, can be fixed with the plugin switched off |
-| D93 | The poll reads published and paused reports, most recently active first, as deep as Check's search allows: 10,000 results. A report whose webhook was lost changed recently, so it is near the top. One deeper down has not changed since an earlier poll reconciled it. No position is kept between polls. The known limit: in a workspace with more than 10,000 published reports, a report whose webhook was lost, and which more than 10,000 others outpace in activity before the next poll, is not reconciled until it changes again |
-| D94 | A withdrawn verdict holds the claim on its live record and on its latest version, which the admin edits. The admin then shows the hold, and a save keeps it until an editor releases the claim. A withdrawal of a claim already unverified changes nothing, so a released claim is not held again. The webhook answers `401`, as for a wrong secret, while no secret is set, so a caller cannot tell whether one is |
+| D85 | plugin-ai stores one key, for the vendor PT_LLM_MODEL names, and an optional address for Ollama or a proxy, rather than a key per vendor. A deployment uses one model (section 6.1) |
+| D86 | AI analysis runs as its own `extractCandidates` job, queued once a document is read, rather than as a stage of the document's workflow. Its concurrency key is the AI provider, so one document at a time goes to each provider however many workers run (section 9.7). Evidence documents are not analysed |
+| D87 | The AI health check's test request is answered from memory for 60 seconds, since each one is billed. A failed test request at start-up, such as a missing key or exhausted credit, is logged and shown as degraded, and does not stop start-up |
+| D88 | The quote check matches a quote in the document ignoring spacing and letter case, which the review screen's highlight also ignores. Accents and every other character must match, and a quote under 8 characters never passes. At most 120 sections of a document are analysed, and the second pass sees at most 220 candidates, as in v2 |
+| D89 | An accepted candidate's statement is its first quote, unless the reviewer chooses another. The claim records the reviewer as who entered it, `ai` as how it was found, and the extraction and candidate it came from. A reviewer may accept candidates though they cannot create claims by hand (section 13.2) |
+| D90 | Check reads the `X-Check-Team` header as the workspace's slug, its short name in Check's addresses, not a number. The plugin's setting is that name. v2 sent the same value |
+| D91 | The Check webhook's shared secret lives in the plugin's settings, encrypted with the API key, not in an environment variable as in v2, so a super-admin can change it without a deploy. It uses the encrypted settings field plugin-tika brought, so neither is ever shown again once saved |
+| D92 | The core sends claims out and applies verdicts for any verification adapter that names where a claim keeps its reference, such as `check.itemId`. A new claim queues `submitForVerification`, which retries while the service is down: that is the local queue section 5.2 asks for. A verdict from outside is written to the live claim, as an update's rating is (D72), so it never publishes a claim's draft. The admin shows the live values, and a save keeps them |
+| D93 | A published report gives the item's mapped verdict, its text as the rationale in the default language, its publication time as the verification date, and its article link as the report link. The webhook carries the report but not the item's status, so the plugin reads the status from Check. A paused report sets the verdict to unverified, holds the claim and emails editors |
+| D94 | Start-up refuses only when it reads the workspace's statuses and one has no verdict. With the workspace or key not set, or Check out of reach, it logs a warning and starts, so a super-admin can fill in the settings and an outage at Check never stops a deploy. A published report whose status has no verdict is logged and skipped |
+| D95 | Webhook fingerprints are kept per process for ten minutes, as in v2. A repeat that reaches another process is applied again, which changes nothing. The poll notes a sync on a claim only when its verdict changed |
+| D96 | A claim goes to Check with no status, so it starts on the workspace's default. Each workspace defines its statuses, and `undetermined` may mean something else there: in the PesaCheck promise workspace it is "Unstarted", a rating |
+| D97 | A disabled plugin's settings stay visible and editable to super-admins, marked as not in use, unlike its other fields (D29). They can be filled in before the plugin is switched on, and a setting that stops start-up, such as an unmapped Check status, can be fixed with the plugin switched off |
+| D98 | The poll reads published and paused reports, most recently active first, as deep as Check's search allows: 10,000 results. A report whose webhook was lost changed recently, so it is near the top. One deeper down has not changed since an earlier poll reconciled it. No position is kept between polls. The known limit: in a workspace with more than 10,000 published reports, a report whose webhook was lost, and which more than 10,000 others outpace in activity before the next poll, is not reconciled until it changes again |
+| D99 | A withdrawn verdict holds the claim on its live record and on its latest version, which the admin edits. The admin then shows the hold, and a save keeps it until an editor releases the claim. A withdrawal of a claim already unverified changes nothing, so a released claim is not held again. The webhook answers `401`, as for a wrong secret, while no secret is set, so a caller cannot tell whether one is |
 
 ### 20.2 Why
 
