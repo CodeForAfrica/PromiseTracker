@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { defineFinalPlugin } from '@promisetracker/kernel'
+import { analyse, configureAi } from '@promisetracker/plugin-ai'
 import {
   ensureDefaultRatings,
   ensureVerificationQueue,
@@ -45,6 +46,13 @@ setPipelineAdapters({
   connectors: kernel.adapters.sourceConnector,
   extractors: kernel.adapters.contentExtractor,
   context: (payload, adapter, signal) => kernel.context(payload, ownerOf(adapter), signal),
+  // A source of claims, once read, goes to AI when an AI plugin is enabled (section 9.5).
+  analyse: kernel.adapters.llm ? analyse : null,
+})
+// The model PT_LLM_MODEL chose, with its plugin's settings (section 6.1).
+configureAi({
+  llm: kernel.adapters.llm,
+  context: (payload, signal) => kernel.context(payload, 'ai', signal),
 })
 // A change reaches the search index through the search port's adapter (section 4.2).
 setSearchIndexer(async (payload, record) =>

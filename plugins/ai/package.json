@@ -1,0 +1,45 @@
+{
+  "name": "@promisetracker/plugin-ai",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.tsx"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "peerDependencies": {
+    "@payloadcms/ui": "catalog:",
+    "payload": "catalog:",
+    "react": "catalog:"
+  },
+  "devDependencies": {
+    "@payloadcms/ui": "catalog:",
+    "@types/react": "catalog:",
+    "payload": "catalog:",
+    "react": "catalog:",
+    "typescript": "catalog:"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "catalog:",
+    "@ai-sdk/cerebras": "catalog:",
+    "@ai-sdk/cohere": "catalog:",
+    "@ai-sdk/deepinfra": "catalog:",
+    "@ai-sdk/deepseek": "catalog:",
+    "@ai-sdk/fireworks": "catalog:",
+    "@ai-sdk/google": "catalog:",
+    "@ai-sdk/groq": "catalog:",
+    "@ai-sdk/mistral": "catalog:",
+    "@ai-sdk/openai": "catalog:",
+    "@ai-sdk/openai-compatible": "catalog:",
+    "@ai-sdk/perplexity": "catalog:",
+    "@ai-sdk/togetherai": "catalog:",
+    "@ai-sdk/xai": "catalog:",
+    "@promisetracker/kernel": "workspace:*",
+    "@promisetracker/plugin-core": "workspace:*",
+    "ai": "catalog:",
+    "zod": "catalog:"
+  }
+}
