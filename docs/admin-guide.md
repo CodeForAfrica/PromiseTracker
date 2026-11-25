@@ -383,8 +383,9 @@ To rate a claim:
    post or article), the publisher, the date, and a **link** or an uploaded **file**. Write the
    **finding**, one line on what it shows. Links are shown on the site, never opened by the server.
 2. Claims > Claim updates > Create New. Choose the **Claim**, the **Date** it happened (a year, a
-   month or a day, and it can be long before today), and the **Rating** as of that date, from the
-   claim's scale.
+   month or a day, and it can be long before today), and the **Rating** as of that date. The
+   **Rating** lists the chosen claim's scale, each with its colour, so choose the claim first.
+   Retired ratings are not offered. Changing the claim clears a rating its scale does not have.
 3. Write the **Title** and the **Narrative**: what happened and how we know. Both can be written in
    each language.
 4. Add the **Evidence**. An update that changes the rating needs at least one piece.

@@ -2,6 +2,7 @@ import { LLMInstructionsMenuItem as LLMInstructionsMenuItem_3817bf644402e67bfe65
 import { FindClaims as FindClaims_0bdeb70f8d678ccbdc32cdf8ef64d7e3 } from '@promisetracker/plugin-ai/client'
 import { SourceQuote as SourceQuote_4b2483109986546830d3cc5a8828e016 } from '@promisetracker/plugin-core/client'
 import { ConfirmRating as ConfirmRating_4b2483109986546830d3cc5a8828e016 } from '@promisetracker/plugin-core/client'
+import { RatingPicker as RatingPicker_4b2483109986546830d3cc5a8828e016 } from '@promisetracker/plugin-core/client'
 import { NullField as NullField_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
 import { HierarchyButton as HierarchyButton_ab83ff7e88da8d3530831f296ec4756a } from '@payloadcms/ui/rsc'
 import { TierRowLabel as TierRowLabel_4b2483109986546830d3cc5a8828e016 } from '@promisetracker/plugin-core/client'
@@ -52,6 +53,7 @@ export const importMap = {
   "@promisetracker/plugin-ai/client#FindClaims": FindClaims_0bdeb70f8d678ccbdc32cdf8ef64d7e3,
   "@promisetracker/plugin-core/client#SourceQuote": SourceQuote_4b2483109986546830d3cc5a8828e016,
   "@promisetracker/plugin-core/client#ConfirmRating": ConfirmRating_4b2483109986546830d3cc5a8828e016,
+  "@promisetracker/plugin-core/client#RatingPicker": RatingPicker_4b2483109986546830d3cc5a8828e016,
   "@payloadcms/ui#NullField": NullField_3817bf644402e67bfe6577f60ef982de,
   "@payloadcms/ui/rsc#HierarchyButton": HierarchyButton_ab83ff7e88da8d3530831f296ec4756a,
   "@promisetracker/plugin-core/client#TierRowLabel": TierRowLabel_4b2483109986546830d3cc5a8828e016,
