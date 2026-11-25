@@ -332,7 +332,8 @@ To rate a claim:
 3. Write the **Title** and the **Narrative**: what happened and how we know. Both can be written in
    each language.
 4. Add the **Evidence**. An update that changes the rating needs at least one piece.
-5. **Kind** fills itself in: **first rating** for a claim's first update, **change** after that.
+5. **Kind** fills itself in: **first rating** for a claim's earliest update by date, **change** for
+   the others. The site works it out again when an older update is added.
    Choose **correction** when the update fixes our own earlier mistake. The site labels it as a
    correction.
 6. **Attribution** credits a citizen who sent the update in, only with their consent.
@@ -341,8 +342,15 @@ To rate a claim:
 An update saved as a **draft** changes nothing until you publish it. Neither does a draft of
 changes to a published update.
 
-Evidence is checked when you save an update, against the update before it by date. Adding an older
-update, or holding one, does not check the later ones again, so look at the timeline afterwards.
+Evidence is checked when you save an update that counts, against the update before it by date.
+Evidence in the trash does not count. Adding an older update, or holding one, does not check the
+later ones again, so look at the timeline afterwards. You can always put an update on hold or move it
+to the trash; it is checked again when you release or restore it.
+
+A claim moves to another claim type only if the new type's scale has every rating its updates give.
+
+Deleting a piece of evidence for good takes it off every update that cites it, and a claim whose
+only source it was comes off the site. Prefer the trash, which can be undone.
 
 A rating that a claim carries, or that any of its updates gave, cannot be deleted from its scale,
 even if the update is in the trash. Retire it instead, so the history keeps its meaning.
@@ -476,8 +484,11 @@ The rating is the slug of a rating on the claim's scale:
 An update row matches an existing update by its claim and date. A row can name one piece of
 evidence, with **Evidence link**, **Evidence title**, **Evidence kind**, **Evidence publisher**,
 **Evidence date** and **Evidence finding**. Evidence with the same link is reused, unchanged, and
-otherwise added. Imported updates start on **hold**. Only those who rate claims can import them.
-A row that changes the rating with no evidence fails when it is imported.
+otherwise added. Imported updates start on **hold**, and are checked for evidence when you
+release them. A row for an update that is already **ready** and changes the rating with no evidence
+fails, in the preview too. A row whose update is in the trash fails: restore it, or delete it for
+good, first. An unchanged row keeps a rating retired since. Only those who rate claims can import
+them.
 
 `tests/fixtures/kenya-areas.csv`, `kenya-offices.csv`, `kenya-actors.csv`, `kenya-terms.csv`,
 `kenya-claims.csv` and `kenya-claim-updates.csv` in the repository are full examples. The people in

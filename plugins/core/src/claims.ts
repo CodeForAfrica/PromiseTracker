@@ -28,6 +28,7 @@ import {
   fromLiveClaim,
   publishedAnywhere,
   ratingFromUpdates,
+  ratingsInHistory,
 } from './updates'
 
 /**
@@ -249,9 +250,20 @@ const checkClaim: CollectionBeforeChangeHook = async ({ data, originalDoc, req, 
   } else if (idOf(originalDoc?.type) !== type) {
     // A new type can mean a new scale, which may not have the claim's rating.
     const { starting, slugs } = await typeRatings(req, type)
-    const rating = originalDoc?.currentRating
+    const id = idOf(originalDoc?.id)
+    // The save starts from the latest version, which does not hold what the
+    // updates wrote to the live record, so the rating is worked out again.
+    const live = id ? await ratingFromUpdates(req, id) : null
+    const missing = id ? (await ratingsInHistory(req, id)).filter((r) => !slugs.has(r)) : []
+    if (missing.length > 0) {
+      throw new APIError(
+        `This claim's updates use ratings that are not on the new type's scale: ${missing.join(', ')}. Choose a type whose scale has them.`,
+        400,
+      )
+    }
+    const rating = live?.currentRating ?? originalDoc?.currentRating
     if (typeof rating !== 'string' || !slugs.has(rating)) {
-      if (Number(originalDoc?.updateCount ?? 0) > 0) {
+      if ((live?.updateCount ?? 0) > 0) {
         throw new APIError(
           `This claim's rating, "${String(rating)}", is not on the new type's scale. Re-rate it through a claim update first.`,
           400,

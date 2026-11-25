@@ -4,6 +4,7 @@ import { commitTransaction, initTransaction, killTransaction } from 'payload'
 
 import { DEFAULT_LOCALE } from '../locales'
 import { SLUG_PATTERN, slugify, slugProblem } from '../slugs'
+import { publishedAnywhere } from '../updates'
 import type { ImportTarget, PlannedRow } from './targets'
 import { existingBySlug, localizedKeys, planRow } from './targets'
 
@@ -532,8 +533,13 @@ const EVIDENCE_COLUMNS = {
   evidenceFinding: 'finding',
 } as const
 
-/** The ratings each claim type's scale allows, by the type's id. Retired ones are left out. */
-async function ratingsByType(payload: Payload): Promise<Map<string, Set<string>>> {
+/**
+ * The ratings each claim type's scale allows, by the type's id, and the one
+ * a claim starts on. Retired ones are left out.
+ */
+async function ratingsByType(
+  payload: Payload,
+): Promise<Map<string, { allowed: Set<string>; starting: string | null }>> {
   const { docs } = await payload.find({
     collection: 'claim-types',
     depth: 1,
@@ -546,14 +552,18 @@ async function ratingsByType(payload: Payload): Promise<Map<string, Set<string>>
       const scale: unknown = doc.ratingScale
       const ratings: unknown =
         scale && typeof scale === 'object' ? Reflect.get(scale, 'ratings') : null
-      const slugs = Array.isArray(ratings)
-        ? ratings.flatMap((r: unknown) => {
-            if (!r || typeof r !== 'object' || Reflect.get(r, 'retired') === true) return []
-            const slug: unknown = Reflect.get(r, 'slug')
-            return typeof slug === 'string' ? [slug] : []
-          })
+      const live = Array.isArray(ratings)
+        ? ratings.flatMap((r: unknown): object[] =>
+            r && typeof r === 'object' && Reflect.get(r, 'retired') !== true ? [r] : [],
+          )
         : []
-      return [String(doc.id), new Set(slugs)] as const
+      const slugOf = (r: object): string | null => {
+        const slug: unknown = Reflect.get(r, 'slug')
+        return typeof slug === 'string' ? slug : null
+      }
+      const start = live.find((r) => Reflect.get(r, 'isStarting') === true)
+      const allowed = new Set(live.map(slugOf).filter((slug): slug is string => slug !== null))
+      return [String(doc.id), { allowed, starting: start ? slugOf(start) : null }] as const
     }),
   )
 }
@@ -582,6 +592,8 @@ async function runUpdatesPlan(payload: Payload, input: Input): Promise<ImportRes
     locale: 'all',
     depth: 0,
     pagination: false,
+    // Updates in the trash too, so a row does not add a second one beside them.
+    trash: true,
     // An import reads the updates it may change, after the person running it was checked.
     overrideAccess: true,
   })
@@ -589,6 +601,28 @@ async function runUpdatesPlan(payload: Payload, input: Input): Promise<ImportRes
   const existing = new Map(
     docs.map((doc) => [keyOf(doc.claim, doc.date), { ...doc } as Record<string, unknown>]),
   )
+  // The ratings of each claim's updates that count, by date, so a row that
+  // changes the rating can be checked for evidence before anything is saved.
+  const history = new Map<string, Map<string, string>>()
+  const remember = (claim: string, date: string, rating: string) => {
+    const dates = history.get(claim) ?? new Map<string, string>()
+    history.set(claim, dates)
+    dates.set(date, rating)
+  }
+  for (const doc of docs) {
+    const claim = idOf(doc.claim)
+    const live = doc.recordStatus === 'ready' && !doc.deletedAt && publishedAnywhere(doc._status)
+    if (claim && live && typeof doc.rating === 'string') {
+      remember(claim, String(doc.date), doc.rating)
+    }
+  }
+  /** The rating before a date: the latest earlier update's, or the starting one. */
+  const ratingBefore = (claim: string, date: string, starting: string | null) => {
+    const earlier = [...(history.get(claim)?.entries() ?? [])]
+      .filter(([d]) => d < date)
+      .sort(([a], [b]) => (a < b ? 1 : -1))
+    return earlier[0]?.[1] ?? starting
+  }
   // Evidence is reused by its link, so a row whose evidence the update already cites changes nothing.
   const { docs: cited } = await payload.find({
     collection: 'evidence',
@@ -612,11 +646,24 @@ async function runUpdatesPlan(payload: Payload, input: Input): Promise<ImportRes
     if (named && !claim) {
       plan.errors.push(`Claim "${named}" is not in this country. Import the claims first.`)
     }
-    const rating = plan.data.rating
-    const allowed = claim ? ratings.get(idOf(claim.type) ?? '') : undefined
-    if (claim && typeof rating === 'string' && !allowed?.has(rating)) {
+    const key = keyOf(claim?.id, plan.data.date)
+    const current = existing.get(key)
+    if (current?.deletedAt) {
       plan.errors.push(
-        `Rating "${rating}" is not on the claim's scale. Use one of ${[...(allowed ?? [])].join(', ')}.`,
+        'An update for this claim and date is in the trash. Restore it, or delete it for good, first.',
+      )
+    }
+    const rating = plan.data.rating
+    const scale = claim ? ratings.get(idOf(claim.type) ?? '') : undefined
+    // An update keeps a rating retired since, as it can in the admin.
+    if (
+      claim &&
+      typeof rating === 'string' &&
+      !scale?.allowed.has(rating) &&
+      rating !== current?.rating
+    ) {
+      plan.errors.push(
+        `Rating "${rating}" is not on the claim's scale. Use one of ${[...(scale?.allowed ?? [])].join(', ')}.`,
       )
     }
     const evidence: Record<string, unknown> = {}
@@ -631,7 +678,22 @@ async function runUpdatesPlan(payload: Payload, input: Input): Promise<ImportRes
     if (Object.keys(evidence).length > 0 && !link) {
       plan.errors.push('Evidence needs a link. Add a file in the admin instead.')
     }
-    const key = keyOf(claim?.id, plan.data.date)
+    // Only an update that counts needs evidence for a change. One on hold is
+    // checked when it is released.
+    const status = current ? current.recordStatus : (input.onCreate?.recordStatus ?? 'hold')
+    const claimId = idOf(claim?.id)
+    const date = String(plan.data.date ?? '')
+    const willCount = status === 'ready' && claimId !== null && typeof rating === 'string'
+    const cites = Array.isArray(current?.evidence) && current.evidence.length > 0
+    if (
+      willCount &&
+      plan.errors.length === 0 &&
+      !link &&
+      !cites &&
+      rating !== ratingBefore(claimId, date, scale?.starting ?? null)
+    ) {
+      plan.errors.push('A change of rating needs evidence. Add an evidence link to the row.')
+    }
     if (plan.errors.length === 0 && seen.has(key)) {
       plan.errors.push('The same claim and date appear earlier in the file.')
     }
@@ -640,8 +702,8 @@ async function runUpdatesPlan(payload: Payload, input: Input): Promise<ImportRes
       continue
     }
     seen.add(key)
+    if (willCount) remember(claimId, date, rating)
     const data: Record<string, unknown> = { ...plan.data, claim: idOf(claim?.id) }
-    const current = existing.get(key)
     const known = typeof link === 'string' ? evidenceByLink.get(link) : undefined
     const sameEvidence =
       !link ||

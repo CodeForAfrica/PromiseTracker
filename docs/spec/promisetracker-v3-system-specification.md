@@ -1095,7 +1095,7 @@ After 5 failures in a row, the system stops calling an outside service for 60 se
 | `submitForVerification` | check | A claim is created |
 | `pullVerdicts` | check | Every 15 minutes |
 | `cascadeStatus` | core | A record status changes |
-| `refreshCounts` | core | After a cascade or a rating change. Refreshes the cached pages that show figures (D71) |
+| `refreshCounts` | core | After a cascade or a rating change. Refreshes the cached pages that show figures (D73) |
 | `cleanupJobs` | core | Hourly |
 
 The stages of one document run as one workflow, so each stage starts when the last one ends
@@ -1531,7 +1531,7 @@ check passes. Database migrations run before the new version serves traffic.
 - Search runs on Payload's search plugin, section 7.11.
 - "Who represents this place" walks the area tree up and down in one recursive query.
 - Rating counts by actor, area, topic and country are worked out on each request (D57), and the
-  pages that show them are cached and refreshed after a cascade or a rating change (D71).
+  pages that show them are cached and refreshed after a cascade or a rating change (D73).
 - The cascade runs inside transactions.
 - Read replicas can be added for heavy traffic. The Postgres adapter supports them.
 - PostGIS is optional. It would add "find my area from my location" later.
@@ -1792,16 +1792,20 @@ codemods, and passes the full test suite before merging.
 | D67 | A record type with no required text, such as an actor, is live in every language its parents are live in. Payload's per-language publish status only gates text that must exist in a language, and its "publish all languages" covers only the languages switched on at the time |
 | D68 | The claim page shows the verdict's date and rationale, credited to PromiseTracker, and never who verified the claim. Section 13 keeps that internal, which #650's "who verified it" on the page would break |
 | D69 | Reviewers may update a claim only to set its verdict. Their save keeps every other field as it was |
-| D70 | A claim's rating fields are worked out from its published updates in the same transaction as the update's save, not by a `recomputeClaim` job, so the admin shows the new rating as soon as the save returns. With no update left, a claim goes back to its scale's starting rating |
-| D71 | `refreshCounts` refreshes the cached pages that show a country's figures, since the figures are worked out on each request (D57). It runs after a rating change and after a cascade that changes a record |
-| D72 | Every update that starts to count or changes its rating, and every "Confirm rating", records a rating review with who and when. A claim's `lastReviewedAt` is its latest review. Reviews are internal and nobody edits them |
-| D73 | Evidence is read by signed-in users only. The public API shows the evidence of published updates, so evidence attached to an update on hold stays internal |
-| D74 | Deleting a claim for good deletes its updates and rating reviews. Moving it to the trash keeps them, so restoring it brings its history back |
-| D75 | The claim endpoint returns its five latest updates, the evidence of all of them, and its citation: the permanent address under `PT_PUBLIC_URL` and the last-reviewed date. Without `PT_PUBLIC_URL` the address is a path, which the browser makes absolute when a reader copies it. The history endpoint returns every update |
-| D76 | A claim update's spreadsheet row names one piece of evidence by its link. Evidence with the same link is reused unchanged, otherwise it is added, in the same transaction as the update |
-| D77 | A claim update counts once it is ready and published in some language. A draft, or a draft of changes to a published update, changes no rating and records no review. Evidence is checked when an update is saved, against the update before it by date. Adding an older update or holding one does not recheck later ones. Partial dates compare as text, so `2023` comes before `2023-01`, and its rated date is 1 January. Updates on the same date are ordered by when they were recorded. An import records its reviews in the name of whoever ran it |
 | D70 | The verdict and rationale can be imported from a spreadsheet, by someone who may set a verdict |
 | D71 | The "Awaiting verification" view is a Payload query preset, shared with everyone and created at start-up. A dashboard widget counts the claims in it |
+| D72 | A claim's rating fields are worked out from its published updates in the same transaction as the update's save, not by a `recomputeClaim` job, so the admin shows the new rating as soon as the save returns. With no update left, a claim goes back to its scale's starting rating |
+| D73 | `refreshCounts` refreshes the cached pages that show a country's figures, since the figures are worked out on each request (D57). It runs after a rating change and after a cascade that changes a record |
+| D74 | Every update that starts to count or changes its rating, and every "Confirm rating", records a rating review with who and when. A claim's `lastReviewedAt` is its latest review. Reviews are internal and nobody edits them |
+| D75 | Evidence is read by signed-in users only. The public API shows the evidence of published updates, so evidence attached to an update on hold stays internal |
+| D76 | Deleting a claim for good deletes its updates and rating reviews. Moving it to the trash keeps them, so restoring it brings its history back |
+| D77 | The claim endpoint returns its five latest updates, the evidence of all of them, and its citation: the permanent address under `PT_PUBLIC_URL` and the last-reviewed date. Without `PT_PUBLIC_URL` the address is a path, which the browser makes absolute when a reader copies it. The history endpoint returns every update |
+| D78 | A claim update's spreadsheet row names one piece of evidence by its link. Evidence with the same link is reused unchanged, otherwise it is added, in the same transaction as the update |
+| D79 | A claim update counts once it is ready and published in some language. A draft, or a draft of changes to a published update, changes no rating and records no review. Evidence is checked when an update is saved, against the update before it by date. Adding an older update or holding one does not recheck later ones. Partial dates compare as text, so `2023` comes before `2023-01`, and its rated date is 1 January. Updates on the same date are ordered by when they were recorded. An import records its reviews in the name of whoever ran it |
+| D80 | An update's rating and evidence are checked only when it counts. Holding it, or moving it to the trash, always works, and it is checked again when released or restored. Evidence in the trash backs no change. An import checks the same in its preview, against the updates that count and the rows above it |
+| D81 | An update's kind is a correction when an editor says so. Otherwise the public API works it out from the order by date: a claim's earliest published update is its first rating, the rest are changes. The stored kind is set the same way when an update is saved, but is not rewritten when another update moves before it |
+| D82 | A save that changes a claim's rating without an update starting to count or changing its own rating, such as a new date, records a "changed" review. Holding or removing an update records none |
+| D83 | A claim moves to another type only if the new scale has every rating its updates give. A rating an update gave cannot be deleted from its scale, only retired, and an import may keep it on an unchanged row |
 
 ### 20.2 Why
 

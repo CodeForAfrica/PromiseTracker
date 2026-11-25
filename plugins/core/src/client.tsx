@@ -207,6 +207,7 @@ export function ConfirmRating() {
   const { id } = useDocumentInfo()
   const { user } = useAuth()
   const { config } = useConfig()
+  const dispatch = useFormFields(([, dispatchFields]) => dispatchFields)
   const [busy, setBusy] = useState(false)
   const roles: unknown = user ? Reflect.get(user, 'roles') : null
   const allowed = Array.isArray(roles) && roles.some((role) => RATERS.includes(String(role)))
@@ -219,9 +220,13 @@ export function ConfirmRating() {
         credentials: 'include',
       })
       if (!res.ok) throw new Error(String(res.status))
+      const { lastReviewedAt }: { lastReviewedAt?: unknown } = await res.json()
+      // Shown in the sidebar without reloading, which would lose unsaved edits.
+      // The field is the system's, so a save leaves it as stored.
+      if (typeof lastReviewedAt === 'string') {
+        dispatch({ type: 'UPDATE', path: 'lastReviewedAt', value: lastReviewedAt })
+      }
       toast.success('Rating confirmed. The last-reviewed date is today.')
-      // The sidebar shows the stored date, so the page reads the claim again.
-      window.location.reload()
     } catch {
       toast.error('The rating could not be confirmed. Try again.')
     } finally {

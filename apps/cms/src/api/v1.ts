@@ -676,7 +676,6 @@ async function publicUpdates(
   payload: Payload,
   claims: readonly string[],
   locale: TypedLocale,
-  limit?: number,
 ): Promise<ClaimUpdateDoc[]> {
   if (claims.length === 0) return []
   const { docs } = await payload.find({
@@ -685,7 +684,7 @@ async function publicUpdates(
     sort: ['-date', '-createdAt'],
     locale,
     depth: 0,
-    ...(limit ? { limit } : { pagination: false }),
+    pagination: false,
     overrideAccess: false,
   })
   return docs
@@ -731,11 +730,35 @@ async function evidenceOf(
   return new Map(docs.map((doc) => [doc.id, toEvidence(doc)]))
 }
 
+/**
+ * Each update's kind (section 7.6). Editors choose a correction; otherwise a
+ * claim's earliest published update is its first rating, and the rest are
+ * changes. Worked out here from the order by date, so adding an older update
+ * later relabels the one that was first. Takes updates newest first.
+ */
+function kindsOf(updates: readonly ClaimUpdateDoc[]): Map<string, ClaimUpdate['kind']> {
+  const kinds = new Map<string, ClaimUpdate['kind']>()
+  const earliest = new Map<string, string>()
+  for (const doc of updates) earliest.set(idOf(doc.claim) ?? '', doc.id)
+  for (const doc of updates) {
+    kinds.set(
+      doc.id,
+      doc.kind === 'correction'
+        ? 'correction'
+        : earliest.get(idOf(doc.claim) ?? '') === doc.id
+          ? 'first-rating'
+          : 'change',
+    )
+  }
+  return kinds
+}
+
 /** An update for the public, with its rating looked up on the claim's scale. */
 function toUpdate(
   doc: ClaimUpdateDoc,
   scale: RatingScale | undefined,
   evidence: ReadonlyMap<string, Evidence>,
+  kinds: ReadonlyMap<string, ClaimUpdate['kind']>,
 ): ClaimUpdate | null {
   const date = partial(doc.date)
   const title = text(doc.title)
@@ -743,7 +766,7 @@ function toUpdate(
   return {
     id: doc.id,
     date,
-    kind: doc.kind ?? 'change',
+    kind: kinds.get(doc.id) ?? doc.kind ?? 'change',
     rating: scale?.ratings.find((r) => r.slug === doc.rating) ?? null,
     title,
     narrative: text(doc.narrative),
@@ -1160,17 +1183,19 @@ const handlers: Record<string, Handler> = {
     const key = claims.find((claim) => claim.id === idOf(actor.keyClaim))
     const keySummary = key ? toClaimSummary(key, params.code ?? '', own, topics, book) : null
     const byId = new Map(claims.map((claim) => [claim.id, claim]))
-    const recent = await publicUpdates(
+    // Every update, to tell each claim's first rating, of which the latest are shown.
+    const all = await publicUpdates(
       payload,
       claims.map((claim) => claim.id),
       locale,
-      LATEST_CHANGES,
     )
+    const kinds = kindsOf(all)
+    const recent = all.slice(0, LATEST_CHANGES)
     const recentEvidence = await evidenceOf(payload, recent, locale)
     const latestChanges = recent.flatMap((doc): ClaimChange[] => {
       const claim = byId.get(idOf(doc.claim) ?? '')
       const summary = claim ? toClaimSummary(claim, params.code ?? '', own, topics, book) : null
-      const update = claim ? toUpdate(doc, scaleOf(book, claim), recentEvidence) : null
+      const update = claim ? toUpdate(doc, scaleOf(book, claim), recentEvidence, kinds) : null
       return summary && update ? [{ claim: summary, update }] : []
     })
     const current = list.filter((t) => t.stage === 'current')
@@ -1321,8 +1346,9 @@ const handlers: Record<string, Handler> = {
     const updates = await publicUpdates(payload, [doc.id], locale)
     const evidence = await evidenceOf(payload, updates, locale)
     const scale = scaleOf(book, flat)
+    const kinds = kindsOf(updates)
     const timeline = updates
-      .map((u) => toUpdate(u, scale, evidence))
+      .map((u) => toUpdate(u, scale, evidence, kinds))
       .filter((u): u is ClaimUpdate => u !== null)
     const cited = [...new Map(timeline.flatMap((u) => u.evidence).map((e) => [e.id, e])).values()]
     const lastReviewedAt = day(doc.lastReviewedAt)
@@ -1394,12 +1420,13 @@ const handlers: Record<string, Handler> = {
     const updates = await publicUpdates(payload, [doc.id], locale)
     const evidence = await evidenceOf(payload, updates, locale)
     const scale = scaleOf(book, doc)
+    const kinds = kindsOf(updates)
     return ok(
       ClaimHistorySchema.parse({
         claim: summary,
         lastReviewedAt: day(doc.lastReviewedAt),
         updates: updates
-          .map((u) => toUpdate(u, scale, evidence))
+          .map((u) => toUpdate(u, scale, evidence, kinds))
           .filter((u): u is ClaimUpdate => u !== null),
       }),
     )

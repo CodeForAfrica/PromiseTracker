@@ -1185,7 +1185,7 @@ export interface ClaimUpdate {
    */
   rating: string;
   /**
-   * A correction fixes our own earlier mistake. Set for you if empty.
+   * Choose correction when it fixes our own earlier mistake. Otherwise set for you: first rating or change, by date.
    */
   kind?: ('first-rating' | 'change' | 'correction') | null;
   title: string;

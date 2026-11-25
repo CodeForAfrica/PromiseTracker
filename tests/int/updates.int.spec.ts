@@ -707,6 +707,274 @@ describe('claim updates', () => {
     if (!isNotAvailable(fr)) expect(fr.updates[0]?.title).toBe('Les marchés ouvrent')
   })
 
+  describe('on a scale of its own', () => {
+    const rating = (slug: string, value: number, isStarting: boolean, retired = false) => ({
+      slug,
+      label: slug,
+      tier: 'checked',
+      definition: `The claim is ${slug}.`,
+      colour: '#e4e5e8',
+      textColour: '#2a2c26',
+      value,
+      isStarting,
+      retired,
+    })
+    const made: { scales: string[]; types: string[] } = { scales: [], types: [] }
+    const typeWith = async (name: string, ratings: ReturnType<typeof rating>[]) => {
+      const scale = await payload.create({
+        collection: 'rating-scales',
+        locale: 'en',
+        data: {
+          name: `${name} ${code}`,
+          bestValue: 3,
+          worstValue: 1,
+          tiers: [{ slug: 'checked', label: 'Checked', colour: '#1b4fd8' }],
+          ratings,
+        },
+        overrideAccess: true,
+      })
+      const type = await payload.create({
+        collection: 'claim-types',
+        locale: 'en',
+        data: { name, slug: `${name}-${code}`, ratingScale: scale.id },
+        overrideAccess: true,
+      })
+      made.scales.push(scale.id)
+      made.types.push(type.id)
+      return { scale, type }
+    }
+
+    afterAll(async () => {
+      // Claims of these types go first, so the types and scales can.
+      await payload.delete({
+        collection: 'claims',
+        where: { type: { in: made.types } },
+        overrideAccess: true,
+        trash: true,
+      })
+      for (const id of made.types) {
+        await payload.delete({ collection: 'claim-types', id, overrideAccess: true })
+      }
+      for (const id of made.scales) {
+        await payload.delete({ collection: 'rating-scales', id, overrideAccess: true })
+      }
+    })
+
+    it('refuses a new type whose scale lacks a rating the claim’s updates give', async () => {
+      const { type } = await typeWith('narrow', [
+        rating('unstarted', 1, true),
+        rating('other', 2, false),
+      ])
+      const doc = await claim('retyped')
+      const proof = await evidence(`https://example.org/${code}/retyped-1`)
+      await update({ claim: doc.id, date: '2023', rating: 'in-progress', evidence: [proof.id] })
+      // The claim's latest version still holds its starting rating.
+      await expect(
+        payload.update({
+          collection: 'claims',
+          id: doc.id,
+          data: { type: type.id },
+          overrideAccess: true,
+        }),
+      ).rejects.toThrow(/not on the new type's scale: in-progress/)
+    })
+
+    it('imports an unchanged update whose rating was retired since', async () => {
+      const ratings = [rating('unproven', 1, true), rating('proven', 2, false)]
+      const { scale, type } = await typeWith('retiring', ratings)
+      await claim('retiring', { type: type.id })
+      const headings = ['Claim', 'Date', 'Rating', 'Title', 'Evidence link']
+      const rows = [
+        {
+          row: 1,
+          values: [
+            'retiring',
+            '2023',
+            'proven',
+            'Proven',
+            `https://example.org/${code}/retiring-1`,
+          ],
+        },
+      ]
+      const run = () =>
+        runImportPlan(payload, {
+          target: 'claim-updates',
+          country,
+          headings,
+          rows,
+          mapping: guessMapping('claim-updates', headings),
+          commit: true,
+          onCreate: { recordStatus: 'ready' },
+        })
+      expect((await run()).counts).toMatchObject({ create: 1 })
+      await payload.update({
+        collection: 'rating-scales',
+        id: scale.id,
+        locale: 'en',
+        data: { ratings: [ratings[0], { ...ratings[1], retired: true }] },
+        overrideAccess: true,
+      })
+      expect((await run()).counts).toMatchObject({ skip: 1, failed: 0 })
+    })
+  })
+
+  it('withdraws a claim whose only source is evidence deleted for good', async () => {
+    const doc = await claim('sourced', { sourceUrl: null })
+    const proof = await evidence(`https://example.org/${code}/sourced-1`)
+    await update({ claim: doc.id, date: '2023', rating: 'in-progress', evidence: [proof.id] })
+    expect((await read(doc.id)).publishedIn).toEqual(['en'])
+    refreshed.length = 0
+    await payload.delete({ collection: 'evidence', id: proof.id, overrideAccess: true })
+    expect((await read(doc.id)).publishedIn ?? []).toEqual([])
+    expect(refreshed).toContain(`claims:${code}`)
+  })
+
+  it('holds or trashes an update after the update before it is removed', async () => {
+    const doc = await claim('stranded')
+    const proof = await evidence(`https://example.org/${code}/stranded-1`)
+    const first = await update({
+      claim: doc.id,
+      date: '2022',
+      rating: 'in-progress',
+      evidence: [proof.id],
+    })
+    // The same rating as the one before, so no evidence needed.
+    const second = await update({ claim: doc.id, date: '2023', rating: 'in-progress' })
+    await payload.delete({ collection: 'claim-updates', id: first.id, overrideAccess: true })
+    await payload.update({
+      collection: 'claim-updates',
+      id: second.id,
+      data: { recordStatus: 'hold' },
+      overrideAccess: true,
+    })
+    await payload.update({
+      collection: 'claim-updates',
+      id: second.id,
+      data: { deletedAt: new Date().toISOString() } as never,
+      overrideAccess: true,
+    })
+    expect((await read(doc.id)).currentRating).toBe('unstarted')
+  })
+
+  it('does not count evidence in the trash for a change of rating', async () => {
+    const doc = await claim('withdrawn-proof')
+    const proof = await evidence(`https://example.org/${code}/withdrawn-proof-1`)
+    await payload.update({
+      collection: 'evidence',
+      id: proof.id,
+      data: { deletedAt: new Date().toISOString() } as never,
+      overrideAccess: true,
+    })
+    await expect(
+      update({ claim: doc.id, date: '2023', rating: 'in-progress', evidence: [proof.id] }),
+    ).rejects.toThrow(/needs at least one piece of evidence/)
+  })
+
+  it('makes a backdated update the first rating, in the update and the API', async () => {
+    const doc = await claim('backdated')
+    const one = await evidence(`https://example.org/${code}/backdated-1`)
+    const two = await evidence(`https://example.org/${code}/backdated-2`)
+    const later = await update({
+      claim: doc.id,
+      date: '2024',
+      rating: 'in-progress',
+      evidence: [one.id],
+    })
+    expect(later.kind).toBe('first-rating')
+    const earlier = await update({
+      claim: doc.id,
+      date: '2022',
+      rating: 'stalled',
+      evidence: [two.id],
+    })
+    expect(earlier.kind).toBe('first-rating')
+    const found = await sdk.getClaimHistory('en', code, 'backdated')
+    if (isNotAvailable(found)) throw new Error('The claim is not public.')
+    expect(found.updates.map((u) => u.kind)).toEqual(['change', 'first-rating'])
+  })
+
+  it('records a review when a new date changes the claim’s rating', async () => {
+    const doc = await claim('redated')
+    const one = await evidence(`https://example.org/${code}/redated-1`)
+    const two = await evidence(`https://example.org/${code}/redated-2`)
+    const older = await update({
+      claim: doc.id,
+      date: '2022',
+      rating: 'completed',
+      evidence: [one.id],
+    })
+    await update({ claim: doc.id, date: '2023', rating: 'in-progress', evidence: [two.id] })
+    expect((await reviewsOf(doc.id)).length).toBe(2)
+    await payload.update({
+      collection: 'claim-updates',
+      id: older.id,
+      data: { date: '2024' },
+      overrideAccess: true,
+    })
+    const after = await read(doc.id)
+    expect(after.currentRating).toBe('completed')
+    const reviews = await reviewsOf(doc.id)
+    expect(reviews.map((r) => r.outcome)).toEqual(['changed', 'changed', 'changed'])
+    expect(after.lastReviewedAt).toBe(reviews[2]?.date)
+  })
+
+  it('stops showing a claim’s updates to guests once the claim is in the trash', async () => {
+    const doc = await claim('binned')
+    const proof = await evidence(`https://example.org/${code}/binned-1`)
+    await update({ claim: doc.id, date: '2023', rating: 'in-progress', evidence: [proof.id] })
+    const guest = () =>
+      payload.find({
+        collection: 'claim-updates',
+        where: { claim: { equals: doc.id } },
+        overrideAccess: false,
+      })
+    expect((await guest()).totalDocs).toBe(1)
+    await payload.update({
+      collection: 'claims',
+      id: doc.id,
+      data: { deletedAt: new Date().toISOString() } as never,
+      overrideAccess: true,
+    })
+    expect((await guest()).totalDocs).toBe(0)
+  })
+
+  it('flags a change without evidence in the preview, and an update in the trash', async () => {
+    const doc = await claim('previewed')
+    const proof = await evidence(`https://example.org/${code}/previewed-1`)
+    const binned = await update({
+      claim: doc.id,
+      date: '2021',
+      rating: 'in-progress',
+      evidence: [proof.id],
+    })
+    await payload.update({
+      collection: 'claim-updates',
+      id: binned.id,
+      data: { deletedAt: new Date().toISOString() } as never,
+      overrideAccess: true,
+    })
+    const headings = ['Claim', 'Date', 'Rating', 'Title']
+    const preview = (onCreate?: Record<string, unknown>) =>
+      runImportPlan(payload, {
+        target: 'claim-updates',
+        country,
+        headings,
+        rows: [
+          { row: 1, values: ['previewed', '2021', 'in-progress', 'Again'] },
+          { row: 2, values: ['previewed', '2023', 'in-progress', 'Moving'] },
+        ],
+        mapping: guessMapping('claim-updates', headings),
+        commit: false,
+        ...(onCreate ? { onCreate } : {}),
+      })
+    const ready = await preview({ recordStatus: 'ready' })
+    expect(ready.errors.map((e) => e.line)).toEqual([2, 3])
+    expect(ready.errors[0]?.message).toMatch(/in the trash/)
+    expect(ready.errors[1]?.message).toMatch(/needs evidence/)
+    // Added on hold, an update is checked when it is released.
+    expect((await preview()).counts).toMatchObject({ create: 1, failed: 1 })
+  })
+
   it('deletes a claim for good with its updates and reviews', async () => {
     const doc = await claim('ferries')
     const proof = await evidence(`https://example.org/${code}/ferries-1`)
