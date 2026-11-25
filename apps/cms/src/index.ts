@@ -6,7 +6,8 @@ import { getPayload } from './getPayload'
 import type { HealthScope } from './health'
 import { getHealth as checkHealth } from './health'
 
-export { handleV1, languages, matchRoute } from './api/v1'
+export { etagOf, matches, READ_CACHE, respondV1 } from './api/http'
+export { handleV1, languages, matchRoute, V1_PATTERNS } from './api/v1'
 export type { AreaFamily } from './areaTree'
 export { areaFamily } from './areaTree'
 export {

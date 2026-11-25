@@ -1,8 +1,10 @@
 import type {
   Actor,
+  ActorQuery,
   Area,
   Claim,
   ClaimHistory,
+  ClaimQuery,
   Country,
   NotAvailable,
   Redirect,
@@ -28,29 +30,9 @@ import {
   Topic as TopicSchema,
 } from '@promisetracker/contract'
 
-/** The filters and order of an actor list (section 12.1). */
-export type ActorQuery = {
-  kind?: 'person' | 'party' | 'institution' | undefined
-  stage?: 'current' | 'past' | undefined
-  office?: string | undefined
-  area?: string | undefined
-  party?: string | undefined
-  sort?: 'name' | 'office' | undefined
-  cursor?: string | undefined
-  limit?: number | undefined
-}
-
-/** The filters and order of a claim list (section 12.1). */
-export type ClaimQuery = {
-  actor?: string | undefined
-  topic?: string | undefined
-  type?: string | undefined
-  rating?: string | undefined
-  tier?: string | undefined
-  sort?: 'recent' | 'deadline' | 'title' | undefined
-  cursor?: string | undefined
-  limit?: number | undefined
-}
+// The filters and order of actor and claim lists come from the contract, which
+// the API checks them against (section 12.2).
+export type { ActorQuery, ClaimQuery }
 
 /** A query as the API's parameters, leaving out what is not set. */
 const params = (query: Readonly<Record<string, string | number | undefined>>) =>
@@ -84,12 +66,20 @@ export class BadRequestError extends Error {
   }
 }
 
-export function createHttpTransport(baseUrl: string, init: RequestInit = {}): Transport {
+/**
+ * Calls the API over HTTP. `fetchImpl` is the global `fetch` unless given,
+ * which lets tests answer requests with the route's own code.
+ */
+export function createHttpTransport(
+  baseUrl: string,
+  init: RequestInit = {},
+  fetchImpl: typeof fetch = fetch,
+): Transport {
   const root = baseUrl.replace(/\/$/, '')
   return {
     async get(path, query) {
       const qs = query && Object.keys(query).length ? `?${new URLSearchParams(query)}` : ''
-      const res = await fetch(`${root}/api/v1${path}${qs}`, init)
+      const res = await fetchImpl(`${root}/api/v1${path}${qs}`, init)
       const body: unknown = await res.json().catch(() => null)
       return { status: res.status, body }
     },

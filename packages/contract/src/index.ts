@@ -544,3 +544,288 @@ export const Health = z.object({
   services: z.record(z.string(), ServiceHealth),
 })
 export type Health = z.infer<typeof Health>
+
+// Requests (section 12.2). Every query parameter an endpoint takes is listed
+// here. Anything else, or a value of the wrong form, is answered with a 400 in
+// the `ApiError` shape. The OpenAPI document below is built from the same
+// schemas, so the description and the checks cannot drift apart.
+
+/** A slug in an address or a filter: lower case letters and digits, joined by hyphens. */
+const Slug = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+
+/** The most items one page of a list holds, and how many it holds when not asked. */
+export const PAGE_LIMIT = { default: 50, max: 100 } as const
+
+const Paging = {
+  /** Where the page starts, as the previous page's `nextCursor` gave it. */
+  cursor: z.string().regex(/^\d+$/).optional(),
+  limit: z.coerce.number().int().min(1).max(PAGE_LIMIT.max).optional(),
+}
+
+/** Every endpoint answers in one language (section 12.2). The server checks it is in use. */
+export const LocaleQuery = z.strictObject({
+  locale: z.string().min(1).describe('A language the site runs in, such as `en` or `fr`.'),
+})
+
+export const ACTOR_SORTS = ['name', 'office'] as const
+export const CLAIM_SORTS = ['recent', 'deadline', 'title'] as const
+
+export const ActorsQuery = LocaleQuery.extend({
+  kind: z.enum(ACTOR_KINDS).optional(),
+  /** Holding a seat today, or held one before. */
+  stage: z.enum(['current', 'past']).optional(),
+  office: Slug.optional(),
+  area: Slug.optional(),
+  party: Slug.optional(),
+  sort: z.enum(ACTOR_SORTS).optional(),
+  ...Paging,
+})
+
+export const ClaimsQuery = LocaleQuery.extend({
+  actor: Slug.optional(),
+  topic: Slug.optional(),
+  type: Slug.optional(),
+  rating: Slug.optional(),
+  tier: Slug.optional(),
+  sort: z.enum(CLAIM_SORTS).optional(),
+  ...Paging,
+})
+
+export const AreasQuery = LocaleQuery.extend({
+  /** The area whose children to list. The top level without it. */
+  parent: Slug.optional(),
+})
+
+export const RedirectQuery = LocaleQuery.extend({
+  /** An address without its language, such as `/ke/nairobi-county/governor`. */
+  path: z.string().startsWith('/').max(500),
+})
+
+/** The filters and order of an actor list, as the SDK takes them. */
+export type ActorQuery = Omit<z.output<typeof ActorsQuery>, 'locale'>
+/** The filters and order of a claim list, as the SDK takes them. */
+export type ClaimQuery = Omit<z.output<typeof ClaimsQuery>, 'locale'>
+
+type EndpointSpec = {
+  /** OpenAPI form, such as `/countries/{code}`. */
+  path: string
+  summary: string
+  query: z.ZodObject
+  response: z.ZodType
+  /** Whether it can answer "not available in this language" (section 8.3). */
+  notAvailable: boolean
+}
+
+const Code = 'A country code, such as `ke`.'
+
+/** Every read endpoint of `/api/v1` (section 12.1), in the order the specification lists them. */
+export const V1_ENDPOINTS = [
+  {
+    path: '/site',
+    summary: 'Languages, rating scales, interface text and navigation',
+    query: LocaleQuery,
+    response: SiteInfo,
+    notAvailable: false,
+  },
+  {
+    path: '/countries',
+    summary: 'Countries published in this language',
+    query: LocaleQuery,
+    response: CountryList,
+    notAvailable: false,
+  },
+  {
+    path: '/countries/{code}',
+    summary: 'One country and its counts',
+    query: LocaleQuery,
+    response: Country,
+    notAvailable: true,
+  },
+  {
+    path: '/countries/{code}/offices',
+    summary: "The country's offices, highest first",
+    query: LocaleQuery,
+    response: OfficeList,
+    notAvailable: true,
+  },
+  {
+    path: '/countries/{code}/areas',
+    summary: 'Areas, one level at a time',
+    query: AreasQuery,
+    response: AreaList,
+    notAvailable: true,
+  },
+  {
+    path: '/countries/{code}/areas/{area}',
+    summary: 'An area, the areas above it and its seats',
+    query: LocaleQuery,
+    response: Area,
+    notAvailable: true,
+  },
+  {
+    path: '/countries/{code}/seats/{office}',
+    summary: 'The current holders of a national seat',
+    query: LocaleQuery,
+    response: SeatHolders,
+    notAvailable: true,
+  },
+  {
+    path: '/countries/{code}/seats/{area}/{office}',
+    summary: 'The current holders of a seat',
+    query: LocaleQuery,
+    response: SeatHolders,
+    notAvailable: true,
+  },
+  {
+    path: '/countries/{code}/actors',
+    summary: 'Actors, filtered by kind, stage, office, area or party, and sorted',
+    query: ActorsQuery,
+    response: ActorList,
+    notAvailable: true,
+  },
+  {
+    path: '/countries/{code}/actors/{slug}',
+    summary: 'An actor, their terms and their record',
+    query: LocaleQuery,
+    response: Actor,
+    notAvailable: true,
+  },
+  {
+    path: '/countries/{code}/claims',
+    summary: 'Claims, filtered by actor, type, topic, rating or tier, and sorted, with figures',
+    query: ClaimsQuery,
+    response: ClaimList,
+    notAvailable: true,
+  },
+  {
+    path: '/countries/{code}/claims/{slug}',
+    summary: 'A claim, its rating and its history',
+    query: LocaleQuery,
+    response: Claim,
+    notAvailable: true,
+  },
+  {
+    path: '/countries/{code}/claims/{slug}/history',
+    summary: "Every published update to a claim's rating, newest first",
+    query: LocaleQuery,
+    response: ClaimHistory,
+    notAvailable: true,
+  },
+  {
+    path: '/topics',
+    summary: 'Topics, with how many published claims each has',
+    query: LocaleQuery,
+    response: TopicList,
+    notAvailable: false,
+  },
+  {
+    path: '/topics/{slug}',
+    summary: 'A topic, with figures by country',
+    query: LocaleQuery,
+    response: Topic,
+    notAvailable: true,
+  },
+  {
+    path: '/redirects',
+    summary: 'Where a former address or a seat address leads',
+    query: RedirectQuery,
+    response: Redirect,
+    notAvailable: false,
+  },
+] as const satisfies readonly EndpointSpec[]
+
+const PATH_PARAMS: Record<string, string> = {
+  code: Code,
+  area: 'An area slug.',
+  office: 'An office slug.',
+  slug: 'A slug.',
+}
+
+/**
+ * The OpenAPI 3.1 description of `/api/v1` (section 12.2), built from the
+ * schemas above. Served at `/api/v1/openapi.json`.
+ */
+export function openApiDocument(): Record<string, unknown> {
+  const components: Record<string, unknown> = {
+    ApiError: z.toJSONSchema(ApiError),
+    NotAvailable: z.toJSONSchema(NotAvailable),
+  }
+  const ref = (name: string) => ({ $ref: `#/components/schemas/${name}` })
+  const json = (schema: unknown) => ({ content: { 'application/json': { schema } } })
+  const paths = Object.fromEntries(
+    V1_ENDPOINTS.map((endpoint) => {
+      const name = endpoint.path
+        .split('/')
+        .filter(Boolean)
+        .map((part) => part.replace(/[{}]/g, ''))
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join('')
+      components[name] = z.toJSONSchema(endpoint.response, { io: 'output', unrepresentable: 'any' })
+      const query = z.toJSONSchema(endpoint.query, { io: 'input' }) as {
+        properties?: Record<string, Record<string, unknown>>
+        required?: string[]
+      }
+      const pathParams = [...endpoint.path.matchAll(/\{(\w+)\}/g)].map(([, param = '']) => ({
+        name: param,
+        in: 'path',
+        required: true,
+        description: PATH_PARAMS[param],
+        schema: { type: 'string', pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$' },
+      }))
+      const queryParams = Object.entries(query.properties ?? {}).map(([param, schema]) => {
+        const { description, ...rest } = schema
+        return {
+          name: param,
+          in: 'query',
+          required: query.required?.includes(param) ?? false,
+          ...(typeof description === 'string' ? { description } : {}),
+          schema: rest,
+        }
+      })
+      const notFound = endpoint.notAvailable
+        ? {
+            description:
+              'Not found, or not published in this language. "Not available" names the languages it is in (section 8.3).',
+            ...json({ oneOf: [ref('ApiError'), ref('NotAvailable')] }),
+          }
+        : { description: 'Not found.', ...json(ref('ApiError')) }
+      return [
+        endpoint.path,
+        {
+          get: {
+            summary: endpoint.summary,
+            parameters: [...pathParams, ...queryParams],
+            responses: {
+              200: {
+                description: 'OK. Carries `ETag` and `Cache-Control`.',
+                headers: {
+                  ETag: { schema: { type: 'string' } },
+                  'Cache-Control': { schema: { type: 'string' } },
+                },
+                ...json(ref(name)),
+              },
+              304: { description: 'Not modified: the `If-None-Match` ETag still matches.' },
+              400: {
+                description: 'A parameter is missing, unknown or of the wrong form.',
+                ...json(ref('ApiError')),
+              },
+              404: notFound,
+            },
+          },
+        },
+      ]
+    }),
+  )
+  return {
+    openapi: '3.1.0',
+    info: {
+      title: 'PromiseTracker API',
+      version: '1',
+      description:
+        'Read-only, published content only, one language at a time (section 12 of the system specification).',
+    },
+    servers: [{ url: '/api/v1' }],
+    paths,
+    components: { schemas: components },
+  }
+}

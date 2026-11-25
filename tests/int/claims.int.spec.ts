@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { createLocalTransport, getPayload, handleV1 } from '@promisetracker/cms'
+import { getPayload, handleV1 } from '@promisetracker/cms'
 import type { CountryCode, ImportTarget } from '@promisetracker/plugin-core'
 import {
   claimsWithRating,
@@ -14,6 +14,7 @@ import type { Payload, PayloadRequest } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { unusedCountryCodes } from '../countries'
+import { testTransport } from './transport'
 
 /**
  * Claims and topics (sections 7.5, 7.7, 10.4 and 12), with fictional actors
@@ -24,7 +25,7 @@ describe('claims and topics', () => {
   let code: CountryCode
   let country: string
   const topics: string[] = []
-  const sdk = createSdk(createLocalTransport())
+  const sdk = createSdk(testTransport())
 
   const read = async (name: string) => {
     const data = readFileSync(path.resolve(import.meta.dirname, '../fixtures', name))
