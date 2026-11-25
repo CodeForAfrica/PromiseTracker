@@ -3097,8 +3097,7 @@ export interface CollectionQueryWidget {
       | 'media'
       | 'imports'
       | 'import-mappings'
-      | 'users'
-      | 'extractions';
+      | 'users';
     where?:
       | {
           [k: string]: unknown;
@@ -3141,7 +3140,6 @@ export interface ActivityWidget {
           | 'imports'
           | 'import-mappings'
           | 'users'
-          | 'extractions'
         )[]
       | null;
   };
