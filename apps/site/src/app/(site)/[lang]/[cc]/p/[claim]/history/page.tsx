@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
 import { findSite, followRedirect, getClaimHistory, LOGO, loadShell, orNull } from '@/data'
+import { alternates } from '@/seo'
 
 type Props = { params: Promise<{ lang: string; cc: string; claim: string }> }
 
@@ -17,7 +18,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!site) return {}
   const found = await orNull(getClaimHistory(lang, cc, claim))
   return found && !isNotAvailable(found)
-    ? { title: `${site.strings.historyTitle}: ${found.claim.title}` }
+    ? {
+        title: `${site.strings.historyTitle}: ${found.claim.title}`,
+        alternates: alternates(site, `/${cc}/p/${found.claim.slug}/history`),
+      }
     : {}
 }
 

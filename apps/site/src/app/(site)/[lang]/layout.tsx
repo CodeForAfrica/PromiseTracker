@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import type { ReactNode } from 'react'
 
 import { DEFAULT_LOCALE, findSite, getSite } from '@/data'
+import { publicOrigin } from '@/seo'
 
 import '../globals.css'
 
@@ -25,6 +26,9 @@ export async function generateMetadata({ params }: Omit<Props, 'children'>): Pro
   return {
     title: { default: site.name, template: `%s · ${site.name}` },
     description: site.description ?? site.strings.lede,
+    metadataBase: new URL(publicOrigin()),
+    openGraph: { siteName: site.name, locale: site.locale, type: 'website' },
+    twitter: { card: 'summary_large_image' },
   }
 }
 

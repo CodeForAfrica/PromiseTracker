@@ -12,6 +12,7 @@ import {
 } from '@promisetracker/ui'
 import type { Metadata } from 'next'
 import { findSite, getActors, getCountry, getOffices, LOGO, loadShell, orNotFound } from '@/data'
+import { alternates } from '@/seo'
 
 type Props = { params: Promise<{ lang: string; cc: string }> }
 
@@ -28,9 +29,12 @@ const loadCountry = (lang: string, cc: string) => orNotFound(getCountry(lang, cc
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang, cc } = await params
-  if (!(await findSite(lang))) return {}
+  const site = await findSite(lang)
+  if (!site) return {}
   const country = await loadCountry(lang, cc)
-  return isNotAvailable(country) ? {} : { title: country.name }
+  return isNotAvailable(country)
+    ? {}
+    : { title: country.name, alternates: alternates(site, `/${country.code}`) }
 }
 
 /**
