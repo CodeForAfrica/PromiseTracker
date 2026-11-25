@@ -426,7 +426,7 @@ mutation createProjectMedia($input: CreateProjectMediaInput!) {
   on report events, which Check labels `report_design`, and acknowledges all others with `200`.
   A report state of `published` applies the verdict. A state of `paused` withdraws it.
 - Poll: every 15 minutes a job searches Check for items with a published report, 100 per page,
-  and reconciles them. A push can be lost during a deploy, and the poll catches it.
+  most recently active first, and reconciles them (D92). A push can be lost during a deploy, and the poll catches it.
 
 The webhook body is the one v2 already handles. The fields the plugin reads:
 
@@ -1814,6 +1814,7 @@ codemods, and passes the full test suite before merging.
 | D89 | Webhook fingerprints are kept per process for ten minutes, as in v2. A repeat that reaches another process is applied again, which changes nothing. The poll notes a sync on a claim only when its verdict changed |
 | D90 | A claim goes to Check with no status, so it starts on the workspace's default. Each workspace defines its statuses, and `undetermined` may mean something else there: in the PesaCheck promise workspace it is "Unstarted", a rating |
 | D91 | A disabled plugin's settings stay visible and editable to super-admins, marked as not in use, unlike its other fields (D29). They can be filled in before the plugin is switched on, and a setting that stops start-up, such as an unmapped Check status, can be fixed with the plugin switched off |
+| D92 | The poll reads published reports most recently active first, as deep as Check's search allows: 10,000 results. A report whose webhook was lost changed recently, so it is near the top. One deeper down has not changed since an earlier poll reconciled it. No position is kept between polls |
 
 ### 20.2 Why
 

@@ -241,10 +241,16 @@ const PUBLISHED = `
   }
 `
 
-/** At most this many pages per poll, so a runaway search cannot hold the worker. */
-const MAX_PAGES = 50
+/**
+ * Check's search reads at most 10,000 results deep (its `window_size`), so a
+ * poll reads at most that many. Results come most recently active first, so a
+ * report whose webhook was lost is near the top, and one deeper down has not
+ * changed since an earlier poll reconciled it (D92).
+ */
+export const SEARCH_WINDOW = 10_000
+const MAX_PAGES = SEARCH_WINDOW / PAGE_SIZE
 
-/** Every item with a published report, 100 per page (section 5.2). */
+/** Items with a published report, most recently active first, 100 per page (section 5.2). */
 export async function publishedItems(
   credentials: CheckCredentials,
   options: CallOptions = {},
@@ -253,6 +259,8 @@ export async function publishedItems(
   for (let page = 0; page < MAX_PAGES; page++) {
     const query = JSON.stringify({
       report_status: ['published'],
+      sort: 'recent_activity',
+      sort_type: 'desc',
       eslimit: PAGE_SIZE,
       esoffset: page * PAGE_SIZE,
     })

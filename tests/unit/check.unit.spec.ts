@@ -176,8 +176,20 @@ describe('the check adapter', () => {
 
     const pages = api.sent.map((r) => JSON.parse(String(r.variables.query)))
     expect(pages).toEqual([
-      { report_status: ['published'], eslimit: 100, esoffset: 0 },
-      { report_status: ['published'], eslimit: 100, esoffset: 100 },
+      {
+        report_status: ['published'],
+        sort: 'recent_activity',
+        sort_type: 'desc',
+        eslimit: 100,
+        esoffset: 0,
+      },
+      {
+        report_status: ['published'],
+        sort: 'recent_activity',
+        sort_type: 'desc',
+        eslimit: 100,
+        esoffset: 100,
+      },
     ])
     expect(position).toBeNull()
     expect(updates).toHaveLength(103)
@@ -190,6 +202,16 @@ describe('the check adapter', () => {
     })
     expect(updates.find((u) => u.externalId === itemId(20001))?.verdict).toBe('false')
     expect(updates.find((u) => u.externalId === itemId(20100))?.verdict).toBe('unverified')
+  })
+
+  it('reads as deep as Check\u2019s search allows, 10,000 results, and no further', async () => {
+    const full = recording('search-page-1')
+    const api = recordedCheck({ publishedReports: () => full })
+    const adapter = createCheckVerification({ ...api, sleep: noWait })
+    await adapter.pull(null, ctx())
+    const offsets = api.sent.map((r) => JSON.parse(String(r.variables.query)).esoffset)
+    expect(offsets).toHaveLength(100)
+    expect(offsets.at(-1)).toBe(9_900)
   })
 
   it('applies a published report from the webhook, reading the status from Check', async () => {
