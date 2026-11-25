@@ -11,7 +11,12 @@ const ENTITIES: Readonly<Record<string, string>> = {
   "'": '&apos;',
 }
 
-export const escapeXml = (text: string): string => text.replace(/[&<>"']/g, (c) => ENTITIES[c] ?? c)
+/** Control characters XML 1.0 forbids. Text pasted from a PDF can carry them. */
+// biome-ignore lint/suspicious/noControlCharactersInRegex: these are the characters removed
+const FORBIDDEN = /[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g
+
+export const escapeXml = (text: string): string =>
+  text.replace(FORBIDDEN, '').replace(/[&<>"']/g, (c) => ENTITIES[c] ?? c)
 
 const HEAD = '<?xml version="1.0" encoding="UTF-8"?>'
 

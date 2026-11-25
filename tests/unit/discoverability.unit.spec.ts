@@ -225,5 +225,6 @@ describe('machine addresses', () => {
     expect(xml).toContain('<title>A &lt;b&gt;</title>')
     expect(xml).toContain('<pubDate>Sun, 01 Jun 2025 00:00:00 GMT</pubDate>')
     expect(escapeXml(`"'&`)).toBe('&quot;&apos;&amp;')
+    expect(escapeXml('a\u0000b\u000Bc\td')).toBe('abc\td')
   })
 })

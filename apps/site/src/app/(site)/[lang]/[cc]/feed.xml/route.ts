@@ -46,3 +46,6 @@ export async function GET(_request: Request, { params }: Props) {
   })
   return new Response(body, { headers: { 'Content-Type': 'application/rss+xml; charset=utf-8' } })
 }
+
+/** Built per request from cached reads, so new claims appear and the build needs no database. */
+export const dynamic = 'force-dynamic'

@@ -71,3 +71,6 @@ export async function GET(_request: Request, { params }: Props) {
     headers: { 'Content-Type': 'application/xml; charset=utf-8' },
   })
 }
+
+/** Built per request from cached reads, so new claims appear and the build needs no database. */
+export const dynamic = 'force-dynamic'

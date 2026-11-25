@@ -18,3 +18,6 @@ export async function GET() {
   }
   return new Response(sitemapIndex(children), { headers: HEADERS })
 }
+
+/** Built per request from cached reads, so new claims appear and the build needs no database. */
+export const dynamic = 'force-dynamic'
