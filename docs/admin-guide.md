@@ -804,7 +804,8 @@ Who decided is recorded. **Note** is for moderators and is never shown publicly.
 
 A name and a way to reach the sender are optional, and never published. If a sender asks for
 their details to be deleted, clear **Name** and **Contact** in the **Sender** section and save.
-The scrambled network address cannot identify anyone, and stays.
+The scrambled network address cannot identify anyone, and stays. If the submission was already
+accepted with the sender credited, also clear **Attribution** on its claim update.
 
 ### The newsletter
 
