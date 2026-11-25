@@ -109,6 +109,7 @@ if (process.argv.includes('--remove')) {
     ['actors', 'kenya-actors.csv'],
     ['terms', 'kenya-terms.csv'],
     ['claims', 'kenya-claims.csv'],
+    ['claim-updates', 'kenya-claim-updates.csv'],
   ] as const) {
     const content = {
       filename: name,
@@ -137,6 +138,8 @@ if (process.argv.includes('--remove')) {
       rows,
       mapping,
       commit: true,
+      // An editor releases each update. The seed releases them as it adds them.
+      ...(target === 'claim-updates' ? { onCreate: { recordStatus: 'ready' } } : {}),
     })
     if (errors.length) throw new Error(`Seeding ${name} failed: ${JSON.stringify(errors)}`)
   }

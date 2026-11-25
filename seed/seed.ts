@@ -22,7 +22,7 @@ export type SeedCountry = (typeof SEED_COUNTRIES)[number]
  * The order the spreadsheets load in: a record comes after the records it
  * names. Offices and areas name nothing outside their own file, so either can
  * go first. Terms name both, and actors. Claims name actors, areas and the
- * shared topics, so they come last.
+ * shared topics. Claim updates name claims, so they come last.
  */
 export const SEED_ORDER = [
   'offices',
@@ -30,6 +30,7 @@ export const SEED_ORDER = [
   'actors',
   'terms',
   'claims',
+  'claim-updates',
 ] as const satisfies readonly ImportTarget[]
 export type SeedTarget = (typeof SEED_ORDER)[number]
 
@@ -111,7 +112,7 @@ export async function seedCountry(payload: Payload, code: SeedCountry): Promise<
       // site. They save ready in one step, so an interrupted run leaves none
       // on hold. One that exists keeps its status, so one an editor held
       // stays held.
-      ...(target === 'actors' || target === 'claims'
+      ...(target === 'actors' || target === 'claims' || target === 'claim-updates'
         ? { onCreate: { recordStatus: 'ready' } }
         : {}),
     })

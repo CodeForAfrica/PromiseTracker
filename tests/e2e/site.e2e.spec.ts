@@ -233,6 +233,10 @@ test('a claim page shows the claim, who made it, when it is due and its rating',
   await expect(page.getByText('We will build five thousand homes in Kibra.')).toBeVisible()
   await expect(page.getByRole('link', { name: 'Achieng Wekesa' })).toBeVisible()
   await expect(page.getByText('2027', { exact: true })).toBeVisible()
+  // How it was checked, credited to PromiseTracker, never to a person (section 13).
+  const checked = page.getByRole('region', { name: 'How it was checked' })
+  await expect(checked).toContainText('Verified by PromiseTracker on')
+  await expect(checked).toContainText('Checked against the fictional manifesto.')
   await expectAccessible(page)
 })
 
@@ -253,6 +257,55 @@ test('an actor page lists their claims, the key claim and their record so far', 
   await claims.getByRole('button', { name: 'Show' }).click()
   await expect(page).toHaveURL(/topic=housing/)
   await expect(page.getByRole('region', { name: 'Claims' }).getByRole('link')).toHaveCount(1)
+})
+
+test('a claim page shows how the rating changed, the evidence and a citation', async ({
+  page,
+  context,
+}) => {
+  const { full } = seed()
+  await page.goto(`/en/${full.code}/p/a-clinic-in-every-county`)
+  await expect(page.getByText('Rating last reviewed on')).toBeVisible()
+  // The timeline is a real ordered list, newest first (section 10.5).
+  const timeline = page.getByRole('region', { name: 'How the rating changed' })
+  const entries = timeline.locator('ol > li')
+  await expect(entries).toHaveCount(3)
+  await expect(entries.first()).toContainText('We counted the clinics wrong')
+  await expect(entries.first()).toContainText('Correction')
+  await expect(entries.last()).toContainText('Work starts on ten clinics')
+  const evidence = page.getByRole('region', { name: 'Evidence' })
+  await expect(evidence.getByRole('link', { name: 'The recount' })).toHaveAttribute(
+    'href',
+    'https://example.org/clinics-recount-2024',
+  )
+  await expectAccessible(page)
+
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  await page.getByRole('button', { name: 'Copy citation' }).click()
+  await expect(page.getByRole('status')).toHaveText('Citation copied')
+  const copied = await page.evaluate(() => navigator.clipboard.readText())
+  // The address is absolute, so it works pasted anywhere.
+  expect(copied).toMatch(new RegExp(`https?://[^ ]+/en/${full.code}/p/a-clinic-in-every-county\\.`))
+  expect(copied).toContain('Rating last reviewed on')
+})
+
+test('a claim’s history page lists every update, and the actor page the latest', async ({
+  page,
+}) => {
+  const { full } = seed()
+  await page.goto(`/en/${full.code}/p/a-clinic-in-every-county/history`)
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'A clinic in every county' }),
+  ).toBeVisible()
+  await expect(page.locator('main ol > li')).toHaveCount(3)
+  await expectAccessible(page)
+  await page.getByRole('link', { name: 'Back to the claim' }).click()
+  await expect(page).toHaveURL(new RegExp(`/en/${full.code}/p/a-clinic-in-every-county$`))
+
+  await page.goto(`/en/${full.code}/e/amani-otieno`)
+  await expect(page.getByRole('region', { name: 'Latest changes' })).toContainText(
+    'We counted the clinics wrong',
+  )
 })
 
 test('a topic page shows its claims, with figures by country', async ({ page }) => {

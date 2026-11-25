@@ -7,7 +7,10 @@ import * as migration_20261119_070155_rating_scales from './20261119_070155_rati
 import * as migration_20261119_100042_claims_topics from './20261119_100042_claims_topics'
 import * as migration_20261120_071500_documents from './20261120_071500_documents'
 import * as migration_20261120_083653_publishing_cascade from './20261120_083653_publishing_cascade'
-import * as migration_20261124_065330_search from './20261124_065330_search'
+import * as migration_20261120_102714_native_verification from './20261120_102714_native_verification'
+import * as migration_20261124_173822_claim_updates from './20261124_173822_claim_updates'
+import * as migration_20261125_085438_plugin_tika_settings from './20261125_085438_plugin_tika_settings'
+import * as migration_20261125_133015_search from './20261125_133015_search'
 
 export const migrations = [
   {
@@ -56,8 +59,23 @@ export const migrations = [
     name: '20261120_083653_publishing_cascade',
   },
   {
-    up: migration_20261124_065330_search.up,
-    down: migration_20261124_065330_search.down,
-    name: '20261124_065330_search',
+    up: migration_20261120_102714_native_verification.up,
+    down: migration_20261120_102714_native_verification.down,
+    name: '20261120_102714_native_verification',
+  },
+  {
+    up: migration_20261124_173822_claim_updates.up,
+    down: migration_20261124_173822_claim_updates.down,
+    name: '20261124_173822_claim_updates',
+  },
+  {
+    up: migration_20261125_085438_plugin_tika_settings.up,
+    down: migration_20261125_085438_plugin_tika_settings.down,
+    name: '20261125_085438_plugin_tika_settings',
+  },
+  {
+    up: migration_20261125_133015_search.up,
+    down: migration_20261125_133015_search.down,
+    name: '20261125_133015_search',
   },
 ]

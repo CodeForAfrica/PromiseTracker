@@ -25,6 +25,8 @@ const PERMISSION: Record<ImportTarget, Permission> = {
   actors: 'editRecords',
   terms: 'editRecords',
   claims: 'createClaims',
+  // An update rates its claim (section 13.2).
+  'claim-updates': 'rateClaims',
 }
 
 let importers: readonly StructuredImporter[] = [csvImporter, xlsxImporter]
@@ -138,6 +140,13 @@ const runSteps: CollectionBeforeChangeHook = async ({
   const headings: string[] = data.headings ?? originalDoc?.headings ?? []
   const rows: ImportRow[] = data.rows ?? originalDoc?.rows ?? []
   const mapping = toRecord(data.mapping ?? originalDoc?.mapping)
+  // Setting a verdict needs the right to set one, whoever may import claims
+  // (section 13.2). Without a user it is the system, through the Local API, as
+  // above: an import created from the admin always has one.
+  const setsVerdict = Object.keys(mapping).some((key) => /^(verdict|rationale)(:|$)/.test(key))
+  if (setsVerdict && req.user && !userCan(req.user, 'setVerdict')) {
+    throw new APIError('You cannot import verdicts. Remove the Verdict and Rationale columns.', 403)
+  }
   const missing = Object.entries(mapping).filter(([, column]) => !headings.includes(column))
   if (missing.length > 0) {
     throw new APIError(
@@ -172,7 +181,8 @@ const queueJob: CollectionAfterChangeHook = async ({ doc, req, context }) => {
     // Who asked for the import was checked in runSteps, so the job is queued as the system.
     const job = await req.payload.jobs.queue({
       task: 'runImport',
-      input: { importId: doc.id },
+      // Who asked, so what the import records, such as a rating review, names them.
+      input: { importId: doc.id, ...(req.user ? { requestedBy: String(req.user.id) } : {}) },
       overrideAccess: true,
     })
     // A worker would also pick it up. Running it here means a small import is done
@@ -343,9 +353,18 @@ export const ImportMappings: CollectionConfig = {
 /** The job that saves an import's rows (section 9.8). */
 export const runImportTask = {
   slug: 'runImport',
-  inputSchema: [{ name: 'importId', type: 'text' as const, required: true }],
+  inputSchema: [
+    { name: 'importId', type: 'text' as const, required: true },
+    { name: 'requestedBy', type: 'text' as const },
+  ],
   retries: 0,
-  handler: async ({ input, req }: { input: { importId: string }; req: PayloadRequest }) => {
+  handler: async ({
+    input,
+    req,
+  }: {
+    input: { importId: string; requestedBy?: string | null }
+    req: PayloadRequest
+  }) => {
     const { payload } = req
     // The job runs as the system. Who asked for the import was checked when it was queued.
     const doc = await payload.findByID({
@@ -373,6 +392,7 @@ export const runImportTask = {
         rows: (doc.rows as ImportRow[]) ?? [],
         mapping,
         commit: true,
+        ...(input.requestedBy ? { requestedBy: input.requestedBy } : {}),
       })
       if (doc.saveMappingAs) {
         const { docs } = await payload.find({

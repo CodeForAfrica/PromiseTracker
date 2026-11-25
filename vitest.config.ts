@@ -11,6 +11,8 @@ const strictPaths = [
   'packages/kernel/src/**',
   // The document pipeline: connectors, file checks, extraction and jobs.
   'plugins/core/src/documents/**',
+  // Reading office formats through Tika.
+  'plugins/tika/src/**',
 ]
 
 /** The integration tests that read through the SDK, run over both transports. */
@@ -30,7 +32,8 @@ const integration = {
   globalSetup: ['tests/int/global-setup.ts'],
   setupFiles: ['tests/int/setup.ts'],
   // French and Arabic too, so the tests cover a second language and a right-to-left one.
-  env: { PT_LOCALES: 'en,fr,ar' },
+  // plugin-tika too, against the Tika container from `pnpm services` or CI.
+  env: { PT_LOCALES: 'en,fr,ar', PT_PLUGINS: 'core,site,tika' },
   fileParallelism: false,
   testTimeout: 60_000,
   hookTimeout: 120_000,

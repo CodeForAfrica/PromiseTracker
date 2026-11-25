@@ -567,3 +567,44 @@ export const payloadSearch: SearchProvider = {
   },
   index: (record, ctx) => indexRecord(ctx.payload, record),
 }
+
+/** How far back the widget looks, in days. */
+export const EMPTY_SEARCH_DAYS = 30
+/** How many searches it lists. */
+export const EMPTY_SEARCH_ROWS = 10
+
+export type EmptySearch = { query: string; times: number; last: string }
+
+type EmptySearchRow = { query: string; times: number | string; last: Date | string }
+
+/**
+ * Searches that found nothing, most often first, with when each was last
+ * tried (section 18). They test whether location search works, and list the
+ * places the record is missing. Searches differing only in case or spacing
+ * count as one. The database counts them, so every search in the period counts.
+ */
+export async function emptySearches(
+  payload: Payload,
+  user: PayloadRequest['user'],
+  now: Date = new Date(),
+): Promise<EmptySearch[]> {
+  // The log's own read rule, applied here because the count is one SQL query.
+  if (!readSearchLog({ req: { user } as PayloadRequest })) return []
+  const since = new Date(now.getTime() - EMPTY_SEARCH_DAYS * 24 * 60 * 60 * 1000)
+  const { drizzle } = payload.db as unknown as PostgresAdapter
+  const result = await drizzle.execute(sql`
+    SELECT
+      (array_agg(btrim("query") ORDER BY "created_at" DESC))[1] AS "query",
+      count(*)::int AS "times",
+      max("created_at") AS "last"
+    FROM "search_log"
+    WHERE "results" = 0 AND "created_at" > ${since.toISOString()}
+    GROUP BY lower(regexp_replace(btrim("query"), '\\s+', ' ', 'g'))
+    ORDER BY "times" DESC, "last" DESC
+    LIMIT ${EMPTY_SEARCH_ROWS}`)
+  return (result.rows as EmptySearchRow[]).map((row) => ({
+    query: row.query,
+    times: Number(row.times),
+    last: new Date(row.last).toISOString(),
+  }))
+}

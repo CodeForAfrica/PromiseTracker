@@ -3,10 +3,13 @@ import type {
   ActorSummary,
   Area,
   AreaSummary,
+  ClaimChange,
   ClaimSummary,
+  ClaimUpdate,
   Country,
   CountryList,
   CountrySummary,
+  Evidence,
   Figures,
   Holder,
   Image,
@@ -28,6 +31,7 @@ import {
   Actor as ActorSchema,
   AreaList as AreaListSchema,
   Area as AreaSchema,
+  ClaimHistory as ClaimHistorySchema,
   ClaimList as ClaimListSchema,
   Claim as ClaimSchema,
   CountryList as CountryListSchema,
@@ -38,6 +42,7 @@ import {
   SearchResults as SearchResultsSchema,
   SeatHolders as SeatHoldersSchema,
   SiteInfo as SiteInfoSchema,
+  TIMELINE_LENGTH,
   TopicList as TopicListSchema,
   Topic as TopicSchema,
   V1_ENDPOINTS,
@@ -63,7 +68,9 @@ import type {
   Actor as ActorDoc,
   Area as AreaDoc,
   Claim as ClaimDoc,
+  ClaimUpdate as ClaimUpdateDoc,
   Country as CountryDoc,
+  Evidence as EvidenceDoc,
   Media as MediaDoc,
   Office as OfficeDoc,
   RatingScale as RatingScaleDoc,
@@ -670,6 +677,146 @@ function toClaimSummary(
   }
 }
 
+/** A claim's published updates in this language, newest first (section 7.6). */
+async function publicUpdates(
+  payload: Payload,
+  claims: readonly string[],
+  locale: TypedLocale,
+): Promise<ClaimUpdateDoc[]> {
+  if (claims.length === 0) return []
+  const { docs } = await payload.find({
+    collection: 'claim-updates',
+    where: { and: [{ claim: { in: claims } }, publishedInLocale(locale)] },
+    sort: ['-date', '-createdAt'],
+    locale,
+    depth: 0,
+    pagination: false,
+    overrideAccess: false,
+  })
+  return docs
+}
+
+const fileUrl = (media: unknown): string | null =>
+  media && typeof media === 'object' ? text((media as Pick<MediaDoc, 'url'>).url) : null
+
+const toEvidence = (doc: EvidenceDoc): Evidence => ({
+  id: doc.id,
+  kind: doc.kind,
+  title: doc.title,
+  publisher: text(doc.publisher),
+  date: partial(doc.date),
+  url: text(doc.link) ?? fileUrl(doc.file),
+  finding: text(doc.finding),
+  thumbnail: mediaImage(doc.thumbnail, doc.title, null),
+})
+
+/**
+ * The evidence on these updates, by id. Evidence is internal until an update
+ * that cites it is published, so only the published updates' evidence is
+ * read here, with access checks off.
+ */
+async function evidenceOf(
+  payload: Payload,
+  updates: readonly ClaimUpdateDoc[],
+  locale: TypedLocale,
+): Promise<Map<string, Evidence>> {
+  const ids = [...new Set(updates.flatMap((u) => (u.evidence ?? []).map(idOf)))].filter(
+    (id): id is string => id !== null,
+  )
+  if (ids.length === 0) return new Map()
+  const { docs } = await payload.find({
+    collection: 'evidence',
+    where: { id: { in: ids } },
+    locale,
+    depth: 1,
+    pagination: false,
+    // Only evidence cited by published updates, collected above.
+    overrideAccess: true,
+  })
+  return new Map(docs.map((doc) => [doc.id, toEvidence(doc)]))
+}
+
+/**
+ * Each update's kind (section 7.6). Editors choose a correction; otherwise a
+ * claim's earliest published update is its first rating, and the rest are
+ * changes. Worked out here from the order by date, so adding an older update
+ * later relabels the one that was first. Takes updates newest first.
+ */
+function kindsOf(updates: readonly ClaimUpdateDoc[]): Map<string, ClaimUpdate['kind']> {
+  const kinds = new Map<string, ClaimUpdate['kind']>()
+  const earliest = new Map<string, string>()
+  for (const doc of updates) earliest.set(idOf(doc.claim) ?? '', doc.id)
+  for (const doc of updates) {
+    kinds.set(
+      doc.id,
+      doc.kind === 'correction'
+        ? 'correction'
+        : earliest.get(idOf(doc.claim) ?? '') === doc.id
+          ? 'first-rating'
+          : 'change',
+    )
+  }
+  return kinds
+}
+
+/** An update for the public, with its rating looked up on the claim's scale. */
+function toUpdate(
+  doc: ClaimUpdateDoc,
+  scale: RatingScale | undefined,
+  evidence: ReadonlyMap<string, Evidence>,
+  kinds: ReadonlyMap<string, ClaimUpdate['kind']>,
+): ClaimUpdate | null {
+  const date = partial(doc.date)
+  const title = text(doc.title)
+  if (!date || !title) return null
+  return {
+    id: doc.id,
+    date,
+    kind: kinds.get(doc.id) ?? doc.kind ?? 'change',
+    rating: scale?.ratings.find((r) => r.slug === doc.rating) ?? null,
+    title,
+    narrative: text(doc.narrative),
+    attribution: text(doc.attribution),
+    evidence: (doc.evidence ?? []).flatMap((e) => {
+      const found = evidence.get(idOf(e) ?? '')
+      return found ? [found] : []
+    }),
+  }
+}
+
+/** The scale a claim is rated on. */
+const scaleOf = (book: RatingBook, claim: Pick<ClaimDoc, 'type'>): RatingScale | undefined =>
+  book.scales.get(book.scaleOfType.get(idOf(claim.type) ?? '') ?? '')
+
+/**
+ * How to cite a claim: its permanent address, under the site's public
+ * address when one is set, and when its rating was last reviewed.
+ */
+async function citationOf(
+  payload: Payload,
+  locale: TypedLocale,
+  claim: ClaimSummary,
+  lastReviewedAt: string | null,
+): Promise<{ url: string; text: string }> {
+  const site = await payload.findGlobal({ slug: 'site', locale, depth: 0, overrideAccess: false })
+  const strings = resolveStrings(locale, site.strings)
+  const url = `${payload.config.serverURL ?? ''}/${locale}/${claim.country}/p/${claim.slug}`
+  const date = lastReviewedAt
+    ? new Intl.DateTimeFormat(locale, {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'UTC',
+      }).format(new Date(lastReviewedAt))
+    : ''
+  const values: Record<string, string> = { title: claim.title, url, date }
+  const template = lastReviewedAt ? strings.citeAs : strings.citeAsUnreviewed
+  return { url, text: template.replace(/\{(\w+)\}/g, (match, k: string) => values[k] ?? match) }
+}
+
+/** How many changes the actor page lists. */
+const LATEST_CHANGES = 5
+
 type ClaimOrder = (locale: string) => (a: ClaimDoc, b: ClaimDoc) => number
 
 /** By title, in the reader's language. */
@@ -1028,10 +1175,25 @@ const handlers: Record<string, Handler> = {
     const claims = await publicClaims(payload, country.id, locale, {
       actor: { equals: actor.id },
     })
+    const own = new Map([[actor.id, actor]])
     const key = claims.find((claim) => claim.id === idOf(actor.keyClaim))
-    const keySummary = key
-      ? toClaimSummary(key, params.code ?? '', new Map([[actor.id, actor]]), topics, book)
-      : null
+    const keySummary = key ? toClaimSummary(key, params.code ?? '', own, topics, book) : null
+    const byId = new Map(claims.map((claim) => [claim.id, claim]))
+    // Every update, to tell each claim's first rating, of which the latest are shown.
+    const all = await publicUpdates(
+      payload,
+      claims.map((claim) => claim.id),
+      locale,
+    )
+    const kinds = kindsOf(all)
+    const recent = all.slice(0, LATEST_CHANGES)
+    const recentEvidence = await evidenceOf(payload, recent, locale)
+    const latestChanges = recent.flatMap((doc): ClaimChange[] => {
+      const claim = byId.get(idOf(doc.claim) ?? '')
+      const summary = claim ? toClaimSummary(claim, params.code ?? '', own, topics, book) : null
+      const update = claim ? toUpdate(doc, scaleOf(book, claim), recentEvidence, kinds) : null
+      return summary && update ? [{ claim: summary, update }] : []
+    })
     const current = list.filter((t) => t.stage === 'current')
     const [lead] = [...current].sort(
       (a, b) =>
@@ -1053,6 +1215,7 @@ const handlers: Record<string, Handler> = {
         terms: list,
         keyClaim: keySummary ? { claim: keySummary, note: text(actor.keyClaimNote) } : null,
         record: figuresOf(claims, book, threshold),
+        latestChanges,
       }),
     )
   },
@@ -1170,6 +1333,15 @@ const handlers: Record<string, Handler> = {
     )
     const areas = await areaMap(payload, areaIds, locale)
     const typeId = idOf(doc.type)
+    const updates = await publicUpdates(payload, [doc.id], locale)
+    const evidence = await evidenceOf(payload, updates, locale)
+    const scale = scaleOf(book, flat)
+    const kinds = kindsOf(updates)
+    const timeline = updates
+      .map((u) => toUpdate(u, scale, evidence, kinds))
+      .filter((u): u is ClaimUpdate => u !== null)
+    const cited = [...new Map(timeline.flatMap((u) => u.evidence).map((e) => [e.id, e])).values()]
+    const lastReviewedAt = day(doc.lastReviewedAt)
     return ok(
       ClaimSchema.parse({
         ...summary,
@@ -1190,8 +1362,62 @@ const handlers: Record<string, Handler> = {
         sourceUrl: text(doc.sourceUrl),
         sourceLocator: text(doc.sourceLocator),
         ratedOn: day(doc.ratedOn),
-        lastReviewedAt: day(doc.lastReviewedAt),
+        lastReviewedAt,
         image: mediaImage(doc.image, summary.title, text(doc.imageCredit)),
+        // Who verified it stays internal (section 13).
+        verification: {
+          date: day(doc.verification?.date),
+          rationale: text(doc.verification?.rationale),
+          reportUrl: text(doc.verification?.reportUrl),
+        },
+        updateCount: timeline.length,
+        timeline: timeline.slice(0, TIMELINE_LENGTH),
+        evidence: cited,
+        citation: await citationOf(payload, locale, summary, lastReviewedAt),
+      }),
+    )
+  },
+
+  '/countries/:code/claims/:slug/history': async ({ payload, params, locale }) => {
+    const code = params.code ?? ''
+    const country = await publishedCountry(payload, code, locale)
+    if (isResult(country)) return country
+    const { docs } = await payload.find({
+      collection: 'claims',
+      where: { and: [{ country: { equals: country.id } }, { slug: { equals: params.slug } }] },
+      locale,
+      depth: 0,
+      limit: 1,
+      overrideAccess: false,
+    })
+    const [doc] = docs
+    if (!doc) return notFound()
+    const published = doc.publishedIn ?? []
+    if (!published.includes(locale)) {
+      return notAvailable(published.filter((l) => (country.publishedIn ?? []).includes(l)))
+    }
+    const [people, book, topics] = await Promise.all([
+      findActors(
+        payload,
+        publicActors(country.id, locale, new Date(), idIn([idOf(doc.actor)])),
+        locale,
+      ),
+      ratingBook(payload, locale),
+      topicMap(payload, locale),
+    ])
+    const summary = toClaimSummary(doc, code, people, topics, book)
+    if (!summary) return notFound()
+    const updates = await publicUpdates(payload, [doc.id], locale)
+    const evidence = await evidenceOf(payload, updates, locale)
+    const scale = scaleOf(book, doc)
+    const kinds = kindsOf(updates)
+    return ok(
+      ClaimHistorySchema.parse({
+        claim: summary,
+        lastReviewedAt: day(doc.lastReviewedAt),
+        updates: updates
+          .map((u) => toUpdate(u, scale, evidence, kinds))
+          .filter((u): u is ClaimUpdate => u !== null),
       }),
     )
   },
@@ -1323,7 +1549,9 @@ const handlers: Record<string, Handler> = {
       (await bySlug(payload, collection, country.id, slug)) ??
       (await bySlug(payload, collection, country.id, slug, true))
 
-    if (rest[0] === 'p' && rest.length === 2) {
+    // A claim's page, or its history page (section 11.1).
+    const history = rest.length === 3 && rest[2] === 'history'
+    if (rest[0] === 'p' && (rest.length === 2 || history)) {
       const { docs } = await payload.find({
         collection: 'claims',
         where: {
@@ -1334,7 +1562,7 @@ const handlers: Record<string, Handler> = {
         overrideAccess: false,
       })
       const slug = docs[0]?.slug
-      return slug ? permanent(`/${code}/p/${slug}`) : notFound()
+      return slug ? permanent(`/${code}/p/${slug}${history ? '/history' : ''}`) : notFound()
     }
     if (rest[0] === 'e' && rest.length === 2) {
       const actor = await bySlug(payload, 'actors', country.id, rest[1] ?? '', true)
@@ -1540,7 +1768,7 @@ async function placeOf(
       (a.seat.area?.name ?? '').localeCompare(b.seat.area?.name ?? ''),
   )
   // Seats inside a large place, such as a region with thousands of wards, are
-  // cut first: the list is in order, top first (D68).
+  // cut first: the list is in order, top first (D84).
   return {
     country: code,
     area,

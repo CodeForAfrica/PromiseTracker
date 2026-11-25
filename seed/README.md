@@ -26,7 +26,14 @@ left empty, since the seed cannot vouch for a quote.
 
 Each claim links its source: the news report of the pledge, or the manifesto. A claim needs a
 source to be public (section 8.1 of the specification), so a claim added here needs one too. Every
-link was opened and checked to report the pledge before it was added.
+link was opened and checked to report the pledge before it was added. Each is marked **verified**, with that
+check as its rationale, since only verified claims are public.
+
+Some claims also have **claim updates**, the dated entries that rate them, each with a piece of
+evidence: Kenya's fertiliser subsidy at Sh3,500 in September 2022 and Sh2,500 in August 2023, the
+Hustler Fund's launch on 30 November 2022 and the Social Health Insurance Act signed on 19 October
+2023, and the Court of Auditors' report on Senegal's public finances, published in February 2025.
+Every evidence link was opened and checked to report what its update says.
 
 Kenya has past holders, so the site shows archived records, successors and "Past administrations".
 Senegal is French first, so it shows the site in French. Actors the seed creates are marked ready,
@@ -42,12 +49,12 @@ other counties' senators, woman representatives and MPs are not seeded yet.
 ## How it works
 
 Each country is a folder in `seed/data`, holding one spreadsheet per record type:
-`offices.csv`, `areas.csv`, `actors.csv`, `terms.csv` and `claims.csv`. They are in the format editors import
+`offices.csv`, `areas.csv`, `actors.csv`, `terms.csv`, `claims.csv` and `claim-updates.csv`. They are in the format editors import
 (`docs/admin-guide.md`, section 7), and `pnpm seed` loads them through the same import, so they are
 checked the way an editor's file is.
 
 - **It is safe to run again.** Each row matches the record it made before, by slug, or for a term
-  by its actor, office, area and start date. A second run changes nothing. A changed row updates
+  by its actor, office, area and start date, or for a claim update by its claim and date. A second run changes nothing. A changed row updates
   its record.
 - **It adds, and never removes.** A country that already exists keeps its settings. If it is not
   ready, the seed says so, since its pages will not show. Actors the seed creates are saved ready,
@@ -55,7 +62,7 @@ checked the way an editor's file is.
   status, so one you held stays held. Records you added by hand are left alone. To start again, empty the database: `pnpm services:down`, remove
   the Postgres volume, then `pnpm services` and `pnpm migrate`.
 - **It loads in order:** the shared topics first, then for each country offices, areas, actors,
-  terms and claims, because each names records loaded before it.
+  terms, claims and claim updates, because each names records loaded before it.
 
 `seed/seed.ts` holds the loader. `tests/unit/seed.unit.spec.ts` checks every row without a
 database, and `tests/int/seed.int.spec.ts` loads it all into the test database.
@@ -72,5 +79,5 @@ request, so the next person sees it working without entering anything.
 3. Extend `tests/int/seed.int.spec.ts` to check that the new data reaches the site.
 4. Update the table above.
 
-To add a country, add its folder in `seed/data` with all four spreadsheets, and add its code to
+To add a country, add its folder in `seed/data` with all its spreadsheets, and add its code to
 `SEED_COUNTRIES` in `seed/seed.ts`.

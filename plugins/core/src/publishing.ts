@@ -376,6 +376,16 @@ export async function cascadePublishing(
       }
     }
   }
+  // Figures follow published claims, so their pages are refreshed too (section 9.8).
+  const code = tags.find((tag) => tag.startsWith('country:'))?.slice('country:'.length)
+  if (code && changed > 0) {
+    // The cascade runs as the system, after whoever saved was checked.
+    await payload.jobs.queue({
+      task: 'refreshCounts',
+      input: { country: code },
+      overrideAccess: true,
+    })
+  }
   return { recomputed, changed }
 }
 
@@ -510,6 +520,11 @@ const statusField = (defaultValue: RecordStatus): Field => ({
     description: 'Ready makes it public in each language it is published in.',
   },
   hooks: { beforeChange: [checkStatus(defaultValue)] },
+  // Only those who may set a status see it editable: a reviewer, say, does not.
+  access: {
+    update: ({ req }) =>
+      userCan(req.user, 'setAnyRecordStatus') || userCan(req.user, 'holdRecords'),
+  },
 })
 
 /** The live record's published status, read once per request for the admin's two fields. */

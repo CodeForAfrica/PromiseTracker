@@ -133,6 +133,8 @@ describe('search', () => {
         topic: ids.topic,
         sourceUrl: 'https://example.org/manifesto',
         recordStatus: 'ready',
+        // Only a verified claim is published (section 5.1).
+        verification: { verdict: 'verified' },
       })
     ).id as string
   })
