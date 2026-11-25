@@ -17,6 +17,7 @@ COPY packages/kernel/package.json packages/kernel/
 COPY packages/contract/package.json packages/contract/
 COPY packages/sdk/package.json packages/sdk/
 COPY packages/ui/package.json packages/ui/
+COPY plugins/ai/package.json plugins/ai/
 COPY plugins/core/package.json plugins/core/
 COPY plugins/site/package.json plugins/site/
 COPY plugins/tika/package.json plugins/tika/

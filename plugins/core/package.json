@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./client": "./src/client.tsx",
-    "./widgets": "./src/widgets.tsx"
+    "./widgets": "./src/widgets.tsx",
+    "./quote": "./src/quote.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"

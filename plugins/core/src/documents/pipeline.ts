@@ -68,6 +68,12 @@ type Adapters = {
     adapter: { id: string },
     signal: AbortSignal,
   ) => Promise<AdapterContext>
+  /**
+   * What happens once a source of claims is read: plugin-ai queues its
+   * analysis (section 9.8). None while no AI plugin is enabled, and the
+   * document stays at `extracted`.
+   */
+  analyse: ((payload: Payload, documentId: string) => Promise<void>) | null
 }
 
 let adapters: Adapters = {
@@ -79,6 +85,7 @@ let adapters: Adapters = {
     signal,
     settings: {},
   }),
+  analyse: null,
 }
 
 /** The connectors and extractors of every enabled plugin, chosen by the app (section 4.1). */
@@ -105,6 +112,8 @@ export function extractorFor(
 type DocumentRecord = {
   id: string
   title?: string | null
+  /** A source of claims, or evidence about them. Only sources are analysed. */
+  type?: string | null
   connector?: string | null
   file?: unknown
   sourceUrl?: string | null
@@ -401,10 +410,16 @@ async function extractStage(
       pageCount: result.pageCount,
       retryCount: 0,
     })
-    return { ok: true }
   } catch (error) {
     return stageFailed(req, doc, 'extracting', error)
   }
+  // After the text is saved: a failure to queue the analysis is not a failure to read.
+  if (adapters.analyse && (doc.type ?? 'claims') === 'claims') {
+    await adapters.analyse(payload, id).catch((error: unknown) => {
+      log.error('Could not queue the analysis', { ids: { document: id }, error })
+    })
+  }
+  return { ok: true }
 }
 
 type DocumentInput = { documentId: string }
@@ -441,7 +456,8 @@ type Tasks = Record<
 
 /**
  * One document's stages as one workflow (section 9.8). Analysis, the next
- * stage, belongs to plugin-ai, which starts from `extracted`.
+ * stage, belongs to plugin-ai. It runs as its own job, queued once the text
+ * is read, because its concurrency key is the AI provider, not the document.
  */
 export const processDocumentWorkflow = {
   slug: 'processDocument',

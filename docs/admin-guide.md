@@ -26,7 +26,7 @@ The admin's menu groups record types by what they are for:
 | People         | Actors, Terms                                                                       |
 | Claims         | Claims, Claim updates, Evidence, Rating reviews, Topics, Rating scales, Claim types |
 | Places         | Countries, Areas, Offices, Boundaries                                               |
-| Sources        | Documents, Source files                                                             |
+| Sources        | Documents, Source files, Extractions                                                |
 | Media library  | Images, such as actor photos                                                        |
 | Imports        | Imports, Saved mappings                                                             |
 | Administration | Users, Settings                                                                     |
@@ -559,6 +559,47 @@ says which. Save a new copy, without a password, and upload that.
 Settings > Tika, such as `http://tika:9998`. The address is stored encrypted and shows as
 `********` after saving. Saving the page without retyping it keeps the address. Until it is set,
 those documents fail with a message saying so. `/api/health` shows whether Tika answers.
+
+### Finding claims with AI
+
+When the server runs the AI plugin, a document whose **Type** is a source of claims goes to AI as
+soon as it is read. Evidence is never sent. The **Status** moves on to **Finding claims**, then:
+
+- **Claims found**: AI found candidate claims, and the **Message** says how many wait for review.
+- **Needs review**: AI found nothing whose quotes are in the text. Check the document, or add its
+  claims by hand.
+- **Failed**: AI could not be reached, or the account has no credit left. The **Message** says
+  which. A vendor that is down or busy is tried again later, up to 3 runs.
+
+Each run is an **extraction**, under Sources > Extractions. It records the model, the prompt
+version, the tokens used and what AI found. Nobody can edit or delete one. To run AI again, open
+the document and press **Find claims again** under **AI**. The new extraction joins the earlier
+ones.
+
+**Every quote is checked.** AI must copy the words it relies on from the document. A candidate
+whose quotes are not in the text, word for word, is dropped before anyone sees it. Spacing and
+capital letters may differ. Accents and every other letter must match.
+
+**Reviewing candidates.** Editors, reviewers and super-admins open an extraction to see each
+candidate with its quotes highlighted in the document's text. For each one:
+
+- **Accept** makes it a claim as it stands.
+- **Edit and accept** lets you change the title and summary, choose which quote is the
+  statement, and choose the topic first.
+- **Reject** asks why, so the next reviewer can see the reason.
+
+An accepted candidate becomes a claim **on hold** and **unverified**, with the document as its
+source. Under "How it was found" it says **ai**, with the candidate's confidence, and you as the
+person who entered it. It then goes through verification and rating like any other claim, section
+7. The claim names the actor from the document's **Actors**. Add them to the document before
+reviewing. With more than one, you choose for each claim.
+
+**Setting up AI.** The server chooses the model with `PT_LLM_MODEL`, such as
+`google:gemini-2.5-pro`. A super-admin pastes that vendor's key in Administration > Settings > AI.
+The key is stored encrypted and shows as `********` after saving. **Address** is needed only for
+Ollama, or for a proxy in front of the vendor. The server sends a small test request at start-up
+and on health checks, so `/api/health` shows the AI plugin as degraded when the key is wrong or the
+account has run out of credit.
 
 ## 11. Site settings
 

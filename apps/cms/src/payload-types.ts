@@ -175,6 +175,7 @@ export interface Config {
     imports: Import;
     'import-mappings': ImportMapping;
     users: User;
+    extractions: Extraction;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -221,6 +222,7 @@ export interface Config {
     imports: ImportsSelect<false> | ImportsSelect<true>;
     'import-mappings': ImportMappingsSelect<false> | ImportMappingsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
+    extractions: ExtractionsSelect<false> | ExtractionsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -269,6 +271,7 @@ export interface Config {
       recomputePublishing: TaskRecomputePublishing;
       dailyPublishing: TaskDailyPublishing;
       refreshCounts: TaskRefreshCounts;
+      extractCandidates: TaskExtractCandidates;
       inline: {
         input: unknown;
         output: unknown;
@@ -573,6 +576,10 @@ export interface Claim {
   liveIn?: string | null;
   publishingProblems?: string | null;
   whyNotPublic?: string | null;
+  ai?: {
+    extraction?: (string | null) | Extraction;
+    candidate?: string | null;
+  };
   createdBy?: {
     relationTo: 'users';
     value: string | User;
@@ -1108,6 +1115,7 @@ export interface Document {
    * Worked out on save. The languages this record is live in.
    */
   liveIn?: string | null;
+  ai?: {};
   createdBy?: {
     relationTo: 'users';
     value: string | User;
@@ -1170,6 +1178,52 @@ export interface DocumentFile {
   };
   focalX?: number | null;
   focalY?: number | null;
+}
+/**
+ * Each time AI reads a document for claims. Open one to accept or reject what it found.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "extractions".
+ */
+export interface Extraction {
+  id: string;
+  document?: (string | null) | Document;
+  status: 'running' | 'completed' | 'failed';
+  message?: string | null;
+  model: string;
+  promptVersion?: string | null;
+  sections?: number | null;
+  inputTokens?: number | null;
+  outputTokens?: number | null;
+  /**
+   * Candidates nobody has accepted or rejected yet.
+   */
+  pending?: number | null;
+  candidates?:
+    | {
+        title?: string | null;
+        summary?: string | null;
+        topic?: string | null;
+        quotes?: string[] | null;
+        confidence?: number | null;
+        decision?: ('pending' | 'accepted' | 'rejected') | null;
+        reason?: string | null;
+        reviewer?: (string | null) | User;
+        reviewedAt?: string | null;
+        claim?: (string | null) | Claim;
+        id?: string | null;
+      }[]
+    | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1606,7 +1660,8 @@ export interface PayloadJob {
           | 'cascadePublishing'
           | 'recomputePublishing'
           | 'dailyPublishing'
-          | 'refreshCounts';
+          | 'refreshCounts'
+          | 'extractCandidates';
         taskID: string;
         input:
           | {
@@ -1648,6 +1703,7 @@ export interface PayloadJob {
                 | 'recomputePublishing'
                 | 'dailyPublishing'
                 | 'refreshCounts'
+                | 'extractCandidates'
               )
             | null;
           taskID?: string | null;
@@ -1667,6 +1723,7 @@ export interface PayloadJob {
         | 'recomputePublishing'
         | 'dailyPublishing'
         | 'refreshCounts'
+        | 'extractCandidates'
       )
     | null;
   queue?: string | null;
@@ -1762,6 +1819,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'users';
         value: string | User;
+      } | null)
+    | ({
+        relationTo: 'extractions';
+        value: string | Extraction;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -2082,6 +2143,7 @@ export interface DocumentsSelect<T extends boolean = true> {
   recordStatus?: T;
   publishedIn?: T;
   liveIn?: T;
+  ai?: T | {};
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;
@@ -2174,6 +2236,12 @@ export interface ClaimsSelect<T extends boolean = true> {
   liveIn?: T;
   publishingProblems?: T;
   whyNotPublic?: T;
+  ai?:
+    | T
+    | {
+        extraction?: T;
+        candidate?: T;
+      };
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;
@@ -2461,6 +2529,40 @@ export interface UsersSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "extractions_select".
+ */
+export interface ExtractionsSelect<T extends boolean = true> {
+  document?: T;
+  status?: T;
+  message?: T;
+  model?: T;
+  promptVersion?: T;
+  sections?: T;
+  inputTokens?: T;
+  outputTokens?: T;
+  pending?: T;
+  candidates?:
+    | T
+    | {
+        title?: T;
+        summary?: T;
+        topic?: T;
+        quotes?: T;
+        confidence?: T;
+        decision?: T;
+        reason?: T;
+        reviewer?: T;
+        reviewedAt?: T;
+        claim?: T;
+        id?: T;
+      };
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
@@ -2740,6 +2842,16 @@ export interface Setting {
      */
     url?: string | null;
   };
+  ai?: {
+    /**
+     * The key for the vendor PT_LLM_MODEL names, such as Google for google:gemini-2.5-pro. Stored encrypted and shown masked. Ollama needs none.
+     */
+    apiKey?: string | null;
+    /**
+     * Only for Ollama, or a proxy in front of the vendor, such as http://ollama:11434. Leave empty to use the vendor’s own.
+     */
+    baseUrl?: string | null;
+  };
   createdBy?: {
     relationTo: 'users';
     value: string | User;
@@ -2897,6 +3009,12 @@ export interface SettingsSelect<T extends boolean = true> {
     | {
         url?: T;
       };
+  ai?:
+    | T
+    | {
+        apiKey?: T;
+        baseUrl?: T;
+      };
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;
@@ -2979,7 +3097,8 @@ export interface CollectionQueryWidget {
       | 'media'
       | 'imports'
       | 'import-mappings'
-      | 'users';
+      | 'users'
+      | 'extractions';
     where?:
       | {
           [k: string]: unknown;
@@ -3022,6 +3141,7 @@ export interface ActivityWidget {
           | 'imports'
           | 'import-mappings'
           | 'users'
+          | 'extractions'
         )[]
       | null;
   };
@@ -3119,6 +3239,17 @@ export interface TaskDailyPublishing {
 export interface TaskRefreshCounts {
   input: {
     country: string;
+  };
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskExtractCandidates".
+ */
+export interface TaskExtractCandidates {
+  input: {
+    documentId: string;
+    again?: boolean | null;
   };
   output?: unknown;
 }
