@@ -325,7 +325,10 @@ fact-checkers work in the Check workspace, not here:
   claim unverified and puts it on **hold**, and editors get an email.
 - The **Verdict**, **Date**, **Rationale** and **Report** fields are read-only. Reviewers can no
   longer set a verdict. Change it in Check. Only a super-admin can override it here, and that is
-  logged.
+  logged. While the report stays published in Check, the next sync, within 15 minutes, puts its
+  verdict back.
+- A claim put on **hold** because its report was unpublished stays on hold when someone saves it.
+  An editor releases it by setting it to **ready**.
 - The **Check** section shows the report's state and when the claim was last synced.
 
 #### Setting up Check

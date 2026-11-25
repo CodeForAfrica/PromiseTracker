@@ -1814,7 +1814,8 @@ codemods, and passes the full test suite before merging.
 | D89 | Webhook fingerprints are kept per process for ten minutes, as in v2. A repeat that reaches another process is applied again, which changes nothing. The poll notes a sync on a claim only when its verdict changed |
 | D90 | A claim goes to Check with no status, so it starts on the workspace's default. Each workspace defines its statuses, and `undetermined` may mean something else there: in the PesaCheck promise workspace it is "Unstarted", a rating |
 | D91 | A disabled plugin's settings stay visible and editable to super-admins, marked as not in use, unlike its other fields (D29). They can be filled in before the plugin is switched on, and a setting that stops start-up, such as an unmapped Check status, can be fixed with the plugin switched off |
-| D92 | The poll reads published reports most recently active first, as deep as Check's search allows: 10,000 results. A report whose webhook was lost changed recently, so it is near the top. One deeper down has not changed since an earlier poll reconciled it. No position is kept between polls |
+| D92 | The poll reads published reports most recently active first, as deep as Check's search allows: 10,000 results. A report whose webhook was lost changed recently, so it is near the top. One deeper down has not changed since an earlier poll reconciled it. No position is kept between polls. The known limit: in a workspace with more than 10,000 published reports, a report whose webhook was lost, and which more than 10,000 others outpace in activity before the next poll, is not reconciled until it changes again |
+| D93 | A withdrawn verdict holds the claim on its live record and on its latest version, which the admin edits. The admin then shows the hold, and a save keeps it until an editor releases the claim. The webhook answers `401`, as for a wrong secret, while no secret is set, so a caller cannot tell whether one is |
 
 ### 20.2 Why
 

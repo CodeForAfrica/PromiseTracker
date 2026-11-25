@@ -70,18 +70,19 @@ export type WebhookDeps = {
 async function apply(
   payload: Payload,
   updates: readonly VerdictUpdate[],
-  reportState: string,
   { recordUnchanged }: { recordUnchanged: boolean },
 ): Promise<Answer> {
   if (updates.length === 0) return { status: 200, body: { ok: true, applied: 0 } }
   const req = await createPayloadRequest({ payload })
   const outcomes = await applyVerdictUpdates(req, updates)
   const at = new Date().toISOString()
-  for (const outcome of outcomes) {
+  for (const [index, outcome] of outcomes.entries()) {
     // The poll sees every published report each time, so it notes only changes.
     if (!outcome.claim || (!outcome.changed && !recordUnchanged)) continue
+    // Each outcome answers the update at the same place in the list.
+    const withdrawn = updates[index]?.withdrawn === true
     await recordSync(req, outcome.claim, {
-      'check.reportState': reportState,
+      'check.reportState': withdrawn ? 'paused' : 'published',
       'check.syncedAt': at,
       'check.syncResult': outcome.changed ? 'applied' : 'unchanged',
     })
@@ -104,8 +105,10 @@ export async function handleWebhook(request: Request, deps: WebhookDeps): Promis
   const log = createLog(ctx.logger, 'check')
   const { webhookSecret } = readCheckSettings(ctx.settings)
   if (!webhookSecret) {
+    // The same answer as a wrong secret, so a caller cannot tell whether one is
+    // set. The log says why, for whoever is setting the webhook up.
     log.error('A Check webhook arrived, but no webhook secret is set')
-    return json({ status: 503, body: { error: 'The Check webhook is not set up.' } })
+    return json({ status: 401, body: { error: 'Unauthorized' } })
   }
   if (!secretMatches(request.headers.get('authorization'), webhookSecret)) {
     return json({ status: 401, body: { error: 'Unauthorized' } })
@@ -135,8 +138,7 @@ export async function handleWebhook(request: Request, deps: WebhookDeps): Promis
     if (!deps.adapter.receive) return { status: 200, body: { ok: true, ignored: true } }
     try {
       const updates = await deps.adapter.receive(body, request.headers, ctx)
-      const state = updates.some((u) => u.withdrawn) ? 'paused' : 'published'
-      return await apply(deps.payload, updates, state, { recordUnchanged: true })
+      return await apply(deps.payload, updates, { recordUnchanged: true })
     } catch (error) {
       log.error('Could not apply a Check webhook', { error })
       // Check retries a failed delivery, and the poll catches what it misses.
@@ -155,7 +157,7 @@ export async function pollCheck(deps: Omit<WebhookDeps, 'now'>): Promise<{ appli
   const ctx = await deps.context()
   if (!readCheckSettings(ctx.settings).credentials) return { applied: 0 }
   const { updates } = await deps.adapter.pull(null, ctx)
-  const answer = await apply(deps.payload, updates, 'published', { recordUnchanged: false })
+  const answer = await apply(deps.payload, updates, { recordUnchanged: false })
   const applied = answer.body.applied
   return { applied: typeof applied === 'number' ? applied : 0 }
 }

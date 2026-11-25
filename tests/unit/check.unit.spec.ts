@@ -13,6 +13,8 @@ import {
   createCheckVerification,
   createItem,
   DEFAULT_STATUS_MAP,
+  forgetDeliveries,
+  handleWebhook,
   itemId,
   readReport,
   secretMatches,
@@ -322,5 +324,47 @@ describe('the webhook secret', () => {
     expect(secretMatches('Bearer test-webhook-secret', 'test-webhook-secret')).toBe(true)
     expect(secretMatches('wrong', 'test-webhook-secret')).toBe(false)
     expect(secretMatches(null, 'test-webhook-secret')).toBe(false)
+  })
+})
+
+describe('the webhook', () => {
+  const post = (body: unknown, authorization = 'test-webhook-secret') =>
+    new Request('https://pt.test/api/plugins/check/webhook', {
+      method: 'POST',
+      headers: { Authorization: authorization },
+      body: JSON.stringify(body),
+    })
+  const deps = (receive: () => Promise<never[]>, own: Record<string, unknown> = settings) => ({
+    payload: {} as Payload,
+    adapter: { ...createCheckVerification(), receive },
+    context: async () => ctx(own),
+  })
+
+  beforeEach(() => forgetDeliveries())
+
+  it('answers 401 with no secret set, as for a wrong one, and logs why', async () => {
+    const { webhookSecret: _unset, ...unset } = settings
+    const response = await handleWebhook(
+      post({}),
+      deps(async () => [], unset),
+    )
+    expect(response.status).toBe(401)
+    expect(logger.error).toHaveBeenCalled()
+  })
+
+  it('processes a delivery again when Check retries one that failed', async () => {
+    let calls = 0
+    const receive = async (): Promise<never[]> => {
+      calls++
+      if (calls === 1) throw new Error('database down')
+      return []
+    }
+    const body = recording('webhook-published')
+    const first = await handleWebhook(post(body), deps(receive))
+    expect(first.status).toBe(500)
+    const retry = await handleWebhook(post(body), deps(receive))
+    expect(retry.status).toBe(200)
+    expect(await retry.json()).not.toHaveProperty('repeated')
+    expect(calls).toBe(2)
   })
 })

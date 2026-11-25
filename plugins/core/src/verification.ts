@@ -107,6 +107,8 @@ export const keepVerificationInStep: CollectionBeforeChangeHook = async ({
   const live = await liveClaim(req, id, req.locale ?? undefined)
   if (!live) return data
   const group = groupOf(ref.externalId)
+  // The plugin's whole group is the system's: every field in it is read-only
+  // (section 4.5), so nothing an editor typed is lost.
   const verification = { ...asRecord(data.verification) }
   const liveVerification = asRecord(live.verification)
   for (const field of SYSTEM_FIELDS) verification[field] = liveVerification[field] ?? null
@@ -136,6 +138,7 @@ export const submitOnCreate: CollectionAfterChangeHook = async ({ doc, operation
   if (!id) return doc
   await afterCommit(req, async () => {
     // Whoever created the claim, it goes out as the system.
+    // Plugins cannot see the app's generated task types, which name this task.
     await req.payload.jobs.queue({
       task: 'submitForVerification' as never,
       input: { claim: id } as never,
@@ -199,22 +202,24 @@ async function storeReference(
 ): Promise<void> {
   const ref = reference()
   if (!ref) return
-  const live = await liveClaim(req, id)
   const group = groupOf(ref.externalId)
-  const update = nested(values)
+  // Only the fields given, so a webhook, the poll and the send job, which can
+  // overlap on one claim, never write back each other's older values.
   await req.payload.db.updateOne({
     collection: 'claims',
     id,
-    // The whole group, so the fields left out keep their values.
-    data: { [group]: { ...asRecord(live?.[group]), ...asRecord(update[group]) } },
+    data: { [group]: asRecord(nested(values)[group]) },
     req,
     returning: false,
   })
 }
 
+/** Tries at storing a reference after the claim went out. */
+const REFERENCE_WRITES = 3
+
 /**
- * Sends a claim out (section 5.2). A claim that already went out is left
- * alone, so a retry never sends it twice. While the service is down the job
+ * Sends a claim out (section 5.2). A claim whose reference is stored is left
+ * alone, so a retry does not send it again. While the service is down the job
  * waits and retries, which is the local queue section 5.2 asks for.
  */
 export const submitForVerificationTask = {
@@ -231,11 +236,31 @@ export const submitForVerificationTask = {
     if (!claim) return { output: { sent: false } }
     const ctx = await wiring.context(req.payload)
     const { externalId, url } = await wiring.adapter.submit(claim, ctx)
-    await storeReference(req, input.claim, {
+    const values = {
       [ref.externalId]: externalId,
       ...(ref.url && url ? { [ref.url]: url } : {}),
       ...(ref.syncedAt ? { [ref.syncedAt]: new Date().toISOString() } : {}),
-    })
+    }
+    // The item now exists in the outside system. A retry of the whole job
+    // would send the claim again, so the write is retried here first. If it
+    // still fails, the job's retry can create a second item, which is logged.
+    for (let attempt = 1; ; attempt++) {
+      try {
+        await storeReference(req, input.claim, values)
+        break
+      } catch (error) {
+        if (attempt >= REFERENCE_WRITES) {
+          req.payload.logger.error({
+            err: error,
+            msg: 'Sent a claim out but could not store its reference. A retry may send it again.',
+            claim: input.claim,
+            externalId,
+          })
+          throw error
+        }
+        await new Promise((resolve) => setTimeout(resolve, 500 * attempt))
+      }
+    }
     return { output: { sent: true } }
   },
 }
@@ -285,6 +310,26 @@ async function tellEditors(req: PayloadRequest, id: string, title: string): Prom
       // An email that fails never undoes the verdict.
       req.payload.logger.error({ err: error, msg: `Could not send "${subject}"` })
     }
+  })
+}
+
+/** Sets the claim's latest version on hold, leaving the rest of it as it is. */
+async function holdLatestVersion(req: PayloadRequest, id: string): Promise<void> {
+  const { docs } = await req.payload.db.findVersions({
+    collection: 'claims',
+    where: { parent: { equals: id } },
+    sort: '-updatedAt',
+    limit: 1,
+    req,
+  })
+  const [latest] = docs
+  if (!latest) return
+  await req.payload.db.updateVersion({
+    collection: 'claims',
+    id: String(latest.id),
+    versionData: { version: { recordStatus: 'hold' } },
+    req,
+    returning: false,
   })
 }
 
@@ -347,6 +392,10 @@ async function applyOne(req: PayloadRequest, update: VerdictUpdate): Promise<Ver
       req,
       returning: false,
     })
+    // The admin edits the latest version, which still holds the old status. The
+    // hold goes there too, so it shows, and a save keeps it until an editor
+    // releases the claim on purpose.
+    if (update.withdrawn) await holdLatestVersion(req, id)
     await recomputeAndCascade(req, 'claims', id)
     const code = await countryCode(req, live.country)
     if (code) await refreshTags([`claims:${code}`, `actors:${code}`, `country:${code}`], req)

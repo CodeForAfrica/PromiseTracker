@@ -260,6 +260,29 @@ describe('verification in Check', () => {
     sendEmail.mockRestore()
   })
 
+  it('keeps the claim on hold through an editor\u2019s unrelated save', async () => {
+    // The admin edits the latest version, so the hold must be there too.
+    const { docs } = await payload.findVersions({
+      collection: 'claims',
+      where: { parent: { equals: claimId } },
+      sort: '-updatedAt',
+      limit: 1,
+      overrideAccess: true,
+    })
+    expect(docs[0]?.version.recordStatus).toBe('hold')
+    expect(docs[0]?.version.title).toBe('Build 200 new health centres by 2027')
+
+    await payload.update({
+      collection: 'claims',
+      id: claimId,
+      locale: 'en',
+      data: { summary: 'An unrelated edit.' },
+      overrideAccess: false,
+      user: { ...editor, collection: 'users' } as never,
+    })
+    expect((await read()).recordStatus).toBe('hold')
+  })
+
   it('reconciles published reports in the poll, catching a lost webhook', async () => {
     const result = await pollCheck(deps())
     // Only item 12345 is a claim here. The rest of the recorded reports are unknown.
