@@ -52,7 +52,7 @@ async function solveCaptcha(locale: string): Promise<{ token: string; trapField:
 /** The field a bot fills and a person never sees. */
 function Trap() {
   return (
-    <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
+    <div aria-hidden="true" className="sr-only">
       <label>
         Website
         <input type="text" name="website" tabIndex={-1} autoComplete="off" defaultValue="" />
