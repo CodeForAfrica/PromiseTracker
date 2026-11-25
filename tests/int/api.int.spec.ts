@@ -128,6 +128,22 @@ describe('/api/v1', () => {
       const unknownCountry = await get('/countries/zz?locale=en')
       expect(unknownCountry.status).toBe(404)
     })
+
+    it('never answers 304 for a record that is missing or not available', async () => {
+      const missing = await get('/countries/zz?locale=en')
+      const etag = missing.headers.get('ETag') ?? ''
+      for (const ifNoneMatch of ['*', etag]) {
+        const again = await get('/countries/zz?locale=en', { 'If-None-Match': ifNoneMatch })
+        expect(again.status, ifNoneMatch).toBe(404)
+        expect(ApiError.parse(await again.json()).error).toBeTruthy()
+      }
+    })
+
+    it('answers 304 for the OpenAPI description, whose ETag stays the same', async () => {
+      const etag = (await get('/openapi.json')).headers.get('ETag') ?? ''
+      expect((await get('/openapi.json')).headers.get('ETag')).toBe(etag)
+      expect((await get('/openapi.json', { 'If-None-Match': etag })).status).toBe(304)
+    })
   })
 
   describe('the OpenAPI description (section 12.2)', () => {

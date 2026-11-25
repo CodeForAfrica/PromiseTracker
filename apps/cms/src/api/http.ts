@@ -32,15 +32,32 @@ export function matches(ifNoneMatch: string | null, etag: string): boolean {
 
 function cached(request: Request, body: unknown, status: number): Response {
   const text = JSON.stringify(body)
-  const etag = etagOf(text)
-  const headers = { 'Cache-Control': READ_CACHE, ETag: etag }
-  if (matches(request.headers.get('if-none-match'), etag)) {
+  return send(request, text, etagOf(text), status)
+}
+
+function send(request: Request, text: string, tag: string, status: number): Response {
+  const headers = { 'Cache-Control': READ_CACHE, ETag: tag }
+  // 304 means "the representation you hold is still right". Only a 200 can be
+  // that: answering 304 to a 404 would tell a client with `If-None-Match: *`
+  // that a missing record exists.
+  if (status === 200 && matches(request.headers.get('if-none-match'), tag)) {
     return new Response(null, { status: 304, headers })
   }
   return new Response(text, {
     status,
     headers: { ...headers, 'Content-Type': 'application/json' },
   })
+}
+
+// The description is built from the contract, so it is the same until the
+// next deploy. Build it, and hash it, once.
+let openApi: { text: string; etag: string } | undefined
+function openApiText(): { text: string; etag: string } {
+  if (!openApi) {
+    const text = JSON.stringify(openApiDocument())
+    openApi = { text, etag: etagOf(text) }
+  }
+  return openApi
 }
 
 const uncached = (body: unknown, status: number) =>
@@ -53,7 +70,10 @@ export async function respondV1(
   getPayload: () => Promise<Payload>,
 ): Promise<Response> {
   try {
-    if (path === '/openapi.json') return cached(request, openApiDocument(), 200)
+    if (path === '/openapi.json') {
+      const { text, etag } = openApiText()
+      return send(request, text, etag, 200)
+    }
     const query = new URL(request.url).searchParams
     const result = await handleV1(await getPayload(), path, query)
     if (result === undefined) return uncached({ error: 'not-found' }, 404)
