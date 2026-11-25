@@ -106,7 +106,7 @@ services:
 
   tika:
     # Reads PDF, Word, Excel and more for plugin-tika.
-    image: apache/tika:3.2.3.0-full
+    image: apache/tika:4.2.0-1-full
     ports: ["${PT_TIKA_PORT:-9998}:9998"]
 
   mailpit:
