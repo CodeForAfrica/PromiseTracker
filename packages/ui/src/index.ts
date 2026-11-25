@@ -39,8 +39,8 @@ export { CountryHero } from './country'
 export { Disclosure } from './Disclosure'
 export { Flag } from './Flag'
 export { fill } from './fill'
-export type { SubmissionKind, UpdateContext } from './forms'
-export { kindOf, SubscribeForm, UpdateForm } from './forms'
+export type { UpdateContext } from './forms'
+export { SubscribeForm, UpdateForm } from './forms'
 export {
   ClaimHistoryView,
   ClaimRecord,
@@ -70,4 +70,6 @@ export { privacyPath, SiteFooter } from './SiteFooter'
 export type { ShellData } from './SiteHeader'
 export { Logo, NavLinks, SiteHeader } from './SiteHeader'
 export { SearchForm, SearchIcon, SearchView, searchPath } from './search'
+export type { SubmissionKind } from './submissionKind'
+export { kindOf } from './submissionKind'
 export { SectionLabel } from './Text'

@@ -365,6 +365,45 @@ describe('submissions and sign-ups', () => {
     expect(await confirmSignup(payload, token)).toBe(false)
   })
 
+  it('sends one confirmation an hour at most, keeping the first link working', async () => {
+    const email = `twice-${code}-${Date.now()}@example.org`
+    const send = vi.spyOn(payload, 'sendEmail')
+    for (let i = 0; i < 2; i++) {
+      const result = await handleForm(
+        payload,
+        '/subscriptions',
+        inputOf({ locale: 'en', email, captcha: await solved() }),
+        sender(),
+      )
+      expect(result?.status).toBe(201)
+    }
+    expect(send).toHaveBeenCalledOnce()
+    send.mockRestore()
+  })
+
+  it('refuses a body over the limit, even with no Content-Length', async () => {
+    const chunk = new Uint8Array(1024 * 1024)
+    let sent = 0
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        if (sent++ < 40) controller.enqueue(chunk)
+        else controller.close()
+      },
+    })
+    const res = await respondForm(
+      new Request('http://promisetracker.test/api/v1/submissions', {
+        method: 'POST',
+        body,
+        headers: { 'content-type': 'multipart/form-data; boundary=x' },
+        duplex: 'half',
+      } as RequestInit),
+      '/submissions',
+      getPayload,
+    )
+    expect(res.status).toBe(413)
+    expect(sent).toBeLessThan(40)
+  })
+
   it('sends nothing to an address already confirmed', async () => {
     const email = `confirmed-${code}-${Date.now()}@example.org`
     await payload.create({

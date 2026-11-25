@@ -15,7 +15,7 @@ import { fill } from './fill'
  * a person never sees.
  */
 
-export type SubmissionKind = 'evidence' | 'correction' | 'changed'
+import type { SubmissionKind } from './submissionKind'
 
 const FILE_LIMIT = { count: 3, bytes: 10 * 1024 * 1024 }
 const FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
@@ -82,10 +82,6 @@ export type UpdateContext = {
 }
 
 const KINDS: SubmissionKind[] = ['evidence', 'correction', 'changed']
-
-/** Reads `?kind=` into one of the three kinds, evidence by default. */
-export const kindOf = (value: string | undefined | null): SubmissionKind =>
-  value === 'correction' || value === 'changed' ? value : 'evidence'
 
 export function UpdateForm({
   strings: t,

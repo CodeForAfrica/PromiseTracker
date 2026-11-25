@@ -104,6 +104,37 @@ function senderOf(request: Request) {
   return { ...(ip ? { ip } : {}), ...(userAgent ? { userAgent } : {}) }
 }
 
+/**
+ * The body's bytes, counted as they arrive. Null once it passes `limit`, so a
+ * chunked body with no Content-Length cannot be buffered without end.
+ */
+async function readLimited(
+  request: Request,
+  limit: number,
+): Promise<Uint8Array<ArrayBuffer> | null> {
+  if (!request.body) return new Uint8Array()
+  const reader = request.body.getReader()
+  const chunks: Uint8Array[] = []
+  let total = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    total += value.byteLength
+    if (total > limit) {
+      await reader.cancel()
+      return null
+    }
+    chunks.push(value)
+  }
+  const bytes = new Uint8Array(total)
+  let offset = 0
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return bytes
+}
+
 /** Answers a POST to `/api/v1{path}`: the forms (section 12.1). Never cached. */
 export async function respondForm(
   request: Request,
@@ -113,10 +144,14 @@ export async function respondForm(
   try {
     const length = Number(request.headers.get('content-length') ?? 0)
     if (length > MAX_FORM_BYTES) return uncached({ error: 'files' }, 413)
+    const body = await readLimited(request, MAX_FORM_BYTES)
+    if (!body) return uncached({ error: 'files' }, 413)
     const type = request.headers.get('content-type') ?? ''
+    // Parsed from the bytes already read, so no body is ever buffered past the limit.
+    const parsed = new Response(body, { headers: { 'content-type': type } })
     const input = type.includes('application/json')
-      ? inputOf(((await request.json().catch(() => null)) ?? {}) as Record<string, unknown>)
-      : inputOfFormData(await request.formData().catch(() => new FormData()))
+      ? inputOf(((await parsed.json().catch(() => null)) ?? {}) as Record<string, unknown>)
+      : inputOfFormData(await parsed.formData().catch(() => new FormData()))
     const result = await handleForm(await getPayload(), path, input, senderOf(request))
     if (result === undefined) return uncached({ error: 'not-found' }, 404)
     return uncached(result.body, result.status)

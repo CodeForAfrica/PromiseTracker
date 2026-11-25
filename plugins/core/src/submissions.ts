@@ -59,6 +59,8 @@ const idOf = (value: unknown): string | null => {
 export const SubmissionFiles: CollectionConfig = {
   slug: SUBMISSION_FILES,
   labels: { singular: 'Submission file', plural: 'Submission files' },
+  // Personal data: no history, so a deletion deletes (section 13.9).
+  versions: false,
   admin: {
     group: ADMIN_GROUPS.claims,
     useAsTitle: 'filename',
@@ -144,6 +146,8 @@ const moderate: CollectionBeforeChangeHook = async ({ data, originalDoc, req, op
 export const Submissions: CollectionConfig = {
   slug: SUBMISSIONS,
   labels: { singular: 'Submission', plural: 'Submissions' },
+  // Personal data: no history, so clearing a sender's details erases them (section 13.9).
+  versions: false,
   admin: {
     group: ADMIN_GROUPS.claims,
     useAsTitle: 'text',
@@ -414,12 +418,17 @@ export const submissionsDigestTask = {
 /** How long a confirmation link works. */
 export const CONFIRM_TTL_MS = 7 * 24 * 60 * 60_000
 
+/** How long before a sign-up's confirmation email can be sent again. */
+export const RESEND_AFTER_MS = 60 * 60_000
+
 const hashToken = (token: string) => createHash('sha256').update(token).digest('hex')
 
 /** Sign-ups for the `local` newsletter adapter. Personal data, for super-admins only. */
 export const NewsletterSignups: CollectionConfig = {
   slug: NEWSLETTER_SIGNUPS,
   labels: { singular: 'Newsletter sign-up', plural: 'Newsletter sign-ups' },
+  // Personal data: no history, so a deletion deletes (section 13.9).
+  versions: false,
   admin: {
     group: ADMIN_GROUPS.administration,
     useAsTitle: 'email',
@@ -460,11 +469,21 @@ export const localNewsletter: NewsletterProvider = {
       where: { email: { equals: address } },
       depth: 0,
       limit: 1,
+      // The token's expiry tells when the last email went.
+      showHiddenFields: true,
       // The adapter stores sign-ups for the public API.
       overrideAccess: true,
     })
-    const existing = docs[0] as { id: string; confirmed?: boolean | null } | undefined
+    const existing = docs[0] as
+      | { id: string; confirmed?: boolean | null; tokenExpires?: string | null }
+      | undefined
     if (existing?.confirmed) return
+    // One email an hour per address at most, so the form cannot flood an
+    // inbox or keep replacing a link the owner is about to open.
+    const issued = existing?.tokenExpires
+      ? new Date(existing.tokenExpires).getTime() - CONFIRM_TTL_MS
+      : 0
+    if (Date.now() - issued < RESEND_AFTER_MS) return
     const token = randomBytes(24).toString('base64url')
     const data = {
       email: address,
