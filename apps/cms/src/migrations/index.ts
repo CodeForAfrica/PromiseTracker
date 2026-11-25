@@ -9,6 +9,7 @@ import * as migration_20261120_071500_documents from './20261120_071500_document
 import * as migration_20261120_083653_publishing_cascade from './20261120_083653_publishing_cascade'
 import * as migration_20261120_102714_native_verification from './20261120_102714_native_verification'
 import * as migration_20261124_173822_claim_updates from './20261124_173822_claim_updates'
+import * as migration_20261125_085438_plugin_tika_settings from './20261125_085438_plugin_tika_settings'
 
 export const migrations = [
   {
@@ -65,5 +66,10 @@ export const migrations = [
     up: migration_20261124_173822_claim_updates.up,
     down: migration_20261124_173822_claim_updates.down,
     name: '20261124_173822_claim_updates',
+  },
+  {
+    up: migration_20261125_085438_plugin_tika_settings.up,
+    down: migration_20261125_085438_plugin_tika_settings.down,
+    name: '20261125_085438_plugin_tika_settings',
   },
 ]

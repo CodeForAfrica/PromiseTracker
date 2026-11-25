@@ -8,6 +8,7 @@
     "./config": "./src/payload.config.ts",
     "./email": "./src/email.ts",
     "./env": "./src/env.ts",
+    "./health": "./src/health.ts",
     "./kernel": "./src/kernel.ts",
     "./logger": "./src/logger.ts",
     "./sentry": "./src/sentry.ts"
@@ -28,6 +29,7 @@
     "@promisetracker/kernel": "workspace:*",
     "@promisetracker/plugin-core": "workspace:*",
     "@promisetracker/plugin-site": "workspace:*",
+    "@promisetracker/plugin-tika": "workspace:*",
     "@promisetracker/sdk": "workspace:*",
     "@sentry/nextjs": "catalog:",
     "graphql": "catalog:",
