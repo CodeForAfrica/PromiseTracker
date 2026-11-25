@@ -173,7 +173,9 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
     WHERE v."latest"
     ON CONFLICT ("_parent_id", "_locale") DO UPDATE SET "version__status" = 'published'
   `)
-  await recomputeAll(payload, undefined, req)
+  // The record types that had publishing rules when this ran. Later ones,
+  // such as claim updates, have no table yet at this point.
+  await recomputeAll(payload, ['countries', 'areas', 'actors', 'claims', 'documents'], req)
 }
 
 export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {

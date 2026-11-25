@@ -21,16 +21,16 @@ explains the rules behind each step.
 
 The admin's menu groups record types by what they are for:
 
-| Group          | Holds                                             |
-| -------------- | ------------------------------------------------- |
-| People         | Actors, Terms                                     |
-| Claims         | Claims, Topics, Rating scales, Claim types        |
-| Places         | Countries, Areas, Offices, Boundaries             |
-| Sources        | Documents, Source files                           |
-| Media library  | Images, such as actor photos                      |
-| Imports        | Imports, Saved mappings                           |
-| Administration | Users, and plugin settings once a plugin has some |
-| Public site    | Site settings                                     |
+| Group          | Holds                                                                               |
+| -------------- | ----------------------------------------------------------------------------------- |
+| People         | Actors, Terms                                                                       |
+| Claims         | Claims, Claim updates, Evidence, Rating reviews, Topics, Rating scales, Claim types |
+| Places         | Countries, Areas, Offices, Boundaries                                               |
+| Sources        | Documents, Source files                                                             |
+| Media library  | Images, such as actor photos                                                        |
+| Imports        | Imports, Saved mappings                                                             |
+| Administration | Users, and plugin settings once a plugin has some                                   |
+| Public site    | Site settings                                                                       |
 
 ## 1. Signing in
 
@@ -313,6 +313,61 @@ credited to PromiseTracker. It never shows who verified a claim.
 A claim found **false** or **misleading** is never published and never deleted. Archive it to put it
 away.
 
+### Rating a claim
+
+A claim's rating changes only through a **claim update**: a dated entry in its public history.
+Editors and super-admins add them. Nobody types a claim's rating: the **Current rating**, **Rated
+on**, **Last reviewed** and **Updates** fields in the claim's sidebar are worked out from its
+published updates every time one is added, changed or removed. A new claim starts on its scale's
+starting rating, such as **Unstarted**.
+
+To rate a claim:
+
+1. Add the evidence first, under Claims > Evidence: a title, its kind (document, dataset, social
+   post or article), the publisher, the date, and a **link** or an uploaded **file**. Write the
+   **finding**, one line on what it shows. Links are shown on the site, never opened by the server.
+2. Claims > Claim updates > Create New. Choose the **Claim**, the **Date** it happened (a year, a
+   month or a day, and it can be long before today), and the **Rating** as of that date, from the
+   claim's scale.
+3. Write the **Title** and the **Narrative**: what happened and how we know. Both can be written in
+   each language.
+4. Add the **Evidence**. An update that changes the rating needs at least one piece.
+5. **Kind** fills itself in: **first rating** for a claim's earliest update by date, **change** for
+   the others. The site works it out again when an older update is added.
+   Choose **correction** when the update fixes our own earlier mistake. The site labels it as a
+   correction.
+6. **Attribution** credits a citizen who sent the update in, only with their consent.
+7. Set it to **ready** and save. An update on **hold** changes nothing.
+
+An update saved as a **draft** changes nothing until you publish it. Neither does a draft of
+changes to a published update.
+
+Evidence is checked when you save an update that counts, against the update before it by date.
+Evidence in the trash does not count. Adding an older update, or changing,
+holding or removing one, does not check the later ones again, so look at the timeline afterwards. You can always put an update on hold or move it
+to the trash; it is checked again when you release or restore it.
+
+A claim moves to another claim type only if the new type's scale has every rating its updates give.
+
+Deleting a piece of evidence for good takes it off every update that cites it, and a claim whose
+only source it was comes off the site. Prefer the trash, which can be undone.
+
+A rating that a claim carries, or that any of its updates gave, cannot be deleted from its scale,
+even if the update is in the trash. Retire it instead, so the history keeps its meaning.
+
+Removing an update, or holding it, puts the rating back to the latest update left, or to the
+starting rating if none is.
+
+**Confirm rating.** When you check a claim and find nothing new, use **Confirm rating** in the
+claim's sidebar. It records a rating review and moves **Last reviewed** to today, without a public
+update. The dashboard's **Longest since review** card lists the claims not reviewed for the longest
+time, those never reviewed first.
+
+Every update that changes a rating, and every confirmation, is kept under Claims > Rating reviews,
+with who did it and when. Reviews are internal. Nobody edits them.
+
+Deleting a claim for good, from the trash, deletes its updates and reviews with it.
+
 ### The key claim
 
 On an actor, the collapsed **Key claim** section picks the claim that matters most, with a note on
@@ -320,9 +375,14 @@ why. It shows first on the actor's page.
 
 ### What appears on the site
 
-- **The claim page** shows the claim, who made it, where, when and by when, and its rating.
-- **The actor page** shows the key claim, the record so far, and their claims, which readers can
-  filter by rating and topic.
+- **The claim page** shows the claim, who made it, where, when and by when, and its rating with
+  the date it was last reviewed. Below come **How the rating changed**, the five latest updates,
+  newest first, and the **Evidence** of every published update. **Copy citation** gives readers the
+  claim's permanent address and the last-reviewed date.
+- **The rating history page**, `/{language}/{country}/p/{claim}/history`, lists every published
+  update. The claim page links to it when there are more than five.
+- **The actor page** shows the key claim, the record so far, their claims, which readers can
+  filter by rating and topic, and **Latest changes**: the five latest updates on their claims.
 - **The topic page** shows the topic's figures in each country, and its claims.
 
 **Counts or percentages.** Below 20 claims, figures show as counts, such as "1 of 3", not
@@ -334,7 +394,8 @@ Imports > Imports > Create New.
 
 1. **Upload** a CSV or Excel file, up to 5 MB and 10,000 rows. Excel files are read from their first
    sheet.
-2. Choose the **Country** and what **The file holds**: areas, offices, actors, terms or claims.
+2. Choose the **Country** and what **The file holds**: areas, offices, actors, terms, claims or
+   claim updates.
 3. **Save.** The file is read, and the **Mapping** fills in: which column fills each field. It comes
    from a saved mapping whose columns all appear in the file, or from column headings named like the
    fields, such as "Name", "Type", "Parent", "Area type" or "Name (fr)".
@@ -412,8 +473,26 @@ A claim row matches an existing claim by its slug, made from the title unless a 
 one. Imported claims start on **hold**. A **Verdict** column (verified, false, misleading or unverified) and a
 **Rationale** column set the verification. Only someone who may set a verdict can import them.
 
-`tests/fixtures/kenya-areas.csv`, `kenya-offices.csv`, `kenya-actors.csv`, `kenya-terms.csv` and
-`kenya-claims.csv` in the repository are full examples. The people in them are fictional.
+Claim updates, one row per update. Import the claims first, and name each by its title or slug.
+The rating is the slug of a rating on the claim's scale:
+
+| Claim                    | Date    | Rating      | Kind       | Title                        | Evidence link                       | Evidence title |
+| ------------------------ | ------- | ----------- | ---------- | ---------------------------- | ----------------------------------- | -------------- |
+| A clinic in every county | 2023-02 | in-progress |            | Work starts on ten clinics   | https://example.org/clinics-tender  | Tender notice  |
+| A clinic in every county | 2024-01 | in-progress | correction | We counted the clinics wrong | https://example.org/clinics-recount | The recount    |
+
+An update row matches an existing update by its claim and date. A row can name one piece of
+evidence, with **Evidence link**, **Evidence title**, **Evidence kind**, **Evidence publisher**,
+**Evidence date** and **Evidence finding**. Evidence with the same link is reused, unchanged, and
+otherwise added. Imported updates start on **hold**, and are checked for evidence when you
+release them. A row for an update that is already **ready** and changes the rating with no evidence
+fails, in the preview too. A row whose update is in the trash fails: restore it, or delete it for
+good, first. An unchanged row keeps a rating retired since. Only those who rate claims can import
+them.
+
+`tests/fixtures/kenya-areas.csv`, `kenya-offices.csv`, `kenya-actors.csv`, `kenya-terms.csv`,
+`kenya-claims.csv` and `kenya-claim-updates.csv` in the repository are full examples. The people in
+them are fictional.
 
 ## 9. Area outlines
 

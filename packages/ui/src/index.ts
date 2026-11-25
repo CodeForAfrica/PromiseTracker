@@ -17,6 +17,7 @@ export {
 } from './actors'
 export { AreaHero, AreaSeatsOnly, SeatList } from './area'
 export { Container } from './Container'
+export { CopyCitation } from './CopyCitation'
 export {
   ClaimFilters,
   ClaimList,
@@ -37,6 +38,14 @@ export { CountryHero } from './country'
 export { Disclosure } from './Disclosure'
 export { Flag } from './Flag'
 export { fill } from './fill'
+export {
+  ClaimHistoryView,
+  ClaimRecord,
+  ClaimTimeline,
+  historyPath,
+  LastReviewed,
+  LatestChanges,
+} from './history'
 export { CountryPicker, HomeHero } from './home'
 export { LangToggle } from './LangToggle'
 export { NotAvailableNotice, NotFoundNotice } from './notices'

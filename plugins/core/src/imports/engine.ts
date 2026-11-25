@@ -4,6 +4,7 @@ import { commitTransaction, initTransaction, killTransaction } from 'payload'
 
 import { DEFAULT_LOCALE } from '../locales'
 import { SLUG_PATTERN, slugify, slugProblem } from '../slugs'
+import { publishedAnywhere } from '../updates'
 import type { ImportTarget, PlannedRow } from './targets'
 import { existingBySlug, localizedKeys, planRow } from './targets'
 
@@ -28,6 +29,8 @@ type Input = {
    * keeps its own.
    */
   onCreate?: Readonly<Record<string, unknown>>
+  /** The id of the user who asked for the import, for what it records in their name. */
+  requestedBy?: string
 }
 
 /** How many row errors an import keeps. The count covers them all. */
@@ -154,12 +157,21 @@ async function saveRow(
   payload: Payload,
   target: ImportTarget,
   id: string | null,
-  data: Record<string, unknown>,
+  values: Record<string, unknown>,
   plan: PlannedRow,
+  /** Saves what the record points at first, in the same transaction, and returns its fields. */
+  before?: (req: PayloadRequest) => Promise<Record<string, unknown>>,
+  requestedBy?: string,
 ): Promise<string> {
-  const req: Partial<PayloadRequest> & { payload: Payload } = { payload }
+  // The save runs as the system. Who asked is kept in its context, for the
+  // rating reviews an update records.
+  const req: Partial<PayloadRequest> & { payload: Payload } = {
+    payload,
+    ...(requestedBy ? { context: { requestedBy } } : {}),
+  }
   await initTransaction(req)
   try {
+    const data = before ? { ...values, ...(await before(req as PayloadRequest)) } : values
     // The record's shape is checked by the collection's fields and hooks.
     // This plugin is built without the app's generated types, so the local
     // API cannot check it here.
@@ -211,6 +223,7 @@ async function saveRow(
  */
 export async function runImportPlan(payload: Payload, input: Input): Promise<ImportResult> {
   if (input.target === 'terms') return runTermsPlan(payload, input)
+  if (input.target === 'claim-updates') return runUpdatesPlan(payload, input)
   const existing = await existingBySlug(payload, input.target, input.country)
   // The other collection, whose slugs share a country's addresses. Actors
   // have addresses of their own, under /e/.
@@ -508,4 +521,243 @@ function termUnchanged(
     }
   }
   return true
+}
+
+/** The evidence columns of an update row, which fill an evidence record rather than the update. */
+const EVIDENCE_COLUMNS = {
+  evidenceLink: 'link',
+  evidenceTitle: 'title',
+  evidenceKind: 'kind',
+  evidencePublisher: 'publisher',
+  evidenceDate: 'date',
+  evidenceFinding: 'finding',
+} as const
+
+/**
+ * The ratings each claim type's scale allows, by the type's id, and the one
+ * a claim starts on. Retired ones are left out.
+ */
+async function ratingsByType(
+  payload: Payload,
+): Promise<Map<string, { allowed: Set<string>; starting: string | null }>> {
+  const { docs } = await payload.find({
+    collection: 'claim-types',
+    depth: 1,
+    pagination: false,
+    // An import checks ratings, after the person running it was checked.
+    overrideAccess: true,
+  })
+  return new Map(
+    docs.map((doc) => {
+      const scale: unknown = doc.ratingScale
+      const ratings: unknown =
+        scale && typeof scale === 'object' ? Reflect.get(scale, 'ratings') : null
+      const live = Array.isArray(ratings)
+        ? ratings.flatMap((r: unknown): object[] =>
+            r && typeof r === 'object' && Reflect.get(r, 'retired') !== true ? [r] : [],
+          )
+        : []
+      const slugOf = (r: object): string | null => {
+        const slug: unknown = Reflect.get(r, 'slug')
+        return typeof slug === 'string' ? slug : null
+      }
+      const start = live.find((r) => Reflect.get(r, 'isStarting') === true)
+      const allowed = new Set(live.map(slugOf).filter((slug): slug is string => slug !== null))
+      return [String(doc.id), { allowed, starting: start ? slugOf(start) : null }] as const
+    }),
+  )
+}
+
+/**
+ * Imports claim updates (section 9.6). An update has no slug: each row
+ * matches an update by its claim and date. The claim must exist already. A
+ * row may name one piece of evidence: an evidence record with the same link
+ * is reused, or one is added, in the same transaction as the update.
+ */
+async function runUpdatesPlan(payload: Payload, input: Input): Promise<ImportResult> {
+  const [claims, ratings] = await Promise.all([
+    existingBySlug(payload, 'claims', input.country),
+    ratingsByType(payload),
+  ])
+  // Claims are named by slug or by title.
+  const claimsByName = new Map<string, Record<string, unknown>>()
+  for (const claim of claims.values()) {
+    const title = inLocale(claim.title, DEFAULT_LOCALE)
+    if (typeof title === 'string' && title) claimsByName.set(slugify(title), claim)
+  }
+  for (const [slug, claim] of claims) claimsByName.set(slug, claim)
+  const { docs } = await payload.find({
+    collection: 'claim-updates',
+    where: { country: { equals: input.country } },
+    locale: 'all',
+    depth: 0,
+    pagination: false,
+    // Updates in the trash too, so a row does not add a second one beside them.
+    trash: true,
+    // An import reads the updates it may change, after the person running it was checked.
+    overrideAccess: true,
+  })
+  const keyOf = (claim: unknown, date: unknown) => `${idOf(claim) ?? ''}|${String(date ?? '')}`
+  const existing = new Map(
+    docs.map((doc) => [keyOf(doc.claim, doc.date), { ...doc } as Record<string, unknown>]),
+  )
+  // The ratings of each claim's updates that count, by date, so a row that
+  // changes the rating can be checked for evidence before anything is saved.
+  const history = new Map<string, Map<string, string>>()
+  const remember = (claim: string, date: string, rating: string) => {
+    const dates = history.get(claim) ?? new Map<string, string>()
+    history.set(claim, dates)
+    dates.set(date, rating)
+  }
+  for (const doc of docs) {
+    const claim = idOf(doc.claim)
+    const live = doc.recordStatus === 'ready' && !doc.deletedAt && publishedAnywhere(doc._status)
+    if (claim && live && typeof doc.rating === 'string') {
+      remember(claim, String(doc.date), doc.rating)
+    }
+  }
+  /** The rating before a date: the latest earlier update's, or the starting one. */
+  const ratingBefore = (claim: string, date: string, starting: string | null) => {
+    const earlier = [...(history.get(claim)?.entries() ?? [])]
+      .filter(([d]) => d < date)
+      .sort(([a], [b]) => (a < b ? 1 : -1))
+    return earlier[0]?.[1] ?? starting
+  }
+  // Evidence is reused by its link, so a row whose evidence the update already cites changes nothing.
+  const { docs: cited } = await payload.find({
+    collection: 'evidence',
+    where: { link: { exists: true } },
+    depth: 0,
+    pagination: false,
+    select: { link: true },
+    // An import reuses evidence, after the person running it was checked.
+    overrideAccess: true,
+  })
+  const evidenceByLink = new Map(cited.map((doc) => [String(doc.link), String(doc.id)]))
+  const localized = localizedKeys('claim-updates')
+  const seen = new Set<string>()
+  const { counts, errors, fail } = tally()
+
+  for (const { row, values } of input.rows) {
+    const line = row + 1
+    const plan = planRow('claim-updates', input.headings, input.mapping, values, line)
+    const named = plan.refs.claim
+    const claim = named ? claimsByName.get(named) : undefined
+    if (named && !claim) {
+      plan.errors.push(`Claim "${named}" is not in this country. Import the claims first.`)
+    }
+    const key = keyOf(claim?.id, plan.data.date)
+    const current = existing.get(key)
+    if (current?.deletedAt) {
+      plan.errors.push(
+        'An update for this claim and date is in the trash. Restore it, or delete it for good, first.',
+      )
+    }
+    const rating = plan.data.rating
+    const scale = claim ? ratings.get(idOf(claim.type) ?? '') : undefined
+    // An update keeps a rating retired since, as it can in the admin.
+    if (
+      claim &&
+      typeof rating === 'string' &&
+      !scale?.allowed.has(rating) &&
+      rating !== current?.rating
+    ) {
+      plan.errors.push(
+        `Rating "${rating}" is not on the claim's scale. Use one of ${[...(scale?.allowed ?? [])].join(', ')}.`,
+      )
+    }
+    const evidence: Record<string, unknown> = {}
+    for (const [column, field] of Object.entries(EVIDENCE_COLUMNS)) {
+      if (column in plan.data) evidence[field] = plan.data[column]
+      delete plan.data[column]
+    }
+    const link = evidence.link
+    if (typeof link === 'string' && !/^https?:\/\/\S+$/.test(link)) {
+      plan.errors.push(`Evidence link "${link}" is not a full web address.`)
+    }
+    if (Object.keys(evidence).length > 0 && !link) {
+      plan.errors.push('Evidence needs a link. Add a file in the admin instead.')
+    }
+    // Only an update that counts needs evidence for a change. One on hold is
+    // checked when it is released.
+    const status = current ? current.recordStatus : (input.onCreate?.recordStatus ?? 'hold')
+    const claimId = idOf(claim?.id)
+    const date = String(plan.data.date ?? '')
+    const willCount = status === 'ready' && claimId !== null && typeof rating === 'string'
+    const cites = Array.isArray(current?.evidence) && current.evidence.length > 0
+    if (
+      willCount &&
+      plan.errors.length === 0 &&
+      !link &&
+      !cites &&
+      rating !== ratingBefore(claimId, date, scale?.starting ?? null)
+    ) {
+      plan.errors.push('A change of rating needs evidence. Add an evidence link to the row.')
+    }
+    if (plan.errors.length === 0 && seen.has(key)) {
+      plan.errors.push('The same claim and date appear earlier in the file.')
+    }
+    if (plan.errors.length > 0) {
+      fail(line, plan.errors.join(' '))
+      continue
+    }
+    seen.add(key)
+    if (willCount) remember(claimId, date, rating)
+    const data: Record<string, unknown> = { ...plan.data, claim: idOf(claim?.id) }
+    const known = typeof link === 'string' ? evidenceByLink.get(link) : undefined
+    const sameEvidence =
+      !link ||
+      (known !== undefined &&
+        ((current?.evidence as unknown[] | undefined) ?? []).some((e) => idOf(e) === known))
+    if (current && sameEvidence && termUnchanged(current, data, plan, localized)) {
+      counts.skip += 1
+      continue
+    }
+    if (!input.commit) {
+      counts[current ? 'update' : 'create'] += 1
+      continue
+    }
+    const withEvidence = link
+      ? async (req: PayloadRequest) => {
+          const { docs: found } = await payload.find({
+            collection: 'evidence',
+            where: { link: { equals: link } },
+            depth: 0,
+            limit: 1,
+            // An import reuses evidence by its link, after the person running it was checked.
+            overrideAccess: true,
+            req,
+          })
+          const piece =
+            found[0] ??
+            // A new piece keeps the columns' values. One found by its link is left as it is.
+            (await payload.create({
+              collection: 'evidence',
+              locale: DEFAULT_LOCALE,
+              data: { title: link, kind: 'document', ...evidence } as never,
+              overrideAccess: true,
+              req,
+            }))
+          const before = (current?.evidence as unknown[] | undefined) ?? []
+          const ids = [...new Set([...before.map(idOf), idOf(piece.id)])].filter(Boolean)
+          return { evidence: ids }
+        }
+      : undefined
+    try {
+      const saved = current ? data : { ...data, ...input.onCreate }
+      await saveRow(
+        payload,
+        'claim-updates',
+        current ? String(current.id) : null,
+        saved,
+        plan,
+        withEvidence,
+        input.requestedBy,
+      )
+      counts[current ? 'update' : 'create'] += 1
+    } catch (error) {
+      fail(line, error instanceof Error ? error.message : String(error))
+    }
+  }
+  return { counts, errors }
 }
