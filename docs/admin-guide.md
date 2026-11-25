@@ -29,7 +29,7 @@ The admin's menu groups record types by what they are for:
 | Sources        | Documents, Source files                                                             |
 | Media library  | Images, such as actor photos                                                        |
 | Imports        | Imports, Saved mappings                                                             |
-| Administration | Users, and plugin settings once a plugin has some                                   |
+| Administration | Users, Settings                                                                     |
 | Public site    | Site settings                                                                       |
 
 ## 1. Signing in
@@ -548,8 +548,17 @@ later, up to 3 runs, and the message says when. When a document fails for good, 
 gets an email. Fix the file or link and save to start again. Changing only the title or other
 details does not start it again.
 
-PDF, Word and the other office formats need the Tika plugin, which comes later. Until then, those
-documents fail with a message saying no plugin reads them.
+**PDF, Word, Excel, PowerPoint, OpenDocument, RTF and EPUB files** are read by the Tika plugin,
+when the server runs it. Text, Markdown, CSV and HTML are always read. An Excel file added here is
+read as text, as a document. To bring its rows in as records, use Imports instead, section 8.
+
+A file Tika cannot read, because it is damaged or has a password, fails at once and the message
+says which. Save a new copy, without a password, and upload that.
+
+**Setting up Tika.** A super-admin sets the Tika server's address once, in Administration >
+Settings > Tika, such as `http://tika:9998`. The address is stored encrypted and shows as
+`********` after saving. Saving the page without retyping it keeps the address. Until it is set,
+those documents fail with a message saying so. `/api/health` shows whether Tika answers.
 
 ## 11. Site settings
 

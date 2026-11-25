@@ -337,6 +337,11 @@ describe('a plugin switched on and off', () => {
     expect(fieldNamed(settings(off)?.fields ?? [], 'full')).toHaveProperty('admin.condition')
   })
 
+  it('keeps no history of the settings, so old credentials are not kept', () => {
+    const settings = on.globals?.find((g) => g.slug === 'settings')
+    expect(settings?.versions).toBe(false)
+  })
+
   it("refuses required fields on another plugin's record type", () => {
     const bad: PluginManifest = {
       ...fullManifest,

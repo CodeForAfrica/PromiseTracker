@@ -19,6 +19,7 @@ COPY packages/sdk/package.json packages/sdk/
 COPY packages/ui/package.json packages/ui/
 COPY plugins/core/package.json plugins/core/
 COPY plugins/site/package.json plugins/site/
+COPY plugins/tika/package.json plugins/tika/
 RUN pnpm install --frozen-lockfile
 
 FROM deps AS builder

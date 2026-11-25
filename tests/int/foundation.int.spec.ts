@@ -41,7 +41,8 @@ describe('foundation', () => {
 
   it('reports the database and file storage as healthy', async () => {
     const health = await getHealth()
-    expect(health.status).toBe('healthy')
+    // A plugin's service, such as Tika, can be down without this: that is degraded, not unhealthy.
+    expect(health.status).not.toBe('unhealthy')
     expect(health.services.database?.healthy).toBe(true)
     expect(health.services.storage?.healthy).toBe(true)
     expect(health.plugins.enabled).toEqual(expect.arrayContaining(['core', 'site']))

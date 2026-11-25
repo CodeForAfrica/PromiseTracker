@@ -152,6 +152,9 @@ importers:
       '@promisetracker/plugin-site':
         specifier: workspace:*
         version: link:plugins/site
+      '@promisetracker/plugin-tika':
+        specifier: workspace:*
+        version: link:plugins/tika
       '@promisetracker/sdk':
         specifier: workspace:*
         version: link:packages/sdk
@@ -227,6 +230,9 @@ importers:
       '@promisetracker/plugin-site':
         specifier: workspace:*
         version: link:../../plugins/site
+      '@promisetracker/plugin-tika':
+        specifier: workspace:*
+        version: link:../../plugins/tika
       '@promisetracker/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
@@ -414,6 +420,22 @@ importers:
       '@promisetracker/contract':
         specifier: workspace:*
         version: link:../../packages/contract
+      '@promisetracker/kernel':
+        specifier: workspace:*
+        version: link:../../packages/kernel
+      '@promisetracker/plugin-core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      payload:
+        specifier: 'catalog:'
+        version: 4.0.0-beta.9(graphql@16.15.0)(supports-color@8.1.1)(typescript@6.0.3)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+
+  plugins/tika:
+    dependencies:
       '@promisetracker/kernel':
         specifier: workspace:*
         version: link:../../packages/kernel

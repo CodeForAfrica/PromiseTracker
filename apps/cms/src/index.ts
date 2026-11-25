@@ -3,6 +3,7 @@ import type { Transport } from '@promisetracker/sdk'
 
 import { handleV1 } from './api/v1'
 import { getPayload } from './getPayload'
+import type { HealthScope } from './health'
 import { getHealth as checkHealth } from './health'
 
 export { handleV1, languages, matchRoute } from './api/v1'
@@ -25,19 +26,22 @@ export { effectiveMethod, gateRest, guestMayCall } from './restGate'
 export { startPayload } from './startup'
 
 const HEALTH_CACHE_MS = 5_000
-let lastHealth: { at: number; result: Promise<Health> } | undefined
+const lastHealth = new Map<HealthScope, { at: number; result: Promise<Health> }>()
 
 /**
  * The health of this process's services, checked against its own Payload
  * instance. Results are reused for five seconds, so a load balancer probing
  * every second does not hit the database and the store on every probe.
+ * `required` checks the database and file storage alone, for the readiness
+ * check: a plugin's service being down never stops the site taking traffic.
  */
-export function getHealth(): Promise<Health> {
+export function getHealth(scope: HealthScope = 'all'): Promise<Health> {
   const now = Date.now()
-  if (!lastHealth || now - lastHealth.at > HEALTH_CACHE_MS) {
-    lastHealth = { at: now, result: checkHealth(getPayload) }
-  }
-  return lastHealth.result
+  const last = lastHealth.get(scope)
+  if (last && now - last.at <= HEALTH_CACHE_MS) return last.result
+  const result = checkHealth(getPayload, scope)
+  lastHealth.set(scope, { at: now, result })
+  return result
 }
 
 /** The SDK transport that calls the platform in this process, with no network hop. */
