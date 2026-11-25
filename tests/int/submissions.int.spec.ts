@@ -340,6 +340,40 @@ describe('submissions and sign-ups', () => {
     expect(left.totalDocs).toBe(0)
   })
 
+  it('deletes a claim’s submissions when the claim is deleted for good', async () => {
+    const { id } = await payload.create({
+      collection: 'claims',
+      locale: 'en',
+      data: {
+        title: 'A bridge',
+        slug: 'a-bridge',
+        actor: (
+          await payload.findByID({
+            collection: 'claims',
+            id: claim,
+            depth: 0,
+            overrideAccess: true,
+          })
+        ).actor,
+        sourceUrl: 'https://example.org/manifesto',
+        recordStatus: 'ready',
+      } as never,
+      overrideAccess: true,
+    })
+    await payload.create({
+      collection: SUBMISSIONS,
+      data: { claim: id, kind: 'evidence', text: 'Seen.', status: 'new' },
+      overrideAccess: true,
+    })
+    await payload.delete({ collection: 'claims', id, overrideAccess: true })
+    const left = await payload.count({
+      collection: SUBMISSIONS,
+      where: { claim: { equals: id } },
+      overrideAccess: true,
+    })
+    expect(left.totalDocs).toBe(0)
+  })
+
   it('stores a sign-up unconfirmed and emails a link that confirms it', async () => {
     const email = `reader-${code}-${Date.now()}@example.org`
     const send = vi.spyOn(payload, 'sendEmail')

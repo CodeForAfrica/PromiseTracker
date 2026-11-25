@@ -1,6 +1,7 @@
 import { Card } from '@payloadcms/ui'
 import type { Where, WidgetServerProps } from 'payload'
 
+import { userCan } from './access'
 import { EMPTY_SEARCH_DAYS, emptySearches } from './search'
 import { SUBMISSIONS, WAITING_SUBMISSIONS } from './submissions'
 import { AWAITING_VERIFICATION, whereToQuery } from './verificationQueue'
@@ -46,6 +47,8 @@ export async function AwaitingVerification({ req }: WidgetServerProps) {
  * changed the record: those accepted, each of which became a claim update.
  */
 export async function WaitingSubmissions({ req }: WidgetServerProps) {
+  // Only those who moderate may read submissions.
+  if (!userCan(req.user, 'moderateSubmissions')) return null
   const count = (where: Where) =>
     req.payload.count({ collection: SUBMISSIONS, where, overrideAccess: false, req })
   const [waiting, accepted] = await Promise.all([
