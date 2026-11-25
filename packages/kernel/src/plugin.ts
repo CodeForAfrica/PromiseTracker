@@ -425,7 +425,10 @@ function addSettings(globals: readonly GlobalConfig[], manifest: PluginManifest,
     admin: enabled
       ? {}
       : {
-          description: `Not in use. Add "${manifest.slug}" to PT_PLUGINS to switch it on. These can be filled in first.`,
+          // A function, so the generated types, which keep plain descriptions,
+          // stay the same whichever plugins are switched on.
+          description: () =>
+            `Not in use. Add "${manifest.slug}" to PT_PLUGINS to switch it on. These can be filled in first.`,
         },
   }
   const existing = globals.find((g) => g.slug === SETTINGS_GLOBAL)

@@ -337,7 +337,10 @@ describe('a plugin switched on and off', () => {
     const offGroup = fieldNamed(settings(off)?.fields ?? [], 'full')
     expect(onGroup).not.toHaveProperty('admin.condition')
     expect(offGroup).not.toHaveProperty('admin.condition')
-    expect(offGroup).toHaveProperty('admin.description', expect.stringContaining('Not in use'))
+    const description = (offGroup as { admin?: { description?: unknown } }).admin?.description
+    expect(typeof description === 'function' ? description({}) : description).toContain(
+      'Not in use',
+    )
     expect(settings(off)?.admin).not.toHaveProperty('hidden')
   })
 
