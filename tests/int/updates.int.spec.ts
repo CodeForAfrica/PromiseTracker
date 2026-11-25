@@ -82,6 +82,22 @@ describe('claim updates', () => {
     return endpoint.handler(req)
   }
 
+  const ratingChoices = async (claimId: string, role: keyof typeof users | null, locale = 'en') => {
+    const endpoint = payload.collections['claim-updates'].config.endpoints
+      ? payload.collections['claim-updates'].config.endpoints.find(
+          (e) => e.path === '/rating-choices',
+        )
+      : undefined
+    if (!endpoint) throw new Error('No rating-choices endpoint.')
+    const req = await createPayloadRequest({
+      payload,
+      user: role ? as(role) : null,
+      locale,
+      urlSuffix: `/api/claim-updates/rating-choices?claim=${encodeURIComponent(claimId)}`,
+    })
+    return endpoint.handler(req)
+  }
+
   beforeAll(async () => {
     payload = await getPayload()
     // No site to refresh in these tests.
@@ -161,6 +177,35 @@ describe('claim updates', () => {
       where: { id: { in: [users.editor.id, users.contributor.id] } },
       overrideAccess: true,
     })
+  })
+
+  it('lists the claim’s scale for the update form’s rating picker', async () => {
+    const doc = await claim('picker')
+    const response = await ratingChoices(doc.id, 'editor')
+    expect(response.status).toBe(200)
+    const { choices } = (await response.json()) as {
+      choices: { slug: string; label: string; colour: string | null; retired: boolean }[]
+    }
+    // In scale order, with each rating's label and colour, as the scale record has them.
+    const type = await payload.findByID({
+      collection: 'claim-types',
+      id: typeof doc.type === 'object' && doc.type ? doc.type.id : String(doc.type),
+      depth: 1,
+      locale: 'en',
+      overrideAccess: true,
+    })
+    const scale = type.ratingScale as {
+      ratings: { slug: string; label: string; colour?: string | null }[]
+    }
+    expect(choices.map((c) => c.slug)).toEqual(scale.ratings.map((r) => r.slug))
+    expect(choices[0]).toMatchObject({ label: scale.ratings[0]?.label, retired: false })
+    expect(choices.every((c) => typeof c.colour === 'string')).toBe(true)
+
+    // Anyone who can read an update reads its rating's label, so a contributor
+    // sees the saved rating too. An id that is not a claim's gives nothing.
+    expect((await ratingChoices(doc.id, 'contributor')).status).toBe(200)
+    expect((await ratingChoices(doc.id, null)).status).toBe(403)
+    expect(await (await ratingChoices('not-an-id', 'editor')).json()).toEqual({ choices: [] })
   })
 
   it('sets the claim’s rating, dates and count when an update is published', async () => {

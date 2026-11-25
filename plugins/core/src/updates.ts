@@ -18,6 +18,7 @@ import { afterCommit } from './afterCommit'
 import { refreshTags } from './cache'
 import { countryCode, countryField, idOf } from './places'
 import { recomputeAndCascade, withPublishing, withTrash } from './publishing'
+import type { RatingChoice } from './ratingChoices'
 import { setRatingHistoryUsage } from './ratings'
 
 /**
@@ -685,6 +686,73 @@ const readUpdates = ({ req }: { req: PayloadRequest }): boolean | Where =>
     ],
   }
 
+/** Ids are UUIDs. Anything else names no claim, and would fail the query. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+const textOrNull = (value: unknown): string | null =>
+  typeof value === 'string' && value ? value : null
+
+/**
+ * `GET /api/claim-updates/rating-choices?claim={id}`: the ratings on a claim's
+ * scale, in scale order and the reader's language, for the update form's picker.
+ */
+const ratingChoices: Endpoint = {
+  path: '/rating-choices',
+  method: 'get',
+  handler: async (req) => {
+    // Everyone who can read an update reads its rating's label. A scale's
+    // labels are public on the site, so this gives away nothing.
+    if (!signedIn({ req })) {
+      return Response.json({ error: 'Sign in to see the ratings.' }, { status: 403 })
+    }
+    const claim = req.searchParams.get('claim') ?? ''
+    if (!UUID.test(claim)) return Response.json({ choices: [] })
+    const { docs } = await req.payload.find({
+      collection: 'claims',
+      where: { id: { equals: claim } },
+      select: { type: true },
+      depth: 0,
+      limit: 1,
+      trash: true,
+      // The rater may read every claim. This reads only its type.
+      overrideAccess: true,
+      req: { ...req } as PayloadRequest,
+    })
+    const typeId = idOf(docs[0]?.type)
+    if (!typeId) return Response.json({ choices: [] })
+    const types = await req.payload.find({
+      collection: 'claim-types',
+      where: { id: { equals: typeId } },
+      depth: 1,
+      limit: 1,
+      ...(req.locale ? { locale: req.locale as 'en' } : {}),
+      // Reads the claim's scale, as checkUpdate does.
+      overrideAccess: true,
+      req: { ...req } as PayloadRequest,
+    })
+    const scale: unknown = types.docs[0]?.ratingScale
+    const ratings: unknown =
+      scale && typeof scale === 'object' ? Reflect.get(scale, 'ratings') : null
+    const choices: RatingChoice[] = Array.isArray(ratings)
+      ? ratings.flatMap((r: unknown) => {
+          const rating = r && typeof r === 'object' ? (r as Record<string, unknown>) : {}
+          const slug = textOrNull(rating.slug)
+          if (!slug) return []
+          return [
+            {
+              slug,
+              label: textOrNull(rating.label) ?? slug,
+              colour: textOrNull(rating.colour),
+              textColour: textOrNull(rating.textColour),
+              retired: Boolean(rating.retired),
+            },
+          ]
+        })
+      : []
+    return Response.json({ choices }, { headers: { 'Cache-Control': 'no-store' } })
+  },
+}
+
 /** A dated entry in a claim's history: the new rating, what happened, and the evidence (section 7.6). */
 export const ClaimUpdates: CollectionConfig = withPublishing(
   {
@@ -696,6 +764,7 @@ export const ClaimUpdates: CollectionConfig = withPublishing(
       defaultColumns: ['title', 'claim', 'date', 'rating', 'kind', 'recordStatus'],
     },
     defaultSort: '-date',
+    endpoints: [ratingChoices],
     access: {
       read: readUpdates,
       // Rating a claim, which is what an update does (section 13.2).
@@ -723,7 +792,12 @@ export const ClaimUpdates: CollectionConfig = withPublishing(
             type: 'text',
             required: true,
             index: true,
-            admin: { description: 'The rating as of that date, from the claim’s scale.' },
+            admin: {
+              description: 'The rating as of that date, from the claim’s scale.',
+              // Picks from the chosen claim's scale. The value stays the rating's
+              // slug, which checkUpdate still checks for imports and the API.
+              components: { Field: '@promisetracker/plugin-core/client#RatingPicker' },
+            },
           },
           {
             name: 'kind',
@@ -813,8 +887,7 @@ export const confirmRating: Endpoint = {
       return Response.json({ error: 'You cannot confirm ratings.' }, { status: 403 })
     }
     const id = typeof req.routeParams?.id === 'string' ? req.routeParams.id : ''
-    // Ids are UUIDs. Anything else names no claim, and would fail the query.
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+    if (!UUID.test(id)) {
       return Response.json({ error: 'There is no such claim.' }, { status: 404 })
     }
     const { docs } = await req.payload.find({

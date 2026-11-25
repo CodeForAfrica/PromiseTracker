@@ -1,23 +1,30 @@
 'use client'
 
+import type { ReactSelectOption } from '@payloadcms/ui'
 import {
   Banner,
   Button,
   FieldDescription,
+  FieldError,
   FieldLabel,
+  ReactSelect,
   toast,
   useAuth,
   useConfig,
   useDocumentInfo,
+  useField,
   useFormFields,
+  useLocale,
   useRowLabel,
 } from '@payloadcms/ui'
-import type { UIFieldClientProps } from 'payload'
-import { useEffect, useState } from 'react'
+import type { TextFieldClientProps, UIFieldClientProps } from 'payload'
+import { useEffect, useRef, useState } from 'react'
 
 import { AA_CONTRAST, contrastRatio, formatRatio, isHexColour } from './contrast'
 import type { QuoteMatch } from './quote'
 import { findQuote } from './quote'
+import type { RatingChoice } from './ratingChoices'
+import { ratingOptions } from './ratingChoices'
 
 /**
  * Browser components for the admin. Payload loads them by path, such as
@@ -242,6 +249,126 @@ export function ConfirmRating() {
         path="confirmRating"
         description="You checked the claim and nothing has changed. Moves the last-reviewed date without a public update."
       />
+    </div>
+  )
+}
+
+function RatingSwatch({ choice }: { choice: RatingChoice }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--base, 0.5rem)' }}>
+      <span
+        aria-hidden
+        style={{
+          display: 'inline-block',
+          width: '0.75rem',
+          height: '0.75rem',
+          borderRadius: '50%',
+          background: choice.colour ?? 'var(--theme-elevation-200)',
+          border: '1px solid var(--theme-elevation-150)',
+          flexShrink: 0,
+        }}
+      />
+      {choice.retired ? `${choice.label} (retired)` : choice.label}
+    </span>
+  )
+}
+
+/**
+ * The claim update's rating (section 7.6): a choice of the chosen claim's
+ * ratings, in scale order, each with its colour. The value saved is the slug.
+ */
+export function RatingPicker({ path, field, readOnly }: TextFieldClientProps) {
+  const { value, setValue, showError } = useField<string>({ path })
+  const claimValue = useFormFields(([fields]) => fields.claim?.value)
+  const claim = typeof claimValue === 'string' ? claimValue : null
+  const { config } = useConfig()
+  const localeCode = useLocale()?.code ?? ''
+  const [choices, setChoices] = useState<RatingChoice[] | null>(null)
+  // The claim the choices were last loaded for. Changing it clears a rating
+  // the new scale does not have. Loading the saved update does not.
+  const loadedFor = useRef<string | null>(null)
+  // Read when the choices arrive, so choosing a rating does not reload them.
+  const current = useRef(value)
+  current.current = value
+
+  useEffect(() => {
+    if (!claim) {
+      setChoices(null)
+      return
+    }
+    let cancelled = false
+    const query = new URLSearchParams({ claim, ...(localeCode ? { locale: localeCode } : {}) })
+    fetch(`${config.routes.api}/claim-updates/rating-choices?${query}`, {
+      credentials: 'include',
+    })
+      .then((res) => (res.ok ? res.json() : { choices: [] }))
+      .then(({ choices: loaded }: { choices?: RatingChoice[] }) => {
+        if (cancelled) return
+        const list = Array.isArray(loaded) ? loaded : []
+        setChoices(list)
+        const changed = loadedFor.current !== null && loadedFor.current !== claim
+        loadedFor.current = claim
+        const rating = current.current
+        if (changed && rating && !list.some((c) => c.slug === rating && !c.retired)) {
+          setValue(null)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setChoices([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [claim, config.routes.api, localeCode, setValue])
+
+  const options = ratingOptions(choices ?? [], value)
+  const toOption = (choice: RatingChoice): ReactSelectOption => ({
+    value: choice.slug,
+    label: choice.label,
+    choice,
+  })
+  // A saved rating the list does not have, such as one the scale no longer
+  // holds, still shows as it is stored rather than disappearing.
+  const selected =
+    options.find((choice) => choice.slug === value) ??
+    (value && choices !== null
+      ? { slug: value, label: value, colour: null, textColour: null, retired: false }
+      : undefined)
+  const description = claim
+    ? typeof field.admin?.description === 'string'
+      ? field.admin.description
+      : null
+    : 'Choose the claim first. The ratings come from its scale.'
+
+  return (
+    <div className={`field-type select${showError ? ' error' : ''}`} id={`field-${path}`}>
+      <FieldLabel
+        label={field.label ?? 'Rating'}
+        path={path}
+        {...(field.required ? { required: true } : {})}
+      />
+      <div className="field-type__wrap">
+        <FieldError path={path} showError={showError} />
+        <ReactSelect
+          disabled={Boolean(readOnly) || !claim}
+          isClearable={!field.required}
+          isLoading={Boolean(claim) && choices === null}
+          options={options.map(toOption)}
+          {...(selected ? { value: toOption(selected) } : {})}
+          placeholder={claim ? 'Choose a rating' : 'Choose the claim first'}
+          noOptionsMessage={() => 'This claim’s type has no rating scale.'}
+          formatOptionLabel={(option) => {
+            const choice = (option as ReactSelectOption).choice as RatingChoice | undefined
+            return choice ? <RatingSwatch choice={choice} /> : String(option.value)
+          }}
+          onChange={(option) => {
+            const picked = Array.isArray(option) ? option[0] : option
+            setValue(picked ? String(picked.value) : null)
+          }}
+          showError={showError}
+        />
+        {description ? <FieldDescription path={path} description={description} /> : null}
+      </div>
     </div>
   )
 }

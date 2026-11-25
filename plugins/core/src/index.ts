@@ -212,6 +212,8 @@ export {
 
 import { ClaimUpdates, Evidence, RatingReviews, refreshCountsTask } from './updates'
 
+export type { RatingChoice } from './ratingChoices'
+export { ratingOptions } from './ratingChoices'
 export {
   ClaimUpdates,
   EVIDENCE_KINDS,
