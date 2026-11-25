@@ -1,11 +1,15 @@
 import type {
   Actor,
+  ActorQuery,
   Area,
   Claim,
   ClaimHistory,
+  ClaimQuery,
   Country,
   NotAvailable,
   Redirect,
+  SearchResults,
+  SearchScope,
   Topic,
 } from '@promisetracker/contract'
 import {
@@ -22,35 +26,16 @@ import {
   NotAvailable as NotAvailableSchema,
   OfficeList,
   Redirect as RedirectSchema,
+  SearchResults as SearchResultsSchema,
   SeatHolders,
   SiteInfo,
   TopicList,
   Topic as TopicSchema,
 } from '@promisetracker/contract'
 
-/** The filters and order of an actor list (section 12.1). */
-export type ActorQuery = {
-  kind?: 'person' | 'party' | 'institution' | undefined
-  stage?: 'current' | 'past' | undefined
-  office?: string | undefined
-  area?: string | undefined
-  party?: string | undefined
-  sort?: 'name' | 'office' | undefined
-  cursor?: string | undefined
-  limit?: number | undefined
-}
-
-/** The filters and order of a claim list (section 12.1). */
-export type ClaimQuery = {
-  actor?: string | undefined
-  topic?: string | undefined
-  type?: string | undefined
-  rating?: string | undefined
-  tier?: string | undefined
-  sort?: 'recent' | 'deadline' | 'title' | undefined
-  cursor?: string | undefined
-  limit?: number | undefined
-}
+// The filters and order of actor and claim lists come from the contract, which
+// the API checks them against (section 12.2).
+export type { ActorQuery, ClaimQuery, SearchScope }
 
 /** A query as the API's parameters, leaving out what is not set. */
 const params = (query: Readonly<Record<string, string | number | undefined>>) =>
@@ -84,12 +69,20 @@ export class BadRequestError extends Error {
   }
 }
 
-export function createHttpTransport(baseUrl: string, init: RequestInit = {}): Transport {
+/**
+ * Calls the API over HTTP. `fetchImpl` is the global `fetch` unless given,
+ * which lets tests answer requests with the route's own code.
+ */
+export function createHttpTransport(
+  baseUrl: string,
+  init: RequestInit = {},
+  fetchImpl: typeof fetch = fetch,
+): Transport {
   const root = baseUrl.replace(/\/$/, '')
   return {
     async get(path, query) {
       const qs = query && Object.keys(query).length ? `?${new URLSearchParams(query)}` : ''
-      const res = await fetch(`${root}/api/v1${path}${qs}`, init)
+      const res = await fetchImpl(`${root}/api/v1${path}${qs}`, init)
       const body: unknown = await res.json().catch(() => null)
       return { status: res.status, body }
     },
@@ -193,6 +186,21 @@ export function createSdk(transport: Transport) {
     async getTopic(locale: string, slug: string): Promise<Topic | NotAvailable> {
       const result = await get(`/topics/${encodeURIComponent(slug)}`, locale)
       return isNotAvailable(result) ? NotAvailableSchema.parse(result) : TopicSchema.parse(result)
+    },
+    /**
+     * Places with everyone who represents them, then actors, claims and topics
+     * (section 7.11). In one country, the languages it is published in when it
+     * is not in this one.
+     */
+    async search(
+      locale: string,
+      q: string,
+      scope: SearchScope = {},
+    ): Promise<SearchResults | NotAvailable> {
+      const result = await get('/search', locale, params({ q, ...scope }))
+      return isNotAvailable(result)
+        ? NotAvailableSchema.parse(result)
+        : SearchResultsSchema.parse(result)
     },
     /** Where an address leads, or null when it leads nowhere else (section 11.2). */
     async getRedirect(locale: string, path: string): Promise<Redirect | null> {

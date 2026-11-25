@@ -172,7 +172,11 @@ export interface SearchScope {
 }
 
 export interface SearchResults {
-  groups: { kind: SearchResultKind; items: { id: string; title: string; url: string }[] }[]
+  groups: {
+    kind: SearchResultKind
+    /** `url` is the address without the language. `country` is a country code, or null for a topic. */
+    items: { id: string; title: string; url: string; country: string | null }[]
+  }[]
 }
 
 export interface SearchProvider extends Adapter {

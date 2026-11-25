@@ -24,6 +24,8 @@
     "typescript": "catalog:"
   },
   "dependencies": {
+    "@payloadcms/db-postgres": "catalog:",
+    "@payloadcms/plugin-search": "catalog:",
     "@promisetracker/kernel": "workspace:*",
     "csv-parse": "catalog:",
     "htmlparser2": "catalog:",

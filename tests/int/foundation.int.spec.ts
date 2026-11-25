@@ -1,13 +1,14 @@
-import { createLocalTransport, getHealth, getPayload } from '@promisetracker/cms'
+import { getHealth, getPayload } from '@promisetracker/cms'
 import { createSdk } from '@promisetracker/sdk'
 import { afterAll, describe, expect, it } from 'vitest'
+import { testTransport } from './transport'
 
 /**
  * The V1-03 tracer: a value stored in Postgres, read by Payload, passed
  * through the SDK's local transport and checked against the contract.
  */
 describe('foundation', () => {
-  const sdk = createSdk(createLocalTransport())
+  const sdk = createSdk(testTransport())
 
   afterAll(async () => {
     const payload = await getPayload()

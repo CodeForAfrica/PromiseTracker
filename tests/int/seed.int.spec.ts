@@ -1,10 +1,12 @@
-import { createLocalTransport, getPayload } from '@promisetracker/cms'
+import { getPayload } from '@promisetracker/cms'
+import { NotAvailable, V1_ENDPOINTS } from '@promisetracker/contract'
 import { slugify } from '@promisetracker/plugin-core'
 import { createSdk, isNotAvailable } from '@promisetracker/sdk'
 import type { Payload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { readTopics, SEED_COUNTRIES, seedCountry, seedTopics } from '../../seed/seed'
+import { testTransport } from './transport'
 
 /**
  * The seed data loads into an empty database, loads again without changing
@@ -14,7 +16,7 @@ import { readTopics, SEED_COUNTRIES, seedCountry, seedTopics } from '../../seed/
  */
 describe('seed data', () => {
   let payload: Payload
-  const sdk = createSdk(createLocalTransport())
+  const sdk = createSdk(testTransport())
 
   const seedCountries = async () =>
     (
@@ -174,6 +176,41 @@ describe('seed data', () => {
     })
   })
 
+  it('finds everyone who represents Nairobi, from the president down (section 7.11)', async () => {
+    const results = await sdk.search('en', 'Nairobi')
+    if ('error' in results) throw new Error('Search is not available in English')
+    const [place] = results.places
+    expect(place?.area.slug).toBe('nairobi-county')
+    const seats = (place?.representatives ?? []).map((seat) => ({
+      office: seat.office.slug,
+      area: seat.area?.slug ?? null,
+      holders: seat.holders.map((h) => h.slug),
+    }))
+    expect(seats.slice(0, 5)).toEqual([
+      { office: 'president', area: null, holders: ['william-ruto'] },
+      { office: 'deputy-president', area: null, holders: ['kithure-kindiki'] },
+      { office: 'governor', area: 'nairobi-county', holders: ['johnson-sakaja'] },
+      { office: 'senator', area: 'nairobi-county', holders: ['edwin-sifuna'] },
+      { office: 'woman-representative', area: 'nairobi-county', holders: ['esther-passaris'] },
+    ])
+    // Every MP whose constituency is in Nairobi: all 17 of them, and no one else.
+    const constituencies = await sdk.getAreas('en', 'ke', 'nairobi-county')
+    expect(constituencies.total).toBe(17)
+    const members = seats.slice(5)
+    expect(members.every((seat) => seat.office === 'member-of-parliament')).toBe(true)
+    expect(members.map((seat) => seat.area).sort()).toEqual(
+      constituencies.items.map((area) => area.slug).sort(),
+    )
+    expect(members.every((seat) => seat.holders.length === 1)).toBe(true)
+  })
+
+  it('finds a misspelt county, and a French place without its accents', async () => {
+    const misspelt = await sdk.search('en', 'Nairbi')
+    expect('places' in misspelt && misspelt.places[0]?.area.slug).toBe('nairobi-county')
+    const french = await sdk.search('fr', 'Senegal')
+    expect('places' in french && french.places.map((p) => p.area.name)).toContain('Sénégal')
+  })
+
   it('rates claims from their seeded updates, with evidence', async () => {
     const claim = await sdk.getClaim('en', 'ke', 'cut-the-price-of-fertiliser')
     if (isNotAvailable(claim)) throw new Error('The claim is not public.')
@@ -188,5 +225,45 @@ describe('seed data', () => {
     expect(audit.updates[0]?.title).toBe(
       'La Cour des comptes publie son audit des finances publiques',
     )
+  })
+
+  it("answers every endpoint in the contract's shape (section 15, rule 3)", async () => {
+    const transport = testTransport()
+    const [claim] = (await sdk.getClaims('en', 'ke', { actor: 'william-ruto', limit: 1 })).items
+    if (!claim) throw new Error('The seed has no claim by William Ruto')
+    // One call for each endpoint in the contract, on seeded records.
+    const calls: [endpoint: string, path: string, query?: Record<string, string>][] = [
+      ['/site', '/site'],
+      ['/countries', '/countries'],
+      ['/countries/{code}', '/countries/ke'],
+      ['/countries/{code}/offices', '/countries/ke/offices'],
+      ['/countries/{code}/areas', '/countries/ke/areas', { parent: 'kenya' }],
+      ['/countries/{code}/areas/{area}', '/countries/ke/areas/nairobi-county'],
+      ['/countries/{code}/seats/{office}', '/countries/ke/seats/president'],
+      ['/countries/{code}/seats/{area}/{office}', '/countries/ke/seats/nairobi-county/governor'],
+      ['/countries/{code}/actors', '/countries/ke/actors', { stage: 'current', limit: '5' }],
+      ['/countries/{code}/actors/{slug}', '/countries/ke/actors/william-ruto'],
+      ['/countries/{code}/claims', '/countries/ke/claims', { sort: 'deadline' }],
+      ['/countries/{code}/claims/{slug}', `/countries/ke/claims/${claim.slug}`],
+      ['/countries/{code}/claims/{slug}/history', `/countries/ke/claims/${claim.slug}/history`],
+      ['/topics', '/topics'],
+      ['/topics/{slug}', '/topics/housing'],
+      ['/search', '/search', { q: 'Nairobi', country: 'ke' }],
+      ['/redirects', '/redirects', { path: '/ke/president' }],
+    ]
+    expect(new Set(calls.map(([endpoint]) => endpoint))).toEqual(
+      new Set(V1_ENDPOINTS.map((e) => e.path)),
+    )
+    for (const [endpoint, path, query] of calls) {
+      const { status, body } = await transport.get(path, { locale: 'en', ...query })
+      expect(status, path).toBe(200)
+      const schema = V1_ENDPOINTS.find((e) => e.path === endpoint)?.response
+      expect(schema?.safeParse(body).error, path).toBeUndefined()
+    }
+    // A claim not published in Arabic, which the tests switch on, answers in the
+    // contract's "not available" shape (section 8.3).
+    const missing = await transport.get(`/countries/ke/claims/${claim.slug}`, { locale: 'ar' })
+    expect(missing.status).toBe(404)
+    expect(NotAvailable.safeParse(missing.body).error).toBeUndefined()
   })
 })

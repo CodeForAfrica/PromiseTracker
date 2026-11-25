@@ -1,4 +1,4 @@
-import { createLocalTransport, getPayload, handleV1 } from '@promisetracker/cms'
+import { getPayload, handleV1 } from '@promisetracker/cms'
 import type { CountryCode } from '@promisetracker/plugin-core'
 import { countryName, setTagRefresher } from '@promisetracker/plugin-core'
 import { createSdk, NotFoundError } from '@promisetracker/sdk'
@@ -6,6 +6,7 @@ import type { Payload, PayloadRequest } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { unusedCountryCodes } from '../countries'
+import { testTransport } from './transport'
 
 /**
  * Countries, languages and the API the site reads them through (sections 7.1,
@@ -14,7 +15,7 @@ import { unusedCountryCodes } from '../countries'
  */
 describe('countries and languages', () => {
   let payload: Payload
-  const sdk = createSdk(createLocalTransport())
+  const sdk = createSdk(testTransport())
   const created: string[] = []
   const refreshed: string[][] = []
   // Set in beforeAll: a country in every language, one with no French name, and one on hold.

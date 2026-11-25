@@ -17,8 +17,10 @@ import type {
   NotAvailable,
   Office,
   PartialDate,
+  PlaceResult,
   Rating,
   RatingScale,
+  Representative,
   SeatRef,
   SiteInfo,
   Term,
@@ -35,17 +37,21 @@ import {
   CountryList as CountryListSchema,
   Country as CountrySchema,
   OfficeList as OfficeListSchema,
+  PAGE_LIMIT,
   Redirect as RedirectSchema,
+  SearchResults as SearchResultsSchema,
   SeatHolders as SeatHoldersSchema,
   SiteInfo as SiteInfoSchema,
   TIMELINE_LENGTH,
   TopicList as TopicListSchema,
   Topic as TopicSchema,
+  V1_ENDPOINTS,
 } from '@promisetracker/contract'
 import {
   countryName,
   currentTerms,
   isCountryCode,
+  logSearch,
   onRecord,
   partialDatePrecision,
   pastTerms,
@@ -56,7 +62,7 @@ import { resolveStrings } from '@promisetracker/plugin-site'
 import type { Payload, TypedLocale, Where } from 'payload'
 
 import { areaFamily } from '../areaTree'
-import { kernel } from '../kernel'
+import { kernel, ownerOf } from '../kernel'
 import { registeredLocales } from '../locales'
 import type {
   Actor as ActorDoc,
@@ -828,10 +834,8 @@ const CLAIM_SORTS = {
   title: byTitle,
 } as const satisfies Record<string, ClaimOrder>
 
-const PAGE_SIZE = 50
 /** A list longer than this is sorted in memory with a warning in the log. */
 const LARGE_LIST = 2000
-const MAX_PAGE_SIZE = 100
 
 const handlers: Record<string, Handler> = {
   '/site': async ({ payload, locale }) => {
@@ -1024,12 +1028,11 @@ const handlers: Record<string, Handler> = {
     ] as const) {
       const slug = query.get(param)
       if (!slug) continue
-      const found = SLUG.test(slug) ? await bySlug(payload, collection, country.id, slug) : null
+      const found = await bySlug(payload, collection, country.id, slug)
       if (!found) return empty()
       termFilters.push({ [param]: { equals: found.id } })
     }
     const stage = query.get('stage')
-    if (stage && stage !== 'current' && stage !== 'past') return badRequest('stage')
     let ids: Set<string> | null = null
     if (stage || termFilters.length > 0) {
       const byStage = stage === 'past' ? pastTerms(now) : currentTerms(now)
@@ -1039,9 +1042,6 @@ const handlers: Record<string, Handler> = {
       ids = new Set(terms.map((t) => idOf(t.actor) ?? ''))
     }
     const kind = query.get('kind')
-    if (kind && kind !== 'person' && kind !== 'party' && kind !== 'institution') {
-      return badRequest('kind')
-    }
     const actors = await findActors(
       payload,
       publicActors(country.id, locale, now, {
@@ -1099,16 +1099,12 @@ const handlers: Record<string, Handler> = {
     // sort moved into the query.
     const byName = (a: ActorSummary, b: ActorSummary) => a.name.localeCompare(b.name, locale)
     const sort = query.get('sort') ?? 'name'
-    if (sort !== 'name' && sort !== 'office') return badRequest('sort')
     items.sort(
       sort === 'office'
         ? (a, b) => (rank.get(a.slug) ?? 0) - (rank.get(b.slug) ?? 0) || byName(a, b)
         : byName,
     )
-    const start = Number(query.get('cursor') ?? '0')
-    const size = Number(query.get('limit') ?? PAGE_SIZE)
-    if (!Number.isInteger(start) || start < 0) return badRequest('cursor')
-    if (!Number.isInteger(size) || size < 1 || size > MAX_PAGE_SIZE) return badRequest('limit')
+    const { start, size } = pageOf(query)
     const end = start + size
     return ok(
       ActorListSchema.parse({
@@ -1240,9 +1236,7 @@ const handlers: Record<string, Handler> = {
     const filters: Where[] = []
     const actorSlug = query.get('actor')
     if (actorSlug) {
-      const actor = SLUG.test(actorSlug)
-        ? await bySlug(payload, 'actors', country.id, actorSlug)
-        : null
+      const actor = await bySlug(payload, 'actors', country.id, actorSlug)
       if (!actor) return empty(none)
       filters.push({ actor: { equals: actor.id } })
     }
@@ -1258,12 +1252,8 @@ const handlers: Record<string, Handler> = {
       if (!type) return empty(none)
       filters.push({ type: { equals: type[0] } })
     }
-    const sort = query.get('sort') ?? 'recent'
-    if (!(sort in CLAIM_SORTS)) return badRequest('sort')
-    const start = Number(query.get('cursor') ?? '0')
-    const size = Number(query.get('limit') ?? PAGE_SIZE)
-    if (!Number.isInteger(start) || start < 0) return badRequest('cursor')
-    if (!Number.isInteger(size) || size < 1 || size > MAX_PAGE_SIZE) return badRequest('limit')
+    const sort = (query.get('sort') ?? 'recent') as keyof typeof CLAIM_SORTS
+    const { start, size } = pageOf(query)
 
     const rating = query.get('rating')
     const tier = query.get('tier')
@@ -1273,7 +1263,7 @@ const handlers: Record<string, Handler> = {
       const found = ratingOf(book, claim).rating
       return (!rating || found?.slug === rating) && (!tier || found?.tier === tier)
     })
-    claims.sort(CLAIM_SORTS[sort as keyof typeof CLAIM_SORTS](locale))
+    claims.sort(CLAIM_SORTS[sort](locale))
     const page = claims.slice(start, start + size)
     const actors = await findActors(payload, idIn(page.map((c) => idOf(c.actor))), locale)
     const items = page
@@ -1505,6 +1495,40 @@ const handlers: Record<string, Handler> = {
     )
   },
 
+  '/search': async ({ payload, locale, query }) => {
+    // The contract has checked both: q is 2 to 100 characters, country a code.
+    const q = (query.get('q') ?? '').trim()
+    const code = query.get('country') ?? undefined
+    if (code) {
+      const country = await publishedCountry(payload, code, locale)
+      if (isResult(country)) return country
+    }
+    const search = kernel.adapters.search
+    const ctx = await kernel.context(payload, ownerOf(search))
+    const scope = { locale, ...(code ? { country: code } : {}) }
+    const [found, matches] = await Promise.all([
+      search.search(q, scope, ctx),
+      search.resolvePlace(q, scope, ctx),
+    ])
+    const now = new Date()
+    const places = (
+      await Promise.all(matches.map((match) => placeOf(payload, locale, match.id, now)))
+    ).filter((place): place is PlaceResult => place !== null)
+    const items = (kind: 'actor' | 'claim' | 'topic') =>
+      (found.groups.find((group) => group.kind === kind)?.items ?? []).map(
+        ({ title, url, country }) => ({ title, url, country }),
+      )
+    const actors = items('actor')
+    const claims = items('claim')
+    const topics = items('topic')
+    const total = places.length + actors.length + claims.length + topics.length
+    const body = SearchResultsSchema.parse({ query: q, places, actors, claims, topics, total })
+    // Logged after the answer, so the log never slows a search down.
+    // recordSearch catches its own errors.
+    void recordSearch(payload, { query: q, locale, country: code ?? null, results: total })
+    return ok(body)
+  },
+
   '/redirects': async ({ payload, locale, query }) => {
     const parts = (query.get('path') ?? '').split('/').filter(Boolean)
     const [code = '', ...rest] = parts
@@ -1589,10 +1613,45 @@ const officeRef = (office: Office) => ({
 const officeId = (offices: ReadonlyMap<string, OfficeEntry>, slug: string): string =>
   [...offices.values()].find((entry) => entry.office.slug === slug)?.id ?? ''
 
-const badRequest = (param: string): V1Result => ({
-  status: 400,
-  body: { error: `The ${param} parameter is not one this endpoint accepts.` },
+const badRequest = (error: string): V1Result => ({ status: 400, body: { error } })
+
+/** Where a page starts and how long it is. The values were checked against the contract. */
+const pageOf = (query: URLSearchParams) => ({
+  start: Number(query.get('cursor') ?? '0'),
+  size: Number(query.get('limit') ?? PAGE_LIMIT.default),
 })
+
+/** Each handler's query schema, from the contract's endpoint table. */
+const QUERIES = new Map(
+  V1_ENDPOINTS.map((e) => [e.path.replace(/\{(\w+)\}/g, ':$1'), e.query] as const),
+)
+
+/**
+ * Checks the query against the endpoint's schema in the contract (section
+ * 12.2): every parameter known, once, and of the right form. Returns the
+ * problem, or null.
+ */
+function checkQuery(pattern: string, query: URLSearchParams): V1Result | null {
+  const keys = [...new Set(query.keys())]
+  const repeated = keys.find((key) => query.getAll(key).length > 1)
+  if (repeated) return badRequest(`The ${repeated} parameter is given more than once.`)
+  const schema = QUERIES.get(pattern)
+  if (!schema) return badRequest('This endpoint has no parameters in the contract.')
+  const result = schema.safeParse(Object.fromEntries(query))
+  if (!result.success) {
+    const [issue] = result.error.issues
+    if (issue?.code === 'unrecognized_keys') {
+      return badRequest(`This endpoint takes no ${issue.keys[0]} parameter.`)
+    }
+    const param = String(issue?.path[0] ?? 'locale')
+    if (param === 'locale') return localeError()
+    return badRequest(`The ${param} parameter is not one this endpoint accepts.`)
+  }
+  return null
+}
+
+const localeError = () =>
+  badRequest(`The locale parameter must be one of ${kernel.locales.map((l) => l.code).join(', ')}.`)
 
 /** The public holders of one seat today. */
 async function seatHolders(
@@ -1635,6 +1694,118 @@ async function seatHandler(
     }),
   )
 }
+
+/**
+ * A place that matched a search, with every seat that answers for it today,
+ * from the top down: national seats, the areas above it, the place itself,
+ * then the areas inside it (section 7.11). A whole country lists only its
+ * national seats, since everything is inside it.
+ */
+async function placeOf(
+  payload: Payload,
+  locale: TypedLocale,
+  id: string,
+  now: Date,
+): Promise<PlaceResult | null> {
+  const { docs } = await payload.find({
+    collection: 'areas',
+    joins: false,
+    where: { and: [{ id: { equals: id } }, publishedInLocale(locale)] },
+    locale,
+    depth: 0,
+    limit: 1,
+    overrideAccess: false,
+  })
+  const [doc] = docs
+  const area = doc ? toAreaSummary(doc) : null
+  const countryId = doc ? idOf(doc.country) : null
+  if (!doc || !area || !countryId) return null
+  const { docs: countries } = await payload.find({
+    collection: 'countries',
+    joins: false,
+    where: { and: [{ id: { equals: countryId } }, publishedInLocale(locale)] },
+    locale,
+    depth: 0,
+    limit: 1,
+    overrideAccess: false,
+  })
+  const code = countries[0]?.code
+  if (!code) return null
+  const family = await areaFamily(payload, doc.id)
+  const above = [...family.ancestors].reverse()
+  const below = doc.type === 'country' ? [] : family.descendants
+  // National seats first, then the areas above, the country first, then this
+  // place, then everything inside it.
+  const rank = new Map<string, number>([
+    ...above.map((areaId, i) => [areaId, i + 1] as const),
+    [doc.id, above.length + 1],
+    ...below.map((areaId) => [areaId, above.length + 2] as const),
+  ])
+  const ids = [...rank.keys()]
+  const [holders, offices, areas] = await Promise.all([
+    holdersBySeat(
+      payload,
+      countryId,
+      locale,
+      { or: [{ area: { in: ids } }, { area: { exists: false } }] },
+      now,
+    ),
+    officeMap(payload, countryId, locale),
+    areaMap(payload, ids, locale),
+  ])
+  const seats = [...holders.entries()].flatMap(([key, list]) => {
+    const [officeKey = '', areaKey = ''] = key.split('|')
+    const entry = offices.get(officeKey)
+    const seatArea = areaKey ? areas.get(areaKey) : null
+    if (!entry || seatArea === undefined) return []
+    const seat: Representative = { office: officeRef(entry.office), area: seatArea, holders: list }
+    return [{ seat, rank: areaKey ? (rank.get(areaKey) ?? ids.length) : 0, order: entry.order }]
+  })
+  seats.sort(
+    (a, b) =>
+      a.rank - b.rank ||
+      a.order - b.order ||
+      (a.seat.area?.name ?? '').localeCompare(b.seat.area?.name ?? ''),
+  )
+  // Seats inside a large place, such as a region with thousands of wards, are
+  // cut first: the list is in order, top first (D84).
+  return {
+    country: code,
+    area,
+    representatives: seats.slice(0, MAX_REPRESENTATIVES).map((s) => s.seat),
+  }
+}
+
+/** The most seats a place lists. A county with every constituency fits well within it. */
+const MAX_REPRESENTATIVES = 60
+
+/**
+ * Logs a search (section 18) and tells the analytics port. A search is
+ * answered even if either fails, so a failure goes to the log only.
+ */
+async function recordSearch(
+  payload: Payload,
+  search: { query: string; locale: string; country: string | null; results: number },
+): Promise<void> {
+  try {
+    await logSearch(payload, search)
+    const analytics = kernel.adapters.analytics
+    await analytics.searchEvent(
+      {
+        query: search.query,
+        locale: search.locale,
+        ...(search.country ? { country: search.country } : {}),
+        resultCount: search.results,
+      },
+      await kernel.context(payload, ownerOf(analytics)),
+    )
+  } catch (error) {
+    payload.logger.error({ err: error, msg: 'Could not log a search' })
+  }
+}
+
+/** Every path the handlers answer, such as `/countries/:code`. */
+export const V1_PATTERNS: readonly string[] = Object.keys(handlers)
 
 /** A path segment decoded, or null when its percent-escapes are malformed, such as `%E0%A4%A`. */
 const decode = (part: string): string | null => {
@@ -1679,11 +1850,10 @@ export async function handleV1(
   if (!route) return undefined
   const handler = handlers[route.pattern]
   if (!handler) return undefined
+  const problem = checkQuery(route.pattern, query)
+  if (problem) return problem
   // Every endpoint answers in one language, which the caller names (section 12.2).
   const locale = query.get('locale') ?? ''
-  if (!inUse(locale)) {
-    const codes = kernel.locales.map((l) => l.code).join(', ')
-    return { status: 400, body: { error: `The locale parameter must be one of ${codes}.` } }
-  }
+  if (!inUse(locale)) return localeError()
   return handler({ payload, params: route.params, locale, query })
 }

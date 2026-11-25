@@ -7,6 +7,7 @@ import { Flag } from './Flag'
 import { LangToggle } from './LangToggle'
 import { MobileMenu } from './MobileMenu'
 import { localePath } from './paths'
+import { SearchIcon, searchPath } from './search'
 
 export type ShellData = {
   site: SiteInfo
@@ -142,6 +143,10 @@ function MenuLinks({ site, countries, active }: Omit<ShellData, 'logo'>) {
     )
   return (
     <>
+      <Link href={searchPath(site.locale)} className={row(false)}>
+        <SearchIcon size={20} />
+        {site.strings.search}
+      </Link>
       {countries.map((c) => (
         <Link
           key={c.code}
@@ -186,6 +191,19 @@ export function SiteHeader({ overlay = false, ...data }: ShellData & { overlay?:
           </nav>
         )}
         <div className="ms-auto flex min-w-0 items-center gap-2 sm:gap-3 nav:ms-0">
+          <Link
+            href={searchPath(site.locale)}
+            aria-label={t.search}
+            title={t.search}
+            className={cn(
+              'size-10 flex-none items-center justify-center rounded-full text-ink hover:bg-tile hover:text-ink',
+              // On a phone there is no room beside the language switch, so
+              // search is the menu's first link.
+              hasNav ? 'hidden sm:flex' : 'flex',
+            )}
+          >
+            <SearchIcon size={18} />
+          </Link>
           <LangToggle locale={site.locale} languages={site.languages} label={t.language} />
           {hasNav && (
             <MobileMenu

@@ -10,7 +10,8 @@ import * as migration_20261120_083653_publishing_cascade from './20261120_083653
 import * as migration_20261120_102714_native_verification from './20261120_102714_native_verification'
 import * as migration_20261124_173822_claim_updates from './20261124_173822_claim_updates'
 import * as migration_20261125_085438_plugin_tika_settings from './20261125_085438_plugin_tika_settings'
-import * as migration_20261125_092657_plugin_check from './20261125_092657_plugin_check'
+import * as migration_20261125_133015_search from './20261125_133015_search'
+import * as migration_20261125_143448_plugin_check from './20261125_143448_plugin_check'
 
 export const migrations = [
   {
@@ -74,8 +75,13 @@ export const migrations = [
     name: '20261125_085438_plugin_tika_settings',
   },
   {
-    up: migration_20261125_092657_plugin_check.up,
-    down: migration_20261125_092657_plugin_check.down,
-    name: '20261125_092657_plugin_check',
+    up: migration_20261125_133015_search.up,
+    down: migration_20261125_133015_search.down,
+    name: '20261125_133015_search',
+  },
+  {
+    up: migration_20261125_143448_plugin_check.up,
+    down: migration_20261125_143448_plugin_check.down,
+    name: '20261125_143448_plugin_check',
   },
 ]

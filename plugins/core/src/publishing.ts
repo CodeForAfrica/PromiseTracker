@@ -17,6 +17,7 @@ import type { RecordStatus } from './access'
 import { maySetRecordStatus, signedIn, userCan } from './access'
 import { afterCommit } from './afterCommit'
 import { refreshTags } from './cache'
+import { indexLater } from './search'
 
 /**
  * Publishing rules (section 8).
@@ -256,6 +257,10 @@ export async function recomputePublishing(
       req,
       returning: false,
     })
+  }
+  // Written without a save, so no hook brings the record's search entry up to date.
+  if (changed) {
+    await indexLater({ payload, transactionID: req.transactionID }, { collection: slug, id })
   }
   const country = slug === 'countries' ? idOf(doc.id) : idOf(doc.country)
   return { before, after: publishedIn, problems, changed, country }

@@ -22,6 +22,25 @@ test('the API serves the same data the page shows', async ({ request }) => {
   expect((await request.get('/api/v1/unknown')).status()).toBe(404)
 })
 
+test('the API answers with an ETag, and 304 when nothing changed (section 12.2)', async ({
+  request,
+}) => {
+  const first = await request.get('/api/v1/site?locale=en')
+  const etag = first.headers().etag ?? ''
+  expect(etag).toMatch(/^"[\w-]+"$/)
+  expect(first.headers()['cache-control']).toBe('public, max-age=0, must-revalidate')
+  const again = await request.get('/api/v1/site?locale=en', {
+    headers: { 'If-None-Match': etag },
+  })
+  expect(again.status()).toBe(304)
+  const bad = await request.get('/api/v1/countries?locale=en&page=2')
+  expect(bad.status()).toBe(400)
+  expect(await bad.json()).toEqual({ error: 'This endpoint takes no page parameter.' })
+  const openapi = await request.get('/api/v1/openapi.json')
+  expect(openapi.ok()).toBe(true)
+  expect(await openapi.json()).toMatchObject({ openapi: '3.1.0' })
+})
+
 test('the admin is mounted at /admin', async ({ page }) => {
   await page.goto('/admin')
   await expect(page).toHaveURL(/\/admin/)

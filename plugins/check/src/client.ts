@@ -112,7 +112,7 @@ export type NewItem = {
 
 /**
  * Creates a Check item of type Claim (section 5.2). It sets no status, so the
- * item starts on the workspace's default, which may not be `undetermined` (D90).
+ * item starts on the workspace's default, which may not be `undetermined` (D91).
  */
 export async function createItem(
   credentials: CheckCredentials,
@@ -245,7 +245,7 @@ const PUBLISHED = `
  * Check's search reads at most 10,000 results deep (its `window_size`), so a
  * poll reads at most that many. Results come most recently active first, so a
  * report whose webhook was lost is near the top, and one deeper down has not
- * changed since an earlier poll reconciled it (D92).
+ * changed since an earlier poll reconciled it (D93).
  */
 export const SEARCH_WINDOW = 10_000
 const MAX_PAGES = SEARCH_WINDOW / PAGE_SIZE

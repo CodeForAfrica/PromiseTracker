@@ -334,3 +334,51 @@ test('a claim page ships under 150 KB of JavaScript, compressed (section 17)', a
   const total = (await Promise.all(sizes)).reduce((sum, n) => sum + n, 0)
   expect(total).toBeLessThan(150 * 1024)
 })
+
+test('a search for a place lists everyone who represents it, from the president down', async ({
+  page,
+}) => {
+  await page.goto('/en/search?q=Nairobi')
+  await expect(page.getByRole('heading', { level: 1, name: 'Nairobi' })).toBeVisible()
+  const place = page.getByRole('region', { name: 'Nairobi County' })
+  const names = place.getByRole('link').filter({ hasNotText: 'Open the page' })
+  await expect(names).toContainText([
+    'Amani Otieno',
+    'Achieng Wekesa',
+    'Halima Yusuf',
+    'Wanjiru Kamau',
+    'Juma Hassan',
+  ])
+  // A former governor and a member whose term has not started represent no one today.
+  await expect(place).not.toContainText('Baraka Njoroge')
+  await expect(place).not.toContainText('Kito Barasa')
+  await expectAccessible(page)
+})
+
+test('on a phone, search is the first link in the menu', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/en')
+  await expect(page.getByRole('banner').getByRole('link', { name: 'Search' })).toBeHidden()
+  await page.getByRole('button', { name: 'Menu' }).click()
+  const menu = page.getByRole('dialog')
+  await expect(menu.getByRole('navigation').getByRole('link').first()).toHaveText('Search')
+  await menu.getByRole('link', { name: 'Search' }).click()
+  await expect(page).toHaveURL(/\/en\/search$/)
+})
+
+test('the header leads to search, and the address keeps the search', async ({ page }) => {
+  await page.goto('/en')
+  await page.getByRole('banner').getByRole('link', { name: 'Search' }).click()
+  await expect(page).toHaveURL(/\/en\/search$/)
+  await page
+    .getByRole('searchbox', { name: 'Search for a place, a person or a claim' })
+    .fill('Wekesa')
+  await page.getByRole('button', { name: 'Search' }).click()
+  await expect(page).toHaveURL(/\/en\/search\?q=Wekesa$/)
+  await expect(page.getByRole('region', { name: 'People' })).toContainText('Achieng Wekesa')
+  await page.goto('/en/search?q=zzqxv')
+  await expect(
+    page.getByText('Nothing on the record matches “zzqxv”.', { exact: false }),
+  ).toBeVisible()
+  await expectAccessible(page)
+})

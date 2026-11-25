@@ -1,4 +1,4 @@
-import { createLocalTransport, getPayload, handleV1 } from '@promisetracker/cms'
+import { getPayload, handleV1 } from '@promisetracker/cms'
 import type { CountryCode } from '@promisetracker/plugin-core'
 import { PIPELINE_SAVE, recomputeAll, setTagRefresher } from '@promisetracker/plugin-core'
 import { createSdk } from '@promisetracker/sdk'
@@ -6,6 +6,7 @@ import type { Payload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { unusedCountryCodes } from '../countries'
+import { testTransport } from './transport'
 
 /**
  * Publishing rules and the cascade (section 8), with a fictional actor and
@@ -20,7 +21,7 @@ describe('publishing rules and the cascade', () => {
   let topic: string
   const claims: Record<string, string> = {}
   const refreshed: string[][] = []
-  const sdk = createSdk(createLocalTransport())
+  const sdk = createSdk(testTransport())
   const mailpit = `http://localhost:${process.env.PT_MAIL_UI_PORT || '8025'}/api/v1`
 
   const v1 = (route: string, locale = 'en') =>
@@ -271,7 +272,8 @@ describe('publishing rules and the cascade', () => {
       payload.create({
         collection: 'users',
         data: {
-          email: `${role}-${code}@example.org`,
+          // Unique each run: these users stay, and the file runs over both transports.
+          email: `${role}-${crypto.randomUUID()}@example.org`,
           password: 'a-test-password-only',
           name: `Trash test ${role}`,
           roles: [role],
