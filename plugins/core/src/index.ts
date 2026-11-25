@@ -28,6 +28,12 @@ import { csvImporter, xlsxImporter } from './imports/readers'
 import { Areas, Offices } from './places'
 import { ClaimTypes, RatingScales } from './ratings'
 import { SearchLog } from './search'
+import {
+  NewsletterSignups,
+  SubmissionFiles,
+  Submissions,
+  submissionsDigestTask,
+} from './submissions'
 import { Users } from './users'
 import { submitForVerificationTask } from './verification'
 
@@ -68,6 +74,8 @@ export const corePlugin = definePromiseTrackerPlugin({
     ClaimUpdates,
     Evidence,
     RatingReviews,
+    Submissions,
+    SubmissionFiles,
     Topics,
     RatingScales,
     ClaimTypes,
@@ -75,6 +83,7 @@ export const corePlugin = definePromiseTrackerPlugin({
     Imports,
     ImportMappings,
     SearchLog,
+    NewsletterSignups,
     Users,
   ],
   tasks: [
@@ -87,6 +96,7 @@ export const corePlugin = definePromiseTrackerPlugin({
     dailyPublishingTask as never,
     refreshCountsTask as never,
     submitForVerificationTask as never,
+    submissionsDigestTask as never,
   ],
   workflows: [processDocumentWorkflow as never],
   widgets: [
@@ -99,6 +109,13 @@ export const corePlugin = definePromiseTrackerPlugin({
     {
       slug: 'awaiting-verification',
       Component: '@promisetracker/plugin-core/widgets#AwaitingVerification',
+      minWidth: 'small',
+      maxWidth: 'medium',
+    },
+    {
+      slug: 'waiting-submissions',
+      label: 'Submissions',
+      Component: '@promisetracker/plugin-core/widgets#WaitingSubmissions',
       minWidth: 'small',
       maxWidth: 'medium',
     },
@@ -166,6 +183,7 @@ export {
 
 import { cascadePublishingTask, dailyPublishingTask, recomputePublishingTask } from './publishing'
 
+export * from './captcha'
 export { VERDICTS, verdictOf } from './claims'
 export type { ImportTarget } from './imports/targets'
 export { guessMapping, IMPORT_TARGETS, mappingKeys, planRow } from './imports/targets'
@@ -200,6 +218,7 @@ export {
   skipSync,
 } from './search'
 export * from './slugs'
+export * from './submissions'
 export { Users } from './users'
 // Widgets are loaded by the admin through `@promisetracker/plugin-core/widgets`, never from
 // here: they import Payload's admin components, which the public site must not ship.

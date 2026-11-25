@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto'
 import { openApiDocument } from '@promisetracker/contract'
 import type { Payload } from 'payload'
 
+import { captchaChallenge, handleForm, inputOf, inputOfFormData } from './forms'
 import { handleV1 } from './v1'
 
 /**
@@ -74,6 +75,10 @@ export async function respondV1(
       const { text, etag } = openApiText()
       return send(request, text, etag, 200)
     }
+    if (path === '/captcha') {
+      // Each challenge is used once, so none is ever cached.
+      return uncached(await captchaChallenge(await getPayload()), 200)
+    }
     const query = new URL(request.url).searchParams
     const result = await handleV1(await getPayload(), path, query)
     if (result === undefined) return uncached({ error: 'not-found' }, 404)
@@ -84,6 +89,39 @@ export async function respondV1(
   } catch (error) {
     // The public contract always answers in JSON. Details go to the log only.
     console.error(`GET /api/v1${path} failed`, error)
+    return uncached({ error: 'Internal server error' }, 500)
+  }
+}
+
+/** The most a form body may be: three files and the text around them. */
+const MAX_FORM_BYTES = 31 * 1024 * 1024
+
+/** The sender's address, from the proxy in front. Used only for the captcha's rate limit. */
+function senderOf(request: Request) {
+  const forwarded = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+  const ip = forwarded || request.headers.get('x-real-ip')?.trim() || undefined
+  const userAgent = request.headers.get('user-agent') ?? undefined
+  return { ...(ip ? { ip } : {}), ...(userAgent ? { userAgent } : {}) }
+}
+
+/** Answers a POST to `/api/v1{path}`: the forms (section 12.1). Never cached. */
+export async function respondForm(
+  request: Request,
+  path: string,
+  getPayload: () => Promise<Payload>,
+): Promise<Response> {
+  try {
+    const length = Number(request.headers.get('content-length') ?? 0)
+    if (length > MAX_FORM_BYTES) return uncached({ error: 'files' }, 413)
+    const type = request.headers.get('content-type') ?? ''
+    const input = type.includes('application/json')
+      ? inputOf(((await request.json().catch(() => null)) ?? {}) as Record<string, unknown>)
+      : inputOfFormData(await request.formData().catch(() => new FormData()))
+    const result = await handleForm(await getPayload(), path, input, senderOf(request))
+    if (result === undefined) return uncached({ error: 'not-found' }, 404)
+    return uncached(result.body, result.status)
+  } catch (error) {
+    console.error(`POST /api/v1${path} failed`, error)
     return uncached({ error: 'Internal server error' }, 500)
   }
 }

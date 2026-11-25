@@ -2,6 +2,7 @@ import { Card } from '@payloadcms/ui'
 import type { Where, WidgetServerProps } from 'payload'
 
 import { EMPTY_SEARCH_DAYS, emptySearches } from './search'
+import { SUBMISSIONS, WAITING_SUBMISSIONS } from './submissions'
 import { AWAITING_VERIFICATION, whereToQuery } from './verificationQueue'
 
 /**
@@ -36,6 +37,40 @@ export async function AwaitingVerification({ req }: WidgetServerProps) {
         href={queue}
         buttonAriaLabel="Show the claims awaiting verification"
       />
+    </div>
+  )
+}
+
+/**
+ * Submissions waiting for a moderator, linking to the queue, and how many
+ * changed the record: those accepted, each of which became a claim update.
+ */
+export async function WaitingSubmissions({ req }: WidgetServerProps) {
+  const count = (where: Where) =>
+    req.payload.count({ collection: SUBMISSIONS, where, overrideAccess: false, req })
+  const [waiting, accepted] = await Promise.all([
+    count(WAITING_SUBMISSIONS),
+    count({ status: { equals: 'accepted' } }),
+  ])
+  const queue = `${req.payload.config.routes.admin}/collections/${SUBMISSIONS}?${whereToQuery(WAITING_SUBMISSIONS)}`
+  const n = waiting.totalDocs
+  const title =
+    n === 0 ? 'No submissions waiting' : `${n} ${n === 1 ? 'submission' : 'submissions'} waiting`
+  const changed = accepted.totalDocs
+  return (
+    <div className="collections__group">
+      <h2 className="collections__label">Submissions</h2>
+      <Card
+        id="card-waiting-submissions"
+        title={title}
+        href={queue}
+        buttonAriaLabel="Show the submissions waiting for a moderator"
+      />
+      <p style={{ marginTop: 'calc(var(--base) / 2)' }}>
+        {changed === 0
+          ? 'None has changed the record yet.'
+          : `${changed} ${changed === 1 ? 'has' : 'have'} changed the record.`}
+      </p>
     </div>
   )
 }

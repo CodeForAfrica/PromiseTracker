@@ -1,4 +1,4 @@
-import { createLocalTransport, getPayload, respondV1 } from '@promisetracker/cms'
+import { createLocalTransport, getPayload, respondForm, respondV1 } from '@promisetracker/cms'
 import type { Transport } from '@promisetracker/sdk'
 import { createHttpTransport } from '@promisetracker/sdk'
 
@@ -14,7 +14,9 @@ export function testTransport(): Transport {
   return createHttpTransport('http://promisetracker.test', {}, async (input, init) => {
     const request = new Request(input, init)
     const path = new URL(request.url).pathname.replace(/^\/api\/v1/, '')
-    return respondV1(request, path, getPayload)
+    return request.method === 'POST'
+      ? respondForm(request, path, getPayload)
+      : respondV1(request, path, getPayload)
   })
 }
 

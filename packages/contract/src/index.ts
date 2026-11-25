@@ -105,10 +105,72 @@ export const STRING_KEYS = [
   'searchClaims',
   'searchTopics',
 ] as const
-export type StringKey = (typeof STRING_KEYS)[number]
+
+/**
+ * The public forms' text (section 12.1), in the defaults only. Editors cannot
+ * change it yet: each editable string is a localized column, and the site
+ * settings' query cannot read more than about 100 of them in Postgres.
+ */
+export const FORM_STRING_KEYS = [
+  'seen',
+  'updateLede',
+  'whatSending',
+  'kindEvidence',
+  'kindCorrection',
+  'kindChanged',
+  'kindEvidenceHint',
+  'kindCorrectionHint',
+  'kindChangedHint',
+  'attached',
+  'attachedClaim',
+  'attachedActor',
+  'attachedWhere',
+  'attachedRating',
+  'attachedNote',
+  'addFile',
+  'upTo',
+  'removeFile',
+  'tooBig',
+  'whatSaw',
+  'whatSawPlaceholder',
+  'whatSawRequired',
+  'whereSpecific',
+  'prefilled',
+  'evidenceLink',
+  'yourName',
+  'creditMe',
+  'reach',
+  'reachPlaceholder',
+  'reachNote',
+  'send',
+  'sending',
+  'noAccount',
+  'received',
+  'thanks',
+  'thanksBody',
+  'reference',
+  'sent',
+  'noEta',
+  'formFailed',
+  'tooMany',
+  'privacy',
+  'privacyTitle',
+  'privacyBody',
+  'subscribe',
+  'subscribeLine',
+  'subscribeEmail',
+  'subscribeInvalid',
+  'subscribeDone',
+  'confirmTitle',
+  'confirmDone',
+  'confirmFailed',
+] as const
+export type StringKey = (typeof STRING_KEYS)[number] | (typeof FORM_STRING_KEYS)[number]
 
 export const Strings = z.object(
-  Object.fromEntries(STRING_KEYS.map((key) => [key, z.string()])) as Record<StringKey, z.ZodString>,
+  Object.fromEntries(
+    [...STRING_KEYS, ...FORM_STRING_KEYS].map((key) => [key, z.string()]),
+  ) as Record<StringKey, z.ZodString>,
 )
 export type Strings = z.infer<typeof Strings>
 
@@ -577,6 +639,17 @@ export const isNotAvailable = (value: unknown): value is NotAvailable =>
 
 /** Any error the API returns. */
 export const ApiError = z.object({ error: z.string() })
+
+/** What a form shows for the captcha (D32): a challenge for the browser to solve. */
+export const CaptchaChallenge = z.object({
+  kind: z.string(),
+  data: z.record(z.string(), z.unknown()),
+})
+export type CaptchaChallenge = z.infer<typeof CaptchaChallenge>
+
+/** The answer to a citizen submission: a reference the sender can quote. */
+export const SubmissionReceipt = z.object({ reference: z.string() })
+export type SubmissionReceipt = z.infer<typeof SubmissionReceipt>
 
 const ServiceHealth = z.object({
   healthy: z.boolean(),

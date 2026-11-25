@@ -19,19 +19,20 @@ explains the rules behind each step.
 11. Site settings
 12. Publishing: what is public, and when
 13. Search
+14. Submissions and the newsletter
 
 The admin's menu groups record types by what they are for:
 
-| Group          | Holds                                                                               |
-| -------------- | ----------------------------------------------------------------------------------- |
-| People         | Actors, Terms                                                                       |
-| Claims         | Claims, Claim updates, Evidence, Rating reviews, Topics, Rating scales, Claim types |
-| Places         | Countries, Areas, Offices, Boundaries                                               |
-| Sources        | Documents, Source files, Extractions                                                |
-| Media library  | Images, such as actor photos                                                        |
-| Imports        | Imports, Saved mappings                                                             |
-| Administration | Users, Settings, Search index, Search log                                           |
-| Public site    | Site settings                                                                       |
+| Group          | Holds                                                                                            |
+| -------------- | ------------------------------------------------------------------------------------------------ |
+| People         | Actors, Terms                                                                                    |
+| Claims         | Claims, Claim updates, Evidence, Rating reviews, Submissions, Topics, Rating scales, Claim types |
+| Places         | Countries, Areas, Offices, Boundaries                                                            |
+| Sources        | Documents, Source files, Extractions                                                             |
+| Media library  | Images, such as actor photos                                                                     |
+| Imports        | Imports, Saved mappings                                                                          |
+| Administration | Users, Settings, Search index, Search log, Newsletter sign-ups                                   |
+| Public site    | Site settings                                                                                    |
 
 ## 1. Signing in
 
@@ -775,3 +776,41 @@ To see the searches that found nothing, add the **Searches that found nothing** 
 dashboard: choose **Edit Dashboard**, then **Add Widget**. It lists the last 30 days' searches with
 no results, most often first. A place that keeps appearing may be missing from the record, or
 spelt another way. Add the area, or check how its name is spelt.
+
+## 14. Submissions and the newsletter
+
+Readers send updates about a claim from the **Send it in** form under every claim: new evidence,
+a correction, or a note that something has changed. They need no account. Each form is checked
+by the site itself, with no outside service, and each connection can send ten forms an hour.
+
+### Moderating
+
+**Claims → Submissions** lists what readers sent, newest first. Moderators, editors and
+super-admins can open it. Add the **Submissions** widget to your dashboard to see how many are
+waiting and how many have changed the record. Its link opens the ones waiting. Moderators also
+get an email each morning when new submissions came in the day before.
+
+Open a submission to read it and its files. Then set **Status**:
+
+- **accepted**: it should change the record. Saving makes a draft claim update on the claim, with
+  the reader's words as its narrative. The sender is credited by name only if they gave a name and
+  ticked the box agreeing to it. An editor then finishes the update, with a rating and evidence,
+  and publishes it. Nothing is public until then.
+- **rejected** or **spam**: nothing changes. These are deleted after 180 days.
+
+Who decided is recorded. **Note** is for moderators and is never shown publicly.
+
+### The sender's details
+
+A name and a way to reach the sender are optional, and never published. If a sender asks for
+their details to be deleted, clear **Name** and **Contact** in the **Sender** section and save.
+The scrambled network address cannot identify anyone, and stays.
+
+### The newsletter
+
+The sign-up at the bottom of every page stores the address and sends a confirmation email. Nobody
+is subscribed until they open the link in it. Super-admins see the list in **Administration →
+Newsletter sign-ups**, and delete an entry when someone asks to leave.
+
+Both forms link to the privacy notice at `/{language}/privacy`, which says what is collected and
+why.

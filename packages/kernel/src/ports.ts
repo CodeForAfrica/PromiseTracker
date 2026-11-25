@@ -212,7 +212,8 @@ export interface CaptchaProvider extends Adapter {
   challenge(ctx: AdapterContext): Promise<{ kind: string; data: Record<string, unknown> }>
   verify(
     token: string,
-    request: { ip?: string; userAgent?: string },
+    /** `trap` is the form's hidden trap field, which a person leaves empty. */
+    request: { ip?: string; userAgent?: string; trap?: string },
     ctx: AdapterContext,
   ): Promise<boolean>
 }
