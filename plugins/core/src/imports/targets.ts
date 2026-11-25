@@ -1,13 +1,21 @@
 import type { Payload } from 'payload'
 
 import { ACTOR_KINDS, GENDERS, INSTITUTION_TYPES } from '../actors'
-import { partialDatePrecision } from '../claims'
+import { partialDatePrecision, VERDICTS } from '../claims'
 import { REGISTERED_LOCALES } from '../locales'
 import { AREA_PAGE, AREA_TYPES } from '../places'
 import { slugify } from '../slugs'
+import { EVIDENCE_KINDS, UPDATE_KINDS } from '../updates'
 
 /** What an import can create or update (section 9.6). Others join with their issues. */
-export const IMPORT_TARGETS = ['areas', 'offices', 'actors', 'terms', 'claims'] as const
+export const IMPORT_TARGETS = [
+  'areas',
+  'offices',
+  'actors',
+  'terms',
+  'claims',
+  'claim-updates',
+] as const
 export type ImportTarget = (typeof IMPORT_TARGETS)[number]
 
 /** A field a column can fill. A localized field also has one per language, as `name:fr`. */
@@ -81,6 +89,26 @@ const FIELDS: Record<ImportTarget, readonly TargetField[]> = {
     { key: 'deadlineText', label: 'Deadline in words', localized: true },
     { key: 'sourceUrl', label: 'Source link' },
     { key: 'sourceLocator', label: 'Where in the source' },
+    // Only someone who may set a verdict can import these (section 13.2).
+    { key: 'verdict', label: 'Verdict', options: VERDICTS },
+    { key: 'rationale', label: 'Rationale', localized: true },
+  ],
+  // A claim update has no slug: it is found by its claim and date (section 9.6).
+  'claim-updates': [
+    { key: 'claim', label: 'Claim', required: true, reference: true },
+    { key: 'date', label: 'Date', required: true, partialDate: true },
+    { key: 'rating', label: 'Rating', required: true },
+    { key: 'kind', label: 'Kind', options: UPDATE_KINDS },
+    { key: 'title', label: 'Title', required: true, localized: true },
+    { key: 'narrative', label: 'Narrative', localized: true },
+    { key: 'attribution', label: 'Attribution' },
+    // One piece of evidence per row, found by its link or added.
+    { key: 'evidenceLink', label: 'Evidence link' },
+    { key: 'evidenceTitle', label: 'Evidence title' },
+    { key: 'evidenceKind', label: 'Evidence kind', options: EVIDENCE_KINDS },
+    { key: 'evidencePublisher', label: 'Evidence publisher' },
+    { key: 'evidenceDate', label: 'Evidence date', partialDate: true },
+    { key: 'evidenceFinding', label: 'Evidence finding' },
   ],
 }
 
@@ -205,9 +233,11 @@ export function planRow(
   // A claim's slug comes from its title, as it does in the admin.
   const named = data.name ?? data.title
   const name = typeof named === 'string' ? named : ''
-  // A term has no slug: it is found by its actor, office, area and start.
-  const slug = target === 'terms' ? '' : cell('slug') || slugify(name)
-  if (!slug && name) errors.push('The slug cannot be made from the name. Add a slug column.')
+  // A term or an update has no slug: each is found by its natural key.
+  const keyed = target === 'terms' || target === 'claim-updates'
+  const slug = keyed ? '' : cell('slug') || slugify(name)
+  if (!keyed && !slug && name)
+    errors.push('The slug cannot be made from the name. Add a slug column.')
   const parent = target === 'areas' ? cell('parent') || null : null
   return { line, slug, data, translations, parent: parent ? slugify(parent) : null, refs, errors }
 }
@@ -215,7 +245,7 @@ export function planRow(
 /** The records of a target in one country, by slug, in every language. */
 export async function existingBySlug(
   payload: Payload,
-  target: Exclude<ImportTarget, 'terms'>,
+  target: Exclude<ImportTarget, 'terms' | 'claim-updates'>,
   country: string,
 ): Promise<Map<string, Record<string, unknown>>> {
   const query = {

@@ -45,6 +45,7 @@
     "@promisetracker/kernel": "workspace:*",
     "@promisetracker/plugin-core": "workspace:*",
     "@promisetracker/plugin-site": "workspace:*",
+    "@promisetracker/plugin-tika": "workspace:*",
     "@promisetracker/sdk": "workspace:*",
     "@promisetracker/ui": "workspace:*",
     "@types/node": "catalog:",

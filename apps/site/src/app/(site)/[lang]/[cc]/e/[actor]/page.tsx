@@ -7,6 +7,7 @@ import {
   CountrySection,
   FiguresBlock,
   KeyClaim,
+  LatestChanges,
   localePath,
   NotAvailableNotice,
   PageShell,
@@ -127,6 +128,7 @@ export default async function ActorPage({ params, searchParams }: Props) {
           )}
         </CountrySection>
       )}
+      <LatestChanges site={shell.site} changes={actor.latestChanges} />
       <TermList site={shell.site} code={cc} actor={actor} />
       <ClosingSummary site={shell.site} code={cc} actor={actor} />
     </PageShell>

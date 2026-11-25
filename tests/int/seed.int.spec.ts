@@ -1,7 +1,7 @@
 import { getPayload } from '@promisetracker/cms'
 import { NotAvailable, V1_ENDPOINTS } from '@promisetracker/contract'
 import { slugify } from '@promisetracker/plugin-core'
-import { createSdk } from '@promisetracker/sdk'
+import { createSdk, isNotAvailable } from '@promisetracker/sdk'
 import type { Payload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
@@ -176,6 +176,22 @@ describe('seed data', () => {
     })
   })
 
+  it('rates claims from their seeded updates, with evidence', async () => {
+    const claim = await sdk.getClaim('en', 'ke', 'cut-the-price-of-fertiliser')
+    if (isNotAvailable(claim)) throw new Error('The claim is not public.')
+    expect(claim.rating?.slug).toBe('completed')
+    expect(claim.timeline).toHaveLength(2)
+    expect(claim.evidence.every((e) => e.url?.startsWith('https://'))).toBe(true)
+    const ruto = await sdk.getActor('en', 'ke', 'william-ruto')
+    if (isNotAvailable(ruto)) throw new Error('The actor is not public.')
+    expect(ruto.latestChanges.length).toBeGreaterThan(0)
+    const audit = await sdk.getClaimHistory('fr', 'sn', 'audit-public-finances')
+    if (isNotAvailable(audit)) throw new Error('The history is not public in French.')
+    expect(audit.updates[0]?.title).toBe(
+      'La Cour des comptes publie son audit des finances publiques',
+    )
+  })
+
   it("answers every endpoint in the contract's shape (section 15, rule 3)", async () => {
     const transport = testTransport()
     const [claim] = (await sdk.getClaims('en', 'ke', { actor: 'william-ruto', limit: 1 })).items
@@ -194,6 +210,7 @@ describe('seed data', () => {
       ['/countries/{code}/actors/{slug}', '/countries/ke/actors/william-ruto'],
       ['/countries/{code}/claims', '/countries/ke/claims', { sort: 'deadline' }],
       ['/countries/{code}/claims/{slug}', `/countries/ke/claims/${claim.slug}`],
+      ['/countries/{code}/claims/{slug}/history', `/countries/ke/claims/${claim.slug}/history`],
       ['/topics', '/topics'],
       ['/topics/{slug}', '/topics/housing'],
       ['/redirects', '/redirects', { path: '/ke/president' }],

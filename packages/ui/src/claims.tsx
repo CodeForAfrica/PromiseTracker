@@ -2,7 +2,6 @@ import type {
   Claim,
   ClaimSummary,
   Figures,
-  PartialDate,
   RatingScale,
   SiteInfo,
   TopicSummary,
@@ -13,28 +12,14 @@ import type { ReactNode } from 'react'
 import { actorPath, CountrySection, seatLabel } from './actors'
 import { Container } from './Container'
 import { fill } from './fill'
-import { localePath } from './paths'
+import { ClaimRecord, LastReviewed } from './history'
+import { formatPartialDate } from './partialDate'
+import { claimPath, localePath } from './paths'
 import { RatingChip, RatingLegend, TierBar } from './ratings'
-
-/** A claim's page: `/{lang}/{cc}/p/{claim}` (section 11.1). */
-export const claimPath = (locale: string, code: string, slug: string): string =>
-  localePath(locale, `/${code}/p/${slug}`)
 
 /** A topic's page: `/{lang}/topics/{topic}`. */
 export const topicPath = (locale: string, slug: string): string =>
   localePath(locale, `/topics/${slug}`)
-
-/** "2027", "August 2027" or "9 August 2027", as precise as the date is. */
-export function formatPartialDate(locale: string, date: PartialDate): string {
-  const when = new Date(`${date.value.padEnd(10, '-01').slice(0, 10)}T00:00:00Z`)
-  const parts: Intl.DateTimeFormatOptions =
-    date.precision === 'year'
-      ? { year: 'numeric' }
-      : date.precision === 'month'
-        ? { year: 'numeric', month: 'long' }
-        : { year: 'numeric', month: 'long', day: 'numeric' }
-  return new Intl.DateTimeFormat(locale, { ...parts, timeZone: 'UTC' }).format(when)
-}
 
 /**
  * How one figure is written: "1 of 3" below the threshold, "33%" above it
@@ -214,8 +199,8 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
 
 /**
  * The claim page's sections that have data (section 10.2): the claim, with
- * who, where, when and by when, and its rating. Evidence, the rating history
- * and the analysis join it with their issues.
+ * who, where, when and by when, its rating with the last-reviewed date, how
+ * the rating changed, and the evidence. The analysis joins it with its issue.
  */
 export function ClaimView({ site, claim }: { site: SiteInfo; claim: Claim }) {
   const t = site.strings
@@ -251,6 +236,7 @@ export function ClaimView({ site, claim }: { site: SiteInfo; claim: Claim }) {
               )}
             </div>
           )}
+          <LastReviewed site={site} claim={claim} />
         </Container>
       </section>
       <Container className="grid gap-10 pt-8 pb-12 md:grid-cols-[2fr_1fr]">
@@ -270,6 +256,7 @@ export function ClaimView({ site, claim }: { site: SiteInfo; claim: Claim }) {
               {claim.summary}
             </p>
           )}
+          <Verification site={site} claim={claim} />
           {claim.sourceUrl && (
             <p className="text-[14px]">
               {t.claimSource}:{' '}
@@ -305,7 +292,46 @@ export function ClaimView({ site, claim }: { site: SiteInfo; claim: Claim }) {
           {byWhen && <Fact label={t.claimByWhen}>{byWhen}</Fact>}
         </dl>
       </Container>
+      <ClaimRecord site={site} claim={claim} />
     </>
+  )
+}
+
+/**
+ * How the claim was checked: credited to PromiseTracker, with the date, the
+ * rationale and any report. Never the name of who checked it (section 13).
+ */
+function Verification({ site, claim }: { site: SiteInfo; claim: Claim }) {
+  const { date, rationale, reportUrl } = claim.verification
+  if (!date && !rationale && !reportUrl) return null
+  const t = site.strings
+  const on = date
+    ? new Intl.DateTimeFormat(site.locale, {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'UTC',
+      }).format(new Date(date))
+    : null
+  return (
+    <section aria-labelledby="verification" className="rounded-lg bg-surface px-5 py-4">
+      <h2 id="verification" className="mb-2 text-[13px] font-semibold text-ink">
+        {t.verifiedTitle}
+      </h2>
+      {on && <p className="text-[13px] text-ink-2">{fill(t.verifiedOn, { date: on })}</p>}
+      {rationale && (
+        <p className="mt-2 max-w-[64ch] text-[15px] leading-[1.6] whitespace-pre-line text-ink-2">
+          {rationale}
+        </p>
+      )}
+      {reportUrl && (
+        <p className="mt-2 text-[14px]">
+          <a href={reportUrl} rel="noopener noreferrer nofollow" className="underline">
+            {t.verifiedReport}
+          </a>
+        </p>
+      )}
+    </section>
   )
 }
 
@@ -363,3 +389,5 @@ export function CountryFigures({
     </ul>
   )
 }
+
+export { claimPath, formatPartialDate }

@@ -9,3 +9,7 @@ export function withoutLocale(pathname: string, locales: readonly string[]): str
   if (first && locales.includes(first)) return rest.length ? `/${rest.join('/')}` : '/'
   return pathname || '/'
 }
+
+/** A claim's page: `/{lang}/{cc}/p/{claim}` (section 11.1). */
+export const claimPath = (locale: string, code: string, slug: string): string =>
+  localePath(locale, `/${code}/p/${slug}`)

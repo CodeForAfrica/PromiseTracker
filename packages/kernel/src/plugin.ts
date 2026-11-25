@@ -429,6 +429,10 @@ function addSettings(globals: readonly GlobalConfig[], manifest: PluginManifest,
         slug: SETTINGS_GLOBAL,
         // Plugin credentials sit with users, in the administrators' part of the menu.
         admin: { group: 'Administration' },
+        // No history: an old credential is replaced, never kept. Version history is
+        // readable by every signed-in user (core's privateHistory), so it would
+        // also widen who can see the settings.
+        versions: false,
         // Settings hold credentials, so only super-admins can read them (section 7.10).
         access: {
           read: ({ req }) => isSuperAdmin(req.user),

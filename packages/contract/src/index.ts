@@ -69,6 +69,22 @@ export const STRING_KEYS = [
   'figuresByCountry',
   'claimsOnTopic',
   'filterCountry',
+  'verifiedOn',
+  'verifiedTitle',
+  'verifiedReport',
+  'lastReviewed',
+  'timelineTitle',
+  'historyTitle',
+  'fullHistory',
+  'backToClaim',
+  'correction',
+  'evidenceTitle',
+  'latestChanges',
+  'reportedBy',
+  'copyCitation',
+  'citationCopied',
+  'citeAs',
+  'citeAsUnreviewed',
   'notFoundTitle',
   'notFoundBody',
   'backHome',
@@ -352,6 +368,44 @@ export const ClaimList = z.object({
 })
 export type ClaimList = z.infer<typeof ClaimList>
 
+export const EVIDENCE_KINDS = ['document', 'dataset', 'social-post', 'article'] as const
+export const UPDATE_KINDS = ['first-rating', 'change', 'correction'] as const
+
+/** A piece of evidence (section 7.6). Links are shown, never fetched. */
+export const Evidence = z.object({
+  id: z.string().min(1),
+  kind: z.enum(EVIDENCE_KINDS),
+  title: z.string().min(1),
+  publisher: z.string().nullable(),
+  date: PartialDate.nullable(),
+  /** The link, or the address of the uploaded file. */
+  url: z.string().nullable(),
+  /** One line saying what the evidence shows. */
+  finding: z.string().nullable(),
+  thumbnail: Image.nullable(),
+})
+export type Evidence = z.infer<typeof Evidence>
+
+/**
+ * A dated entry in a claim's public history (section 7.6): the rating as of
+ * that date, what happened, and the evidence. A correction fixes an earlier
+ * mistake of ours and says so.
+ */
+export const ClaimUpdate = z.object({
+  id: z.string().min(1),
+  date: PartialDate,
+  kind: z.enum(UPDATE_KINDS),
+  rating: Rating.nullable(),
+  title: z.string().min(1),
+  narrative: z.string().nullable(),
+  attribution: z.string().nullable(),
+  evidence: z.array(Evidence),
+})
+export type ClaimUpdate = z.infer<typeof ClaimUpdate>
+
+/** How many updates the claim page shows. The history page shows them all. */
+export const TIMELINE_LENGTH = 5
+
 /** `GET /api/v1/countries/{cc}/claims/{slug}` (section 7.5). */
 export const Claim = ClaimSummary.extend({
   /** The exact words, in the language they were said. */
@@ -369,8 +423,42 @@ export const Claim = ClaimSummary.extend({
   ratedOn: z.string().nullable(),
   lastReviewedAt: z.string().nullable(),
   image: Image.nullable(),
+  /**
+   * How the claim was checked (section 7.5). A published claim is always
+   * verified. Who verified it is internal and never here (section 13).
+   */
+  verification: z.object({
+    /** YYYY-MM-DD. */
+    date: z.string().nullable(),
+    rationale: z.string().nullable(),
+    reportUrl: z.string().nullable(),
+  }),
+  /** How many published updates the claim has. */
+  updateCount: z.number().int().nonnegative(),
+  /** The latest updates, newest first, up to `TIMELINE_LENGTH`. */
+  timeline: z.array(ClaimUpdate),
+  /** Every piece of evidence on the published updates, newest first. */
+  evidence: z.array(Evidence),
+  /**
+   * How to cite the claim (section 12.1): its permanent address and the date
+   * its rating was last reviewed. The address is a path when the site's
+   * public address is not set.
+   */
+  citation: z.object({ url: z.string().min(1), text: z.string().min(1) }),
 })
 export type Claim = z.infer<typeof Claim>
+
+/** `GET /api/v1/countries/{cc}/claims/{slug}/history`: every published update, newest first. */
+export const ClaimHistory = z.object({
+  claim: ClaimSummary,
+  lastReviewedAt: z.string().nullable(),
+  updates: z.array(ClaimUpdate),
+})
+export type ClaimHistory = z.infer<typeof ClaimHistory>
+
+/** A recent change on an actor's claims, for "Latest changes" (section 10.2). */
+export const ClaimChange = z.object({ claim: ClaimSummary, update: ClaimUpdate })
+export type ClaimChange = z.infer<typeof ClaimChange>
 
 /** `GET /api/v1/topics`: every topic, with how many published claims it has. */
 export const TopicList = z.object({
@@ -398,6 +486,8 @@ export const Actor = ActorSummary.extend({
   keyClaim: z.object({ claim: ClaimSummary, note: z.string().nullable() }).nullable(),
   /** The figures of every published claim the actor made. */
   record: Figures,
+  /** The latest updates on the actor's claims, newest first. */
+  latestChanges: z.array(ClaimChange),
 })
 export type Actor = z.infer<typeof Actor>
 
@@ -612,6 +702,13 @@ export const V1_ENDPOINTS = [
     summary: 'A claim, its rating and its history',
     query: LocaleQuery,
     response: Claim,
+    notAvailable: true,
+  },
+  {
+    path: '/countries/{code}/claims/{slug}/history',
+    summary: "Every published update to a claim's rating, newest first",
+    query: LocaleQuery,
+    response: ClaimHistory,
     notAvailable: true,
   },
   {

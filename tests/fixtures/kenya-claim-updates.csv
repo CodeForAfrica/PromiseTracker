@@ -1,0 +1,4 @@
+Claim,Date,Rating,Kind,Title,Title (fr),Narrative,Evidence link,Evidence title,Evidence publisher
+A clinic in every county,2023-02,in-progress,,Work starts on ten clinics,Les travaux commencent sur dix cliniques,The county advertised tenders for ten clinics.,https://example.org/clinics-tender-2023,Clinic tender notice,The Fictional Gazette
+A clinic in every county,2023-09,completed,,All the clinics open,Toutes les cliniques ouvrent,The last of the clinics opened in September.,https://example.org/clinics-open-2023,Opening report,The Fictional Times
+A clinic in every county,2024-01,in-progress,correction,We counted the clinics wrong,Nous avons mal compté les cliniques,Two of the clinics we counted were not open. We corrected the rating.,https://example.org/clinics-recount-2024,The recount,The Fictional Times

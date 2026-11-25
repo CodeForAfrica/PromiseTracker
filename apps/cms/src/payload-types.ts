@@ -165,6 +165,9 @@ export interface Config {
     documents: Document;
     'document-files': DocumentFile;
     claims: Claim;
+    'claim-updates': ClaimUpdate;
+    evidence: Evidence;
+    'rating-reviews': RatingReview;
     topics: Topic;
     'rating-scales': RatingScale;
     'claim-types': ClaimType;
@@ -177,6 +180,7 @@ export interface Config {
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
+    'payload-query-presets': PayloadQueryPreset;
     'payload-llm-instructions': PayloadLlmInstruction;
   };
   collectionsJoins: {
@@ -207,6 +211,9 @@ export interface Config {
     documents: DocumentsSelect<false> | DocumentsSelect<true>;
     'document-files': DocumentFilesSelect<false> | DocumentFilesSelect<true>;
     claims: ClaimsSelect<false> | ClaimsSelect<true>;
+    'claim-updates': ClaimUpdatesSelect<false> | ClaimUpdatesSelect<true>;
+    evidence: EvidenceSelect<false> | EvidenceSelect<true>;
+    'rating-reviews': RatingReviewsSelect<false> | RatingReviewsSelect<true>;
     topics: TopicsSelect<false> | TopicsSelect<true>;
     'rating-scales': RatingScalesSelect<false> | RatingScalesSelect<true>;
     'claim-types': ClaimTypesSelect<false> | ClaimTypesSelect<true>;
@@ -219,6 +226,7 @@ export interface Config {
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
+    'payload-query-presets': PayloadQueryPresetsSelect<false> | PayloadQueryPresetsSelect<true>;
     'payload-llm-instructions': PayloadLlmInstructionsSelect<false> | PayloadLlmInstructionsSelect<true>;
   };
   db: {
@@ -232,14 +240,18 @@ export interface Config {
     | ('en' | 'fr' | 'pt' | 'ar' | 'sw')[];
   globals: {
     site: Site;
+    settings: Setting;
     'payload-jobs-stats': PayloadJobsStat;
   };
   globalsSelect: {
     site: SiteSelect<false> | SiteSelect<true>;
+    settings: SettingsSelect<false> | SettingsSelect<true>;
     'payload-jobs-stats': PayloadJobsStatsSelect<false> | PayloadJobsStatsSelect<true>;
   };
   locale: 'en' | 'fr' | 'pt' | 'ar' | 'sw';
   widgets: {
+    'least-recently-reviewed': LeastRecentlyReviewedWidget;
+    'awaiting-verification': AwaitingVerificationWidget;
     welcome: WelcomeWidget;
     collections: CollectionsWidget;
     'collection-query': CollectionQueryWidget;
@@ -256,6 +268,7 @@ export interface Config {
       cascadePublishing: TaskCascadePublishing;
       recomputePublishing: TaskRecomputePublishing;
       dailyPublishing: TaskDailyPublishing;
+      refreshCounts: TaskRefreshCounts;
       inline: {
         input: unknown;
         output: unknown;
@@ -506,6 +519,28 @@ export interface Claim {
    * Where in the source, such as page 12.
    */
   sourceLocator?: string | null;
+  /**
+   * Check the statement against the source, then set the verdict.
+   */
+  verification?: {
+    verdict?: ('unverified' | 'verified' | 'false' | 'misleading') | null;
+    /**
+     * Set when the verdict changes.
+     */
+    date?: string | null;
+    /**
+     * How the claim was checked. Shown on the claim page.
+     */
+    rationale?: string | null;
+    /**
+     * A published fact-check report, if there is one.
+     */
+    reportUrl?: string | null;
+    /**
+     * Set when the verdict changes.
+     */
+    verifiedBy?: (string | null) | User;
+  };
   image?: (string | null) | Media;
   imageCredit?: string | null;
   /**
@@ -1137,6 +1172,124 @@ export interface DocumentFile {
   focalY?: number | null;
 }
 /**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "claim-updates".
+ */
+export interface ClaimUpdate {
+  id: string;
+  claim: string | Claim;
+  /**
+   * When it happened, which may be long before it was recorded.
+   */
+  date: string;
+  /**
+   * The rating as of that date, from the claim’s scale.
+   */
+  rating: string;
+  /**
+   * Choose correction when it fixes our own earlier mistake. Otherwise set for you: first rating or change, by date.
+   */
+  kind?: ('first-rating' | 'change' | 'correction') | null;
+  title: string;
+  /**
+   * What happened, and how we know.
+   */
+  narrative?: string | null;
+  /**
+   * At least one piece when the rating changes.
+   */
+  evidence?: (string | Evidence)[] | null;
+  /**
+   * Credit for a citizen who sent this in, with their consent.
+   */
+  attribution?: string | null;
+  /**
+   * The claim’s country.
+   */
+  country?: (string | null) | Country;
+  /**
+   * Ready makes it public in each language it is published in.
+   */
+  recordStatus: 'ready' | 'hold' | 'archived';
+  publishedIn?: string[] | null;
+  /**
+   * Worked out on save. The languages this record is live in.
+   */
+  liveIn?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "evidence".
+ */
+export interface Evidence {
+  id: string;
+  title: string;
+  kind: 'document' | 'dataset' | 'social-post' | 'article';
+  publisher?: string | null;
+  /**
+   * When it was published.
+   */
+  date?: string | null;
+  /**
+   * Shown as a link. The server never opens it.
+   */
+  link?: string | null;
+  /**
+   * Instead of a link, such as a photo of a site visit.
+   */
+  file?: (string | null) | Media;
+  /**
+   * One line: what the evidence shows.
+   */
+  finding?: string | null;
+  thumbnail?: (string | null) | Media;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rating-reviews".
+ */
+export interface RatingReview {
+  id: string;
+  claim: string | Claim;
+  outcome: 'confirmed' | 'changed' | 'updated';
+  rating?: string | null;
+  reviewer?: (string | null) | User;
+  date: string;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Upload a CSV or Excel file. Check the mapping, then choose Preview, and Import when the preview is right.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1145,7 +1298,7 @@ export interface DocumentFile {
 export interface Import {
   id: string;
   country: string | Country;
-  recordType: 'areas' | 'offices' | 'actors' | 'terms' | 'claims';
+  recordType: 'areas' | 'offices' | 'actors' | 'terms' | 'claims' | 'claim-updates';
   /**
    * Runs when you save.
    */
@@ -1218,7 +1371,28 @@ export interface Import {
           | 'deadlineText:ar'
           | 'deadlineText:sw'
           | 'sourceUrl'
-          | 'sourceLocator';
+          | 'sourceLocator'
+          | 'verdict'
+          | 'rationale'
+          | 'rationale:fr'
+          | 'rationale:pt'
+          | 'rationale:ar'
+          | 'rationale:sw'
+          | 'claim'
+          | 'date'
+          | 'rating'
+          | 'narrative'
+          | 'narrative:fr'
+          | 'narrative:pt'
+          | 'narrative:ar'
+          | 'narrative:sw'
+          | 'attribution'
+          | 'evidenceLink'
+          | 'evidenceTitle'
+          | 'evidenceKind'
+          | 'evidencePublisher'
+          | 'evidenceDate'
+          | 'evidenceFinding';
         column: string;
         id?: string | null;
       }[]
@@ -1321,7 +1495,7 @@ export interface Import {
 export interface ImportMapping {
   id: string;
   name: string;
-  recordType: 'areas' | 'offices' | 'actors' | 'terms' | 'claims';
+  recordType: 'areas' | 'offices' | 'actors' | 'terms' | 'claims' | 'claim-updates';
   /**
    * Field to column heading.
    */
@@ -1431,7 +1605,8 @@ export interface PayloadJob {
           | 'cleanupJobs'
           | 'cascadePublishing'
           | 'recomputePublishing'
-          | 'dailyPublishing';
+          | 'dailyPublishing'
+          | 'refreshCounts';
         taskID: string;
         input:
           | {
@@ -1472,6 +1647,7 @@ export interface PayloadJob {
                 | 'cascadePublishing'
                 | 'recomputePublishing'
                 | 'dailyPublishing'
+                | 'refreshCounts'
               )
             | null;
           taskID?: string | null;
@@ -1490,6 +1666,7 @@ export interface PayloadJob {
         | 'cascadePublishing'
         | 'recomputePublishing'
         | 'dailyPublishing'
+        | 'refreshCounts'
       )
     | null;
   queue?: string | null;
@@ -1545,6 +1722,18 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'claims';
         value: string | Claim;
+      } | null)
+    | ({
+        relationTo: 'claim-updates';
+        value: string | ClaimUpdate;
+      } | null)
+    | ({
+        relationTo: 'evidence';
+        value: string | Evidence;
+      } | null)
+    | ({
+        relationTo: 'rating-reviews';
+        value: string | RatingReview;
       } | null)
     | ({
         relationTo: 'topics';
@@ -1613,6 +1802,55 @@ export interface PayloadMigration {
   id: string;
   name?: string | null;
   batch?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-query-presets".
+ */
+export interface PayloadQueryPreset {
+  id: string;
+  title: string;
+  groupBy?: string | null;
+  columns?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  where?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  isShared?: boolean | null;
+  access?: {
+    read?: {
+      constraint?: ('everyone' | 'onlyMe' | 'specificUsers') | null;
+      users?: (string | User)[] | null;
+    };
+    update?: {
+      constraint?: ('everyone' | 'onlyMe' | 'specificUsers') | null;
+      users?: (string | User)[] | null;
+    };
+    delete?: {
+      constraint?: ('everyone' | 'onlyMe' | 'specificUsers') | null;
+      users?: (string | User)[] | null;
+    };
+  };
+  relatedCollection: 'claims';
+  /**
+   * This is a temporary field used to determine if updating the preset would remove the user's access to it. When `true`, this record will be deleted after running the preset's `validate` function.
+   */
+  isTemp?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1910,6 +2148,15 @@ export interface ClaimsSelect<T extends boolean = true> {
   source?: T;
   sourceUrl?: T;
   sourceLocator?: T;
+  verification?:
+    | T
+    | {
+        verdict?: T;
+        date?: T;
+        rationale?: T;
+        reportUrl?: T;
+        verifiedBy?: T;
+      };
   image?: T;
   imageCredit?: T;
   slug?: T;
@@ -1933,6 +2180,64 @@ export interface ClaimsSelect<T extends boolean = true> {
   createdAt?: T;
   deletedAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "claim-updates_select".
+ */
+export interface ClaimUpdatesSelect<T extends boolean = true> {
+  claim?: T;
+  date?: T;
+  rating?: T;
+  kind?: T;
+  title?: T;
+  narrative?: T;
+  evidence?: T;
+  attribution?: T;
+  country?: T;
+  recordStatus?: T;
+  publishedIn?: T;
+  liveIn?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  deletedAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "evidence_select".
+ */
+export interface EvidenceSelect<T extends boolean = true> {
+  title?: T;
+  kind?: T;
+  publisher?: T;
+  date?: T;
+  link?: T;
+  file?: T;
+  finding?: T;
+  thumbnail?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  deletedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rating-reviews_select".
+ */
+export interface RatingReviewsSelect<T extends boolean = true> {
+  claim?: T;
+  outcome?: T;
+  rating?: T;
+  reviewer?: T;
+  date?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2237,6 +2542,43 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-query-presets_select".
+ */
+export interface PayloadQueryPresetsSelect<T extends boolean = true> {
+  title?: T;
+  groupBy?: T;
+  columns?: T;
+  where?: T;
+  isShared?: T;
+  access?:
+    | T
+    | {
+        read?:
+          | T
+          | {
+              constraint?: T;
+              users?: T;
+            };
+        update?:
+          | T
+          | {
+              constraint?: T;
+              users?: T;
+            };
+        delete?:
+          | T
+          | {
+              constraint?: T;
+              users?: T;
+            };
+      };
+  relatedCollection?: T;
+  isTemp?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-llm-instructions_select".
  */
 export interface PayloadLlmInstructionsSelect<T extends boolean = true> {
@@ -2352,12 +2694,51 @@ export interface Site {
     figuresByCountry?: string | null;
     claimsOnTopic?: string | null;
     filterCountry?: string | null;
+    verifiedOn?: string | null;
+    verifiedTitle?: string | null;
+    verifiedReport?: string | null;
+    lastReviewed?: string | null;
+    timelineTitle?: string | null;
+    historyTitle?: string | null;
+    fullHistory?: string | null;
+    backToClaim?: string | null;
+    correction?: string | null;
+    evidenceTitle?: string | null;
+    latestChanges?: string | null;
+    reportedBy?: string | null;
+    copyCitation?: string | null;
+    citationCopied?: string | null;
+    citeAs?: string | null;
+    citeAsUnreviewed?: string | null;
     notFoundTitle?: string | null;
     notFoundBody?: string | null;
     backHome?: string | null;
     footerNav?: string | null;
     initiative?: string | null;
     copyright?: string | null;
+  };
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "settings".
+ */
+export interface Setting {
+  id: string;
+  tika?: {
+    /**
+     * Where the Tika server listens, such as http://tika:9998. Stored encrypted and shown masked.
+     */
+    url?: string | null;
   };
   createdBy?: {
     relationTo: 'users';
@@ -2477,12 +2858,44 @@ export interface SiteSelect<T extends boolean = true> {
         figuresByCountry?: T;
         claimsOnTopic?: T;
         filterCountry?: T;
+        verifiedOn?: T;
+        verifiedTitle?: T;
+        verifiedReport?: T;
+        lastReviewed?: T;
+        timelineTitle?: T;
+        historyTitle?: T;
+        fullHistory?: T;
+        backToClaim?: T;
+        correction?: T;
+        evidenceTitle?: T;
+        latestChanges?: T;
+        reportedBy?: T;
+        copyCitation?: T;
+        citationCopied?: T;
+        citeAs?: T;
+        citeAsUnreviewed?: T;
         notFoundTitle?: T;
         notFoundBody?: T;
         backHome?: T;
         footerNav?: T;
         initiative?: T;
         copyright?: T;
+      };
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "settings_select".
+ */
+export interface SettingsSelect<T extends boolean = true> {
+  tika?:
+    | T
+    | {
+        url?: T;
       };
   createdBy?: T;
   updatedBy?: T;
@@ -2499,6 +2912,26 @@ export interface PayloadJobsStatsSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "least-recently-reviewed_widget".
+ */
+export interface LeastRecentlyReviewedWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'small' | 'medium' | 'large';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "awaiting-verification_widget".
+ */
+export interface AwaitingVerificationWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'small' | 'medium';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2537,6 +2970,9 @@ export interface CollectionQueryWidget {
       | 'documents'
       | 'document-files'
       | 'claims'
+      | 'claim-updates'
+      | 'evidence'
+      | 'rating-reviews'
       | 'topics'
       | 'rating-scales'
       | 'claim-types'
@@ -2576,6 +3012,9 @@ export interface ActivityWidget {
           | 'documents'
           | 'document-files'
           | 'claims'
+          | 'claim-updates'
+          | 'evidence'
+          | 'rating-reviews'
           | 'topics'
           | 'rating-scales'
           | 'claim-types'
@@ -2605,6 +3044,7 @@ export interface UploadDropzoneWidget {
 export interface TaskRunImport {
   input: {
     importId: string;
+    requestedBy?: string | null;
   };
   output?: unknown;
 }
@@ -2670,6 +3110,16 @@ export interface TaskRecomputePublishing {
  */
 export interface TaskDailyPublishing {
   input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskRefreshCounts".
+ */
+export interface TaskRefreshCounts {
+  input: {
+    country: string;
+  };
   output?: unknown;
 }
 /**

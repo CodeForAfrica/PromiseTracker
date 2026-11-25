@@ -46,6 +46,7 @@ describe('publishing rules and the cascade', () => {
         topic,
         sourceUrl: 'https://example.org/manifesto',
         recordStatus: 'ready',
+        verification: { verdict: 'verified' },
         ...extra,
       },
       overrideAccess: true,

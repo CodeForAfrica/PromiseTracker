@@ -63,6 +63,9 @@ export const corePlugin = definePromiseTrackerPlugin({
     Documents,
     DocumentFiles,
     Claims,
+    ClaimUpdates,
+    Evidence,
+    RatingReviews,
     Topics,
     RatingScales,
     ClaimTypes,
@@ -79,8 +82,23 @@ export const corePlugin = definePromiseTrackerPlugin({
     cascadePublishingTask as never,
     recomputePublishingTask as never,
     dailyPublishingTask as never,
+    refreshCountsTask as never,
   ],
   workflows: [processDocumentWorkflow as never],
+  widgets: [
+    {
+      slug: 'least-recently-reviewed',
+      Component: '@promisetracker/plugin-core/widgets#LeastRecentlyReviewed',
+      minWidth: 'small',
+      maxWidth: 'large',
+    },
+    {
+      slug: 'awaiting-verification',
+      Component: '@promisetracker/plugin-core/widgets#AwaitingVerification',
+      minWidth: 'small',
+      maxWidth: 'medium',
+    },
+  ],
   provides: {
     verification: [nativeVerification],
     sourceConnector: [uploadConnector, urlConnector],
@@ -123,6 +141,7 @@ export * from './documents/fileType'
 export * from './documents/pipeline'
 export * from './documents/plaintext'
 export * from './documents/ssrf'
+export * from './fields/encryptedSecret'
 export { privateHistory } from './history'
 export { setImporters } from './imports/collections'
 export type { ImportResult, RowError } from './imports/engine'
@@ -137,13 +156,35 @@ export {
 
 import { cascadePublishingTask, dailyPublishingTask, recomputePublishingTask } from './publishing'
 
+export { VERDICTS, verdictOf } from './claims'
 export type { ImportTarget } from './imports/targets'
 export { guessMapping, IMPORT_TARGETS, mappingKeys, planRow } from './imports/targets'
 export * from './locales'
 export type { AreaType } from './places'
 export { AREA_PAGE, AREA_TYPES, Areas, Offices } from './places'
 export * from './publishing'
+export { findQuote } from './quote'
 export * from './ratings'
 export * from './roles'
 export * from './slugs'
 export { Users } from './users'
+// Widgets are loaded by the admin through `@promisetracker/plugin-core/widgets`, never from
+// here: they import Payload's admin components, which the public site must not ship.
+export {
+  AWAITING_VERIFICATION,
+  ensureVerificationQueue,
+  VERIFICATION_QUEUE,
+  whereToQuery,
+} from './verificationQueue'
+
+import { ClaimUpdates, Evidence, RatingReviews, refreshCountsTask } from './updates'
+
+export {
+  ClaimUpdates,
+  EVIDENCE_KINDS,
+  Evidence,
+  partialDateStart,
+  RatingReviews,
+  ratingFromUpdates,
+  UPDATE_KINDS,
+} from './updates'
