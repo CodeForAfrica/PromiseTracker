@@ -1,0 +1,26 @@
+{
+  "event": "update_annotation_report_design",
+  "team": {
+    "dbid": 1,
+    "slug": "promise-tracker"
+  },
+  "time": "2026-11-25T11:00:00Z",
+  "user_id": 7,
+  "data": {
+    "id": "QW5ub3RhdGlvbi85ODc2NQ=="
+  },
+  "object": {
+    "id": 98765,
+    "annotation_type": "report_design",
+    "annotated_type": "ProjectMedia",
+    "annotated_id": 12345,
+    "data": {
+      "state": "paused",
+      "options": {
+        "language": "en",
+        "title": "Fact-check",
+        "text": "The ministry's budget statement lists the 200 centres as built."
+      }
+    }
+  }
+}

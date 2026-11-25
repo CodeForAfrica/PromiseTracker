@@ -269,6 +269,8 @@ export interface Config {
       recomputePublishing: TaskRecomputePublishing;
       dailyPublishing: TaskDailyPublishing;
       refreshCounts: TaskRefreshCounts;
+      submitForVerification: TaskSubmitForVerification;
+      pollCheck: TaskPollCheck;
       inline: {
         input: unknown;
         output: unknown;
@@ -573,6 +575,13 @@ export interface Claim {
   liveIn?: string | null;
   publishingProblems?: string | null;
   whyNotPublic?: string | null;
+  check?: {
+    itemId?: string | null;
+    itemUrl?: string | null;
+    reportState?: ('published' | 'paused') | null;
+    syncedAt?: string | null;
+    syncResult?: ('applied' | 'unchanged') | null;
+  };
   createdBy?: {
     relationTo: 'users';
     value: string | User;
@@ -1606,7 +1615,9 @@ export interface PayloadJob {
           | 'cascadePublishing'
           | 'recomputePublishing'
           | 'dailyPublishing'
-          | 'refreshCounts';
+          | 'refreshCounts'
+          | 'submitForVerification'
+          | 'pollCheck';
         taskID: string;
         input:
           | {
@@ -1648,6 +1659,8 @@ export interface PayloadJob {
                 | 'recomputePublishing'
                 | 'dailyPublishing'
                 | 'refreshCounts'
+                | 'submitForVerification'
+                | 'pollCheck'
               )
             | null;
           taskID?: string | null;
@@ -1667,6 +1680,8 @@ export interface PayloadJob {
         | 'recomputePublishing'
         | 'dailyPublishing'
         | 'refreshCounts'
+        | 'submitForVerification'
+        | 'pollCheck'
       )
     | null;
   queue?: string | null;
@@ -2174,6 +2189,15 @@ export interface ClaimsSelect<T extends boolean = true> {
   liveIn?: T;
   publishingProblems?: T;
   whyNotPublic?: T;
+  check?:
+    | T
+    | {
+        itemId?: T;
+        itemUrl?: T;
+        reportState?: T;
+        syncedAt?: T;
+        syncResult?: T;
+      };
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;
@@ -2740,6 +2764,30 @@ export interface Setting {
      */
     url?: string | null;
   };
+  check?: {
+    /**
+     * The workspace's short name, from its address in Check: checkmedia.org/{name}/all-items.
+     */
+    workspace?: string | null;
+    /**
+     * A key from the workspace’s settings, under API keys. Stored encrypted.
+     */
+    apiKey?: string | null;
+    /**
+     * Check sends this in the Authorization header of every webhook. Stored encrypted.
+     */
+    webhookSecret?: string | null;
+    /**
+     * Statuses are managed in Check. Give each of the workspace’s statuses a verdict. PromiseTracker will not start while one has none.
+     */
+    statuses?:
+      | {
+          status?: string | null;
+          verdict?: ('verified' | 'false' | 'misleading' | 'unverified') | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
   createdBy?: {
     relationTo: 'users';
     value: string | User;
@@ -2896,6 +2944,20 @@ export interface SettingsSelect<T extends boolean = true> {
     | T
     | {
         url?: T;
+      };
+  check?:
+    | T
+    | {
+        workspace?: T;
+        apiKey?: T;
+        webhookSecret?: T;
+        statuses?:
+          | T
+          | {
+              status?: T;
+              verdict?: T;
+              id?: T;
+            };
       };
   createdBy?: T;
   updatedBy?: T;
@@ -3120,6 +3182,24 @@ export interface TaskRefreshCounts {
   input: {
     country: string;
   };
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSubmitForVerification".
+ */
+export interface TaskSubmitForVerification {
+  input: {
+    claim: string;
+  };
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskPollCheck".
+ */
+export interface TaskPollCheck {
+  input?: unknown;
   output?: unknown;
 }
 /**

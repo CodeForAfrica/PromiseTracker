@@ -146,6 +146,9 @@ importers:
       '@promisetracker/kernel':
         specifier: workspace:*
         version: link:packages/kernel
+      '@promisetracker/plugin-check':
+        specifier: workspace:*
+        version: link:plugins/check
       '@promisetracker/plugin-core':
         specifier: workspace:*
         version: link:plugins/core
@@ -224,6 +227,9 @@ importers:
       '@promisetracker/kernel':
         specifier: workspace:*
         version: link:../../packages/kernel
+      '@promisetracker/plugin-check':
+        specifier: workspace:*
+        version: link:../../plugins/check
       '@promisetracker/plugin-core':
         specifier: workspace:*
         version: link:../../plugins/core
@@ -380,6 +386,25 @@ importers:
       react-dom:
         specifier: 'catalog:'
         version: 19.3.1(react@19.3.1)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+
+  plugins/check:
+    dependencies:
+      '@promisetracker/kernel':
+        specifier: workspace:*
+        version: link:../../packages/kernel
+      '@promisetracker/plugin-core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.19.2
+      payload:
+        specifier: 'catalog:'
+        version: 4.0.0-beta.9(graphql@16.15.0)(supports-color@8.1.1)(typescript@6.0.3)
       typescript:
         specifier: 'catalog:'
         version: 6.0.3

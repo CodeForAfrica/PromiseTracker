@@ -313,6 +313,39 @@ credited to PromiseTracker. It never shows who verified a claim.
 A claim found **false** or **misleading** is never published and never deleted. Archive it to put it
 away.
 
+### Verifying in Meedan Check
+
+When the deployment verifies in Check (`PT_PLUGINS` includes `check` and `PT_VERIFICATION=check`),
+fact-checkers work in the Check workspace, not here:
+
+- A new claim is sent to Check as an item of type Claim, starting as **Unstarted**. Its **Check**
+  section, in the sidebar, shows the item and a link to it, filled in within a minute or so.
+- When a report is published in Check, the claim takes the verdict for the item's status, the
+  report's text as its rationale, and the report's date. A report unpublished in Check makes the
+  claim unverified and puts it on **hold**, and editors get an email.
+- The **Verdict**, **Date**, **Rationale** and **Report** fields are read-only. Reviewers can no
+  longer set a verdict. Change it in Check. Only a super-admin can override it here, and that is
+  logged.
+- The **Check** section shows the report's state and when the claim was last synced.
+
+#### Setting up Check
+
+A super-admin fills these in once, under Administration > Settings > Check:
+
+| Field                 | What to put                                                                              |
+| --------------------- | ---------------------------------------------------------------------------------------- |
+| Workspace             | The workspace's short name, from its address: `checkmedia.org/{name}/all-items`          |
+| API key               | A key from the workspace's settings. Stored encrypted, and shown as `********`           |
+| Webhook secret        | Any long random text. Stored encrypted                                                   |
+| Statuses and verdicts | Each of the workspace's statuses with its verdict. The default workspace's are filled in |
+
+Then, in the workspace's settings in Check, add a webhook for report events to
+`{site address}/api/plugins/check/webhook`, with the webhook secret as its `Authorization` header.
+Verdicts also arrive every 15 minutes without it, so a missed webhook catches up.
+
+Statuses are managed in Check. Add a status there, and give it a verdict here before the next
+deploy: PromiseTracker refuses to start while a status has none, and says which.
+
 ### Rating a claim
 
 A claim's rating changes only through a **claim update**: a dated entry in its public history.

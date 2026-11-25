@@ -1,0 +1,17 @@
+{
+  "event": "update_annotation_verification_status",
+  "team": {
+    "dbid": 1,
+    "slug": "promise-tracker"
+  },
+  "data": {
+    "id": "QW5ub3RhdGlvbi85ODc2Ng=="
+  },
+  "object": {
+    "id": 98766,
+    "annotation_type": "verification_status",
+    "annotated_type": "ProjectMedia",
+    "annotated_id": 12345,
+    "data": {}
+  }
+}

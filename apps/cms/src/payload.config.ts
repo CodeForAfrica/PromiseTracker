@@ -13,6 +13,7 @@ import {
   setImporters,
   setPipelineAdapters,
   setTagRefresher,
+  setVerification,
 } from '@promisetracker/plugin-core'
 import { buildConfig } from 'payload'
 import { createHttpRefresher } from './cache'
@@ -47,6 +48,13 @@ setPipelineAdapters({
   connectors: kernel.adapters.sourceConnector,
   extractors: kernel.adapters.contentExtractor,
   context: (payload, adapter, signal) => kernel.context(payload, ownerOf(adapter), signal),
+})
+// Claims go out to the verification adapter the kernel chose, with its own
+// plugin's settings, and verdicts come back through it (section 5).
+setVerification({
+  adapter: kernel.adapters.verification,
+  context: (payload, signal) =>
+    kernel.context(payload, ownerOf(kernel.adapters.verification), signal),
 })
 const s3Reader = s3FileReader()
 if (s3Reader) setFileReader(s3Reader)

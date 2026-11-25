@@ -43,6 +43,7 @@
     "@promisetracker/cms": "workspace:*",
     "@promisetracker/contract": "workspace:*",
     "@promisetracker/kernel": "workspace:*",
+    "@promisetracker/plugin-check": "workspace:*",
     "@promisetracker/plugin-core": "workspace:*",
     "@promisetracker/plugin-site": "workspace:*",
     "@promisetracker/plugin-tika": "workspace:*",

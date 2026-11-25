@@ -383,7 +383,8 @@ item's id in Check, its link, the report state, and the time and result of the l
 
 **The API.** One GraphQL endpoint, `https://check-api.checkmedia.org/api/graphql`. Every request
 carries the `X-Check-Token` header with the workspace API key and the `X-Check-Team` header with
-the workspace id. Both values live in the plugin's settings, encrypted.
+the workspace's short name, which Check reads as its slug (D84). Both live in the plugin's
+settings, the key encrypted, with the webhook's shared secret (D85).
 
 **How a claim maps to a Check item.**
 
@@ -1092,8 +1093,8 @@ After 5 failures in a row, the system stops calling an outside service for 60 se
 | `extractText` | core | A document reaches fetched |
 | `extractCandidates` | ai | A document reaches extracted |
 | `runImport` | core | An editor commits an import |
-| `submitForVerification` | check | A claim is created |
-| `pullVerdicts` | check | Every 15 minutes |
+| `submitForVerification` | core | A claim is created, when the verification adapter sends claims out (D86) |
+| `pollCheck` | check | Every 15 minutes |
 | `cascadeStatus` | core | A record status changes |
 | `refreshCounts` | core | After a cascade or a rating change. Refreshes the cached pages that show figures (D73) |
 | `cleanupJobs` | core | Hourly |
@@ -1806,6 +1807,12 @@ codemods, and passes the full test suite before merging.
 | D81 | An update's kind is a correction when an editor says so. Otherwise the public API works it out from the order by date: a claim's earliest published update is its first rating, the rest are changes. The stored kind is set the same way when an update is saved, but is not rewritten when another update moves before it |
 | D82 | A save that changes a claim's rating without an update starting to count or changing its own rating, such as a new date, records a "changed" review. Holding or removing an update records none |
 | D83 | A claim moves to another type only if the new scale has every rating its updates give. A rating an update gave cannot be deleted from its scale, only retired, and an import may keep it on an unchanged row |
+| D84 | Check reads the `X-Check-Team` header as the workspace's slug, its short name in Check's addresses, not a number. The plugin's setting is that name. v2 sent the same value |
+| D85 | The Check webhook's shared secret lives in the plugin's settings, encrypted with the API key, not in an environment variable as in v2, so a super-admin can change it without a deploy. It uses the encrypted settings field plugin-tika brought, so neither is ever shown again once saved |
+| D86 | The core sends claims out and applies verdicts for any verification adapter that names where a claim keeps its reference, such as `check.itemId`. A new claim queues `submitForVerification`, which retries while the service is down: that is the local queue section 5.2 asks for. A verdict from outside is written to the live claim, as an update's rating is (D72), so it never publishes a claim's draft. The admin shows the live values, and a save keeps them |
+| D87 | A published report gives the item's mapped verdict, its text as the rationale in the default language, its publication time as the verification date, and its article link as the report link. The webhook carries the report but not the item's status, so the plugin reads the status from Check. A paused report sets the verdict to unverified, holds the claim and emails editors |
+| D88 | Start-up refuses only when it reads the workspace's statuses and one has no verdict. With the workspace or key not set, or Check out of reach, it logs a warning and starts, so a super-admin can fill in the settings and an outage at Check never stops a deploy. A published report whose status has no verdict is logged and skipped |
+| D89 | Webhook fingerprints are kept per process for ten minutes, as in v2. A repeat that reaches another process is applied again, which changes nothing. The poll notes a sync on a claim only when its verdict changed |
 
 ### 20.2 Why
 

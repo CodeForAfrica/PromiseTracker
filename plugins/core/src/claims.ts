@@ -30,6 +30,7 @@ import {
   ratingFromUpdates,
   ratingsInHistory,
 } from './updates'
+import { fromLiveGroup, keepVerificationInStep, submitOnCreate } from './verification'
 
 /**
  * Claims and topics (sections 7.5 and 7.7). A claim is what an actor said
@@ -308,6 +309,8 @@ const verdictAccess = { create: can.setVerdict, update: can.setVerdict }
 const verificationField: Field = {
   name: 'verification',
   type: 'group',
+  // While a plugin owns the verdict it writes the live claim (section 5.2).
+  hooks: { afterRead: [fromLiveGroup('verification')] },
   admin: {
     description: 'Check the statement against the source, then set the verdict.',
   },
@@ -638,9 +641,10 @@ export const Claims: CollectionConfig = withPublishing(
         stampVerification,
         keepFoundFalse,
         keepRatingInStep,
+        keepVerificationInStep,
       ],
       beforeDelete: [neverDeleteFoundFalse, deleteClaimHistory],
-      afterChange: [refreshOnClaimChange],
+      afterChange: [refreshOnClaimChange, submitOnCreate],
       afterDelete: [refreshOnClaimDelete],
     },
     fields: editorsOnly([
