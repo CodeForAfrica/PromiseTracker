@@ -2,6 +2,7 @@ import { PageShell, SearchView } from '@promisetracker/ui'
 import type { Metadata } from 'next'
 
 import { findSite, LOGO, loadShell, search } from '@/data'
+import { alternates } from '@/seo'
 
 type Props = {
   params: Promise<{ lang: string }>
@@ -23,7 +24,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang } = await params
   const site = await findSite(lang)
   // Results change as the record does, and each address is someone's words.
-  return site ? { title: site.strings.search, robots: { index: false, follow: true } } : {}
+  return site
+    ? {
+        title: site.strings.search,
+        robots: { index: false, follow: true },
+        alternates: alternates(site, '/search'),
+      }
+    : {}
 }
 
 /**
