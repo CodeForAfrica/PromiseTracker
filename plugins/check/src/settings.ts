@@ -118,18 +118,20 @@ export async function checkStatusMapping(
     log.warn('The Check plugin has no workspace or API key yet. Fill them in under Settings.')
     return
   }
-  let statuses: string[]
+  let statuses: { id: string; label: string }[]
   try {
     statuses = await workspaceStatuses(settings.credentials, { signal: ctx.signal, ...options })
   } catch (error) {
     log.warn('Could not read the Check workspace’s statuses at start-up', { error })
     return
   }
-  const unmapped = statuses.filter((status) => !settings.statuses.has(status))
+  const unmapped = statuses.filter((status) => !settings.statuses.has(status.id))
   if (unmapped.length > 0) {
+    // A custom status's id is a number, so its label says which one it is.
+    const named = unmapped.map((s) => (s.label === s.id ? `"${s.id}"` : `"${s.label}" (${s.id})`))
     throw new ConfigurationError(
-      `Check status ${unmapped.map((s) => `"${s}"`).join(', ')} has no verdict. ` +
-        'Give it one under Settings, Check, Statuses and verdicts.',
+      `Check status ${named.join(', ')} has no verdict. ` +
+        'Give it one under Settings, Check, Statuses and verdicts, by its id.',
     )
   }
 }

@@ -331,10 +331,14 @@ describe('a plugin switched on and off', () => {
     expect(off.admin?.dashboard).toBeUndefined()
   })
 
-  it("keeps the plugin's settings group in the settings global, hidden when disabled", () => {
+  it("keeps a disabled plugin's settings editable, marked as not in use", () => {
     const settings = (config: Config) => config.globals?.find((g) => g.slug === 'settings')
-    expect(fieldNamed(settings(on)?.fields ?? [], 'full')).not.toHaveProperty('admin.condition')
-    expect(fieldNamed(settings(off)?.fields ?? [], 'full')).toHaveProperty('admin.condition')
+    const onGroup = fieldNamed(settings(on)?.fields ?? [], 'full')
+    const offGroup = fieldNamed(settings(off)?.fields ?? [], 'full')
+    expect(onGroup).not.toHaveProperty('admin.condition')
+    expect(offGroup).not.toHaveProperty('admin.condition')
+    expect(offGroup).toHaveProperty('admin.description', expect.stringContaining('Not in use'))
+    expect(settings(off)?.admin).not.toHaveProperty('hidden')
   })
 
   it('keeps no history of the settings, so old credentials are not kept', () => {

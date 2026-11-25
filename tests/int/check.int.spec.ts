@@ -162,7 +162,6 @@ describe('verification in Check', () => {
     const sent = api.sent.find((r) => r.operation === 'createProjectMedia')
     expect(sent?.variables.input).toMatchObject({
       quote: 'We will build 200 new health centres by 2027',
-      set_status: 'undetermined',
       set_tags: expect.arrayContaining([code]),
     })
   })

@@ -393,7 +393,7 @@ settings, the key encrypted, with the webhook's shared secret (D85).
 | Statement | `quote` | The exact quote. Check creates an item of type `Claim` |
 | Title and summary | `set_claim_description` | Includes a link back to the claim |
 | Topic, claim type, country | `set_tags` | |
-| Starting status | `set_status` | `undetermined` |
+| Starting status | None | The workspace's default status (D90) |
 | Claim identity | The returned item id | Stored as `check.itemId` and used for matching |
 | Item link | The returned `full_url` | Stored as `check.itemUrl` |
 
@@ -413,7 +413,6 @@ mutation createProjectMedia($input: CreateProjectMediaInput!) {
     "media_type": "Claim",
     "quote": "We will build 200 new health centres by 2027",
     "channel": { "main": 1 },
-    "set_status": "undetermined",
     "set_tags": ["health", "promise", "ke"],
     "set_claim_description": "Governor: 200 new health centres ..."
   }
@@ -1813,6 +1812,8 @@ codemods, and passes the full test suite before merging.
 | D87 | A published report gives the item's mapped verdict, its text as the rationale in the default language, its publication time as the verification date, and its article link as the report link. The webhook carries the report but not the item's status, so the plugin reads the status from Check. A paused report sets the verdict to unverified, holds the claim and emails editors |
 | D88 | Start-up refuses only when it reads the workspace's statuses and one has no verdict. With the workspace or key not set, or Check out of reach, it logs a warning and starts, so a super-admin can fill in the settings and an outage at Check never stops a deploy. A published report whose status has no verdict is logged and skipped |
 | D89 | Webhook fingerprints are kept per process for ten minutes, as in v2. A repeat that reaches another process is applied again, which changes nothing. The poll notes a sync on a claim only when its verdict changed |
+| D90 | A claim goes to Check with no status, so it starts on the workspace's default. Each workspace defines its statuses, and `undetermined` may mean something else there: in the PesaCheck promise workspace it is "Unstarted", a rating |
+| D91 | A disabled plugin's settings stay visible and editable to super-admins, marked as not in use, unlike its other fields (D29). They can be filled in before the plugin is switched on, and a setting that stops start-up, such as an unmapped Check status, can be fixed with the plugin switched off |
 
 ### 20.2 Why
 

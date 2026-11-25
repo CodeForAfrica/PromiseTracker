@@ -330,7 +330,8 @@ fact-checkers work in the Check workspace, not here:
 
 #### Setting up Check
 
-A super-admin fills these in once, under Administration > Settings > Check:
+A super-admin fills these in once, under Administration > Settings > Check. They can be filled
+in before the plugin is switched on: until then the section says it is not in use.
 
 | Field                 | What to put                                                                              |
 | --------------------- | ---------------------------------------------------------------------------------------- |
@@ -343,8 +344,26 @@ Then, in the workspace's settings in Check, add a webhook for report events to
 `{site address}/api/plugins/check/webhook`, with the webhook secret as its `Authorization` header.
 Verdicts also arrive every 15 minutes without it, so a missed webhook catches up.
 
-Statuses are managed in Check. Add a status there, and give it a verdict here before the next
-deploy: PromiseTracker refuses to start while a status has none, and says which.
+Statuses are managed in Check, and each workspace defines its own. Give each one the verdict that
+fits what it means in that workspace, by its id. The error at start-up names any status with no
+verdict, with its label and id. A custom status's id is a number.
+
+The PesaCheck promise workspace uses its statuses as promise ratings, so a published report there
+means the promise was checked:
+
+| Status in Check | Id               | Verdict    |
+| --------------- | ---------------- | ---------- |
+| Completed       | `verified`       | verified   |
+| In Progress     | `in_progress`    | verified   |
+| Behind Schedule | `not_applicable` | verified   |
+| Stalled         | `false`          | verified   |
+| Unstarted       | `undetermined`   | verified   |
+| Unchecked       | `1764592506934`  | unverified |
+| Unverified      | `1764591532014`  | unverified |
+
+Add a status in Check, and give it a verdict here before the next deploy: PromiseTracker refuses
+to start while a status has none. If it already refuses, take `check` out of `PT_PLUGINS`, start
+it, give the status a verdict under Settings, then put `check` back.
 
 ### Rating a claim
 

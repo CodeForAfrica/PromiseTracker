@@ -120,7 +120,6 @@ describe('the check adapter', () => {
       media_type: 'Claim',
       quote: claim.statement,
       channel: { main: 1 },
-      set_status: 'undetermined',
       set_tags: ['health', 'promise', 'ke'],
       set_claim_description: `${claim.title}: ${claim.summary}\n\n${claim.url}`,
     })
@@ -256,7 +255,9 @@ describe('the status mapping at start-up', () => {
     }
     const check = checkStatusMapping(ctx(partial), api)
     await expect(check).rejects.toBeInstanceOf(ConfigurationError)
-    await expect(checkStatusMapping(ctx(partial), api)).rejects.toThrow('"in_progress"')
+    await expect(checkStatusMapping(ctx(partial), api)).rejects.toThrow(
+      '"In Progress" (in_progress)',
+    )
   })
 
   it('only warns when the settings are not filled in yet', async () => {

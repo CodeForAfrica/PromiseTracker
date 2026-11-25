@@ -110,7 +110,10 @@ export type NewItem = {
   tags: readonly string[]
 }
 
-/** Creates a Check item of type Claim, starting as undetermined (section 5.2). */
+/**
+ * Creates a Check item of type Claim (section 5.2). It sets no status, so the
+ * item starts on the workspace's default, which may not be `undetermined` (D90).
+ */
 export async function createItem(
   credentials: CheckCredentials,
   item: NewItem,
@@ -125,7 +128,6 @@ export async function createItem(
         media_type: 'Claim',
         quote: item.quote,
         channel: { main: 1 },
-        set_status: 'undetermined',
         set_tags: [...item.tags],
         set_claim_description: item.description,
       },
@@ -272,11 +274,11 @@ const STATUSES = `
   }
 `
 
-/** The ids of the statuses the workspace defines. Check manages them (D42). */
+/** The statuses the workspace defines, by id and label. Check manages them (D42). */
 export async function workspaceStatuses(
   credentials: CheckCredentials,
   options: CallOptions = {},
-): Promise<string[]> {
+): Promise<{ id: string; label: string }[]> {
   const data = await checkGraphQL(credentials, 'verification_statuses', STATUSES, {}, options)
   let statuses: unknown = asRecord(data.team).verification_statuses
   if (typeof statuses === 'string') {
@@ -293,7 +295,10 @@ export async function workspaceStatuses(
       failure: 'invalid-response',
     })
   }
-  return list.map((status) => text(asRecord(status).id)).filter((id): id is string => id !== null)
+  return list.flatMap((status) => {
+    const id = text(asRecord(status).id)
+    return id ? [{ id, label: text(asRecord(status).label) ?? id }] : []
+  })
 }
 
 /** The item's id in Check's GraphQL API: base64 of `ProjectMedia/{number}` (section 5.2). */
