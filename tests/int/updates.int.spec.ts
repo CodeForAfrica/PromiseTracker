@@ -82,7 +82,7 @@ describe('claim updates', () => {
     return endpoint.handler(req)
   }
 
-  const ratingChoices = async (claimId: string, role: keyof typeof users, locale = 'en') => {
+  const ratingChoices = async (claimId: string, role: keyof typeof users | null, locale = 'en') => {
     const endpoint = payload.collections['claim-updates'].config.endpoints
       ? payload.collections['claim-updates'].config.endpoints.find(
           (e) => e.path === '/rating-choices',
@@ -91,7 +91,7 @@ describe('claim updates', () => {
     if (!endpoint) throw new Error('No rating-choices endpoint.')
     const req = await createPayloadRequest({
       payload,
-      user: as(role),
+      user: role ? as(role) : null,
       locale,
       urlSuffix: `/api/claim-updates/rating-choices?claim=${encodeURIComponent(claimId)}`,
     })
@@ -201,8 +201,10 @@ describe('claim updates', () => {
     expect(choices[0]).toMatchObject({ label: scale.ratings[0]?.label, retired: false })
     expect(choices.every((c) => typeof c.colour === 'string')).toBe(true)
 
-    // Only those who rate claims can ask, and an id that is not a claim's gives nothing.
-    expect((await ratingChoices(doc.id, 'contributor')).status).toBe(403)
+    // Anyone who can read an update reads its rating's label, so a contributor
+    // sees the saved rating too. An id that is not a claim's gives nothing.
+    expect((await ratingChoices(doc.id, 'contributor')).status).toBe(200)
+    expect((await ratingChoices(doc.id, null)).status).toBe(403)
     expect(await (await ratingChoices('not-an-id', 'editor')).json()).toEqual({ choices: [] })
   })
 

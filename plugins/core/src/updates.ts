@@ -694,14 +694,16 @@ const textOrNull = (value: unknown): string | null =>
 
 /**
  * `GET /api/claim-updates/rating-choices?claim={id}`: the ratings on a claim's
- * scale, in scale order and the editor's language, for the update form's picker.
+ * scale, in scale order and the reader's language, for the update form's picker.
  */
 const ratingChoices: Endpoint = {
   path: '/rating-choices',
   method: 'get',
   handler: async (req) => {
-    if (!can.rateClaims({ req })) {
-      return Response.json({ error: 'You cannot rate claims.' }, { status: 403 })
+    // Everyone who can read an update reads its rating's label. A scale's
+    // labels are public on the site, so this gives away nothing.
+    if (!signedIn({ req })) {
+      return Response.json({ error: 'Sign in to see the ratings.' }, { status: 403 })
     }
     const claim = req.searchParams.get('claim') ?? ''
     if (!UUID.test(claim)) return Response.json({ choices: [] })

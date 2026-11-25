@@ -327,7 +327,13 @@ export function RatingPicker({ path, field, readOnly }: TextFieldClientProps) {
     label: choice.label,
     choice,
   })
-  const selected = options.find((choice) => choice.slug === value)
+  // A saved rating the list does not have, such as one the scale no longer
+  // holds, still shows as it is stored rather than disappearing.
+  const selected =
+    options.find((choice) => choice.slug === value) ??
+    (value && choices !== null
+      ? { slug: value, label: value, colour: null, textColour: null, retired: false }
+      : undefined)
   const description = claim
     ? typeof field.admin?.description === 'string'
       ? field.admin.description
