@@ -47,6 +47,34 @@ export function setClaimTypeUsage(next: ClaimTypeUsage): void {
   claimTypeUsage = next
 }
 
+// Claim updates arrive with #651, which sets the real lookup.
+let ratingHistoryUsage: RatingUsage = async () => []
+
+/** Sets how claims whose updates give a rating are found. The claim updates record type calls this. */
+export function setRatingHistoryUsage(next: RatingUsage): void {
+  ratingHistoryUsage = next
+}
+
+/**
+ * The claims that carry a rating now or gave it in an update, without
+ * repeats. A rating any of them uses is retired, never deleted, so their
+ * history keeps its meaning (section 7.4).
+ */
+async function claimsUsingRating(
+  req: PayloadRequest,
+  scale: string,
+  rating: string,
+): Promise<RatingUse[]> {
+  const found = new Map<string, RatingUse>()
+  for (const use of [
+    ...(await ratingUsage({ req, scale, rating })),
+    ...(await ratingHistoryUsage({ req, scale, rating })),
+  ]) {
+    found.set(use.id, use)
+  }
+  return [...found.values()]
+}
+
 /** The claims that carry a rating, so it is not deleted while in use and can be re-rated when retired. */
 export function claimsWithRating(
   req: PayloadRequest,
@@ -171,11 +199,11 @@ const guardScale: CollectionBeforeChangeHook = async ({ data, originalDoc, req, 
     for (const removed of rows(originalDoc.ratings)) {
       const slug = str(removed.slug)
       if (!slug || kept.has(slug)) continue
-      const claims = await claimsWithRating(req, String(originalDoc.id), slug)
+      const claims = await claimsUsingRating(req, String(originalDoc.id), slug)
       if (claims.length > 0) {
         errors.push({
           path: 'ratings',
-          message: `"${slug}" is the rating of ${claims.length} claim(s): ${listClaims(claims)}. Retire it instead.`,
+          message: `"${slug}" is used by ${claims.length} claim(s), now or in their history: ${listClaims(claims)}. Retire it instead.`,
         })
       }
     }
@@ -210,10 +238,10 @@ const guardScaleDelete: CollectionBeforeDeleteHook = async ({ id, req }) => {
   for (const rating of rows(scale.ratings)) {
     const slug = str(rating.slug)
     if (!slug) continue
-    const claims = await claimsWithRating(req, String(id), slug)
+    const claims = await claimsUsingRating(req, String(id), slug)
     if (claims.length > 0) {
       throw new APIError(
-        `"${slug}" is the rating of ${claims.length} claim(s): ${listClaims(claims)}.`,
+        `"${slug}" is used by ${claims.length} claim(s), now or in their history: ${listClaims(claims)}.`,
         400,
         null,
         true,

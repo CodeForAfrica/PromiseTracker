@@ -411,7 +411,15 @@ function editorsOnly(fields: Field[]): Field[] {
 const keepRatingInStep: CollectionBeforeChangeHook = async ({ data, originalDoc, req }) => {
   const id = idOf(originalDoc?.id)
   if (!id) return data
-  return { ...data, ...(await ratingFromUpdates(req, id)) }
+  const rating = await ratingFromUpdates(req, id)
+  // With no update counting, the claim is on its scale's starting rating, as
+  // syncClaim sets it. The version a save starts from may still hold an older one.
+  if (!rating.currentRating) {
+    const type = idOf(valueIn(data, originalDoc, 'type'))
+    const { starting } = type ? await typeRatings(req, type) : { starting: null }
+    if (starting) rating.currentRating = starting
+  }
+  return { ...data, ...rating }
 }
 
 /** A changed verdict records when, and who set it. */

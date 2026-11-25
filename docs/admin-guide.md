@@ -344,6 +344,9 @@ changes to a published update.
 Evidence is checked when you save an update, against the update before it by date. Adding an older
 update, or holding one, does not check the later ones again, so look at the timeline afterwards.
 
+A rating that a claim carries, or that any of its updates gave, cannot be deleted from its scale,
+even if the update is in the trash. Retire it instead, so the history keeps its meaning.
+
 Removing an update, or holding it, puts the rating back to the latest update left, or to the
 starting rating if none is.
 

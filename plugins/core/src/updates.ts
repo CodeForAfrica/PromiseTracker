@@ -18,6 +18,7 @@ import { afterCommit } from './afterCommit'
 import { refreshTags } from './cache'
 import { countryCode, countryField, idOf } from './places'
 import { recomputeAndCascade, withPublishing, withTrash } from './publishing'
+import { setRatingHistoryUsage } from './ratings'
 
 /**
  * The tracker (sections 7.6 and 8.4): dated updates that set a claim's
@@ -763,3 +764,47 @@ export const refreshCountsTask = {
     return { output: {} }
   },
 }
+
+// An update names its rating by slug on its claim's scale. This tells the
+// rating scales which claims gave a rating in an update, trashed ones too,
+// since they can be restored, so one still in a claim's history is retired
+// rather than deleted.
+setRatingHistoryUsage(async ({ req, scale, rating }) => {
+  const types = await req.payload.find({
+    collection: 'claim-types',
+    where: { ratingScale: { equals: scale } },
+    depth: 0,
+    pagination: false,
+    // Finds the claim types on a scale, whoever edits the scale.
+    overrideAccess: true,
+    req: { ...req } as PayloadRequest,
+  })
+  if (types.docs.length === 0) return []
+  const { docs: updates } = await req.payload.find({
+    collection: 'claim-updates',
+    where: { rating: { equals: rating } },
+    depth: 0,
+    pagination: false,
+    select: { claim: true },
+    trash: true,
+    // Every update giving the rating, for the editor of the scale.
+    overrideAccess: true,
+    req: { ...req } as PayloadRequest,
+  })
+  const ids = [...new Set(updates.map((u) => idOf(u.claim)).filter((id) => id !== null))]
+  if (ids.length === 0) return []
+  const { docs } = await req.payload.find({
+    collection: 'claims',
+    where: {
+      and: [{ id: { in: ids } }, { type: { in: types.docs.map((t) => t.id) } }],
+    },
+    depth: 0,
+    pagination: false,
+    select: { title: true, slug: true },
+    trash: true,
+    // Names the claims, for the editor of the scale.
+    overrideAccess: true,
+    req: { ...req } as PayloadRequest,
+  })
+  return docs.map((doc) => ({ id: String(doc.id), title: String(doc.title ?? doc.slug ?? doc.id) }))
+})

@@ -259,6 +259,98 @@ describe('claim updates', () => {
     expect(none.updateCount).toBe(0)
   })
 
+  it('puts a claim saved with no update back on its starting rating', async () => {
+    const doc = await claim('harbours')
+    const proof = await evidence(`https://example.org/${code}/harbours-1`)
+    const only = await update({
+      claim: doc.id,
+      date: '2023',
+      rating: 'in-progress',
+      evidence: [proof.id],
+    })
+    // Saved while rated, so its latest version holds the rating.
+    await payload.update({
+      collection: 'claims',
+      id: doc.id,
+      locale: 'en',
+      data: { title: 'A pledge, harbours, renamed' },
+      overrideAccess: true,
+    })
+    await payload.delete({ collection: 'claim-updates', id: only.id, overrideAccess: true })
+    // A save with no user, as an import makes, starts from that version.
+    const saved = await payload.update({
+      collection: 'claims',
+      id: doc.id,
+      locale: 'en',
+      data: { title: 'A pledge, harbours' },
+      overrideAccess: true,
+    })
+    expect(saved.currentRating).toBe('unstarted')
+    expect((await read(doc.id)).currentRating).toBe('unstarted')
+  })
+
+  it('keeps a rating an older update gave from being deleted from its scale', async () => {
+    const rating = (slug: string, value: number, isStarting: boolean) => ({
+      slug,
+      label: slug,
+      tier: 'checked',
+      definition: `The claim is ${slug}.`,
+      colour: '#e4e5e8',
+      textColour: '#2a2c26',
+      value,
+      isStarting,
+    })
+    const scale = await payload.create({
+      collection: 'rating-scales',
+      locale: 'en',
+      data: {
+        name: `History ${code}`,
+        bestValue: 2,
+        worstValue: 1,
+        tiers: [{ slug: 'checked', label: 'Checked', colour: '#1b4fd8' }],
+        ratings: [rating('unproven', 1, true), rating('proven', 2, false)],
+      },
+      overrideAccess: true,
+    })
+    const type = await payload.create({
+      collection: 'claim-types',
+      locale: 'en',
+      data: { name: 'History test', slug: `history-${code}`, ratingScale: scale.id },
+      overrideAccess: true,
+    })
+    const doc = await claim('history', { type: type.id })
+    try {
+      const one = await evidence(`https://example.org/${code}/history-1`)
+      const two = await evidence(`https://example.org/${code}/history-2`)
+      await update({ claim: doc.id, date: '2023', rating: 'proven', evidence: [one.id] })
+      await update({ claim: doc.id, date: '2024', rating: 'unproven', evidence: [two.id] })
+      // No claim carries "proven" now, but an update in its history does.
+      expect((await read(doc.id)).currentRating).toBe('unproven')
+      const refused = await payload
+        .update({
+          collection: 'rating-scales',
+          id: scale.id,
+          locale: 'en',
+          data: { ratings: [rating('unproven', 1, true)] },
+          overrideAccess: true,
+        })
+        .then(
+          () => null,
+          (error: unknown) => error,
+        )
+      const { errors } = (Reflect.get(Object(refused), 'data') ?? {}) as {
+        errors?: { message: string }[]
+      }
+      expect(errors?.[0]?.message).toMatch(
+        /"proven" is used by 1 claim\(s\), now or in their history/,
+      )
+    } finally {
+      await payload.delete({ collection: 'claims', id: doc.id, overrideAccess: true, trash: true })
+      await payload.delete({ collection: 'claim-types', id: type.id, overrideAccess: true })
+      await payload.delete({ collection: 'rating-scales', id: scale.id, overrideAccess: true })
+    }
+  })
+
   it('confirms a rating with a review, and no public update', async () => {
     const doc = await claim('bridges')
     const before = await read(doc.id)
