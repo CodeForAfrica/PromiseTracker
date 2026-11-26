@@ -335,4 +335,143 @@ describe('editorial content', () => {
       })
     })
   })
+  describe('rich text and renamed addresses (sections 7.7 and 11.2)', () => {
+    /** A paragraph with a link to a record, as the admin's link feature saves it. */
+    const linkTo = (relationTo: string, value: string, label: string) => ({
+      type: 'paragraph',
+      format: '',
+      indent: 0,
+      version: 1,
+      direction: 'ltr',
+      textFormat: 0,
+      textStyle: '',
+      children: [
+        {
+          type: 'link',
+          format: '',
+          indent: 0,
+          version: 3,
+          direction: 'ltr',
+          fields: { linkType: 'internal', newTab: false, doc: { relationTo, value } },
+          children: [
+            {
+              type: 'text',
+              text: label,
+              format: 0,
+              style: '',
+              mode: 'normal',
+              detail: 0,
+              version: 1,
+            },
+          ],
+        },
+      ],
+    })
+
+    it('gives internal links their public address, keeps hidden ones as text, and shows images', async () => {
+      // One pixel, so the upload is a real image.
+      const png = Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+        'base64',
+      )
+      const image = await payload.create({
+        collection: 'media',
+        data: { alt: `Pipes ${word}` },
+        file: { data: png, mimetype: 'image/png', name: `pipes-${word}.png`, size: png.length },
+        overrideAccess: true,
+      })
+      made.unshift({ collection: 'media', id: String(image.id) })
+      const body = richText([{ p: 'Read on.' }]) as { root: { children: unknown[] } }
+      body.root.children.push(
+        linkTo('claims', claim, 'The pledge'),
+        linkTo('claims', heldClaim, 'A held pledge'),
+        linkTo('actors', actor, 'The president'),
+        {
+          type: 'upload',
+          format: '',
+          version: 3,
+          relationTo: 'media',
+          value: String(image.id),
+          fields: null,
+        },
+      )
+      await create('articles', {
+        country,
+        about: { relationTo: 'claims', value: claim },
+        title: `Linked ${word}`,
+        date: '2024-04-01',
+        body,
+        recordStatus: 'ready',
+      })
+      const article = await sdk.getArticle('en', code, `linked-${word}`)
+      if (isNotAvailable(article)) throw new Error('The article is not public.')
+      expect(article.body).toContain(`href="/en/${code}/p/pipe-${word}-water"`)
+      expect(article.body).toContain(`href="/en/${code}/e/ilvanne-${word}"`)
+      // A record the reader cannot see is named, without a link to it.
+      expect(article.body).toContain('A held pledge')
+      expect(article.body).not.toContain('href="#"')
+      expect(article.body).toMatch(/<img[^>]+alt="Pipes /)
+
+      const page = await create('pages', {
+        title: 'Images',
+        slug: `images-${word}`,
+        body,
+        recordStatus: 'ready',
+      })
+      expect(page).toBeTruthy()
+      const shown = await sdk.getPage('en', `images-${word}`)
+      if (isNotAvailable(shown)) throw new Error('The page is not public.')
+      expect(shown.body).toMatch(/<img[^>]+alt="Pipes /)
+    })
+
+    it('leads a renamed article and a renamed theme to their new addresses', async () => {
+      const article = await create('articles', {
+        country,
+        about: { relationTo: 'claims', value: claim },
+        title: `Old name ${word}`,
+        date: '2024-05-01',
+        recordStatus: 'ready',
+      })
+      await payload.update({
+        collection: 'articles',
+        id: article,
+        data: { slug: `new-name-${word}` },
+        overrideAccess: true,
+      })
+      expect(await sdk.getRedirect('en', `/${code}/a/old-name-${word}`)).toEqual({
+        to: `/${code}/a/new-name-${word}`,
+        permanent: true,
+      })
+      const theme = await create('themes', {
+        title: `Roads ${word}`,
+        claims: [claim],
+        countries: [country],
+        recordStatus: 'ready',
+      })
+      await payload.update({
+        collection: 'themes',
+        id: theme,
+        data: { slug: `transport-${word}` },
+        overrideAccess: true,
+      })
+      expect(await sdk.getRedirect('en', `/themes/roads-${word}`)).toEqual({
+        to: `/themes/transport-${word}`,
+        permanent: true,
+      })
+      expect(await sdk.getRedirect('en', `/themes/never-${word}`)).toBeNull()
+    })
+
+    it('refuses a page under a parent that no longer exists', async () => {
+      const gone = await create('pages', { title: 'Gone', slug: `gone-${word}` })
+      await payload.delete({ collection: 'pages', id: gone, overrideAccess: true })
+      await expect(
+        payload.create({
+          collection: 'pages',
+          data: { title: 'Orphan', slug: `orphan-${word}`, parent: gone } as never,
+          locale: 'en',
+          overrideAccess: true,
+        }),
+      ).rejects.toThrow(/no longer exists|invalid/i)
+    })
+  })
 })

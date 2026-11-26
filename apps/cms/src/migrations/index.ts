@@ -14,7 +14,7 @@ import * as migration_20261125_133015_search from './20261125_133015_search'
 import * as migration_20261125_142205_plugin_ai from './20261125_142205_plugin_ai'
 import * as migration_20261125_145030_plugin_check from './20261125_145030_plugin_check'
 import * as migration_20261125_174350_submissions from './20261125_174350_submissions'
-import * as migration_20261126_061936_editorial from './20261126_061936_editorial'
+import * as migration_20261126_125003_editorial from './20261126_125003_editorial'
 
 export const migrations = [
   {
@@ -98,8 +98,8 @@ export const migrations = [
     name: '20261125_174350_submissions',
   },
   {
-    up: migration_20261126_061936_editorial.up,
-    down: migration_20261126_061936_editorial.down,
-    name: '20261126_061936_editorial',
+    up: migration_20261126_125003_editorial.up,
+    down: migration_20261126_125003_editorial.down,
+    name: '20261126_125003_editorial',
   },
 ]

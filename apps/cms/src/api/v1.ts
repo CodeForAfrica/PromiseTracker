@@ -1,4 +1,8 @@
-import { convertLexicalToHTML } from '@payloadcms/richtext-lexical/html'
+import {
+  convertLexicalToHTML,
+  defaultHTMLConverters,
+  LinkHTMLConverter,
+} from '@payloadcms/richtext-lexical/html'
 import type {
   ActorRef,
   ActorSummary,
@@ -940,23 +944,214 @@ async function actorSummaries(
 /** How many articles Latest analysis shows. */
 const ANALYSIS_LENGTH = 3
 
-/** Link addresses a reader can safely follow: the web, email, and this site's own. */
-const SAFE_HREF = /^(https?:\/\/|mailto:|\/(?!\/)|#)/i
+/**
+ * Link addresses a reader can safely follow: the web, email, and this site's
+ * own. A site path may not start `//` or `/\\`, which browsers read as another site.
+ */
+const SAFE_HREF = /^(https?:\/\/|mailto:|\/(?![/\\])|#)/i
+
+/** A node of an editor's rich text, as Lexical saves it. */
+type RichNode = {
+  type?: unknown
+  fields?: { linkType?: unknown; doc?: { relationTo?: unknown; value?: unknown } }
+  relationTo?: unknown
+  value?: unknown
+  children?: unknown
+}
+
+/** What a body's links and images point at, read before it is turned into HTML. */
+export type RichRefs = {
+  /** A public address for each linked record, by `collection:id`. */
+  hrefs: ReadonlyMap<string, string>
+  /** Each embedded image's media record, by id. */
+  media: ReadonlyMap<string, Record<string, unknown>>
+}
+
+const NO_REFS: RichRefs = { hrefs: new Map(), media: new Map() }
+
+const nodesOf = (value: unknown): RichNode[] => {
+  if (!value || typeof value !== 'object' || !('root' in value)) return []
+  const out: RichNode[] = []
+  const walk = (node: unknown) => {
+    if (!node || typeof node !== 'object') return
+    out.push(node as RichNode)
+    const { children } = node as RichNode
+    if (Array.isArray(children)) for (const child of children) walk(child)
+  }
+  walk(value.root)
+  return out
+}
+
+const refId = (value: unknown): string | null =>
+  typeof value === 'string' ? value : (idOf(value as never) ?? null)
+
+/** The record an internal link points at, as `collection:id`. */
+const linkKey = (node: RichNode): string | null => {
+  const doc = node.fields?.doc
+  const id = refId(doc?.value)
+  return node.type === 'link' && node.fields?.linkType === 'internal' && id
+    ? `${String(doc?.relationTo)}:${id}`
+    : null
+}
+
+/**
+ * Reads what a body's internal links and images point at, as the reader would
+ * see them: a record that is not public in this language gets no address, and
+ * its link becomes plain text.
+ */
+export async function richRefs(
+  payload: Payload,
+  locale: TypedLocale,
+  value: unknown,
+): Promise<RichRefs> {
+  const nodes = nodesOf(value)
+  const linked = new Map<string, Set<string>>()
+  for (const node of nodes) {
+    const key = linkKey(node)
+    if (!key) continue
+    const [collection = '', id = ''] = key.split(':')
+    linked.set(collection, (linked.get(collection) ?? new Set()).add(id))
+  }
+  const mediaIds = nodes.flatMap((node) => {
+    const id = node.type === 'upload' && node.relationTo === 'media' ? refId(node.value) : null
+    return id ? [id] : []
+  })
+  if (!linked.size && !mediaIds.length) return NO_REFS
+  const ids = (collection: string) => [...(linked.get(collection) ?? [])]
+  const countries = new Map(
+    (await publishedCountries(payload, locale)).map((c) => [c.id, c.code] as const),
+  )
+  const hrefs = new Map<string, string>()
+  const inCountry = async (collection: 'actors' | 'articles', letter: string): Promise<void> => {
+    const wanted = ids(collection)
+    if (!wanted.length) return
+    const { docs } = await payload.find({
+      collection,
+      where: { and: [{ id: { in: wanted } }, publishedInLocale(locale)] },
+      depth: 0,
+      limit: 0,
+      overrideAccess: false,
+    })
+    for (const doc of docs) {
+      const code = countries.get(idOf(doc.country) ?? '')
+      if (code && doc.slug)
+        hrefs.set(`${collection}:${doc.id}`, `/${locale}/${code}/${letter}/${doc.slug}`)
+    }
+  }
+  const claims = async () => {
+    const wanted = ids('claims')
+    if (!wanted.length) return
+    const { docs } = await payload.find({
+      collection: 'claims',
+      where: { id: { in: wanted } },
+      depth: 0,
+      limit: 0,
+      select: { country: true },
+      overrideAccess: false,
+    })
+    const byCountry = new Map<string, string[]>()
+    for (const doc of docs) {
+      const country = idOf(doc.country) ?? ''
+      byCountry.set(country, [...(byCountry.get(country) ?? []), doc.id])
+    }
+    for (const [country, inIt] of byCountry) {
+      const code = countries.get(country)
+      if (!code) continue
+      for (const claim of await publicClaims(payload, country, locale, { id: { in: inIt } })) {
+        if (claim.slug) hrefs.set(`claims:${claim.id}`, `/${locale}/${code}/p/${claim.slug}`)
+      }
+    }
+  }
+  const global = async (collection: 'themes' | 'pages') => {
+    const wanted = ids(collection)
+    if (!wanted.length) return
+    const { docs } = await payload.find({
+      collection,
+      where: { and: [{ id: { in: wanted } }, publishedInLocale(locale)] },
+      depth: 0,
+      limit: 0,
+      overrideAccess: false,
+    })
+    for (const doc of docs) {
+      const tail =
+        collection === 'themes' ? `themes/${doc.slug ?? ''}` : (Reflect.get(doc, 'path') as unknown)
+      if (typeof tail === 'string' && tail && !tail.endsWith('/')) {
+        hrefs.set(`${collection}:${doc.id}`, `/${locale}/${tail}`)
+      }
+    }
+  }
+  for (const id of ids('countries')) {
+    const code = countries.get(id)
+    if (code) hrefs.set(`countries:${id}`, `/${locale}/${code}`)
+  }
+  const [, , , , , found] = await Promise.all([
+    inCountry('actors', 'e'),
+    inCountry('articles', 'a'),
+    claims(),
+    global('themes'),
+    global('pages'),
+    mediaIds.length
+      ? payload.find({
+          collection: 'media',
+          where: { id: { in: mediaIds } },
+          depth: 0,
+          limit: 0,
+          overrideAccess: false,
+        })
+      : null,
+  ])
+  const media = new Map(
+    (found?.docs ?? []).map((doc) => [doc.id, doc as unknown as Record<string, unknown>] as const),
+  )
+  return { hrefs, media }
+}
+
+/** A copy of the body with each image's media record in place of its id. */
+const withMedia = (value: object, media: RichRefs['media']): object => {
+  if (!media.size) return value
+  const copy = structuredClone(value)
+  for (const node of nodesOf(copy)) {
+    const id = node.type === 'upload' ? refId(node.value) : null
+    const doc = id ? media.get(id) : undefined
+    if (doc) node.value = doc
+  }
+  return copy
+}
 
 /**
  * HTML from an editor's rich text. Payload's converter escapes the text it
  * writes. A link to anything but the web, email or this site, such as a
- * `javascript:` address, loses its address.
+ * `javascript:` address, loses its address. Internal links and images take
+ * what `richRefs` read for them; without it they have no address and no image.
  */
-export const htmlOf = (value: unknown): string | null => {
+export const htmlOf = (value: unknown, refs: RichRefs = NO_REFS): string | null => {
   if (!value || typeof value !== 'object' || !('root' in value)) return null
-  const html = convertLexicalToHTML({ data: value as never, disableContainer: true })
+  const links = LinkHTMLConverter({
+    internalDocToHref: ({ linkNode }) => refs.hrefs.get(linkKey(linkNode as RichNode) ?? '') ?? '',
+  })
+  const html = convertLexicalToHTML({
+    data: withMedia(value, refs.media) as never,
+    disableContainer: true,
+    converters: {
+      ...defaultHTMLConverters,
+      ...links,
+      // A link to a record the reader cannot see is its text alone.
+      link: (args) =>
+        linkKey(args.node as RichNode) && !refs.hrefs.has(linkKey(args.node as RichNode) ?? '')
+          ? args.nodesToHTML({ nodes: args.node.children }).join('')
+          : (links.link as (a: typeof args) => string)(args),
+    },
+  })
     .replace(/\shref="([^"]*)"/g, (whole, href: string) =>
       SAFE_HREF.test(href.trim()) ? whole : ' href="#"',
     )
     .trim()
   return html ? html : null
 }
+
+/** A body as the reader sees it: its links and images read, then turned into HTML. */
+const bodyHtml = async (payload: Payload, locale: TypedLocale, value: unknown) =>
+  htmlOf(value, await richRefs(payload, locale, value))
 
 type AboutKind = ArticleSummary['about']['kind']
 const KIND_OF: Record<string, AboutKind> = {
@@ -1952,7 +2147,7 @@ const handlers: Record<string, Handler> = {
     }
     const [summary] = await toArticleSummaries(payload, country, locale, [doc])
     if (!summary) return notFound()
-    return ok(ArticleSchema.parse({ ...summary, body: htmlOf(doc.body) }))
+    return ok(ArticleSchema.parse({ ...summary, body: await bodyHtml(payload, locale, doc.body) }))
   },
 
   '/themes': async ({ payload, locale }) => {
@@ -2060,7 +2255,7 @@ const handlers: Record<string, Handler> = {
     return ok(
       PageSchema.parse({
         ...page,
-        body: page.link ? null : htmlOf(doc.body),
+        body: page.link ? null : await bodyHtml(payload, locale, doc.body),
         parents: summaries(parents).sort((a, b) => a.path.length - b.path.length),
         children: summaries(children),
       }),
@@ -2132,6 +2327,20 @@ const handlers: Record<string, Handler> = {
     const parts = (query.get('path') ?? '').split('/').filter(Boolean)
     const [code = '', ...rest] = parts
     if (!rest.every((part) => SLUG.test(part))) return notFound()
+    // A renamed theme: themes sit outside any country (section 11.2).
+    if (code === 'themes' && rest.length === 1) {
+      const { docs } = await payload.find({
+        collection: 'themes',
+        where: { formerSlugs: { in: [rest[0] ?? ''] } },
+        depth: 0,
+        limit: 1,
+        overrideAccess: false,
+      })
+      const slug = docs[0]?.slug
+      return slug
+        ? ok(RedirectSchema.parse({ to: `/themes/${slug}`, permanent: true }))
+        : notFound()
+    }
     const country = await publishedCountry(payload, code, locale)
     if (isResult(country)) return notFound()
     const permanent = (to: string) => ok(RedirectSchema.parse({ to, permanent: true }))
@@ -2162,6 +2371,19 @@ const handlers: Record<string, Handler> = {
       })
       const slug = docs[0]?.slug
       return slug ? permanent(`/${code}/p/${slug}${history ? '/history' : ''}`) : notFound()
+    }
+    if (rest[0] === 'a' && rest.length === 2) {
+      const { docs } = await payload.find({
+        collection: 'articles',
+        where: {
+          and: [{ country: { equals: country.id } }, { formerSlugs: { in: [rest[1] ?? ''] } }],
+        },
+        depth: 0,
+        limit: 1,
+        overrideAccess: false,
+      })
+      const slug = docs[0]?.slug
+      return slug ? permanent(`/${code}/a/${slug}`) : notFound()
     }
     if (rest[0] === 'e' && rest.length === 2) {
       const actor = await bySlug(payload, 'actors', country.id, rest[1] ?? '', true)

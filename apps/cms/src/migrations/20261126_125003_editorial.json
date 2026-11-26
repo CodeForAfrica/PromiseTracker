@@ -18571,7 +18571,7 @@
               "nulls": "last"
             }
           ],
-          "isUnique": false,
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -34853,6 +34853,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "ccec7f15-ddb2-4a46-9426-756b66ccc836",
+  "id": "147c1049-929d-4be4-8b6a-e9019d54206d",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

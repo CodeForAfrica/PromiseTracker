@@ -414,8 +414,12 @@ describe('rules', () => {
         { link: { text: 'Mail', url: 'mailto:a@example.org' } },
         { link: { text: 'Here', url: '/en/methodology' } },
         { link: { text: 'Bad', url: 'javascript:alert(1)' } },
+        { link: { text: 'Elsewhere', url: '/\\evil.example' } },
+        { link: { text: 'Also elsewhere', url: '//evil.example' } },
       ]),
     )
+    // Browsers read both as an address on another site.
+    expect(out).not.toContain('evil.example')
     expect(out).toContain('<h2>Heading</h2>')
     expect(out).toContain('href="https://example.org"')
     expect(out).toContain('href="mailto:a@example.org"')
