@@ -1,7 +1,17 @@
 import type { SiteInfo } from '@promisetracker/contract'
 
-import { findSite, getAllActors, getClaims, getCountries, getTopics } from '@/data'
+import {
+  findSite,
+  getAllActors,
+  getArticles,
+  getClaims,
+  getCountries,
+  getPageList,
+  getThemes,
+  getTopics,
+} from '@/data'
 import { absolute, alternates } from '@/seo'
+import { articlePaths, editorialPaths } from '@/sitemap'
 import type { SitemapEntry } from '@/xml'
 import { urlset } from '@/xml'
 
@@ -30,12 +40,28 @@ async function claimSlugs(lang: string, code: string): Promise<string[]> {
   return slugs
 }
 
-/** The pages of one language and country: the country, its officials, actors and claims. */
+/** Every article in a country, following each page. */
+async function articleSlugs(lang: string, code: string): Promise<string[]> {
+  const slugs: string[] = []
+  let cursor: string | undefined
+  do {
+    const page = await getArticles(lang, code, { limit: 100, cursor })
+    slugs.push(...page.items.map((article) => article.slug))
+    cursor = page.nextCursor ?? undefined
+  } while (cursor)
+  return slugs
+}
+
+/**
+ * The pages of one language and country: the country, its officials, actors,
+ * claims and articles.
+ */
 async function countryPaths(lang: string, code: string): Promise<string[]> {
-  const [actors, past, claims] = await Promise.all([
+  const [actors, past, claims, articles] = await Promise.all([
     getAllActors(lang, code),
     getAllActors(lang, code, { stage: 'past' }),
     claimSlugs(lang, code),
+    articleSlugs(lang, code),
   ])
   const actorSlugs = new Set([...actors, ...past].map((actor) => actor.slug))
   return [
@@ -43,11 +69,13 @@ async function countryPaths(lang: string, code: string): Promise<string[]> {
     `/${code}/officials`,
     ...[...actorSlugs].map((slug) => `/${code}/e/${slug}`),
     ...claims.flatMap((slug) => [`/${code}/p/${slug}`, `/${code}/p/${slug}/history`]),
+    ...articlePaths(code, articles),
   ]
 }
 
 /**
- * `/sitemap/{lang}/index.xml` lists a language's home and topic pages, and
+ * `/sitemap/{lang}/index.xml` lists a language's home, topic, theme and
+ * editor pages, and
  * `/sitemap/{lang}/{cc}.xml` one country's pages in that language.
  */
 export async function GET(_request: Request, { params }: Props) {
@@ -57,8 +85,16 @@ export async function GET(_request: Request, { params }: Props) {
   if (!site || !match?.[1]) return new Response('Not found', { status: 404 })
   let paths: string[]
   if (match[1] === 'index') {
-    const { items } = await getTopics(lang)
-    paths = ['/', ...items.filter((t) => t.claims > 0).map((t) => `/topics/${t.slug}`)]
+    const [topics, themes, pages] = await Promise.all([
+      getTopics(lang),
+      getThemes(lang),
+      getPageList(lang),
+    ])
+    paths = [
+      '/',
+      ...topics.items.filter((t) => t.claims > 0).map((t) => `/topics/${t.slug}`),
+      ...editorialPaths(themes.items, pages.items),
+    ]
   } else {
     const code = match[1]
     const { items } = await getCountries(lang)

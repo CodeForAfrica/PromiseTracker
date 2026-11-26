@@ -172,6 +172,16 @@ export const getArticle = (locale: string, code: string, slug: string) =>
     revalidate: HOLDERS_TTL,
   })()
 
+/** Every theme published in this language, for the sitemap. */
+export const getThemes = (locale: string) =>
+  unstable_cache(() => sdk.getThemes(locale), [RUN, 'themes', locale], {
+    tags: ['themes', 'countries'],
+  })()
+
+/** Every editor page published in this language, for the sitemap. */
+export const getPageList = (locale: string) =>
+  unstable_cache(() => sdk.getPages(locale), [RUN, 'pages', locale], { tags: ['pages', 'site'] })()
+
 /** An editor page at an address after the language, such as `about` or `resources/guides`. */
 export const getPage = (locale: string, path: string) =>
   unstable_cache(() => sdk.getPage(locale, path), [RUN, 'page', locale, path], {

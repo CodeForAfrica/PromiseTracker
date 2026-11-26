@@ -147,6 +147,17 @@ describe('editorial content', () => {
       })
       const moved = await sdk.getPage('en', `who-we-are-${word}/guides`)
       expect(isNotAvailable(moved) ? null : moved.title).toBe('Guides')
+      // The sitemap's list has every published page by its address, link pages marked.
+      const list = await sdk.getPages('en')
+      expect(
+        list.items
+          .filter((p) => p.path.startsWith(`who-we-are-${word}`))
+          .map((p) => [p.path, p.link]),
+      ).toEqual([
+        [`who-we-are-${word}`, null],
+        [`who-we-are-${word}/fact-checks`, 'https://pesacheck.org'],
+        [`who-we-are-${word}/guides`, null],
+      ])
     })
 
     it('refuses a second page at the same address', async () => {
@@ -247,6 +258,7 @@ describe('editorial content', () => {
       })
       const found = await sdk.getTheme('en', `water-${word}`)
       if (isNotAvailable(found)) throw new Error('The theme is not public.')
+      expect((await sdk.getThemes('en')).items.map((t) => t.slug)).toContain(`water-${word}`)
       expect(found.claims.map((c) => c.slug)).toEqual([`pipe-${word}-water`])
       expect(found.figures.map((f) => f.country.code)).toEqual([code])
 

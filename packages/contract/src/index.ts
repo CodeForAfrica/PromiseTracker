@@ -665,6 +665,10 @@ export const ThemeSummary = z.object({
 })
 export type ThemeSummary = z.infer<typeof ThemeSummary>
 
+/** `GET /api/v1/themes`: every theme published in this language. */
+export const ThemeList = z.object({ items: z.array(ThemeSummary) })
+export type ThemeList = z.infer<typeof ThemeList>
+
 /** `GET /api/v1/themes/{slug}`: the theme, its claims and figures by country. */
 export const Theme = ThemeSummary.extend({
   /** The claims an editor picked, in their order, published in this language. */
@@ -695,6 +699,10 @@ export const PageSummary = z.object({
   link: z.string().nullable(),
 })
 export type PageSummary = z.infer<typeof PageSummary>
+
+/** `GET /api/v1/pages/list`: every editor page published in this language, by address. */
+export const PageList = z.object({ items: z.array(PageSummary) })
+export type PageList = z.infer<typeof PageList>
 
 /** `GET /api/v1/pages?path=`: an editor page, the pages above it and those under it. */
 export const Page = PageSummary.extend({
@@ -1062,11 +1070,25 @@ export const V1_ENDPOINTS = [
     notAvailable: true,
   },
   {
+    path: '/themes',
+    summary: 'Every theme published in this language',
+    query: LocaleQuery,
+    response: ThemeList,
+    notAvailable: false,
+  },
+  {
     path: '/themes/{slug}',
     summary: 'A theme, its claims and figures by country',
     query: LocaleQuery,
     response: Theme,
     notAvailable: true,
+  },
+  {
+    path: '/pages/list',
+    summary: 'Every editor page published in this language, by address',
+    query: LocaleQuery,
+    response: PageList,
+    notAvailable: false,
   },
   {
     path: '/pages',

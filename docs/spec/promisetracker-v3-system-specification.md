@@ -1833,6 +1833,7 @@ codemods, and passes the full test suite before merging.
 | D108 | An editor can force a section on even when its rule in section 10.3 would leave it out, but a section with nothing in it never shows, forced on or not. Forced on, Choose a country is a list even with one country |
 | D109 | The interface text in plugin-site is stored as one value per language, not a column per string. Postgres reads at most a hundred columns in one call, and the strings outnumber that. The admin still shows one box per string |
 | D110 | Articles are listed under their country, `GET /countries/{cc}/articles?about=`, with `about` as `country`, `claim:{slug}` or `actor:{slug}`, as every other record that belongs to a country is. Editor pages are read with `GET /pages?path=`, since a nested path does not fit one address segment. `GET /overview` gives the homepage's "What we have tracked". An article about a claim or actor not published in a language is left out in that language |
+| D111 | Each language's sitemap lists its themes and editor pages, and each country's lists its articles, read through `GET /themes` and `GET /pages/list`. A page that is a marked link to a sister site is left out, since it leads away |
 
 ### 20.2 Why
 
