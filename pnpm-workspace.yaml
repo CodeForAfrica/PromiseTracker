@@ -49,7 +49,7 @@ catalog:
   "@vitest/coverage-v8": 5.1.1
   ai: 7.0.169
   csv-parse: 7.0.3
-  graphql: 16.15.0
+  graphql: 17.1.0
   htmlparser2: 12.0.0
   lefthook: 2.2.2
   next: 16.4.6
