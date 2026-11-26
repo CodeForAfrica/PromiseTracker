@@ -23,6 +23,7 @@ import {
   fetchDocumentTask,
   processDocumentWorkflow,
 } from './documents/pipeline'
+import { Articles, Pages, Partners, SisterTools, Themes } from './editorial'
 import { ImportMappings, Imports, runImportTask } from './imports/collections'
 import { csvImporter, xlsxImporter } from './imports/readers'
 import { Areas, Offices } from './places'
@@ -77,6 +78,11 @@ export const corePlugin = definePromiseTrackerPlugin({
     Submissions,
     SubmissionFiles,
     Topics,
+    Themes,
+    Articles,
+    Pages,
+    Partners,
+    SisterTools,
     RatingScales,
     ClaimTypes,
     Media,
@@ -168,6 +174,15 @@ export * from './documents/fileType'
 export * from './documents/pipeline'
 export * from './documents/plaintext'
 export * from './documents/ssrf'
+export {
+  ABOUT_TYPES,
+  Articles,
+  PAGE_DEPTH,
+  Pages,
+  Partners,
+  SisterTools,
+  Themes,
+} from './editorial'
 export * from './fields/encryptedSecret'
 export { privateHistory } from './history'
 export { setImporters } from './imports/collections'

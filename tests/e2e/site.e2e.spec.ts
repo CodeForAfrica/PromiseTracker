@@ -382,3 +382,68 @@ test('the header leads to search, and the address keeps the search', async ({ pa
   ).toBeVisible()
   await expectAccessible(page)
 })
+
+test('the home page shows every section an editor filled in (section 10.2)', async ({ page }) => {
+  await page.goto('/en')
+  const claim = page.getByRole('region', { name: 'A real claim' })
+  await expect(claim.getByRole('link', { name: 'Build 5000 homes in Kibra' })).toBeVisible()
+  const focus = page.getByRole('region', { name: 'In focus' })
+  await expect(
+    focus.getByRole('link', { name: /Homes and water, across 2 countries/ }),
+  ).toBeVisible()
+  const how = page.getByRole('region', { name: 'How a rating is decided' })
+  await expect(how.getByRole('link', { name: 'Read the full methodology' })).toHaveAttribute(
+    'href',
+    '/en/methodology',
+  )
+  await expect(page.getByRole('region', { name: 'What we have tracked' })).toBeVisible()
+  await expect(
+    page
+      .getByRole('region', { name: 'Who we work with' })
+      .getByRole('link', { name: 'Code for Africa' }),
+  ).toBeVisible()
+  await expect(
+    page
+      .getByRole('region', { name: 'Other tools from PesaCheck' })
+      .getByRole('link', { name: /PesaCheck/ }),
+  ).toHaveAttribute('href', 'https://pesacheck.org')
+  // The live reader counter is gone (D28).
+  await expect(page.getByText(/Readers on PromiseTracker/)).toHaveCount(0)
+  await expectAccessible(page)
+})
+
+test('a theme page lists its claims, with figures by country', async ({ page }) => {
+  await page.goto('/en/themes/e2e-homes-and-water')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Homes and water')
+  await expect(page.getByRole('link', { name: 'Build 5000 homes in Kibra' })).toBeVisible()
+  await expect(page.getByRole('link', { name: seed().full.en }).first()).toBeVisible()
+  await expectAccessible(page)
+})
+
+test('a claim page shows its latest analysis, which opens the article', async ({ page }) => {
+  const { code } = seed().full
+  await page.goto(`/en/${code}/p/kibra-housing`)
+  const analysis = page.getByRole('region', { name: 'Latest analysis' })
+  await analysis.getByRole('link', { name: 'Why the Kibra homes are late' }).click()
+  await expect(page).toHaveURL(`/en/${code}/a/why-the-kibra-homes-are-late`)
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Why the Kibra homes are late')
+  await expect(page.getByText('By A. Reporter')).toBeVisible()
+  await expect(page.getByText('The first phase was funded in the second budget.')).toBeVisible()
+  await expectAccessible(page)
+})
+
+test('an editor page renders at its own address', async ({ page }) => {
+  await page.goto('/en/methodology')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Methodology')
+  await expect(page.getByRole('heading', { name: 'Rating a claim' })).toBeVisible()
+  await expectAccessible(page)
+})
+
+test('the country page leads with In focus and the snapshot', async ({ page }) => {
+  await page.goto(`/en/${seed().full.code}`)
+  const focus = page.getByRole('region', { name: 'In focus' })
+  await expect(focus.getByRole('link', { name: 'Clean water for every ward' })).toBeVisible()
+  await expect(focus.getByRole('link', { name: /Achieng Wekesa/ }).first()).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Snapshot' })).toBeVisible()
+  await expectAccessible(page)
+})

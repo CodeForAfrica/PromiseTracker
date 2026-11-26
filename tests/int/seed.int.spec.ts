@@ -5,7 +5,14 @@ import { createSdk, isNotAvailable } from '@promisetracker/sdk'
 import type { Payload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import { readTopics, SEED_COUNTRIES, seedCountry, seedTopics } from '../../seed/seed'
+import {
+  readEditorial,
+  readTopics,
+  SEED_COUNTRIES,
+  seedCountry,
+  seedEditorial,
+  seedTopics,
+} from '../../seed/seed'
 import { testTransport } from './transport'
 
 /**
@@ -48,7 +55,28 @@ describe('seed data', () => {
   })
 
   afterAll(async () => {
+    // The editorial seed's records, and the picks that name the countries going below.
+    const editorial = readEditorial()
+    await payload.updateGlobal({
+      slug: 'site',
+      data: { picks: { featuredClaim: null, inFocus: null, featuredArea: null }, countryPicks: [] },
+      overrideAccess: true,
+    })
+    for (const [collection, where] of [
+      ['themes', { slug: { in: editorial.themes.map((t) => t.slug) } }],
+      ['pages', { slug: { in: editorial.pages.map((p) => p.slug) } }],
+      ['partners', { name: { in: editorial.partners.map((p) => p.name) } }],
+      ['sister-tools', { name: { in: editorial.sisterTools.map((t) => t.name) } }],
+    ] as const) {
+      await payload.delete({ collection, where, overrideAccess: true, trash: true })
+    }
     for (const { id } of await seedCountries()) {
+      await payload.delete({
+        collection: 'articles',
+        where: { country: { equals: id } },
+        overrideAccess: true,
+        trash: true,
+      })
       for (const collection of ['claims', 'terms', 'actors', 'areas', 'offices'] as const) {
         await payload.delete({
           collection,
@@ -79,6 +107,68 @@ describe('seed data', () => {
     for (const counts of Object.values(again.counts)) {
       expect(counts).toMatchObject({ create: 0, update: 0, failed: 0 })
     }
+  })
+
+  it('loads the editorial content once, and the site shows it (section 7.7)', async () => {
+    const first = await seedEditorial(payload)
+    expect(first).toMatchObject({ failed: 0 })
+    expect(first.create).toBeGreaterThan(0)
+    const again = await seedEditorial(payload)
+    expect(again).toMatchObject({ create: 0, update: 0, failed: 0 })
+
+    const site = await sdk.getSiteInfo('en')
+    expect(site.picks).toEqual({
+      featuredClaim: { country: 'ke', slug: 'cut-the-price-of-fertiliser' },
+      inFocus: 'public-money',
+      featuredArea: { country: 'ke', slug: 'nairobi-county' },
+    })
+    expect(site.partners.map((p) => p.name)).toEqual(['Code for Africa', 'PesaCheck'])
+    expect(site.sisterTools.map((t) => t.name)).toEqual(['PesaCheck'])
+
+    const theme = await sdk.getTheme('fr', 'public-money')
+    if (isNotAvailable(theme)) throw new Error('The theme is not public in French.')
+    expect(theme.title).toBe('L’argent public')
+    expect(theme.countries.map((c) => c.code)).toEqual(['ke', 'sn'])
+    expect(theme.claims.map((c) => c.slug)).toEqual([
+      'cut-the-price-of-fertiliser',
+      'review-oil-gas-and-mining-contracts',
+      'set-up-a-fund-for-small-traders',
+      'audit-public-finances',
+    ])
+    expect(theme.figures.map((f) => f.country.code)).toEqual(['ke', 'sn'])
+
+    const claim = await sdk.getClaim('en', 'ke', 'cut-the-price-of-fertiliser')
+    if (isNotAvailable(claim)) throw new Error('The claim is not public.')
+    expect(claim.analysis.map((a) => a.slug)).toEqual(['how-the-fertiliser-price-came-down'])
+    const article = await sdk.getArticle('en', 'ke', 'how-the-fertiliser-price-came-down')
+    if (isNotAvailable(article)) throw new Error('The article is not public.')
+    // No byline is a normal state (section 7.7).
+    expect(article.byline).toBeNull()
+    expect(article.about).toEqual({
+      kind: 'claim',
+      slug: 'cut-the-price-of-fertiliser',
+      name: 'Cut the price of fertiliser',
+    })
+    expect(article.body).toContain('<h2>The first phase</h2>')
+    expect(article.body).toContain('href="https://citizen.digital/')
+
+    const methodology = await sdk.getPage('fr', 'methodology')
+    if (isNotAvailable(methodology)) throw new Error('The methodology is not public in French.')
+    expect(methodology.title).toBe('Méthodologie')
+
+    const kenya = await sdk.getCountry('en', 'ke')
+    if (isNotAvailable(kenya)) throw new Error('Kenya is not public.')
+    expect(kenya.picks.actors.map((a) => a.slug)).toEqual(['william-ruto', 'johnson-sakaja'])
+    expect(kenya.picks.claims.map((c) => c.slug)).toEqual([
+      'cut-the-price-of-fertiliser',
+      'feed-every-pupil-in-nairobis-public-primary-schools',
+    ])
+    expect(kenya.counts.articles).toBe(1)
+
+    const overview = await sdk.getOverview('en')
+    expect(overview.countries).toBeGreaterThanOrEqual(2)
+    expect(overview.figures.total).toBeGreaterThan(0)
+    expect(overview.sources).toBeGreaterThan(0)
   })
 
   it('leaves an actor an editor held on hold, and says when a country is held', async () => {
@@ -246,8 +336,16 @@ describe('seed data', () => {
       ['/countries/{code}/claims', '/countries/ke/claims', { sort: 'deadline' }],
       ['/countries/{code}/claims/{slug}', `/countries/ke/claims/${claim.slug}`],
       ['/countries/{code}/claims/{slug}/history', `/countries/ke/claims/${claim.slug}/history`],
+      ['/countries/{code}/articles', '/countries/ke/articles', { about: `claim:${claim.slug}` }],
+      [
+        '/countries/{code}/articles/{slug}',
+        '/countries/ke/articles/how-the-fertiliser-price-came-down',
+      ],
       ['/topics', '/topics'],
       ['/topics/{slug}', '/topics/housing'],
+      ['/themes/{slug}', '/themes/public-money'],
+      ['/pages', '/pages', { path: 'methodology' }],
+      ['/overview', '/overview'],
       ['/search', '/search', { q: 'Nairobi', country: 'ke' }],
       ['/redirects', '/redirects', { path: '/ke/president' }],
     ]

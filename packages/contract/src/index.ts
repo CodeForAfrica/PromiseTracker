@@ -104,6 +104,37 @@ export const STRING_KEYS = [
   'searchPeople',
   'searchClaims',
   'searchTopics',
+  'realClaim',
+  'seeRecord',
+  'sourcesReviewed',
+  'evidenceFrom',
+  'inFocus',
+  'chosenByEditor',
+  'themeLabel',
+  'acrossCountries',
+  'withinCountry',
+  'allOnTheme',
+  'peopleLabel',
+  'featuredPlace',
+  'answeredBy',
+  'howRatingDecided',
+  'howRatingTitle',
+  'howRatingBody',
+  'readMethodology',
+  'whatTracked',
+  'trackedClaims',
+  'trackedActors',
+  'trackedCountries',
+  'trackedSources',
+  'whoWeWorkWith',
+  'otherTools',
+  'leavesSite',
+  'countrySnapshot',
+  'latestAnalysis',
+  'byline',
+  'aboutLabel',
+  'themeClaims',
+  'pagesBelow',
 ] as const
 
 /**
@@ -226,6 +257,47 @@ export const RatingScale = z.object({
 })
 export type RatingScale = z.infer<typeof RatingScale>
 
+/**
+ * The sections an editor can force on or off (sections 10.3 and 10.6). A
+ * page leaves out any other section with nothing to show, and never shows
+ * one empty.
+ */
+export const SECTION_IDS = [
+  'home.featured-claim',
+  'home.in-focus',
+  'home.how-ratings-work',
+  'home.tracked',
+  'home.choose-country',
+  'home.partners',
+  'home.sister-tools',
+  'country.in-focus',
+  'country.snapshot',
+  'country.who-is-delivering',
+  'country.officials',
+  'country.past-administrations',
+  'actor.latest-changes',
+  'actor.latest-analysis',
+  'actor.closing-summary',
+  'claim.latest-analysis',
+] as const
+export type SectionId = (typeof SECTION_IDS)[number]
+
+export const Partner = z.object({
+  name: z.string().min(1),
+  url: z.string().min(1),
+  logo: z.object({ url: z.string().min(1), alt: z.string() }).nullable(),
+  /** The countries they work in. Empty for everywhere. */
+  countries: z.array(z.string().length(2)),
+})
+export type Partner = z.infer<typeof Partner>
+
+export const SisterTool = z.object({
+  name: z.string().min(1),
+  description: z.string().nullable(),
+  url: z.string().min(1),
+})
+export type SisterTool = z.infer<typeof SisterTool>
+
 /** `GET /api/v1/site`: what every page of the default site needs. */
 export const SiteInfo = z.object({
   name: z.string().min(1),
@@ -243,6 +315,18 @@ export const SiteInfo = z.object({
   footer: z.object({ about: z.string().nullable(), links: z.array(NavLink) }),
   /** Every rating scale, so any page can show any claim's rating. */
   ratingScales: z.array(RatingScale),
+  /** What editors picked for the homepage (section 10.6), as addresses to read. */
+  picks: z.object({
+    featuredClaim: z.object({ country: z.string().length(2), slug: z.string().min(1) }).nullable(),
+    inFocus: z.string().min(1).nullable(),
+    featuredArea: z.object({ country: z.string().length(2), slug: z.string().min(1) }).nullable(),
+  }),
+  /** Sections an editor forced on or off. A section not listed follows its rule (section 10.3). */
+  sections: z.record(z.string(), z.enum(['on', 'off'])),
+  /** Who we work with. */
+  partners: z.array(Partner),
+  /** Other tools from PesaCheck. */
+  sisterTools: z.array(SisterTool),
 })
 export type SiteInfo = z.infer<typeof SiteInfo>
 
@@ -261,20 +345,6 @@ export const CountryList = z.object({
   nextCursor: z.string().nullable(),
 })
 export type CountryList = z.infer<typeof CountryList>
-
-/** `GET /api/v1/countries/{cc}`. */
-export const Country = CountrySummary.extend({
-  about: z.string().nullable(),
-  defaultLanguage: z.string().nullable(),
-  /** What the rules for the country page's sections need (section 10.3). */
-  counts: z.object({
-    /** People holding an office today. */
-    currentHolders: z.number().int().nonnegative(),
-    /** Terms that have ended. */
-    pastTerms: z.number().int().nonnegative(),
-  }),
-})
-export type Country = z.infer<typeof Country>
 
 /** An office in a country's list, such as Governor (section 7.2). */
 export const Office = z.object({
@@ -443,6 +513,24 @@ export const ClaimList = z.object({
 })
 export type ClaimList = z.infer<typeof ClaimList>
 
+/** `GET /api/v1/countries/{cc}`. */
+export const Country = CountrySummary.extend({
+  about: z.string().nullable(),
+  defaultLanguage: z.string().nullable(),
+  /** What the rules for the country page's sections need (section 10.3). */
+  counts: z.object({
+    /** People holding an office today. */
+    currentHolders: z.number().int().nonnegative(),
+    /** Terms that have ended. */
+    pastTerms: z.number().int().nonnegative(),
+    /** Published articles about the country or anything in it. */
+    articles: z.number().int().nonnegative(),
+  }),
+  /** What an editor picked for the country's In focus (section 10.6), published in this language. */
+  picks: z.object({ actors: z.array(ActorSummary), claims: z.array(ClaimSummary) }),
+})
+export type Country = z.infer<typeof Country>
+
 export const EVIDENCE_KINDS = ['document', 'dataset', 'social-post', 'article'] as const
 export const UPDATE_KINDS = ['first-rating', 'change', 'correction'] as const
 
@@ -477,6 +565,22 @@ export const ClaimUpdate = z.object({
   evidence: z.array(Evidence),
 })
 export type ClaimUpdate = z.infer<typeof ClaimUpdate>
+
+export const ABOUT_KINDS = ['claim', 'actor', 'country'] as const
+
+/** An article in a list (section 7.7). A byline is null when there is none, or it is hidden. */
+export const ArticleSummary = z.object({
+  slug: z.string().min(1),
+  country: z.string().length(2),
+  title: z.string().min(1),
+  standfirst: z.string().nullable(),
+  /** YYYY-MM-DD. */
+  date: z.string(),
+  image: Image.nullable(),
+  byline: z.string().nullable(),
+  about: z.object({ kind: z.enum(ABOUT_KINDS), slug: z.string(), name: z.string().min(1) }),
+})
+export type ArticleSummary = z.infer<typeof ArticleSummary>
 
 /** How many updates the claim page shows. The history page shows them all. */
 export const TIMELINE_LENGTH = 5
@@ -520,6 +624,8 @@ export const Claim = ClaimSummary.extend({
    * public address is not set.
    */
   citation: z.object({ url: z.string().min(1), text: z.string().min(1) }),
+  /** The latest published articles about the claim, newest first (section 10.2). */
+  analysis: z.array(ArticleSummary),
 })
 export type Claim = z.infer<typeof Claim>
 
@@ -549,6 +655,66 @@ export const Topic = TopicSummary.extend({
 })
 export type Topic = z.infer<typeof Topic>
 
+/** A theme in a list or a pick: a subject followed across countries (section 7.7). */
+export const ThemeSummary = z.object({
+  slug: z.string().min(1),
+  title: z.string().min(1),
+  introduction: z.string().nullable(),
+  image: Image.nullable(),
+  countries: z.array(CountrySummary),
+})
+export type ThemeSummary = z.infer<typeof ThemeSummary>
+
+/** `GET /api/v1/themes/{slug}`: the theme, its claims and figures by country. */
+export const Theme = ThemeSummary.extend({
+  /** The claims an editor picked, in their order, published in this language. */
+  claims: z.array(ClaimSummary),
+  countries: z.array(CountrySummary),
+  figures: z.array(z.object({ country: CountrySummary, figures: Figures })),
+})
+export type Theme = z.infer<typeof Theme>
+
+/** `GET /api/v1/countries/{cc}/articles`, the latest first. */
+export const ArticleList = z.object({
+  items: z.array(ArticleSummary),
+  total: z.number().int().nonnegative(),
+  nextCursor: z.string().nullable(),
+})
+export type ArticleList = z.infer<typeof ArticleList>
+
+/** `GET /api/v1/countries/{cc}/articles/{slug}`. The body is HTML made from the editor's text. */
+export const Article = ArticleSummary.extend({ body: z.string().nullable() })
+export type Article = z.infer<typeof Article>
+
+/** An editor page in a list: its address after the language, or the sister site it leads to. */
+export const PageSummary = z.object({
+  title: z.string().min(1),
+  path: z.string().min(1),
+  summary: z.string().nullable(),
+  /** Set when the page is a marked link to a sister site. */
+  link: z.string().nullable(),
+})
+export type PageSummary = z.infer<typeof PageSummary>
+
+/** `GET /api/v1/pages?path=`: an editor page, the pages above it and those under it. */
+export const Page = PageSummary.extend({
+  body: z.string().nullable(),
+  parents: z.array(PageSummary),
+  children: z.array(PageSummary),
+})
+export type Page = z.infer<typeof Page>
+
+/** `GET /api/v1/overview`: what the record holds, for "What we have tracked" (section 10.2). */
+export const Overview = z.object({
+  /** Every published claim, in every country. */
+  figures: Figures,
+  actors: z.number().int().nonnegative(),
+  countries: z.number().int().nonnegative(),
+  /** Pieces of evidence cited by published updates. */
+  sources: z.number().int().nonnegative(),
+})
+export type Overview = z.infer<typeof Overview>
+
 export const Actor = ActorSummary.extend({
   shortName: z.string().nullable(),
   honorific: z.string().nullable(),
@@ -563,6 +729,8 @@ export const Actor = ActorSummary.extend({
   record: Figures,
   /** The latest updates on the actor's claims, newest first. */
   latestChanges: z.array(ClaimChange),
+  /** The latest published articles about the actor, newest first (section 10.2). */
+  analysis: z.array(ArticleSummary),
 })
 export type Actor = z.infer<typeof Actor>
 
@@ -734,10 +902,29 @@ export const SearchQuery = LocaleQuery.extend({
     .optional(),
 })
 
+export const ArticlesQuery = LocaleQuery.extend({
+  /** `country` for articles about the country itself, or `claim:{slug}` or `actor:{slug}`. */
+  about: z
+    .string()
+    .regex(/^(country|(claim|actor):[a-z0-9]+(?:-[a-z0-9]+)*)$/)
+    .optional(),
+  ...Paging,
+})
+
+export const PageQuery = LocaleQuery.extend({
+  /** The page's address after the language, such as `resources/guides`. */
+  path: z
+    .string()
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*(?:\/[a-z0-9]+(?:-[a-z0-9]+)*)*$/)
+    .max(200),
+})
+
 /** The filters and order of an actor list, as the SDK takes them. */
 export type ActorQuery = Omit<z.output<typeof ActorsQuery>, 'locale'>
 /** The filters and order of a claim list, as the SDK takes them. */
 export type ClaimQuery = Omit<z.output<typeof ClaimsQuery>, 'locale'>
+/** Which articles to list, as the SDK takes it. */
+export type ArticleQuery = Omit<z.output<typeof ArticlesQuery>, 'locale'>
 /** A search's scope, as the SDK takes it. */
 export type SearchScope = Omit<z.output<typeof SearchQuery>, 'locale' | 'q'>
 
@@ -847,6 +1034,20 @@ export const V1_ENDPOINTS = [
     notAvailable: true,
   },
   {
+    path: '/countries/{code}/articles',
+    summary: 'Articles, the latest first, optionally about one claim, actor or the country',
+    query: ArticlesQuery,
+    response: ArticleList,
+    notAvailable: true,
+  },
+  {
+    path: '/countries/{code}/articles/{slug}',
+    summary: 'An article',
+    query: LocaleQuery,
+    response: Article,
+    notAvailable: true,
+  },
+  {
     path: '/topics',
     summary: 'Topics, with how many published claims each has',
     query: LocaleQuery,
@@ -859,6 +1060,27 @@ export const V1_ENDPOINTS = [
     query: LocaleQuery,
     response: Topic,
     notAvailable: true,
+  },
+  {
+    path: '/themes/{slug}',
+    summary: 'A theme, its claims and figures by country',
+    query: LocaleQuery,
+    response: Theme,
+    notAvailable: true,
+  },
+  {
+    path: '/pages',
+    summary: 'An editor page, the pages above it and those under it',
+    query: PageQuery,
+    response: Page,
+    notAvailable: true,
+  },
+  {
+    path: '/overview',
+    summary: 'What the record holds: figures for every published claim, and counts',
+    query: LocaleQuery,
+    response: Overview,
+    notAvailable: false,
   },
   {
     path: '/search',

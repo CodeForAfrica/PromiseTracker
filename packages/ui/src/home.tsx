@@ -26,19 +26,21 @@ export function HomeHero({ site }: { site: SiteInfo }) {
 }
 
 /**
- * Choose a country (section 10.3). With one country it is a single link.
- * With none it is left out.
+ * Choose a country (section 10.3). With one country it is a single link,
+ * unless an editor forced the list on. With none it is left out.
  */
 export function CountryPicker({
   site,
   countries,
+  asList = countries.length > 1,
 }: {
   site: SiteInfo
   countries: readonly CountrySummary[]
+  asList?: boolean
 }) {
   const [only] = countries
   if (!only) return null
-  if (countries.length === 1) {
+  if (!asList) {
     return (
       <section>
         <Container className="pt-7 pb-8">

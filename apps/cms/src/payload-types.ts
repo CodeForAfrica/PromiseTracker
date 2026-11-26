@@ -139,6 +139,59 @@ export type SupportedTimezones =
   | 'Pacific/Fiji';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LexicalNodes_9C0B01D6".
+ */
+export type LexicalNodes_9C0B01D6 =
+  | SerializedTextNode
+  | SerializedTabNode
+  | SerializedLineBreakNode
+  | SerializedParagraphNode<LexicalNodes_9C0B01D6>
+  | SerializedHorizontalRuleNode
+  | SerializedUploadNode<'boundaries'>
+  | SerializedUploadNode<'document-files'>
+  | SerializedUploadNode<'submission-files'>
+  | SerializedUploadNode<'media'>
+  | SerializedUploadNode<'imports'>
+  | SerializedQuoteNode<LexicalNodes_9C0B01D6>
+  | SerializedRelationshipNode<
+      | 'actors'
+      | 'terms'
+      | 'countries'
+      | 'areas'
+      | 'offices'
+      | 'documents'
+      | 'claims'
+      | 'claim-updates'
+      | 'evidence'
+      | 'rating-reviews'
+      | 'submissions'
+      | 'topics'
+      | 'themes'
+      | 'articles'
+      | 'pages'
+      | 'partners'
+      | 'sister-tools'
+      | 'rating-scales'
+      | 'claim-types'
+      | 'import-mappings'
+      | 'search-log'
+      | 'newsletter-signups'
+      | 'users'
+      | 'extractions'
+      | 'payload-kv'
+      | 'payload-jobs'
+      | 'payload-locked-documents'
+      | 'payload-preferences'
+      | 'payload-migrations'
+      | 'payload-query-presets'
+    >
+  | SerializedAutoLinkNode<LexicalNodes_9C0B01D6, LexicalLinkFields>
+  | SerializedLinkNode<LexicalNodes_9C0B01D6, LexicalLinkFields>
+  | SerializedListNode<LexicalNodes_9C0B01D6>
+  | SerializedListItemNode<LexicalNodes_9C0B01D6>
+  | SerializedHeadingNode<LexicalNodes_9C0B01D6>;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "LexicalNodes_3DE324E4".
  */
 export type LexicalNodes_3DE324E4 =
@@ -171,6 +224,11 @@ export interface Config {
     submissions: Submission;
     'submission-files': SubmissionFile;
     topics: Topic;
+    themes: Theme;
+    articles: Article;
+    pages: Page;
+    partners: Partner;
+    'sister-tools': SisterTool;
     'rating-scales': RatingScale;
     'claim-types': ClaimType;
     media: Media;
@@ -223,6 +281,11 @@ export interface Config {
     submissions: SubmissionsSelect<false> | SubmissionsSelect<true>;
     'submission-files': SubmissionFilesSelect<false> | SubmissionFilesSelect<true>;
     topics: TopicsSelect<false> | TopicsSelect<true>;
+    themes: ThemesSelect<false> | ThemesSelect<true>;
+    articles: ArticlesSelect<false> | ArticlesSelect<true>;
+    pages: PagesSelect<false> | PagesSelect<true>;
+    partners: PartnersSelect<false> | PartnersSelect<true>;
+    'sister-tools': SisterToolsSelect<false> | SisterToolsSelect<true>;
     'rating-scales': RatingScalesSelect<false> | RatingScalesSelect<true>;
     'claim-types': ClaimTypesSelect<false> | ClaimTypesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
@@ -1465,6 +1528,220 @@ export interface SubmissionFile {
   focalY?: number | null;
 }
 /**
+ * A subject followed across countries, with claims you pick.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "themes".
+ */
+export interface Theme {
+  id: string;
+  title: string;
+  introduction?: string | null;
+  image?: (string | null) | Media;
+  /**
+   * In the order they show. Only published claims appear.
+   */
+  claims?: (string | Claim)[] | null;
+  /**
+   * The countries it covers. Its figures are shown for each.
+   */
+  countries?: (string | Country)[] | null;
+  /**
+   * Made from the title. Used in addresses, such as /en/themes/water.
+   */
+  slug?: string | null;
+  formerSlugs?: string[] | null;
+  /**
+   * Ready makes it public in each language it is published in.
+   */
+  recordStatus: 'ready' | 'hold' | 'archived';
+  publishedIn?: string[] | null;
+  /**
+   * Worked out on save. The languages this record is live in.
+   */
+  liveIn?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * Analysis of a claim, an actor or a country. It shows as Latest analysis.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "articles".
+ */
+export interface Article {
+  id: string;
+  title: string;
+  /**
+   * One or two sentences under the title.
+   */
+  standfirst?: string | null;
+  body?: LexicalRichText<LexicalNodes_9C0B01D6> | null;
+  image?: (string | null) | Media;
+  /**
+   * The claim, actor or country it is about.
+   */
+  about:
+    | {
+        relationTo: 'claims';
+        value: string | Claim;
+      }
+    | {
+        relationTo: 'actors';
+        value: string | Actor;
+      }
+    | {
+        relationTo: 'countries';
+        value: string | Country;
+      };
+  date: string;
+  /**
+   * Who wrote it. Leave empty for none.
+   */
+  byline?: string | null;
+  hideByline?: boolean | null;
+  country: string | Country;
+  /**
+   * Made from the title. Used in addresses, such as /en/ke/a/water-for-kibra.
+   */
+  slug?: string | null;
+  formerSlugs?: string[] | null;
+  /**
+   * Ready makes it public in each language it is published in.
+   */
+  recordStatus: 'ready' | 'hold' | 'archived';
+  publishedIn?: string[] | null;
+  /**
+   * Worked out on save. The languages this record is live in.
+   */
+  liveIn?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * Pages such as About and Methodology, at /{language}/{page}.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages".
+ */
+export interface Page {
+  id: string;
+  _order?: string | null;
+  title: string;
+  /**
+   * One line, under the title and in lists of pages.
+   */
+  summary?: string | null;
+  body?: LexicalRichText<LexicalNodes_9C0B01D6> | null;
+  /**
+   * Makes the page a marked link instead: its address leads to this site, and menus mark it as leaving PromiseTracker.
+   */
+  link?: string | null;
+  /**
+   * The page it sits under, if any.
+   */
+  parent?: (string | null) | Page;
+  /**
+   * Made from the title. Not two letters, which are for countries.
+   */
+  slug?: string | null;
+  /**
+   * Its address after the language, worked out on save.
+   */
+  path?: string | null;
+  /**
+   * Ready makes it public in each language it is published in.
+   */
+  recordStatus: 'ready' | 'hold' | 'archived';
+  publishedIn?: string[] | null;
+  /**
+   * Worked out on save. The languages this record is live in.
+   */
+  liveIn?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+  _status?: ('draft' | 'published') | null;
+  _h_slugPath?: string | null;
+  _h_titlePath?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "partners".
+ */
+export interface Partner {
+  id: string;
+  _order?: string | null;
+  name: string;
+  logo?: (string | null) | Media;
+  url: string;
+  /**
+   * Where they work with us. Empty for everywhere.
+   */
+  countries?: (string | Country)[] | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sister-tools".
+ */
+export interface SisterTool {
+  id: string;
+  _order?: string | null;
+  name: string;
+  description?: string | null;
+  url: string;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+}
+/**
  * Upload a CSV or Excel file. Check the mapping, then choose Preview, and Import when the preview is right.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2012,6 +2289,26 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'topics';
         value: string | Topic;
+      } | null)
+    | ({
+        relationTo: 'themes';
+        value: string | Theme;
+      } | null)
+    | ({
+        relationTo: 'articles';
+        value: string | Article;
+      } | null)
+    | ({
+        relationTo: 'pages';
+        value: string | Page;
+      } | null)
+    | ({
+        relationTo: 'partners';
+        value: string | Partner;
+      } | null)
+    | ({
+        relationTo: 'sister-tools';
+        value: string | SisterTool;
       } | null)
     | ({
         relationTo: 'rating-scales';
@@ -2626,6 +2923,110 @@ export interface TopicsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "themes_select".
+ */
+export interface ThemesSelect<T extends boolean = true> {
+  title?: T;
+  introduction?: T;
+  image?: T;
+  claims?: T;
+  countries?: T;
+  slug?: T;
+  formerSlugs?: T;
+  recordStatus?: T;
+  publishedIn?: T;
+  liveIn?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  deletedAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "articles_select".
+ */
+export interface ArticlesSelect<T extends boolean = true> {
+  title?: T;
+  standfirst?: T;
+  body?: T;
+  image?: T;
+  about?: T;
+  date?: T;
+  byline?: T;
+  hideByline?: T;
+  country?: T;
+  slug?: T;
+  formerSlugs?: T;
+  recordStatus?: T;
+  publishedIn?: T;
+  liveIn?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  deletedAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages_select".
+ */
+export interface PagesSelect<T extends boolean = true> {
+  _order?: T;
+  title?: T;
+  summary?: T;
+  body?: T;
+  link?: T;
+  parent?: T;
+  slug?: T;
+  path?: T;
+  recordStatus?: T;
+  publishedIn?: T;
+  liveIn?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  deletedAt?: T;
+  _status?: T;
+  _h_slugPath?: T;
+  _h_titlePath?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "partners_select".
+ */
+export interface PartnersSelect<T extends boolean = true> {
+  _order?: T;
+  name?: T;
+  logo?: T;
+  url?: T;
+  countries?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  deletedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sister-tools_select".
+ */
+export interface SisterToolsSelect<T extends boolean = true> {
+  _order?: T;
+  name?: T;
+  description?: T;
+  url?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  deletedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "rating-scales_select".
  */
 export interface RatingScalesSelect<T extends boolean = true> {
@@ -3074,105 +3475,59 @@ export interface Site {
         }[]
       | null;
   };
+  picks?: {
+    /**
+     * Shown with its rating and sources.
+     */
+    featuredClaim?: (string | null) | Claim;
+    /**
+     * A theme. It shows when it spans two or more countries, or the site has one country.
+     */
+    inFocus?: (string | null) | Theme;
+    /**
+     * Shown in In focus with who answers for it.
+     */
+    featuredArea?: (string | null) | Area;
+  };
+  countryPicks?:
+    | {
+        country?: (string | null) | Country;
+        actors?: (string | Actor)[] | null;
+        claims?: (string | Claim)[] | null;
+        id?: string | null;
+      }[]
+    | null;
+  sections?: {
+    homeFeaturedClaim?: ('auto' | 'on' | 'off') | null;
+    homeInFocus?: ('auto' | 'on' | 'off') | null;
+    homeHowRatingsWork?: ('auto' | 'on' | 'off') | null;
+    homeTracked?: ('auto' | 'on' | 'off') | null;
+    homeChooseCountry?: ('auto' | 'on' | 'off') | null;
+    homePartners?: ('auto' | 'on' | 'off') | null;
+    homeSisterTools?: ('auto' | 'on' | 'off') | null;
+    countryInFocus?: ('auto' | 'on' | 'off') | null;
+    countrySnapshot?: ('auto' | 'on' | 'off') | null;
+    countryWhoIsDelivering?: ('auto' | 'on' | 'off') | null;
+    countryOfficials?: ('auto' | 'on' | 'off') | null;
+    countryPastAdministrations?: ('auto' | 'on' | 'off') | null;
+    actorLatestChanges?: ('auto' | 'on' | 'off') | null;
+    actorLatestAnalysis?: ('auto' | 'on' | 'off') | null;
+    actorClosingSummary?: ('auto' | 'on' | 'off') | null;
+    claimLatestAnalysis?: ('auto' | 'on' | 'off') | null;
+  };
   /**
    * Below this many claims, figures show as counts, such as "1 of 3 completed", rather than percentages (section 10.4).
    */
   figuresThreshold: number;
-  strings?: {
-    skipToContent?: string | null;
-    home?: string | null;
-    verified?: string | null;
-    countriesNav?: string | null;
-    otherCountries?: string | null;
-    menu?: string | null;
-    closeMenu?: string | null;
-    language?: string | null;
-    headline?: string | null;
-    headlineTail?: string | null;
-    lede?: string | null;
-    aboutSite?: string | null;
-    chooseCountry?: string | null;
-    notAvailableTitle?: string | null;
-    answersFor?: string | null;
-    seatsInArea?: string | null;
-    breadcrumb?: string | null;
-    notAvailableBody?: string | null;
-    officials?: string | null;
-    seeAllOfficials?: string | null;
-    whoIsDelivering?: string | null;
-    pastAdministrations?: string | null;
-    whoThisIs?: string | null;
-    timeInOffice?: string | null;
-    present?: string | null;
-    closingSummary?: string | null;
-    succeededBy?: string | null;
-    formerHolder?: string | null;
-    noHolder?: string | null;
-    links?: string | null;
-    photoCredit?: string | null;
-    filterOffice?: string | null;
-    filterArea?: string | null;
-    filterParty?: string | null;
-    filterAll?: string | null;
-    sortBy?: string | null;
-    sortName?: string | null;
-    sortOffice?: string | null;
-    showResults?: string | null;
-    noMatches?: string | null;
-    nextPage?: string | null;
-    claims?: string | null;
-    recordSoFar?: string | null;
-    keyClaim?: string | null;
-    claimWho?: string | null;
-    claimWhere?: string | null;
-    claimWhen?: string | null;
-    claimByWhen?: string | null;
-    claimRating?: string | null;
-    claimSaid?: string | null;
-    claimSource?: string | null;
-    filterRating?: string | null;
-    filterTopic?: string | null;
-    noClaims?: string | null;
-    figureOf?: string | null;
-    figuresByCountry?: string | null;
-    claimsOnTopic?: string | null;
-    filterCountry?: string | null;
-    verifiedOn?: string | null;
-    verifiedTitle?: string | null;
-    verifiedReport?: string | null;
-    lastReviewed?: string | null;
-    timelineTitle?: string | null;
-    historyTitle?: string | null;
-    fullHistory?: string | null;
-    backToClaim?: string | null;
-    correction?: string | null;
-    evidenceTitle?: string | null;
-    latestChanges?: string | null;
-    reportedBy?: string | null;
-    copyCitation?: string | null;
-    citationCopied?: string | null;
-    citeAs?: string | null;
-    citeAsUnreviewed?: string | null;
-    notFoundTitle?: string | null;
-    notFoundBody?: string | null;
-    backHome?: string | null;
-    footerNav?: string | null;
-    initiative?: string | null;
-    copyright?: string | null;
-    search?: string | null;
-    searchLabel?: string | null;
-    searchPlaceholder?: string | null;
-    searchTitle?: string | null;
-    searchIntro?: string | null;
-    searchResults?: string | null;
-    searchFound?: string | null;
-    searchNothing?: string | null;
-    whoRepresents?: string | null;
-    openPlace?: string | null;
-    searchPeople?: string | null;
-    searchClaims?: string | null;
-    searchTopics?: string | null;
-  };
+  strings?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   createdBy?: {
     relationTo: 'users';
     value: string | User;
@@ -3286,104 +3641,43 @@ export interface SiteSelect<T extends boolean = true> {
               id?: T;
             };
       };
-  figuresThreshold?: T;
-  strings?:
+  picks?:
     | T
     | {
-        skipToContent?: T;
-        home?: T;
-        verified?: T;
-        countriesNav?: T;
-        otherCountries?: T;
-        menu?: T;
-        closeMenu?: T;
-        language?: T;
-        headline?: T;
-        headlineTail?: T;
-        lede?: T;
-        aboutSite?: T;
-        chooseCountry?: T;
-        notAvailableTitle?: T;
-        answersFor?: T;
-        seatsInArea?: T;
-        breadcrumb?: T;
-        notAvailableBody?: T;
-        officials?: T;
-        seeAllOfficials?: T;
-        whoIsDelivering?: T;
-        pastAdministrations?: T;
-        whoThisIs?: T;
-        timeInOffice?: T;
-        present?: T;
-        closingSummary?: T;
-        succeededBy?: T;
-        formerHolder?: T;
-        noHolder?: T;
-        links?: T;
-        photoCredit?: T;
-        filterOffice?: T;
-        filterArea?: T;
-        filterParty?: T;
-        filterAll?: T;
-        sortBy?: T;
-        sortName?: T;
-        sortOffice?: T;
-        showResults?: T;
-        noMatches?: T;
-        nextPage?: T;
-        claims?: T;
-        recordSoFar?: T;
-        keyClaim?: T;
-        claimWho?: T;
-        claimWhere?: T;
-        claimWhen?: T;
-        claimByWhen?: T;
-        claimRating?: T;
-        claimSaid?: T;
-        claimSource?: T;
-        filterRating?: T;
-        filterTopic?: T;
-        noClaims?: T;
-        figureOf?: T;
-        figuresByCountry?: T;
-        claimsOnTopic?: T;
-        filterCountry?: T;
-        verifiedOn?: T;
-        verifiedTitle?: T;
-        verifiedReport?: T;
-        lastReviewed?: T;
-        timelineTitle?: T;
-        historyTitle?: T;
-        fullHistory?: T;
-        backToClaim?: T;
-        correction?: T;
-        evidenceTitle?: T;
-        latestChanges?: T;
-        reportedBy?: T;
-        copyCitation?: T;
-        citationCopied?: T;
-        citeAs?: T;
-        citeAsUnreviewed?: T;
-        notFoundTitle?: T;
-        notFoundBody?: T;
-        backHome?: T;
-        footerNav?: T;
-        initiative?: T;
-        copyright?: T;
-        search?: T;
-        searchLabel?: T;
-        searchPlaceholder?: T;
-        searchTitle?: T;
-        searchIntro?: T;
-        searchResults?: T;
-        searchFound?: T;
-        searchNothing?: T;
-        whoRepresents?: T;
-        openPlace?: T;
-        searchPeople?: T;
-        searchClaims?: T;
-        searchTopics?: T;
+        featuredClaim?: T;
+        inFocus?: T;
+        featuredArea?: T;
       };
+  countryPicks?:
+    | T
+    | {
+        country?: T;
+        actors?: T;
+        claims?: T;
+        id?: T;
+      };
+  sections?:
+    | T
+    | {
+        homeFeaturedClaim?: T;
+        homeInFocus?: T;
+        homeHowRatingsWork?: T;
+        homeTracked?: T;
+        homeChooseCountry?: T;
+        homePartners?: T;
+        homeSisterTools?: T;
+        countryInFocus?: T;
+        countrySnapshot?: T;
+        countryWhoIsDelivering?: T;
+        countryOfficials?: T;
+        countryPastAdministrations?: T;
+        actorLatestChanges?: T;
+        actorLatestAnalysis?: T;
+        actorClosingSummary?: T;
+        claimLatestAnalysis?: T;
+      };
+  figuresThreshold?: T;
+  strings?: T;
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;
@@ -3518,6 +3812,11 @@ export interface CollectionQueryWidget {
       | 'rating-reviews'
       | 'submissions'
       | 'topics'
+      | 'themes'
+      | 'articles'
+      | 'pages'
+      | 'partners'
+      | 'sister-tools'
       | 'rating-scales'
       | 'claim-types'
       | 'media'
@@ -3564,6 +3863,11 @@ export interface ActivityWidget {
           | 'rating-reviews'
           | 'submissions'
           | 'topics'
+          | 'themes'
+          | 'articles'
+          | 'pages'
+          | 'partners'
+          | 'sister-tools'
           | 'rating-scales'
           | 'claim-types'
           | 'media'
@@ -3776,6 +4080,62 @@ export interface SerializedParagraphNode<TChildren> extends SerializedLexicalEle
   type: 'paragraph';
   textFormat: number;
   textStyle: string;
+}
+
+export interface SerializedHorizontalRuleNode {
+  type: 'horizontalrule';
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+}
+
+export type SerializedUploadNode<TSlugs extends keyof Config['collections'], TFields = { [k: string]: unknown }> = {
+  type: 'upload';
+  format: LexicalElementFormat;
+  id: string;
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+  fields: TFields;
+} & {
+  [TSlug in TSlugs]: {
+    relationTo: TSlug;
+    value: Config['collections'][TSlug]['id'] | Config['collections'][TSlug];
+  };
+}[TSlugs];
+
+export interface SerializedQuoteNode<TChildren> extends SerializedLexicalElementBase<TChildren> {
+  type: 'quote';
+}
+
+export type SerializedRelationshipNode<TSlugs extends keyof Config['collections']> = {
+  type: 'relationship';
+  format: LexicalElementFormat;
+  /** @deprecated Ignored when loading. Typed as required only to match Lexical's types: rich text sent through the API, CLI or MCP may not contain it. */
+  version: number;
+} & {
+  [TSlug in TSlugs]: {
+    relationTo: TSlug;
+    value: Config['collections'][TSlug]['id'] | Config['collections'][TSlug];
+  };
+}[TSlugs];
+
+export interface LexicalLinkFields {
+  [k: string]: unknown;
+  doc?: {
+    relationTo: string;
+    value: Config['db']['defaultIDType'] | { [k: string]: unknown; id: Config['db']['defaultIDType'] };
+  } | null;
+  linkType: 'custom' | 'internal';
+  newTab: boolean;
+  url?: string;
+}
+export interface SerializedLinkNode<TChildren, TFields = LexicalLinkFields> extends SerializedLexicalElementBase<TChildren> {
+  type: 'link';
+  fields: TFields;
+  id?: string;
+}
+export interface SerializedAutoLinkNode<TChildren, TFields = LexicalLinkFields> extends SerializedLexicalElementBase<TChildren> {
+  type: 'autolink';
+  fields: TFields;
 }
 
 export interface SerializedListNode<TChildren> extends SerializedLexicalElementBase<TChildren> {

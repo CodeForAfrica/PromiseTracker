@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 
 import { findSite, followRedirect, getSeat, LOGO, loadShell, orNull } from '@/data'
+import { EditorPage, editorPageMetadata, isCountrySegment } from '@/editorPage'
 import { alternates } from '@/seo'
 
 type Props = { params: Promise<{ lang: string; cc: string; area: string; office: string }> }
@@ -14,6 +15,7 @@ export function generateStaticParams(): never[] {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang, cc, area, office } = await params
+  if (!isCountrySegment(cc)) return editorPageMetadata(lang, `${cc}/${area}/${office}`)
   const site = await findSite(lang)
   if (!site) return {}
   const seat = await orNull(getSeat(lang, cc, office, area))
@@ -29,6 +31,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
  */
 export default async function SeatAddress({ params }: Props) {
   const { lang, cc, area, office } = await params
+  // A first segment that is not a country is an editor page (section 11.2).
+  if (!isCountrySegment(cc)) return <EditorPage lang={lang} path={`${cc}/${area}/${office}`} />
   const shell = await loadShell(lang)
   const seat = await orNull(getSeat(lang, cc, office, area))
   if (!seat) {

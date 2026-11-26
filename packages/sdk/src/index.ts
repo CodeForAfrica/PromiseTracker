@@ -2,14 +2,18 @@ import type {
   Actor,
   ActorQuery,
   Area,
+  Article,
+  ArticleQuery,
   Claim,
   ClaimHistory,
   ClaimQuery,
   Country,
   NotAvailable,
+  Page,
   Redirect,
   SearchResults,
   SearchScope,
+  Theme,
   Topic,
 } from '@promisetracker/contract'
 import {
@@ -17,6 +21,8 @@ import {
   Actor as ActorSchema,
   AreaList,
   Area as AreaSchema,
+  ArticleList,
+  Article as ArticleSchema,
   ClaimHistory as ClaimHistorySchema,
   ClaimList,
   Claim as ClaimSchema,
@@ -25,17 +31,20 @@ import {
   isNotAvailable,
   NotAvailable as NotAvailableSchema,
   OfficeList,
+  Overview,
+  Page as PageSchema,
   Redirect as RedirectSchema,
   SearchResults as SearchResultsSchema,
   SeatHolders,
   SiteInfo,
+  Theme as ThemeSchema,
   TopicList,
   Topic as TopicSchema,
 } from '@promisetracker/contract'
 
 // The filters and order of actor and claim lists come from the contract, which
 // the API checks them against (section 12.2).
-export type { ActorQuery, ClaimQuery, SearchScope }
+export type { ActorQuery, ArticleQuery, ClaimQuery, SearchScope }
 
 /** A query as the API's parameters, leaving out what is not set. */
 const params = (query: Readonly<Record<string, string | number | undefined>>) =>
@@ -220,6 +229,33 @@ export function createSdk(transport: Transport) {
       return isNotAvailable(result)
         ? NotAvailableSchema.parse(result)
         : SearchResultsSchema.parse(result)
+    },
+    /** A theme with its claims and figures by country, or the languages it is published in. */
+    async getTheme(locale: string, slug: string): Promise<Theme | NotAvailable> {
+      const result = await get(`/themes/${encodeURIComponent(slug)}`, locale)
+      return isNotAvailable(result) ? NotAvailableSchema.parse(result) : ThemeSchema.parse(result)
+    },
+    /** A country's articles, the latest first, optionally about one claim, actor or the country. */
+    async getArticles(
+      locale: string,
+      code: string,
+      query: ArticleQuery = {},
+    ): Promise<ArticleList> {
+      return ArticleList.parse(await get(`${cc(code)}/articles`, locale, params(query)))
+    },
+    /** One article, or the languages it is published in. */
+    async getArticle(locale: string, code: string, slug: string): Promise<Article | NotAvailable> {
+      const result = await get(`${cc(code)}/articles/${encodeURIComponent(slug)}`, locale)
+      return isNotAvailable(result) ? NotAvailableSchema.parse(result) : ArticleSchema.parse(result)
+    },
+    /** An editor page at an address such as `resources/guides`, or the languages it is in. */
+    async getPage(locale: string, path: string): Promise<Page | NotAvailable> {
+      const result = await get('/pages', locale, { path })
+      return isNotAvailable(result) ? NotAvailableSchema.parse(result) : PageSchema.parse(result)
+    },
+    /** What the record holds, for "What we have tracked". */
+    async getOverview(locale: string): Promise<Overview> {
+      return Overview.parse(await get('/overview', locale))
     },
     /** Where an address leads, or null when it leads nowhere else (section 11.2). */
     async getRedirect(locale: string, path: string): Promise<Redirect | null> {

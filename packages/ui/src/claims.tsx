@@ -369,17 +369,25 @@ export function CountryFigures({
   site,
   countries,
   topic,
+  href,
 }: {
   site: SiteInfo
   countries: readonly { country: { code: string; name: string }; figures: Figures }[]
-  topic: string
+  /** Each country links to the topic's claims there. */
+  topic?: string
+  /** Or wherever this says, such as the country's page. */
+  href?: (code: string) => string
 }) {
   return (
     <ul className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,300px),1fr))] gap-6">
       {countries.map(({ country, figures }) => (
         <li key={country.code} className="grid gap-3">
           <Link
-            href={`${topicPath(site.locale, topic)}?country=${country.code}`}
+            href={
+              href
+                ? href(country.code)
+                : `${topicPath(site.locale, topic ?? '')}?country=${country.code}`
+            }
             className="text-[17px] font-semibold text-ink hover:text-ink hover:opacity-80"
           >
             {country.name}
