@@ -303,7 +303,9 @@ const setPath: CollectionBeforeChangeHook = async ({ data, originalDoc, req }) =
           overrideAccess: true,
           req,
         })
-        .catch(() => null)
+        .catch(() => {
+          throw new APIError('The page it sits under no longer exists.', 400)
+        })
     : null
   const above = parent ? Reflect.get(parent, 'path') : null
   const path = typeof above === 'string' && above ? `${above}/${String(slug)}` : String(slug)
@@ -327,7 +329,10 @@ const setPath: CollectionBeforeChangeHook = async ({ data, originalDoc, req }) =
   return { ...data, path }
 }
 
-/** A page moved or renamed moves the pages under it. */
+/**
+ * A page moved or renamed moves the pages under it. Each child's save moves its
+ * own children, in the same request: PAGE_DEPTH keeps that chain short.
+ */
 const movePagesBelow = async ({
   doc,
   previousDoc,
@@ -439,7 +444,9 @@ export const Pages: CollectionConfig = withPublishing(
       {
         name: 'path',
         type: 'text',
-        index: true,
+        // The hook above gives the editor a readable message. The index is the
+        // guard when two saves race for the same address.
+        unique: true,
         admin: {
           position: 'sidebar',
           readOnly: true,

@@ -712,6 +712,15 @@ A page with **Link to a sister site** set is a marked link: its address leads to
 lists of pages mark it as leaving PromiseTracker. The homepage's "How a rating is decided" links to
 the page with the slug `methodology`.
 
+### Links and images in an article or page
+
+In the body, **Link** can point at a web address or at another record: a claim, actor, article,
+theme, page or country. A link to a record follows it when its slug changes. When the record is
+not public in the reader's language, the reader sees the link's words without the link. Images
+added with **Upload** show at their saved size, with their **Alt** text.
+
+A renamed article or theme keeps its old address: readers who follow it are sent to the new one.
+
 ### Partners and sister tools
 
 Public site > Partners lists who we work with, and Sister tools lists other tools from PesaCheck.

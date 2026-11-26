@@ -620,7 +620,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "pages__order_idx" ON "pages" USING btree ("_order");
   CREATE INDEX "pages_parent_idx" ON "pages" USING btree ("parent_id");
   CREATE INDEX "pages_slug_idx" ON "pages" USING btree ("slug");
-  CREATE INDEX "pages_path_idx" ON "pages" USING btree ("path");
+  CREATE UNIQUE INDEX "pages_path_idx" ON "pages" USING btree ("path");
   CREATE INDEX "pages_record_status_idx" ON "pages" USING btree ("record_status");
   CREATE INDEX "pages_updated_at_idx" ON "pages" USING btree ("updated_at");
   CREATE INDEX "pages_created_at_idx" ON "pages" USING btree ("created_at");
