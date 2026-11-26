@@ -10,6 +10,7 @@ export const ADMIN_GROUPS = {
   claims: 'Claims',
   places: 'Places',
   sources: 'Sources',
+  submissions: 'Submissions',
   library: 'Media library',
   site: 'Public site',
   imports: 'Imports',

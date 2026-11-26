@@ -756,6 +756,18 @@ export const ClaimUpdates: CollectionConfig = withPublishing(
         admin: { description: 'Credit for a citizen who sent this in, with their consent.' },
       },
       {
+        name: 'submission',
+        type: 'relationship',
+        relationTo: 'submissions',
+        admin: {
+          position: 'sidebar',
+          readOnly: true,
+          description: 'The reader’s submission it came from, if any.',
+        },
+        // Set when a moderator accepts a submission (section 7.6).
+        access: { create: () => false, update: () => false },
+      },
+      {
         ...countryField,
         required: false,
         admin: { position: 'sidebar', readOnly: true, description: 'The claim’s country.' },

@@ -5,6 +5,7 @@ import {
   LatestAnalysis,
   NotAvailableNotice,
   PageShell,
+  SendUpdate,
   shows,
 } from '@promisetracker/ui'
 import type { Metadata } from 'next'
@@ -52,6 +53,7 @@ export default async function ClaimPage({ params }: Props) {
       {shows('claim.latest-analysis', shell.site.sections, analysisRule(claim.analysis.length)) && (
         <LatestAnalysis site={shell.site} articles={claim.analysis} />
       )}
+      <SendUpdate site={shell.site} claim={claim} />
     </PageShell>
   )
 }

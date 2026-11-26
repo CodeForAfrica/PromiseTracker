@@ -620,3 +620,38 @@ export function EditorPageView({ site, page }: { site: SiteInfo; page: Page }) {
     </article>
   )
 }
+
+/** Send an update (section 10.2): the three kinds, each opening the form with it chosen. */
+export function SendUpdate({
+  site,
+  claim,
+}: {
+  site: SiteInfo
+  claim: Pick<Claim, 'country' | 'slug'>
+}) {
+  const t = site.strings
+  const base = `${claimPath(site.locale, claim.country, claim.slug)}/update`
+  return (
+    <CountrySection id="send-update" title={t.submitUpdate}>
+      <p className="mb-5 max-w-[60ch] text-[15px] leading-[1.6] text-ink-2">{t.submitUpdateBody}</p>
+      <ul className="flex flex-wrap gap-3">
+        {(
+          [
+            ['evidence', t.kindEvidence],
+            ['correction', t.kindCorrection],
+            ['changed', t.kindChanged],
+          ] as const
+        ).map(([kind, label]) => (
+          <li key={kind}>
+            <Link
+              href={`${base}?kind=${kind}`}
+              className="inline-flex min-h-11 items-center rounded-lg border border-line px-4 text-[14px] font-medium text-ink hover:border-ink hover:text-ink"
+            >
+              {label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </CountrySection>
+  )
+}

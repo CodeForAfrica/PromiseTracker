@@ -40,6 +40,7 @@ import {
   Area as AreaSchema,
   ArticleList as ArticleListSchema,
   Article as ArticleSchema,
+  CaptchaChallenge as CaptchaChallengeSchema,
   ClaimHistory as ClaimHistorySchema,
   ClaimList as ClaimListSchema,
   Claim as ClaimSchema,
@@ -313,7 +314,7 @@ const nameIn = (value: unknown, locale: string): string | null => {
 }
 
 /** A language the site runs in: registered, and switched on by PT_LOCALES. */
-const inUse = (value: string): value is TypedLocale =>
+export const inUse = (value: string): value is TypedLocale =>
   registeredLocales.some((l) => l.code === value) && kernel.locales.some((l) => l.code === value)
 type Handler = (ctx: Context) => Promise<V1Result>
 
@@ -2033,6 +2034,12 @@ const handlers: Record<string, Handler> = {
         children: summaries(children),
       }),
     )
+  },
+
+  '/captcha': async ({ payload }) => {
+    const captcha = kernel.adapters.captcha
+    const challenge = await captcha.challenge(await kernel.context(payload, ownerOf(captcha)))
+    return ok(CaptchaChallengeSchema.parse(challenge))
   },
 
   '/overview': async ({ payload, locale }) => {

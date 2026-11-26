@@ -51,7 +51,13 @@ export function slugProblem(slug: unknown): string | null {
  * Words that follow `/{lang}/` for something other than an editor page, so no
  * page may use them (section 11.2). Two-letter segments are countries.
  */
-export const RESERVED_IN_LANGUAGE = ['topics', 'themes', 'search', 'opengraph-image'] as const
+export const RESERVED_IN_LANGUAGE = [
+  'topics',
+  'themes',
+  'search',
+  'newsletter',
+  'opengraph-image',
+] as const
 
 /** Why an editor page cannot use a slug, or null when it can (section 11.2). */
 export function pageSlugProblem(slug: unknown): string | null {

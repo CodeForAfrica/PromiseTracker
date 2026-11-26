@@ -48,6 +48,7 @@ export {
   Partners,
   pageHref,
   RichText,
+  SendUpdate,
   SisterTools,
   Snapshot,
   ThemeView,
@@ -56,6 +57,8 @@ export {
 } from './editorial'
 export { Flag } from './Flag'
 export { fill } from './fill'
+export type { UpdateContext } from './forms'
+export { ConfirmSignup, SubscribeForm, UpdateForm } from './forms'
 export {
   ClaimHistoryView,
   ClaimRecord,

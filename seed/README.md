@@ -63,7 +63,7 @@ checked the way an editor's file is.
   the Postgres volume, then `pnpm services` and `pnpm migrate`.
 - **It loads in order:** the shared topics first, then for each country offices, areas, actors,
   terms, claims and claim updates, because each names records loaded before it. Last comes
-  `seed/data/editorial.json`: partners, sister tools, a theme, an article, the methodology page
+  `seed/data/editorial.json`: partners, sister tools, a theme, an article, the methodology and privacy pages
   and the homepage and country picks. It loads only when every country is seeded, since it names
   claims in both. Picks an editor already set are kept.
 

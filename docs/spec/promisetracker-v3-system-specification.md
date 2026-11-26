@@ -1815,6 +1815,10 @@ codemods, and passes the full test suite before merging.
 | D90 | An editor can force a section on even when its rule in section 10.3 would leave it out, but a section with nothing in it never shows, forced on or not. Forced on, Choose a country is a list even with one country |
 | D91 | The interface text in plugin-site is stored as one value per language, not a column per string. Postgres reads at most a hundred columns in one call, and the strings outnumber that. The admin still shows one box per string |
 | D92 | Articles are listed under their country, `GET /countries/{cc}/articles?about=`, with `about` as `country`, `claim:{slug}` or `actor:{slug}`, as every other record that belongs to a country is. Editor pages are read with `GET /pages?path=`, since a nested path does not fit one address segment. `GET /overview` gives the homepage's "What we have tracked". An article about a claim or actor not published in a language is left out in that language |
+| D93 | The `local` captcha is a signed proof-of-work challenge from `GET /api/v1/captcha`, needing 16 leading zero bits of SHA-256, answered once within 10 minutes. The server keeps nothing until an answer comes back. A form with the hidden trap field filled in is answered as if it went through, and kept nowhere |
+| D94 | Rate limits count per web process: five submissions and five sign-ups per scrambled address in ten minutes. The address is the last entry of `X-Forwarded-For`, which the proxy adds. The scrambled form is a keyed hash, so the same address always gives the same value and it cannot be read back without the app's secret |
+| D95 | A moderator accepts a submission by setting its status to accepted. That creates a claim update on hold with the claim's current rating, for an editor to rate and release. Submissions and sign-ups keep no version history, so details removed on request leave no copy |
+| D96 | The newsletter's confirmation link opens `/{lang}/newsletter`, where the reader presses a button to confirm, so a mail scanner opening the link does not confirm for them. `newsletter` joins the words an editor page's slug cannot use |
 
 ### 20.2 Why
 

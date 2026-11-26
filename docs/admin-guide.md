@@ -19,6 +19,7 @@ explains the rules behind each step.
 11. Site settings
 12. Publishing: what is public, and when
 13. Search
+14. Submissions and the newsletter
 
 The admin's menu groups record types by what they are for:
 
@@ -28,6 +29,7 @@ The admin's menu groups record types by what they are for:
 | Claims         | Claims, Claim updates, Evidence, Rating reviews, Topics, Rating scales, Claim types |
 | Places         | Countries, Areas, Offices, Boundaries                                               |
 | Sources        | Documents, Source files, Extractions                                                |
+| Submissions    | Submissions, Newsletter sign-ups                                                    |
 | Media library  | Images, such as actor photos                                                        |
 | Imports        | Imports, Saved mappings                                                             |
 | Administration | Users, Settings, Search index, Search log                                           |
@@ -765,3 +767,55 @@ To see the searches that found nothing, add the **Searches that found nothing** 
 dashboard: choose **Edit Dashboard**, then **Add Widget**. It lists the last 30 days' searches with
 no results, most often first. A place that keeps appearing may be missing from the record, or
 spelt another way. Add the area, or check how its name is spelt.
+
+## 14. Submissions and the newsletter
+
+### Submissions
+
+Every claim page has **Send an update**. A reader chooses new evidence, a correction or "something
+has changed", writes what they saw, and can add up to five photos or PDFs, a link, their name and
+how to reach them. No account is needed. They get a reference, such as `KE-2026-48213`, to quote.
+
+Submissions > Submissions lists them, newest first. Moderators, editors and super-admins can open
+them. Each shows the claim, what was sent, and in the sidebar its **Status**:
+
+- **new**: nobody has looked at it yet.
+- **accepted**: turned into a claim update. Saving with this status creates a claim update **on
+  hold**, with the submission's words as its narrative and the claim's current rating. An editor
+  then rates it, adds evidence, and sets it to ready. The sender is credited, under
+  **Attribution**, only if they ticked the box to say so.
+- **rejected**: not used. Say why in **Note**.
+- **spam**: nonsense or abuse.
+
+Rejected and spam submissions are deleted after 180 days. Links in a submission are shown, never
+opened by the server. Files download rather than open in the browser.
+
+**The sender's details** (name and contact) are never shown on the site. When someone asks for
+theirs to be removed, clear **Name** and **Contact** and save. Submissions keep no version
+history, so nothing else holds them. To remove a submission entirely, delete it.
+
+**The daily digest.** Each morning at 07:00 UTC, moderators, editors and super-admins get an email
+listing the new submissions from the last day, with a link to each. Until an email provider is set
+up, it is written to the server's log.
+
+**The dashboard widget.** Add **Submissions** to your dashboard (**Edit Dashboard**, **Add
+Widget**). It shows how many wait for a moderator, and how many of the last 30 days' changed the
+record. Few coming in means readers do not find the form. Many that change nothing means noise or
+a backlog.
+
+**Spam protection.** The forms need no outside service. The reader's browser solves a small puzzle
+before sending, a field hidden from people catches bots, and each sender can send only a few in
+ten minutes. Their network address is never stored, only a scrambled form of it, shown as
+**Sender, scrambled**: the same value on two submissions means they came from the same place.
+
+### The newsletter
+
+The footer of every page has a sign-up form. The reader gets an email with a link, and nothing is
+sent to them until they open it and press **Confirm my sign-up**. Super-admins see the list under
+Submissions > Newsletter sign-ups, with whether each is confirmed. To remove someone on request,
+delete them there.
+
+### The privacy notice
+
+Both forms link to `/{language}/privacy`, an editor page (section 11). Keep it up to date with what
+the site collects and how long it is kept. The seed data has a starting text.

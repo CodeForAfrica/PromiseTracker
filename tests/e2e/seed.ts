@@ -50,6 +50,16 @@ if (process.argv.includes('--remove')) {
       await payload.delete({ collection, id, overrideAccess: true, trash: true }).catch(() => {})
     }
     await payload.delete({
+      collection: 'submissions',
+      where: { 'claim.country': { equals: seed.full.id } } as never,
+      overrideAccess: true,
+    })
+    await payload.delete({
+      collection: 'newsletter-signups',
+      where: { email: { like: '@example.org' } },
+      overrideAccess: true,
+    })
+    await payload.delete({
       collection: 'articles',
       where: { country: { equals: seed.full.id } },
       overrideAccess: true,
@@ -229,6 +239,18 @@ if (process.argv.includes('--remove')) {
     overrideAccess: true,
   })
   editorial.push({ collection: 'pages', id: methodology.id })
+  const privacy = await payload.create({
+    collection: 'pages',
+    locale: 'en',
+    data: {
+      title: 'Privacy notice',
+      slug: 'privacy',
+      body: richText([{ p: 'Your contact details are never published.' }]),
+      recordStatus: 'ready',
+    } as never,
+    overrideAccess: true,
+  })
+  editorial.push({ collection: 'pages', id: privacy.id })
   await payload.create({
     collection: 'articles',
     locale: 'en',

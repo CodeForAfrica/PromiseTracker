@@ -24,6 +24,7 @@ import {
   processDocumentWorkflow,
 } from './documents/pipeline'
 import { Articles, Pages, Partners, SisterTools, Themes } from './editorial'
+import { NewsletterSignups, SubmissionFiles, Submissions, submissionDigestTask } from './forms'
 import { ImportMappings, Imports, runImportTask } from './imports/collections'
 import { csvImporter, xlsxImporter } from './imports/readers'
 import { Areas, Offices } from './places'
@@ -77,6 +78,9 @@ export const corePlugin = definePromiseTrackerPlugin({
     RatingScales,
     ClaimTypes,
     Media,
+    Submissions,
+    SubmissionFiles,
+    NewsletterSignups,
     Imports,
     ImportMappings,
     SearchLog,
@@ -91,6 +95,7 @@ export const corePlugin = definePromiseTrackerPlugin({
     recomputePublishingTask as never,
     dailyPublishingTask as never,
     refreshCountsTask as never,
+    submissionDigestTask as never,
   ],
   workflows: [processDocumentWorkflow as never],
   widgets: [
@@ -103,6 +108,13 @@ export const corePlugin = definePromiseTrackerPlugin({
     {
       slug: 'awaiting-verification',
       Component: '@promisetracker/plugin-core/widgets#AwaitingVerification',
+      minWidth: 'small',
+      maxWidth: 'medium',
+    },
+    {
+      slug: 'submissions',
+      label: 'Submissions',
+      Component: '@promisetracker/plugin-core/widgets#SubmissionsWidget',
       minWidth: 'small',
       maxWidth: 'medium',
     },
@@ -142,6 +154,18 @@ export { ADMIN_GROUPS } from './adminGroups'
 export { afterCommit, installAfterCommit } from './afterCommit'
 export { Boundaries, geoJsonProblem, MAX_BOUNDARY_BYTES } from './boundaries'
 export * from './cache'
+export {
+  CHALLENGE_TTL_MS,
+  checkAnswer,
+  clientAddress,
+  createRateLimiter,
+  hasLeadingZeroBits,
+  newChallenge,
+  POW_BITS,
+  powHash,
+  scrambleAddress,
+  solve,
+} from './captcha'
 export type { DatePrecision } from './claims'
 export { Claims, EXTRACTIONS, PARTIAL_DATE, partialDatePrecision, Topics } from './claims'
 export * from './contrast'
@@ -165,6 +189,24 @@ export {
   Themes,
 } from './editorial'
 export * from './fields/encryptedSecret'
+export type { NewSubmission, SubmissionFile, SubmissionKind } from './forms'
+export {
+  CONFIRM_TTL_MS,
+  confirmSignup,
+  createSubmission,
+  DISCARD_AFTER_DAYS,
+  MAX_SUBMISSION_FILE,
+  MAX_SUBMISSION_FILES,
+  NewsletterSignups,
+  SUBMISSION_FILE_TYPES,
+  SUBMISSION_KINDS,
+  SUBMISSION_STATUSES,
+  SubmissionFiles,
+  Submissions,
+  submissionCounts,
+  submissionDigest,
+  submissionReference,
+} from './forms'
 export { privateHistory } from './history'
 export { setImporters } from './imports/collections'
 export type { ImportResult, RowError } from './imports/engine'

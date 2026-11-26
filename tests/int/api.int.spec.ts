@@ -1,5 +1,5 @@
 import { getPayload, handleV1, READ_CACHE, respondV1, V1_PATTERNS } from '@promisetracker/cms'
-import { ApiError, V1_ENDPOINTS } from '@promisetracker/contract'
+import { ApiError, V1_ENDPOINTS, V1_POSTS } from '@promisetracker/contract'
 import type { Payload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
@@ -158,7 +158,10 @@ describe('/api/v1', () => {
         components: { schemas: Record<string, unknown> }
       }
       expect(doc.openapi).toBe('3.1.0')
-      expect(Object.keys(doc.paths)).toEqual(V1_ENDPOINTS.map((e) => e.path))
+      expect(Object.keys(doc.paths)).toEqual([
+        ...V1_ENDPOINTS.map((e) => e.path),
+        ...V1_POSTS.map((e) => e.path),
+      ])
       expect(doc.components.schemas.NotAvailable).toBeTruthy()
     })
   })

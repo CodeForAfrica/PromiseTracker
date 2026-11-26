@@ -447,3 +447,53 @@ test('the country page leads with In focus and the snapshot', async ({ page }) =
   await expect(page.getByRole('region', { name: 'Snapshot' })).toBeVisible()
   await expectAccessible(page)
 })
+
+test('a reader sends an update about a claim, and is given a reference (section 7.9)', async ({
+  page,
+}) => {
+  const { code } = seed().full
+  await page.goto(`/en/${code}/p/kibra-housing`)
+  await page
+    .getByRole('region', { name: 'Send an update' })
+    .getByRole('link', { name: 'A correction' })
+    .click()
+  await expect(page).toHaveURL(`/en/${code}/p/kibra-housing/update?kind=correction`)
+  await expect(page.getByRole('radio', { name: /A correction/ })).toBeChecked()
+  const main = page.getByRole('main')
+  await expect(main.getByRole('link', { name: 'How we handle what you send' })).toHaveAttribute(
+    'href',
+    '/en/privacy',
+  )
+  await expectAccessible(page)
+  // Sending with nothing written says what is missing.
+  await page.getByRole('button', { name: 'Send it in' }).click()
+  await expect(page.getByText('Tell us what you saw, in a sentence or two.')).toBeVisible()
+  await page.getByLabel('What did you see').fill('The houses are built, but nobody lives in them.')
+  await page.getByRole('button', { name: 'Send it in' }).click()
+  const receipt = main.getByRole('status')
+  await expect(receipt).toContainText('Thank you. An editor will look at this.', {
+    timeout: 30_000,
+  })
+  await expect(receipt).toContainText(new RegExp(`${code.toUpperCase()}-\\d{4}-\\d{5}`))
+})
+
+test('the footer signs a reader up, and asks them to confirm by email', async ({ page }) => {
+  await page.goto('/en')
+  const footer = page.getByRole('contentinfo')
+  await footer.getByLabel('Email address').fill(`e2e-${crypto.randomUUID()}@example.org`)
+  await footer.getByRole('button', { name: 'Get updates' }).click()
+  await expect(footer.getByRole('status')).toHaveText(
+    'Check your inbox: we sent a link to confirm.',
+    { timeout: 30_000 },
+  )
+})
+
+test('a used or wrong confirmation link says so', async ({ page }) => {
+  await page.goto('/en/newsletter?token=not-a-real-token-at-all')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Newsletter')
+  await page.getByRole('button', { name: 'Confirm my sign-up' }).click()
+  await expect(page.getByRole('main').getByRole('alert')).toContainText(
+    'This link has expired or was already used.',
+  )
+  await expectAccessible(page)
+})

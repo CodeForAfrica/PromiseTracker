@@ -155,6 +155,8 @@ describe('seed data', () => {
     const methodology = await sdk.getPage('fr', 'methodology')
     if (isNotAvailable(methodology)) throw new Error('The methodology is not public in French.')
     expect(methodology.title).toBe('Méthodologie')
+    const privacy = await sdk.getPage('en', 'privacy')
+    expect(isNotAvailable(privacy) ? null : privacy.title).toBe('Privacy notice')
 
     const kenya = await sdk.getCountry('en', 'ke')
     if (isNotAvailable(kenya)) throw new Error('Kenya is not public.')
@@ -346,6 +348,7 @@ describe('seed data', () => {
       ['/themes/{slug}', '/themes/public-money'],
       ['/pages', '/pages', { path: 'methodology' }],
       ['/overview', '/overview'],
+      ['/captcha', '/captcha'],
       ['/search', '/search', { q: 'Nairobi', country: 'ke' }],
       ['/redirects', '/redirects', { path: '/ke/president' }],
     ]

@@ -1,9 +1,4 @@
-import type {
-  AnalyticsProvider,
-  CaptchaProvider,
-  NewsletterProvider,
-  VerificationProvider,
-} from '@promisetracker/kernel'
+import type { AnalyticsProvider, VerificationProvider } from '@promisetracker/kernel'
 
 /**
  * Core's default adapters (section 6.5). They need no outside service. Most
@@ -22,16 +17,10 @@ export const nativeVerification: VerificationProvider = {
   pull: notYet('native verification', '#650 (V1-12)'),
 }
 
+export { localCaptcha } from './captcha'
 export { plaintextExtractor, uploadConnector, urlConnector } from './documents/connectors'
-
+export { localNewsletter } from './forms'
 export { payloadSearch } from './search'
-
-export const localNewsletter: NewsletterProvider = {
-  id: 'local',
-  health: healthy,
-  subscribe: notYet('local newsletter', '#658 (V1-20)'),
-  unsubscribe: notYet('local newsletter', '#658 (V1-20)'),
-}
 
 /** Sends nothing. Searches with no results are still logged locally (section 18). */
 export const noAnalytics: AnalyticsProvider = {
@@ -39,11 +28,4 @@ export const noAnalytics: AnalyticsProvider = {
   health: healthy,
   pageView: async () => {},
   searchEvent: async () => {},
-}
-
-export const localCaptcha: CaptchaProvider = {
-  id: 'local',
-  health: healthy,
-  challenge: notYet('local captcha', '#658 (V1-20)'),
-  verify: notYet('local captcha', '#658 (V1-20)'),
 }

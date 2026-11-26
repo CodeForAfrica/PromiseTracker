@@ -1,6 +1,8 @@
 import { Card } from '@payloadcms/ui'
 import type { Where, WidgetServerProps } from 'payload'
 
+import { userCan } from './access'
+import { submissionCounts } from './forms'
 import { EMPTY_SEARCH_DAYS, emptySearches } from './search'
 import { AWAITING_VERIFICATION, whereToQuery } from './verificationQueue'
 
@@ -148,6 +150,35 @@ export async function EmptySearches({ req, user }: WidgetServerProps) {
           </tbody>
         </table>
       )}
+    </div>
+  )
+}
+
+/**
+ * Submissions (sections 16.4 and 18): those waiting for a moderator, and how
+ * many of the last 30 days' changed the record. Few coming in means the form
+ * is hard to find. Many changing nothing means noise or a backlog.
+ */
+export async function SubmissionsWidget({ req, user }: WidgetServerProps) {
+  if (!userCan(user ?? null, 'moderateSubmissions')) return null
+  const { received, waiting, changed } = await submissionCounts(req.payload)
+  const queue = `${req.payload.config.routes.admin}/collections/submissions?where[status][equals]=new`
+  return (
+    <div className="collections__group">
+      <h2 className="collections__label">Submissions</h2>
+      <Card
+        id="card-submissions"
+        title={
+          waiting === 0
+            ? 'No submissions waiting'
+            : `${waiting} ${waiting === 1 ? 'submission' : 'submissions'} waiting`
+        }
+        href={queue}
+        buttonAriaLabel="Show the submissions waiting for a moderator"
+      />
+      <p style={{ margin: '8px 0 0', fontSize: 13 }}>
+        Last 30 days: {received} received, {changed} changed the record.
+      </p>
     </div>
   )
 }

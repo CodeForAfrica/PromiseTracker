@@ -1,7 +1,13 @@
 {
   "partners": [
-    { "name": "Code for Africa", "url": "https://codeforafrica.org" },
-    { "name": "PesaCheck", "url": "https://pesacheck.org" }
+    {
+      "name": "Code for Africa",
+      "url": "https://codeforafrica.org"
+    },
+    {
+      "name": "PesaCheck",
+      "url": "https://pesacheck.org"
+    }
   ],
   "sisterTools": [
     {
@@ -16,7 +22,10 @@
   "themes": [
     {
       "slug": "public-money",
-      "title": { "en": "Public money", "fr": "L’argent public" },
+      "title": {
+        "en": "Public money",
+        "fr": "L’argent public"
+      },
       "introduction": {
         "en": "How governments raise, review and spend public money: subsidies, funds for traders, audits and the contracts for oil, gas and minerals.",
         "fr": "Comment les gouvernements lèvent, contrôlent et dépensent l’argent public : subventions, fonds pour les commerçants, audits et contrats pétroliers, gaziers et miniers."
@@ -49,7 +58,9 @@
           {
             "p": "During the 2022 campaign, William Ruto promised to cut the price of a 50kg bag of fertiliser to Sh2,500. Before the subsidy, a bag sold for up to Sh6,500."
           },
-          { "h2": "The first phase" },
+          {
+            "h2": "The first phase"
+          },
           {
             "p": "On taking office in September 2022, the President directed that 1.4 million bags be sold at Sh3,500 each. That was a large cut, but not yet the price promised, so the claim was rated in progress."
           },
@@ -59,7 +70,9 @@
               "url": "https://citizen.digital/article/government-releases-ksh35-billion-for-fertiliser-subsidy-n305983"
             }
           },
-          { "h2": "The second phase" },
+          {
+            "h2": "The second phase"
+          },
           {
             "p": "In August 2023, the second phase of the subsidy cut the price from Sh3,500 to Sh2,500 a bag, the price the President had promised. The claim's rating moved to completed."
           },
@@ -74,7 +87,9 @@
           {
             "p": "Pendant la campagne de 2022, William Ruto a promis de faire baisser le prix du sac d’engrais de 50 kg à 2 500 shillings. Avant la subvention, un sac se vendait jusqu’à 6 500 shillings."
           },
-          { "h2": "La première phase" },
+          {
+            "h2": "La première phase"
+          },
           {
             "p": "À son entrée en fonction en septembre 2022, le Président a ordonné que 1,4 million de sacs soient vendus 3 500 shillings chacun. La baisse était importante, mais pas encore au prix promis : l’engagement a été évalué en cours."
           },
@@ -84,7 +99,9 @@
               "url": "https://citizen.digital/article/government-releases-ksh35-billion-for-fertiliser-subsidy-n305983"
             }
           },
-          { "h2": "La deuxième phase" },
+          {
+            "h2": "La deuxième phase"
+          },
           {
             "p": "En août 2023, la deuxième phase de la subvention a fait passer le prix de 3 500 à 2 500 shillings le sac, le prix promis par le Président. L’évaluation de l’engagement est passée à réalisé."
           },
@@ -101,60 +118,148 @@
   "pages": [
     {
       "slug": "methodology",
-      "title": { "en": "Methodology", "fr": "Méthodologie" },
+      "title": {
+        "en": "Methodology",
+        "fr": "Méthodologie"
+      },
       "summary": {
         "en": "How claims are found, checked and rated, and how the record changes.",
         "fr": "Comment les engagements sont trouvés, vérifiés et évalués, et comment le registre évolue."
       },
       "body": {
         "en": [
-          { "h2": "Where claims come from" },
+          {
+            "h2": "Where claims come from"
+          },
           {
             "p": "Every claim comes from a cited source: a manifesto, a speech, a budget or a report. The claim's page links to it, and records where and when it was said and by when it is due."
           },
-          { "h2": "Checking a claim" },
+          {
+            "h2": "Checking a claim"
+          },
           {
             "p": "Before a claim is published, a reviewer checks the words against the source and records a verdict. Only verified claims appear on the site."
           },
-          { "h2": "Rating a claim" },
+          {
+            "h2": "Rating a claim"
+          },
           {
             "p": "An editor rates each claim against public evidence, on a scale whose ratings fall into tiers. Each rating is recorded with the date it was reviewed and the evidence behind it."
           },
           {
             "p": "Every change is kept. A claim's history shows each rating it has had, when it changed, and why."
           },
-          { "h2": "Counts, not percentages" },
+          {
+            "h2": "Counts, not percentages"
+          },
           {
             "p": "With only a few claims, a percentage can mislead. Below a threshold, 20 claims unless the site says otherwise, figures are shown as counts, such as 1 of 3 completed."
           },
-          { "h2": "Sending in an update" },
+          {
+            "h2": "Sending in an update"
+          },
           {
             "p": "Anyone can send in evidence, a correction or a note that something has changed. An editor reads each one and decides what changes the record."
           }
         ],
         "fr": [
-          { "h2": "D’où viennent les engagements" },
+          {
+            "h2": "D’où viennent les engagements"
+          },
           {
             "p": "Chaque engagement provient d’une source citée : un programme, un discours, un budget ou un rapport. La page de l’engagement y renvoie, et indique où et quand il a été pris, et pour quand."
           },
-          { "h2": "Vérifier un engagement" },
+          {
+            "h2": "Vérifier un engagement"
+          },
           {
             "p": "Avant sa publication, un vérificateur compare les mots à la source et consigne un verdict. Seuls les engagements vérifiés apparaissent sur le site."
           },
-          { "h2": "Évaluer un engagement" },
+          {
+            "h2": "Évaluer un engagement"
+          },
           {
             "p": "Un rédacteur évalue chaque engagement à partir de preuves publiques, sur une échelle dont les évaluations sont regroupées par niveaux. Chaque évaluation est consignée avec sa date d’examen et les preuves qui la fondent."
           },
           {
             "p": "Chaque changement est conservé. L’historique d’un engagement montre chaque évaluation qu’il a reçue, quand elle a changé, et pourquoi."
           },
-          { "h2": "Des nombres, pas des pourcentages" },
+          {
+            "h2": "Des nombres, pas des pourcentages"
+          },
           {
             "p": "Avec peu d’engagements, un pourcentage peut tromper. En dessous d’un seuil, 20 engagements sauf réglage contraire, les chiffres sont donnés en nombres, par exemple 1 sur 3 réalisé."
           },
-          { "h2": "Signaler une mise à jour" },
+          {
+            "h2": "Signaler une mise à jour"
+          },
           {
             "p": "Chacun peut envoyer une preuve, une correction ou signaler qu’un fait a changé. Un rédacteur lit chaque envoi et décide de ce qui modifie le registre."
+          }
+        ]
+      }
+    },
+    {
+      "slug": "privacy",
+      "title": {
+        "en": "Privacy notice",
+        "fr": "Avis de confidentialité"
+      },
+      "summary": {
+        "en": "What we collect when you send an update or sign up, why, and how long we keep it.",
+        "fr": "Ce que nous recueillons quand vous envoyez une mise à jour ou vous inscrivez, pourquoi, et pour combien de temps."
+      },
+      "body": {
+        "en": [
+          {
+            "h2": "Sending an update"
+          },
+          {
+            "p": "When you send an update about a claim, we keep what you wrote, any files and link you added, and, if you give them, your name and how to reach you. Editors and moderators read it to decide whether it changes the record."
+          },
+          {
+            "p": "Your name and contact details are never published. If an update you sent changes the record, it is credited to you by name only if you ticked the box to say so."
+          },
+          {
+            "p": "We do not keep your network address. We keep a scrambled form of it, enough to spot repeated abuse and not enough to identify you."
+          },
+          {
+            "h2": "Signing up to the newsletter"
+          },
+          {
+            "p": "We keep your email address and the language you signed up in. Nothing is sent until you confirm by opening the link in the email we send you."
+          },
+          {
+            "h2": "How long we keep it"
+          },
+          {
+            "p": "Submissions that are rejected or marked as spam are deleted after 180 days. To have your details removed sooner, or to stop the newsletter, write to us and we will delete them."
+          }
+        ],
+        "fr": [
+          {
+            "h2": "Envoyer une mise à jour"
+          },
+          {
+            "p": "Quand vous envoyez une mise à jour sur un engagement, nous conservons ce que vous avez écrit, les fichiers et le lien ajoutés et, si vous les donnez, votre nom et un moyen de vous joindre. Les rédacteurs et modérateurs les lisent pour décider s’ils modifient le registre."
+          },
+          {
+            "p": "Votre nom et vos coordonnées ne sont jamais publiés. Si votre envoi modifie le registre, il ne vous est attribué par votre nom que si vous avez coché la case prévue."
+          },
+          {
+            "p": "Nous ne conservons pas votre adresse réseau, seulement une forme brouillée, suffisante pour repérer des abus répétés mais pas pour vous identifier."
+          },
+          {
+            "h2": "S’inscrire à la lettre"
+          },
+          {
+            "p": "Nous conservons votre adresse e-mail et la langue de votre inscription. Rien n’est envoyé tant que vous n’avez pas confirmé en ouvrant le lien reçu par e-mail."
+          },
+          {
+            "h2": "Durée de conservation"
+          },
+          {
+            "p": "Les envois rejetés ou classés comme indésirables sont supprimés après 180 jours. Pour faire supprimer vos données plus tôt, ou vous désinscrire, écrivez-nous et nous les effacerons."
           }
         ]
       }

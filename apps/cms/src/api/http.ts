@@ -77,6 +77,8 @@ export async function respondV1(
     const query = new URL(request.url).searchParams
     const result = await handleV1(await getPayload(), path, query)
     if (result === undefined) return uncached({ error: 'not-found' }, 404)
+    // A challenge is answered once, so no cache may hand the same one to two readers.
+    if (path === '/captcha') return uncached(result.body, result.status)
     // A read and "not available in this language" are both answers worth
     // keeping. A bad request is not.
     if (result.status === 400) return uncached(result.body, 400)

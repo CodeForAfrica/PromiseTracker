@@ -7,6 +7,7 @@ import {
   PAGE_LIMIT,
   RedirectQuery,
   V1_ENDPOINTS,
+  V1_POSTS,
 } from '@promisetracker/contract'
 import { describe, expect, it } from 'vitest'
 
@@ -63,9 +64,17 @@ describe('query schemas', () => {
 describe('the OpenAPI description', () => {
   const doc = openApiDocument() as Document
 
-  it('is OpenAPI 3.1 with one path per endpoint, in the contract’s order', () => {
+  it('is OpenAPI 3.1 with one path per endpoint, in the contract’s order, then the forms', () => {
     expect(doc.openapi).toBe('3.1.0')
-    expect(Object.keys(doc.paths)).toEqual(V1_ENDPOINTS.map((e) => e.path))
+    expect(Object.keys(doc.paths)).toEqual([
+      ...V1_ENDPOINTS.map((e) => e.path),
+      ...V1_POSTS.map((e) => e.path),
+    ])
+    // The forms are POSTs, with their bodies described.
+    for (const post of V1_POSTS) {
+      const entry = (doc.paths as Record<string, { post?: { requestBody?: unknown } }>)[post.path]
+      expect(entry?.post?.requestBody, post.path).toBeDefined()
+    }
   })
 
   it('lists each path parameter, and each query parameter from the contract', () => {

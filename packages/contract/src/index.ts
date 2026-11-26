@@ -135,6 +135,63 @@ export const STRING_KEYS = [
   'aboutLabel',
   'themeClaims',
   'pagesBelow',
+  'submitUpdate',
+  'submitUpdateBody',
+  'updateSeen',
+  'updateLede',
+  'whatSending',
+  'kindEvidence',
+  'kindCorrection',
+  'kindChanged',
+  'kindEvidenceHint',
+  'kindCorrectionHint',
+  'kindChangedHint',
+  'attached',
+  'attachedClaim',
+  'attachedActor',
+  'attachedWhere',
+  'attachedRating',
+  'attachedNote',
+  'addFile',
+  'addAnother',
+  'fileLimit',
+  'removeFile',
+  'fileTooBig',
+  'whatSaw',
+  'whatSawPlaceholder',
+  'whatSawRequired',
+  'whereSpecific',
+  'prefilled',
+  'evidenceLink',
+  'evidenceLinkHint',
+  'yourName',
+  'consentCredit',
+  'reach',
+  'reachPlaceholder',
+  'reachNote',
+  'sendIt',
+  'sending',
+  'noAccount',
+  'checkingBrowser',
+  'received',
+  'thanks',
+  'thanksBody',
+  'reference',
+  'sentOn',
+  'noEta',
+  'backToClaimForm',
+  'formFailed',
+  'tooMany',
+  'privacyLink',
+  'subscribe',
+  'subscribeLine',
+  'subscribeEmail',
+  'subscribeInvalid',
+  'subscribeDone',
+  'newsletterTitle',
+  'newsletterConfirm',
+  'newsletterConfirmed',
+  'newsletterFailed',
 ] as const
 export type StringKey = (typeof STRING_KEYS)[number]
 
@@ -846,6 +903,97 @@ export const PageQuery = LocaleQuery.extend({
     .max(200),
 })
 
+// The public forms (sections 12.1 and 13.5). Their bodies are checked here, on the server.
+
+/** `GET /api/v1/captcha`: a challenge the form must answer before it posts. */
+export const CaptchaChallenge = z.object({
+  kind: z.string().min(1),
+  data: z.record(z.string(), z.unknown()),
+})
+export type CaptchaChallenge = z.infer<typeof CaptchaChallenge>
+
+export const SUBMISSION_KINDS = ['evidence', 'correction', 'changed'] as const
+
+/**
+ * A field only bots fill in. A person never sees it. A form with it filled in
+ * is answered as if it went through, and kept nowhere.
+ */
+const Trap = z.string().max(500).optional()
+
+/** The fields of `POST /api/v1/submissions`, sent as a form, with up to five files under `files`. */
+export const SubmissionForm = z.strictObject({
+  locale: z.string().min(1),
+  country: z.string().regex(/^[a-z]{2}$/),
+  claim: Slug,
+  kind: z.enum(SUBMISSION_KINDS),
+  text: z.string().trim().min(1).max(5000),
+  location: z.string().trim().max(200).optional(),
+  /** Shown to moderators, never fetched (section 13.4). */
+  evidenceUrl: z
+    .string()
+    .trim()
+    .regex(/^https?:\/\/\S+$/)
+    .max(500)
+    .optional()
+    .or(z.literal('')),
+  name: z.string().trim().max(120).optional(),
+  contact: z.string().trim().max(200).optional(),
+  /** Agreed to be credited by name. */
+  consent: z.enum(['true', 'false']).optional(),
+  website: Trap,
+  captcha: z.string().min(1).max(400),
+})
+export type SubmissionForm = z.infer<typeof SubmissionForm>
+
+/** What the sender is told: the reference to quote, and the day it was sent. */
+export const SubmissionReceipt = z.object({ reference: z.string().min(1), sent: z.string() })
+export type SubmissionReceipt = z.infer<typeof SubmissionReceipt>
+
+/** `POST /api/v1/subscriptions`: a newsletter sign-up, confirmed by email before use. */
+export const SubscriptionForm = z.strictObject({
+  locale: z.string().min(1),
+  email: z.string().trim().email().max(254),
+  website: Trap,
+  captcha: z.string().min(1).max(400),
+})
+export type SubscriptionForm = z.infer<typeof SubscriptionForm>
+
+/**
+ * The same answer whether or not the address was already subscribed, so the
+ * form does not tell who is.
+ */
+export const SubscriptionReceipt = z.object({ ok: z.literal(true) })
+
+/** `POST /api/v1/subscriptions/confirm`: the token from the confirmation email. */
+export const ConfirmForm = z.strictObject({ token: z.string().min(1).max(100) })
+export const ConfirmReceipt = z.object({ confirmed: z.boolean() })
+export type ConfirmReceipt = z.infer<typeof ConfirmReceipt>
+
+/** The write endpoints, for the OpenAPI document. Each needs a captcha answer and is rate limited. */
+export const V1_POSTS = [
+  {
+    path: '/submissions',
+    summary: 'A reader’s update to a claim: new evidence, a correction, or that something changed',
+    body: SubmissionForm,
+    contentType: 'multipart/form-data',
+    response: SubmissionReceipt,
+  },
+  {
+    path: '/subscriptions',
+    summary: 'A newsletter sign-up. Nothing is subscribed until the emailed link is confirmed',
+    body: SubscriptionForm,
+    contentType: 'application/json',
+    response: SubscriptionReceipt,
+  },
+  {
+    path: '/subscriptions/confirm',
+    summary: 'Confirms a newsletter sign-up with the token from its email',
+    body: ConfirmForm,
+    contentType: 'application/json',
+    response: ConfirmReceipt,
+  },
+] as const
+
 /** The filters and order of an actor list, as the SDK takes them. */
 export type ActorQuery = Omit<z.output<typeof ActorsQuery>, 'locale'>
 /** The filters and order of a claim list, as the SDK takes them. */
@@ -1003,6 +1151,13 @@ export const V1_ENDPOINTS = [
     notAvailable: true,
   },
   {
+    path: '/captcha',
+    summary: 'A proof-of-work challenge the forms answer before they post',
+    query: LocaleQuery,
+    response: CaptchaChallenge,
+    notAvailable: false,
+  },
+  {
     path: '/overview',
     summary: 'What the record holds: figures for every published claim, and counts',
     query: LocaleQuery,
@@ -1043,7 +1198,7 @@ export function openApiDocument(): Record<string, unknown> {
   }
   const ref = (name: string) => ({ $ref: `#/components/schemas/${name}` })
   const json = (schema: unknown) => ({ content: { 'application/json': { schema } } })
-  const paths = Object.fromEntries(
+  const paths: Record<string, unknown> = Object.fromEntries(
     V1_ENDPOINTS.map((endpoint) => {
       const name = endpoint.path
         .split('/')
@@ -1107,13 +1262,40 @@ export function openApiDocument(): Record<string, unknown> {
       ]
     }),
   )
+  for (const post of V1_POSTS) {
+    const name = `${post.path
+      .split('/')
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join('')}Post`
+    components[name] = z.toJSONSchema(post.response, { io: 'output' })
+    paths[post.path] = {
+      post: {
+        summary: post.summary,
+        requestBody: {
+          required: true,
+          content: { [post.contentType]: { schema: z.toJSONSchema(post.body, { io: 'input' }) } },
+        },
+        responses: {
+          200: { description: 'Received.', ...json(ref(name)) },
+          400: {
+            description: 'A field is missing or of the wrong form.',
+            ...json(ref('ApiError')),
+          },
+          403: { description: 'The captcha answer is wrong or spent.', ...json(ref('ApiError')) },
+          404: { description: 'The claim is not published.', ...json(ref('ApiError')) },
+          429: { description: 'Too many from this sender. Try later.', ...json(ref('ApiError')) },
+        },
+      },
+    }
+  }
   return {
     openapi: '3.1.0',
     info: {
       title: 'PromiseTracker API',
       version: '1',
       description:
-        'Read-only, published content only, one language at a time (section 12 of the system specification).',
+        'Published content only, one language at a time, and the two public forms (section 12 of the system specification).',
     },
     servers: [{ url: '/api/v1' }],
     paths,

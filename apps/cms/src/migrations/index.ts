@@ -13,6 +13,7 @@ import * as migration_20261125_085438_plugin_tika_settings from './20261125_0854
 import * as migration_20261125_133015_search from './20261125_133015_search'
 import * as migration_20261125_142205_plugin_ai from './20261125_142205_plugin_ai'
 import * as migration_20261125_150219_editorial from './20261125_150219_editorial'
+import * as migration_20261126_060159_public_forms from './20261126_060159_public_forms'
 
 export const migrations = [
   {
@@ -89,5 +90,10 @@ export const migrations = [
     up: migration_20261125_150219_editorial.up,
     down: migration_20261125_150219_editorial.down,
     name: '20261125_150219_editorial',
+  },
+  {
+    up: migration_20261126_060159_public_forms.up,
+    down: migration_20261126_060159_public_forms.down,
+    name: '20261126_060159_public_forms',
   },
 ]

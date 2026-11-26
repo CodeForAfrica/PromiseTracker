@@ -3,11 +3,12 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 import { Container } from './Container'
+import { SubscribeForm } from './forms'
+import { localePath } from './paths'
 
 /**
- * The footer: what the site is, the editor's links and the copyright line.
- * Partners, sister tools and the newsletter join it with the issues that add
- * them.
+ * The footer: what the site is, the newsletter sign-up, the editor's links
+ * and the copyright line.
  */
 export function SiteFooter({ site, logo }: { site: SiteInfo; logo: string }) {
   const t = site.strings
@@ -34,6 +35,17 @@ export function SiteFooter({ site, logo }: { site: SiteInfo; logo: string }) {
                 {site.footer.about}
               </p>
             )}
+          </div>
+          <div className="grid gap-2">
+            <p className="text-[20px] leading-[1.2] font-bold tracking-[-.02em] text-ink">
+              {t.subscribe}
+            </p>
+            <p className="text-[14px] text-ink-2">{t.subscribeLine}</p>
+            <SubscribeForm
+              strings={t}
+              locale={site.locale}
+              privacyHref={localePath(site.locale, '/privacy')}
+            />
           </div>
         </div>
 

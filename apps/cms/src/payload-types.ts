@@ -139,19 +139,20 @@ export type SupportedTimezones =
   | 'Pacific/Fiji';
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "LexicalNodes_FCE4C081".
+ * via the `definition` "LexicalNodes_10F79A85".
  */
-export type LexicalNodes_FCE4C081 =
+export type LexicalNodes_10F79A85 =
   | SerializedTextNode
   | SerializedTabNode
   | SerializedLineBreakNode
-  | SerializedParagraphNode<LexicalNodes_FCE4C081>
+  | SerializedParagraphNode<LexicalNodes_10F79A85>
   | SerializedHorizontalRuleNode
   | SerializedUploadNode<'boundaries'>
   | SerializedUploadNode<'document-files'>
   | SerializedUploadNode<'media'>
+  | SerializedUploadNode<'submission-files'>
   | SerializedUploadNode<'imports'>
-  | SerializedQuoteNode<LexicalNodes_FCE4C081>
+  | SerializedQuoteNode<LexicalNodes_10F79A85>
   | SerializedRelationshipNode<
       | 'actors'
       | 'terms'
@@ -171,6 +172,8 @@ export type LexicalNodes_FCE4C081 =
       | 'sister-tools'
       | 'rating-scales'
       | 'claim-types'
+      | 'submissions'
+      | 'newsletter-signups'
       | 'import-mappings'
       | 'search-log'
       | 'users'
@@ -182,11 +185,11 @@ export type LexicalNodes_FCE4C081 =
       | 'payload-migrations'
       | 'payload-query-presets'
     >
-  | SerializedAutoLinkNode<LexicalNodes_FCE4C081, LexicalLinkFields>
-  | SerializedLinkNode<LexicalNodes_FCE4C081, LexicalLinkFields>
-  | SerializedListNode<LexicalNodes_FCE4C081>
-  | SerializedListItemNode<LexicalNodes_FCE4C081>
-  | SerializedHeadingNode<LexicalNodes_FCE4C081>;
+  | SerializedAutoLinkNode<LexicalNodes_10F79A85, LexicalLinkFields>
+  | SerializedLinkNode<LexicalNodes_10F79A85, LexicalLinkFields>
+  | SerializedListNode<LexicalNodes_10F79A85>
+  | SerializedListItemNode<LexicalNodes_10F79A85>
+  | SerializedHeadingNode<LexicalNodes_10F79A85>;
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "LexicalNodes_3DE324E4".
@@ -227,6 +230,9 @@ export interface Config {
     'rating-scales': RatingScale;
     'claim-types': ClaimType;
     media: Media;
+    submissions: Submission;
+    'submission-files': SubmissionFile;
+    'newsletter-signups': NewsletterSignup;
     imports: Import;
     'import-mappings': ImportMapping;
     'search-log': SearchLog;
@@ -281,6 +287,9 @@ export interface Config {
     'rating-scales': RatingScalesSelect<false> | RatingScalesSelect<true>;
     'claim-types': ClaimTypesSelect<false> | ClaimTypesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    submissions: SubmissionsSelect<false> | SubmissionsSelect<true>;
+    'submission-files': SubmissionFilesSelect<false> | SubmissionFilesSelect<true>;
+    'newsletter-signups': NewsletterSignupsSelect<false> | NewsletterSignupsSelect<true>;
     imports: ImportsSelect<false> | ImportsSelect<true>;
     'import-mappings': ImportMappingsSelect<false> | ImportMappingsSelect<true>;
     'search-log': SearchLogSelect<false> | SearchLogSelect<true>;
@@ -318,6 +327,7 @@ export interface Config {
   widgets: {
     'least-recently-reviewed': LeastRecentlyReviewedWidget;
     'awaiting-verification': AwaitingVerificationWidget;
+    submissions: SubmissionsWidget;
     'empty-searches': EmptySearchesWidget;
     welcome: WelcomeWidget;
     collections: CollectionsWidget;
@@ -336,6 +346,7 @@ export interface Config {
       recomputePublishing: TaskRecomputePublishing;
       dailyPublishing: TaskDailyPublishing;
       refreshCounts: TaskRefreshCounts;
+      submissionDigest: TaskSubmissionDigest;
       extractCandidates: TaskExtractCandidates;
       inline: {
         input: unknown;
@@ -1323,6 +1334,10 @@ export interface ClaimUpdate {
    */
   attribution?: string | null;
   /**
+   * The reader’s submission it came from, if any.
+   */
+  submission?: (string | null) | Submission;
+  /**
    * The claim’s country.
    */
   country?: (string | null) | Country;
@@ -1385,6 +1400,95 @@ export interface Evidence {
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
+}
+/**
+ * What readers sent about claims. Set one to accepted to turn it into a claim update on hold.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "submissions".
+ */
+export interface Submission {
+  id: string;
+  claim: string | Claim;
+  kind: 'evidence' | 'correction' | 'changed';
+  text: string;
+  location?: string | null;
+  /**
+   * Shown only. The server never opens it.
+   */
+  evidenceUrl?: string | null;
+  files?: (string | SubmissionFile)[] | null;
+  name?: string | null;
+  contact?: string | null;
+  consent?: boolean | null;
+  /**
+   * The sender was given this.
+   */
+  reference?: string | null;
+  status: 'new' | 'accepted' | 'rejected' | 'spam';
+  /**
+   * For other moderators. Never shown.
+   */
+  note?: string | null;
+  /**
+   * Made when it was accepted.
+   */
+  update?: (string | null) | ClaimUpdate;
+  moderator?: (string | null) | User;
+  language?: string | null;
+  /**
+   * The same for every submission from one network address. It cannot be read back.
+   */
+  addressHash?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "submission-files".
+ */
+export interface SubmissionFile {
+  id: string;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  _stored?: boolean | null;
+  _transforms?: UploadTransforms;
+  original?: {
+    filename?: string | null;
+    url?: string | null;
+    mimeType?: string | null;
+    filesize?: number | null;
+    width?: number | null;
+    height?: number | null;
+    prefix?: string | null;
+    _objectKey?: string | null;
+    _stored?: boolean | null;
+  };
+  focalX?: number | null;
+  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1467,7 +1571,7 @@ export interface Article {
    * One or two sentences under the title.
    */
   standfirst?: string | null;
-  body?: LexicalRichText<LexicalNodes_FCE4C081> | null;
+  body?: LexicalRichText<LexicalNodes_10F79A85> | null;
   image?: (string | null) | Media;
   /**
    * The claim, actor or country it is about.
@@ -1533,7 +1637,7 @@ export interface Page {
    * One line, under the title and in lists of pages.
    */
   summary?: string | null;
-  body?: LexicalRichText<LexicalNodes_FCE4C081> | null;
+  body?: LexicalRichText<LexicalNodes_10F79A85> | null;
   /**
    * Makes the page a marked link instead: its address leads to this site, and menus mark it as leaving PromiseTracker.
    */
@@ -1621,6 +1725,31 @@ export interface SisterTool {
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
+}
+/**
+ * Nobody is subscribed until they confirm by email.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "newsletter-signups".
+ */
+export interface NewsletterSignup {
+  id: string;
+  email: string;
+  language?: string | null;
+  confirmed?: boolean | null;
+  confirmedAt?: string | null;
+  tokenHash?: string | null;
+  tokenExpiresAt?: string | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: string | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * Upload a CSV or Excel file. Check the mapping, then choose Preview, and Import when the preview is right.
@@ -1994,6 +2123,7 @@ export interface PayloadJob {
           | 'recomputePublishing'
           | 'dailyPublishing'
           | 'refreshCounts'
+          | 'submissionDigest'
           | 'extractCandidates';
         taskID: string;
         input:
@@ -2036,6 +2166,7 @@ export interface PayloadJob {
                 | 'recomputePublishing'
                 | 'dailyPublishing'
                 | 'refreshCounts'
+                | 'submissionDigest'
                 | 'extractCandidates'
               )
             | null;
@@ -2056,6 +2187,7 @@ export interface PayloadJob {
         | 'recomputePublishing'
         | 'dailyPublishing'
         | 'refreshCounts'
+        | 'submissionDigest'
         | 'extractCandidates'
       )
     | null;
@@ -2160,6 +2292,18 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: string | Media;
+      } | null)
+    | ({
+        relationTo: 'submissions';
+        value: string | Submission;
+      } | null)
+    | ({
+        relationTo: 'submission-files';
+        value: string | SubmissionFile;
+      } | null)
+    | ({
+        relationTo: 'newsletter-signups';
+        value: string | NewsletterSignup;
       } | null)
     | ({
         relationTo: 'imports';
@@ -2623,6 +2767,7 @@ export interface ClaimUpdatesSelect<T extends boolean = true> {
   narrative?: T;
   evidence?: T;
   attribution?: T;
+  submission?: T;
   country?: T;
   recordStatus?: T;
   publishedIn?: T;
@@ -2877,6 +3022,82 @@ export interface MediaSelect<T extends boolean = true> {
       };
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "submissions_select".
+ */
+export interface SubmissionsSelect<T extends boolean = true> {
+  claim?: T;
+  kind?: T;
+  text?: T;
+  location?: T;
+  evidenceUrl?: T;
+  files?: T;
+  name?: T;
+  contact?: T;
+  consent?: T;
+  reference?: T;
+  status?: T;
+  note?: T;
+  update?: T;
+  moderator?: T;
+  language?: T;
+  addressHash?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "submission-files_select".
+ */
+export interface SubmissionFilesSelect<T extends boolean = true> {
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  _stored?: T;
+  _transforms?: T;
+  original?:
+    | T
+    | {
+        filename?: T;
+        url?: T;
+        mimeType?: T;
+        filesize?: T;
+        width?: T;
+        height?: T;
+        prefix?: T;
+        _objectKey?: T;
+        _stored?: T;
+      };
+  focalX?: T;
+  focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "newsletter-signups_select".
+ */
+export interface NewsletterSignupsSelect<T extends boolean = true> {
+  email?: T;
+  language?: T;
+  confirmed?: T;
+  confirmedAt?: T;
+  tokenHash?: T;
+  tokenExpiresAt?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -3463,6 +3684,16 @@ export interface AwaitingVerificationWidget {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "submissions_widget".
+ */
+export interface SubmissionsWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'small' | 'medium';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "empty-searches_widget".
  */
 export interface EmptySearchesWidget {
@@ -3520,6 +3751,8 @@ export interface CollectionQueryWidget {
       | 'rating-scales'
       | 'claim-types'
       | 'media'
+      | 'submissions'
+      | 'newsletter-signups'
       | 'imports'
       | 'import-mappings'
       | 'search-log'
@@ -3569,6 +3802,8 @@ export interface ActivityWidget {
           | 'rating-scales'
           | 'claim-types'
           | 'media'
+          | 'submissions'
+          | 'newsletter-signups'
           | 'imports'
           | 'import-mappings'
           | 'search-log'
@@ -3672,6 +3907,14 @@ export interface TaskRefreshCounts {
   input: {
     country: string;
   };
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSubmissionDigest".
+ */
+export interface TaskSubmissionDigest {
+  input?: unknown;
   output?: unknown;
 }
 /**
