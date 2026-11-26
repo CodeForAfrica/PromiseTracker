@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import { absolute, alternates, jsonLd, publicOrigin } from '../../apps/site/src/seo'
 import { addFigures, clip, tierFigures } from '../../apps/site/src/share'
+import { articlePaths, editorialPaths } from '../../apps/site/src/sitemap'
 import { actorData, claimReview } from '../../apps/site/src/structured'
 import { escapeXml, robotsTxt, rss, sitemapIndex, urlset } from '../../apps/site/src/xml'
 
@@ -204,6 +205,20 @@ describe('machine addresses', () => {
     const xml = urlset([{ loc: `${ORIGIN}/en/ke`, alternates: { fr: `${ORIGIN}/fr/ke` } }])
     expect(xml).toContain(`<loc>${ORIGIN}/en/ke</loc>`)
     expect(xml).toContain(`hreflang="fr" href="${ORIGIN}/fr/ke"`)
+  })
+
+  it('lists themes, editor pages and articles, but not a page that leads to a sister site', () => {
+    expect(
+      editorialPaths(
+        [{ slug: 'water' }],
+        [
+          { path: 'methodology', link: null },
+          { path: 'resources/guides', link: null },
+          { path: 'pesacheck', link: 'https://pesacheck.org' },
+        ],
+      ),
+    ).toEqual(['/themes/water', '/methodology', '/resources/guides'])
+    expect(articlePaths('ke', ['why-late'])).toEqual(['/ke/a/why-late'])
   })
 
   it('keeps a noindex server out of search engines', () => {

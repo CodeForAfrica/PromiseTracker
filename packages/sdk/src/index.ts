@@ -32,11 +32,13 @@ import {
   NotAvailable as NotAvailableSchema,
   OfficeList,
   Overview,
+  PageList,
   Page as PageSchema,
   Redirect as RedirectSchema,
   SearchResults as SearchResultsSchema,
   SeatHolders,
   SiteInfo,
+  ThemeList,
   Theme as ThemeSchema,
   TopicList,
   Topic as TopicSchema,
@@ -229,6 +231,14 @@ export function createSdk(transport: Transport) {
       return isNotAvailable(result)
         ? NotAvailableSchema.parse(result)
         : SearchResultsSchema.parse(result)
+    },
+    /** Every theme published in this language. */
+    async getThemes(locale: string): Promise<ThemeList> {
+      return ThemeList.parse(await get('/themes', locale))
+    },
+    /** Every editor page published in this language, by address. */
+    async getPages(locale: string): Promise<PageList> {
+      return PageList.parse(await get('/pages/list', locale))
     },
     /** A theme with its claims and figures by country, or the languages it is published in. */
     async getTheme(locale: string, slug: string): Promise<Theme | NotAvailable> {

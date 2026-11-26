@@ -52,12 +52,14 @@ import {
   OfficeList as OfficeListSchema,
   Overview as OverviewSchema,
   PAGE_LIMIT,
+  PageList as PageListSchema,
   Page as PageSchema,
   Redirect as RedirectSchema,
   SECTION_IDS,
   SearchResults as SearchResultsSchema,
   SeatHolders as SeatHoldersSchema,
   SiteInfo as SiteInfoSchema,
+  ThemeList as ThemeListSchema,
   Theme as ThemeSchema,
   TIMELINE_LENGTH,
   TopicList as TopicListSchema,
@@ -2146,6 +2148,36 @@ const handlers: Record<string, Handler> = {
     const [summary] = await toArticleSummaries(payload, country, locale, [doc])
     if (!summary) return notFound()
     return ok(ArticleSchema.parse({ ...summary, body: await bodyHtml(payload, locale, doc.body) }))
+  },
+
+  '/themes': async ({ payload, locale }) => {
+    const { docs } = await payload.find({
+      collection: 'themes',
+      where: publishedInLocale(locale),
+      sort: 'createdAt',
+      locale,
+      depth: 1,
+      pagination: false,
+      overrideAccess: false,
+    })
+    const themes = await Promise.all(docs.map((doc) => toThemeSummary(payload, doc, locale)))
+    return ok(
+      ThemeListSchema.parse({
+        items: themes.flatMap((theme) => (theme ? [theme.summary] : [])),
+      }),
+    )
+  },
+
+  '/pages/list': async ({ payload, locale }) => {
+    const docs = await pagesAt(payload, locale, { path: { exists: true } })
+    return ok(
+      PageListSchema.parse({
+        items: docs
+          .map(toPageSummary)
+          .filter((p): p is PageSummary => p !== null)
+          .sort((a, b) => a.path.localeCompare(b.path)),
+      }),
+    )
   },
 
   '/themes/:slug': async ({ payload, params, locale }) => {
