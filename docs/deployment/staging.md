@@ -160,6 +160,9 @@ dokku config:set --no-restart promisetracker-v3 \
 - `PT_ADMIN_EMAIL` and `PT_ADMIN_PASSWORD` create the first super-admin at the first start (D48).
   Remove them once it exists, below.
 - Add `SENTRY_DSN` if staging errors should reach Sentry.
+- `PT_PROXY_HOPS` needs no setting while Dokku's nginx is the only proxy. If a CDN or load
+  balancer is put in front of it, set it to `2`, so the forms' rate limit counts readers, not the
+  CDN.
 
 ### The first deploy
 
