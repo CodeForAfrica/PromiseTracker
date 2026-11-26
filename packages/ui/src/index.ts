@@ -32,6 +32,7 @@ export {
   scalesOf,
   topicChoices,
   topicPath,
+  updatePath,
 } from './claims'
 export { cn } from './cn'
 export { CountryHero } from './country'
@@ -56,6 +57,8 @@ export {
 } from './editorial'
 export { Flag } from './Flag'
 export { fill } from './fill'
+export type { UpdateContext } from './forms'
+export { SubscribeForm, UpdateForm } from './forms'
 export {
   ClaimHistoryView,
   ClaimRecord,
@@ -69,6 +72,7 @@ export { LangToggle } from './LangToggle'
 export { NotAvailableNotice, NotFoundNotice } from './notices'
 export { Explainer, PageShell, SkipLink } from './PageShell'
 export { localePath, withoutLocale } from './paths'
+export { PrivacyNotice, SubscriptionConfirmed } from './privacy'
 export type { RatingCounts } from './ratings'
 export {
   orderedRatings,
@@ -80,7 +84,7 @@ export {
   tierCount,
   tierRatings,
 } from './ratings'
-export { SiteFooter } from './SiteFooter'
+export { privacyPath, SiteFooter } from './SiteFooter'
 export type { ShellData } from './SiteHeader'
 export { Logo, NavLinks, SiteHeader } from './SiteHeader'
 export { SearchForm, SearchIcon, SearchView, searchPath } from './search'
@@ -95,4 +99,6 @@ export {
   peopleRule,
   shows,
 } from './sections'
+export type { SubmissionKind } from './submissionKind'
+export { kindOf } from './submissionKind'
 export { SectionLabel } from './Text'

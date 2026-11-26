@@ -1,6 +1,6 @@
 import type { ClaimUpdate, SiteInfo } from '@promisetracker/contract'
 import { ClaimUpdate as ClaimUpdateSchema } from '@promisetracker/contract'
-import { guessMapping, partialDateStart, planRow } from '@promisetracker/plugin-core'
+import { guessMapping, partialDateStart, planRow, ratingOptions } from '@promisetracker/plugin-core'
 import { resolveStrings } from '@promisetracker/plugin-site'
 import { ClaimTimeline, LatestChanges } from '@promisetracker/ui'
 import { createElement } from 'react'
@@ -131,5 +131,28 @@ describe('the timeline (sections 10.2 and 10.5)', () => {
   it('is left out with nothing to show', () => {
     expect(renderToStaticMarkup(createElement(ClaimTimeline, { site, updates: [] }))).toBe('')
     expect(renderToStaticMarkup(createElement(LatestChanges, { site, changes: [] }))).toBe('')
+  })
+})
+
+describe('the rating picker', () => {
+  const choice = (slug: string, retired = false) => ({
+    slug,
+    label: slug,
+    colour: '#000000',
+    textColour: '#ffffff',
+    retired,
+  })
+  const scale = [choice('unstarted'), choice('in-progress'), choice('stalled', true)]
+
+  it('offers the scale in order, without retired ratings', () => {
+    expect(ratingOptions(scale, null).map((c) => c.slug)).toEqual(['unstarted', 'in-progress'])
+  })
+
+  it('keeps a retired rating an update already has', () => {
+    expect(ratingOptions(scale, 'stalled').map((c) => c.slug)).toEqual([
+      'unstarted',
+      'in-progress',
+      'stalled',
+    ])
   })
 })

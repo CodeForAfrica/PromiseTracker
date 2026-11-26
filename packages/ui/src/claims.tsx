@@ -293,6 +293,7 @@ export function ClaimView({ site, claim }: { site: SiteInfo; claim: Claim }) {
         </dl>
       </Container>
       <ClaimRecord site={site} claim={claim} />
+      <UpdateLinks site={site} claim={claim} />
     </>
   )
 }
@@ -399,3 +400,39 @@ export function CountryFigures({
 }
 
 export { claimPath, formatPartialDate }
+
+/** The form for sending an update about a claim: `/{lang}/{cc}/p/{claim}/update`. */
+export const updatePath = (locale: string, code: string, slug: string, kind?: string): string =>
+  `${claimPath(locale, code, slug)}/update${kind ? `?kind=${kind}` : ''}`
+
+/** Links to the update form, one per kind of submission (section 7.9). */
+function UpdateLinks({ site, claim }: { site: SiteInfo; claim: Claim }) {
+  const t = site.strings
+  const kinds = [
+    ['evidence', t.kindEvidence],
+    ['correction', t.kindCorrection],
+    ['changed', t.kindChanged],
+  ] as const
+  return (
+    <section aria-labelledby="send-update" className="border-t border-line-soft">
+      <Container className="py-10">
+        <h2 id="send-update" className="mb-2 text-[22px] leading-[1.2] font-semibold">
+          {t.seen}
+        </h2>
+        <p className="mb-5 max-w-[60ch] text-[14px] leading-[1.6] text-ink-2">{t.updateLede}</p>
+        <ul className="flex flex-wrap gap-2.5">
+          {kinds.map(([kind, label]) => (
+            <li key={kind}>
+              <Link
+                href={updatePath(site.locale, claim.country, claim.slug, kind)}
+                className="inline-block rounded-lg border border-line px-4 py-3 text-[13px] font-medium text-ink hover:border-ink"
+              >
+                {label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </Container>
+    </section>
+  )
+}

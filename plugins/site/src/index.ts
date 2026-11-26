@@ -257,7 +257,7 @@ export const Site: GlobalConfig = {
             {
               name: 'strings',
               // One value per language, not a column per string: the strings
-              // outnumber the hundred columns a Postgres query may name (D91).
+              // outnumber the hundred columns a Postgres query may name (D109).
               type: 'json',
               localized: true,
               admin: {

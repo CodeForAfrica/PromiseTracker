@@ -1,0 +1,28 @@
+{
+  "event": "update_annotation_report_design",
+  "team": {
+    "dbid": 1,
+    "slug": "promise-tracker"
+  },
+  "time": "2026-11-25T10:00:00Z",
+  "user_id": 7,
+  "data": {
+    "id": "QW5ub3RhdGlvbi85ODc2NQ=="
+  },
+  "object": {
+    "id": 98765,
+    "annotation_type": "report_design",
+    "annotated_type": "ProjectMedia",
+    "annotated_id": 12345,
+    "data": {
+      "state": "published",
+      "last_published": "1764064800",
+      "options": {
+        "language": "en",
+        "title": "Fact-check",
+        "text": "The ministry's budget statement lists the 200 centres as built.",
+        "published_article_url": "https://example.org/fact-checks/health-centres"
+      }
+    }
+  }
+}

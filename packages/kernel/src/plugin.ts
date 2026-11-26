@@ -419,7 +419,17 @@ function addSettings(globals: readonly GlobalConfig[], manifest: PluginManifest,
     name: manifest.slug,
     type: 'group',
     fields: [...manifest.settings],
-    admin: enabled ? {} : { condition: () => false },
+    // A disabled plugin's settings stay editable. They can be filled in before
+    // it is switched on, and a setting that stops start-up, such as Check's
+    // status mapping, can be fixed with the plugin off.
+    admin: enabled
+      ? {}
+      : {
+          // A function, so the generated types, which keep plain descriptions,
+          // stay the same whichever plugins are switched on.
+          description: () =>
+            `Not in use. Add "${manifest.slug}" to PT_PLUGINS to switch it on. These can be filled in first.`,
+        },
   }
   const existing = globals.find((g) => g.slug === SETTINGS_GLOBAL)
   if (!existing) {

@@ -19,19 +19,20 @@ explains the rules behind each step.
 11. Site settings
 12. Publishing: what is public, and when
 13. Search
+14. Submissions and the newsletter
 
 The admin's menu groups record types by what they are for:
 
-| Group          | Holds                                                                               |
-| -------------- | ----------------------------------------------------------------------------------- |
-| People         | Actors, Terms                                                                       |
-| Claims         | Claims, Claim updates, Evidence, Rating reviews, Topics, Rating scales, Claim types |
-| Places         | Countries, Areas, Offices, Boundaries                                               |
-| Sources        | Documents, Source files, Extractions                                                |
-| Media library  | Images, such as actor photos                                                        |
-| Imports        | Imports, Saved mappings                                                             |
-| Administration | Users, Settings, Search index, Search log                                           |
-| Public site    | Site settings, Themes, Articles, Pages, Partners, Sister tools                      |
+| Group          | Holds                                                                                            |
+| -------------- | ------------------------------------------------------------------------------------------------ |
+| People         | Actors, Terms                                                                                    |
+| Claims         | Claims, Claim updates, Evidence, Rating reviews, Submissions, Topics, Rating scales, Claim types |
+| Places         | Countries, Areas, Offices, Boundaries                                                            |
+| Sources        | Documents, Source files, Extractions                                                             |
+| Media library  | Images, such as actor photos                                                                     |
+| Imports        | Imports, Saved mappings                                                                          |
+| Administration | Users, Settings, Search index, Search log, Newsletter sign-ups                                   |
+| Public site    | Site settings, Themes, Articles, Pages, Partners, Sister tools                                   |
 
 ## 1. Signing in
 
@@ -314,6 +315,61 @@ credited to PromiseTracker. It never shows who verified a claim.
 A claim found **false** or **misleading** is never published and never deleted. Archive it to put it
 away.
 
+### Verifying in Meedan Check
+
+When the deployment verifies in Check (`PT_PLUGINS` includes `check` and `PT_VERIFICATION=check`),
+fact-checkers work in the Check workspace, not here:
+
+- A new claim is sent to Check as an item of type Claim, starting as **Unstarted**. Its **Check**
+  section, in the sidebar, shows the item and a link to it, filled in within a minute or so.
+- When a report is published in Check, the claim takes the verdict for the item's status, the
+  report's text as its rationale, and the report's date. A report unpublished in Check makes the
+  claim unverified and puts it on **hold**, and editors get an email.
+- The **Verdict**, **Date**, **Rationale** and **Report** fields are read-only. Reviewers can no
+  longer set a verdict. Change it in Check. Only a super-admin can override it here, and that is
+  logged. While the report stays published in Check, the next sync, within 15 minutes, puts its
+  verdict back.
+- A claim put on **hold** because its report was unpublished stays on hold when someone saves it.
+  An editor releases it by setting it to **ready**.
+- The **Check** section shows the report's state and when the claim was last synced.
+
+#### Setting up Check
+
+A super-admin fills these in once, under Administration > Settings > Check. They can be filled
+in before the plugin is switched on: until then the section says it is not in use.
+
+| Field                 | What to put                                                                              |
+| --------------------- | ---------------------------------------------------------------------------------------- |
+| Workspace             | The workspace's short name, from its address: `checkmedia.org/{name}/all-items`          |
+| API key               | A key from the workspace's settings. Stored encrypted, and shown as `********`           |
+| Webhook secret        | Any long random text. Stored encrypted                                                   |
+| Statuses and verdicts | Each of the workspace's statuses with its verdict. The default workspace's are filled in |
+
+Then, in the workspace's settings in Check, add a webhook for report events to
+`{site address}/api/plugins/check/webhook`, with the webhook secret as its `Authorization` header.
+Verdicts also arrive every 15 minutes without it, so a missed webhook catches up.
+
+Statuses are managed in Check, and each workspace defines its own. Give each one the verdict that
+fits what it means in that workspace, by its id. The error at start-up names any status with no
+verdict, with its label and id. A custom status's id is a number.
+
+The PesaCheck promise workspace uses its statuses as promise ratings, so a published report there
+means the promise was checked:
+
+| Status in Check | Id               | Verdict    |
+| --------------- | ---------------- | ---------- |
+| Completed       | `verified`       | verified   |
+| In Progress     | `in_progress`    | verified   |
+| Behind Schedule | `not_applicable` | verified   |
+| Stalled         | `false`          | verified   |
+| Unstarted       | `undetermined`   | verified   |
+| Unchecked       | `1764592506934`  | unverified |
+| Unverified      | `1764591532014`  | unverified |
+
+Add a status in Check, and give it a verdict here before the next deploy: PromiseTracker refuses
+to start while a status has none. If it already refuses, take `check` out of `PT_PLUGINS`, start
+it, give the status a verdict under Settings, then put `check` back.
+
 ### Rating a claim
 
 A claim's rating changes only through a **claim update**: a dated entry in its public history.
@@ -328,8 +384,9 @@ To rate a claim:
    post or article), the publisher, the date, and a **link** or an uploaded **file**. Write the
    **finding**, one line on what it shows. Links are shown on the site, never opened by the server.
 2. Claims > Claim updates > Create New. Choose the **Claim**, the **Date** it happened (a year, a
-   month or a day, and it can be long before today), and the **Rating** as of that date, from the
-   claim's scale.
+   month or a day, and it can be long before today), and the **Rating** as of that date. The
+   **Rating** lists the chosen claim's scale, each with its colour, so choose the claim first.
+   Retired ratings are not offered. Changing the claim clears a rating its scale does not have.
 3. Write the **Title** and the **Narrative**: what happened and how we know. Both can be written in
    each language.
 4. Add the **Evidence**. An update that changes the rating needs at least one piece.
@@ -765,3 +822,42 @@ To see the searches that found nothing, add the **Searches that found nothing** 
 dashboard: choose **Edit Dashboard**, then **Add Widget**. It lists the last 30 days' searches with
 no results, most often first. A place that keeps appearing may be missing from the record, or
 spelt another way. Add the area, or check how its name is spelt.
+
+## 14. Submissions and the newsletter
+
+Readers send updates about a claim from the **Send it in** form under every claim: new evidence,
+a correction, or a note that something has changed. They need no account. Each form is checked
+by the site itself, with no outside service, and each connection can send ten forms an hour.
+
+### Moderating
+
+**Claims → Submissions** lists what readers sent, newest first. Moderators, editors and
+super-admins can open it. Add the **Submissions** widget to your dashboard to see how many are
+waiting and how many have changed the record. Its link opens the ones waiting. Moderators also
+get an email each morning when new submissions came in the day before.
+
+Open a submission to read it and its files. Then set **Status**:
+
+- **accepted**: it should change the record. Saving makes a draft claim update on the claim, with
+  the reader's words as its narrative. The sender is credited by name only if they gave a name and
+  ticked the box agreeing to it. An editor then finishes the update, with a rating and evidence,
+  and publishes it. Nothing is public until then.
+- **rejected** or **spam**: nothing changes. These are deleted after 180 days.
+
+Who decided is recorded. **Note** is for moderators and is never shown publicly.
+
+### The sender's details
+
+A name and a way to reach the sender are optional, and never published. If a sender asks for
+their details to be deleted, clear **Name** and **Contact** in the **Sender** section and save.
+The scrambled network address cannot identify anyone, and stays. If the submission was already
+accepted with the sender credited, also clear **Attribution** on its claim update.
+
+### The newsletter
+
+The sign-up at the bottom of every page stores the address and sends a confirmation email. Nobody
+is subscribed until they open the link in it. Super-admins see the list in **Administration →
+Newsletter sign-ups**, and delete an entry when someone asks to leave.
+
+Both forms link to the privacy notice at `/{language}/privacy`, which says what is collected and
+why.

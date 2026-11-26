@@ -12,7 +12,9 @@ import * as migration_20261124_173822_claim_updates from './20261124_173822_clai
 import * as migration_20261125_085438_plugin_tika_settings from './20261125_085438_plugin_tika_settings'
 import * as migration_20261125_133015_search from './20261125_133015_search'
 import * as migration_20261125_142205_plugin_ai from './20261125_142205_plugin_ai'
-import * as migration_20261125_150219_editorial from './20261125_150219_editorial'
+import * as migration_20261125_145030_plugin_check from './20261125_145030_plugin_check'
+import * as migration_20261125_174350_submissions from './20261125_174350_submissions'
+import * as migration_20261126_061936_editorial from './20261126_061936_editorial'
 
 export const migrations = [
   {
@@ -86,8 +88,18 @@ export const migrations = [
     name: '20261125_142205_plugin_ai',
   },
   {
-    up: migration_20261125_150219_editorial.up,
-    down: migration_20261125_150219_editorial.down,
-    name: '20261125_150219_editorial',
+    up: migration_20261125_145030_plugin_check.up,
+    down: migration_20261125_145030_plugin_check.down,
+    name: '20261125_145030_plugin_check',
+  },
+  {
+    up: migration_20261125_174350_submissions.up,
+    down: migration_20261125_174350_submissions.down,
+    name: '20261125_174350_submissions',
+  },
+  {
+    up: migration_20261126_061936_editorial.up,
+    down: migration_20261126_061936_editorial.down,
+    name: '20261126_061936_editorial',
   },
 ]

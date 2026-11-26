@@ -1,4 +1,4 @@
-import { getPayload, respondV1 } from '@promisetracker/cms'
+import { getPayload, respondForm, respondV1 } from '@promisetracker/cms'
 
 // Every request is answered fresh. Each response carries Cache-Control and an
 // ETag, so a cache in front checks back and gets a 304 when nothing changed.
@@ -10,4 +10,10 @@ type Args = { params: Promise<{ path: string[] }> }
 export async function GET(request: Request, { params }: Args) {
   const { path } = await params
   return respondV1(request, `/${path.join('/')}`, getPayload)
+}
+
+/** The public forms: a citizen submission and a newsletter sign-up (section 12.1). */
+export async function POST(request: Request, { params }: Args) {
+  const { path } = await params
+  return respondForm(request, `/${path.join('/')}`, getPayload)
 }

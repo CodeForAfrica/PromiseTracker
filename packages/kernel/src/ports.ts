@@ -69,6 +69,13 @@ export interface VerdictUpdate {
 }
 
 export interface VerificationProvider extends Adapter {
+  /**
+   * Where a claim keeps its reference in the outside system, as dotted paths
+   * into the plugin's own group, such as `check.itemId`. The core stores what
+   * `submit` returns there, and finds the claim a verdict update names by it.
+   * An adapter that sends nothing out, as the native one, has none.
+   */
+  readonly reference?: { externalId: string; url?: string; syncedAt?: string }
   /** Sends a claim out and returns its reference in the outside system. */
   submit(
     claim: ClaimForVerification,
@@ -205,7 +212,8 @@ export interface CaptchaProvider extends Adapter {
   challenge(ctx: AdapterContext): Promise<{ kind: string; data: Record<string, unknown> }>
   verify(
     token: string,
-    request: { ip?: string; userAgent?: string },
+    /** `trap` is the form's hidden trap field, which a person leaves empty. */
+    request: { ip?: string; userAgent?: string; trap?: string },
     ctx: AdapterContext,
   ): Promise<boolean>
 }

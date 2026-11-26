@@ -3,6 +3,7 @@ import { NotAvailableNotice, PageShell, ThemeView } from '@promisetracker/ui'
 import type { Metadata } from 'next'
 
 import { findSite, getTheme, LOGO, loadShell, orNotFound } from '@/data'
+import { alternates } from '@/seo'
 
 type Props = { params: Promise<{ lang: string; theme: string }> }
 
@@ -13,11 +14,16 @@ export function generateStaticParams(): never[] {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang, theme } = await params
-  if (!(await findSite(lang))) return {}
+  const site = await findSite(lang)
+  if (!site) return {}
   const found = await orNotFound(getTheme(lang, theme))
   return isNotAvailable(found)
     ? {}
-    : { title: found.title, ...(found.introduction ? { description: found.introduction } : {}) }
+    : {
+        title: found.title,
+        alternates: alternates(site, `/themes/${found.slug}`),
+        ...(found.introduction ? { description: found.introduction } : {}),
+      }
 }
 
 /** A theme's page (section 10.2): its claims across countries, with figures by country. */

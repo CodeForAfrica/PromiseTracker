@@ -1,0 +1,77 @@
+{
+  "data": {
+    "search": {
+      "number_of_results": 103,
+      "medias": {
+        "edges": [
+          {
+            "node": {
+              "id": "UHJvamVjdE1lZGlhLzEyMzQ1",
+              "full_url": "https://checkmedia.org/promise-tracker/media/12345",
+              "status": "verified",
+              "report_status": "published",
+              "report": {
+                "data": {
+                  "state": "published",
+                  "last_published": "1764064800",
+                  "options": {
+                    "language": "en",
+                    "use_text_message": true,
+                    "title": "Fact-check",
+                    "text": "Report for item 12345.",
+                    "published_article_url": "https://example.org/fact-checks/12345",
+                    "status_label": "Verified"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "id": "UHJvamVjdE1lZGlhLzIwMTAw",
+              "full_url": "https://checkmedia.org/promise-tracker/media/20100",
+              "status": "in_progress",
+              "report_status": "published",
+              "report": {
+                "data": {
+                  "state": "published",
+                  "last_published": "1764064800",
+                  "options": {
+                    "language": "en",
+                    "use_text_message": true,
+                    "title": "Fact-check",
+                    "text": "Report for item 20100.",
+                    "published_article_url": "https://example.org/fact-checks/20100",
+                    "status_label": "Verified"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "id": "UHJvamVjdE1lZGlhLzIwMTAx",
+              "full_url": "https://checkmedia.org/promise-tracker/media/20101",
+              "status": "verified",
+              "report_status": "published",
+              "report": {
+                "data": {
+                  "state": "published",
+                  "last_published": "1764064800",
+                  "options": {
+                    "language": "en",
+                    "use_text_message": true,
+                    "title": "Fact-check",
+                    "text": "Report for item 20101.",
+                    "published_article_url": "https://example.org/fact-checks/20101",
+                    "status_label": "Verified"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

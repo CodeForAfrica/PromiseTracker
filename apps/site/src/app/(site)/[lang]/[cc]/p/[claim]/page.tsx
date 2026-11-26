@@ -11,6 +11,8 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
 import { findSite, followRedirect, getClaim, LOGO, loadShell, orNull } from '@/data'
+import { alternates, jsonLd } from '@/seo'
+import { claimReview } from '@/structured'
 
 type Props = { params: Promise<{ lang: string; cc: string; claim: string }> }
 
@@ -20,9 +22,16 @@ export function generateStaticParams(): never[] {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang, cc, claim } = await params
-  if (!(await findSite(lang))) return {}
+  const site = await findSite(lang)
+  if (!site) return {}
   const found = await orNull(getClaim(lang, cc, claim))
-  return found && !isNotAvailable(found) ? { title: found.title } : {}
+  return found && !isNotAvailable(found)
+    ? {
+        title: found.title,
+        description: found.summary ?? found.statement ?? null,
+        alternates: alternates(site, `/${cc}/p/${found.slug}`),
+      }
+    : {}
 }
 
 /**
@@ -46,8 +55,16 @@ export default async function ClaimPage({ params }: Props) {
       </PageShell>
     )
   }
+  const review = claimReview(shell.site, claim)
   return (
     <PageShell {...shell} logo={LOGO} active={cc}>
+      {review && (
+        <script
+          type="application/ld+json"
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: escaped by jsonLd
+          dangerouslySetInnerHTML={{ __html: jsonLd(review) }}
+        />
+      )}
       <ClaimView site={shell.site} claim={claim} />
       {shows('claim.latest-analysis', shell.site.sections, analysisRule(claim.analysis.length)) && (
         <LatestAnalysis site={shell.site} articles={claim.analysis} />

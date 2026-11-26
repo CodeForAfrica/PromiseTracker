@@ -10,7 +10,7 @@ import { DEFAULT_STRINGS } from './strings'
 /**
  * The interface text, one box per string (section 10.5). It is saved as one
  * value per language, since a column per string would pass the hundred a
- * Postgres query may name (D91). Payload loads it by path,
+ * Postgres query may name (D109). Payload loads it by path,
  * `@promisetracker/plugin-site/client#InterfaceText`.
  */
 

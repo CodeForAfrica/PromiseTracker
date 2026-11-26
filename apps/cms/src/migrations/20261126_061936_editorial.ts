@@ -3,7 +3,7 @@ import { sql } from '@payloadcms/db-postgres'
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   // The interface text moves from a column per string to one value per
-  // language (D91): Postgres reads at most a hundred columns in one call, and
+  // language (D109): Postgres reads at most a hundred columns in one call, and
   // the strings outnumber that. Each language's text is copied across before
   // the old columns go.
   await db.execute(sql`

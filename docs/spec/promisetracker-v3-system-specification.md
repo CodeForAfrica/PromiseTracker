@@ -383,7 +383,8 @@ item's id in Check, its link, the report state, and the time and result of the l
 
 **The API.** One GraphQL endpoint, `https://check-api.checkmedia.org/api/graphql`. Every request
 carries the `X-Check-Token` header with the workspace API key and the `X-Check-Team` header with
-the workspace id. Both values live in the plugin's settings, encrypted.
+the workspace's short name, which Check reads as its slug (D90). Both live in the plugin's
+settings, the key encrypted, with the webhook's shared secret (D91).
 
 **How a claim maps to a Check item.**
 
@@ -392,7 +393,7 @@ the workspace id. Both values live in the plugin's settings, encrypted.
 | Statement | `quote` | The exact quote. Check creates an item of type `Claim` |
 | Title and summary | `set_claim_description` | Includes a link back to the claim |
 | Topic, claim type, country | `set_tags` | |
-| Starting status | `set_status` | `undetermined` |
+| Starting status | None | The workspace's default status (D96) |
 | Claim identity | The returned item id | Stored as `check.itemId` and used for matching |
 | Item link | The returned `full_url` | Stored as `check.itemUrl` |
 
@@ -412,7 +413,6 @@ mutation createProjectMedia($input: CreateProjectMediaInput!) {
     "media_type": "Claim",
     "quote": "We will build 200 new health centres by 2027",
     "channel": { "main": 1 },
-    "set_status": "undetermined",
     "set_tags": ["health", "promise", "ke"],
     "set_claim_description": "Governor: 200 new health centres ..."
   }
@@ -425,8 +425,8 @@ mutation createProjectMedia($input: CreateProjectMediaInput!) {
   `Authorization` header, which the handler checks before reading the body. The plugin acts only
   on report events, which Check labels `report_design`, and acknowledges all others with `200`.
   A report state of `published` applies the verdict. A state of `paused` withdraws it.
-- Poll: every 15 minutes a job searches Check for items with a published report, 100 per page,
-  and reconciles them. A push can be lost during a deploy, and the poll catches it.
+- Poll: every 15 minutes a job searches Check for items with a published or a paused report, 100
+  per page, most recently active first, and reconciles them (D98). A push can be lost during a deploy, and the poll catches it.
 
 The webhook body is the one v2 already handles. The fields the plugin reads:
 
@@ -1092,8 +1092,8 @@ After 5 failures in a row, the system stops calling an outside service for 60 se
 | `extractText` | core | A document reaches fetched |
 | `extractCandidates` | ai | A document reaches extracted |
 | `runImport` | core | An editor commits an import |
-| `submitForVerification` | check | A claim is created |
-| `pullVerdicts` | check | Every 15 minutes |
+| `submitForVerification` | core | A claim is created, when the verification adapter sends claims out (D92) |
+| `pollCheck` | check | Every 15 minutes |
 | `cascadeStatus` | core | A record status changes |
 | `refreshCounts` | core | After a cascade or a rating change. Refreshes the cached pages that show figures (D73) |
 | `cleanupJobs` | core | Hourly |
@@ -1812,9 +1812,27 @@ codemods, and passes the full test suite before merging.
 | D87 | The AI health check's test request is answered from memory for 60 seconds, since each one is billed. A failed test request at start-up, such as a missing key or exhausted credit, is logged and shown as degraded, and does not stop start-up |
 | D88 | The quote check matches a quote in the document ignoring spacing and letter case, which the review screen's highlight also ignores. Accents and every other character must match, and a quote under 8 characters never passes. At most 120 sections of a document are analysed, and the second pass sees at most 220 candidates, as in v2 |
 | D89 | An accepted candidate's statement is its first quote, unless the reviewer chooses another. The claim records the reviewer as who entered it, `ai` as how it was found, and the extraction and candidate it came from. A reviewer may accept candidates though they cannot create claims by hand (section 13.2) |
-| D90 | An editor can force a section on even when its rule in section 10.3 would leave it out, but a section with nothing in it never shows, forced on or not. Forced on, Choose a country is a list even with one country |
-| D91 | The interface text in plugin-site is stored as one value per language, not a column per string. Postgres reads at most a hundred columns in one call, and the strings outnumber that. The admin still shows one box per string |
-| D92 | Articles are listed under their country, `GET /countries/{cc}/articles?about=`, with `about` as `country`, `claim:{slug}` or `actor:{slug}`, as every other record that belongs to a country is. Editor pages are read with `GET /pages?path=`, since a nested path does not fit one address segment. `GET /overview` gives the homepage's "What we have tracked". An article about a claim or actor not published in a language is left out in that language |
+| D90 | Check reads the `X-Check-Team` header as the workspace's slug, its short name in Check's addresses, not a number. The plugin's setting is that name. v2 sent the same value |
+| D91 | The Check webhook's shared secret lives in the plugin's settings, encrypted with the API key, not in an environment variable as in v2, so a super-admin can change it without a deploy. It uses the encrypted settings field plugin-tika brought, so neither is ever shown again once saved |
+| D92 | The core sends claims out and applies verdicts for any verification adapter that names where a claim keeps its reference, such as `check.itemId`. A new claim queues `submitForVerification`, which retries while the service is down: that is the local queue section 5.2 asks for. A verdict from outside is written to the live claim, as an update's rating is (D72), so it never publishes a claim's draft. The admin shows the live values, and a save keeps them |
+| D93 | A published report gives the item's mapped verdict, its text as the rationale in the default language, its publication time as the verification date, and its article link as the report link. The webhook carries the report but not the item's status, so the plugin reads the status from Check. A paused report sets the verdict to unverified, holds the claim and emails editors |
+| D94 | Start-up refuses only when it reads the workspace's statuses and one has no verdict. With the workspace or key not set, or Check out of reach, it logs a warning and starts, so a super-admin can fill in the settings and an outage at Check never stops a deploy. A published report whose status has no verdict is logged and skipped |
+| D95 | Webhook fingerprints are kept per process for ten minutes, as in v2. A repeat that reaches another process is applied again, which changes nothing. The poll notes a sync on a claim only when its verdict changed |
+| D96 | A claim goes to Check with no status, so it starts on the workspace's default. Each workspace defines its statuses, and `undetermined` may mean something else there: in the PesaCheck promise workspace it is "Unstarted", a rating |
+| D97 | A disabled plugin's settings stay visible and editable to super-admins, marked as not in use, unlike its other fields (D29). They can be filled in before the plugin is switched on, and a setting that stops start-up, such as an unmapped Check status, can be fixed with the plugin switched off |
+| D98 | The poll reads published and paused reports, most recently active first, as deep as Check's search allows: 10,000 results. A report whose webhook was lost changed recently, so it is near the top. One deeper down has not changed since an earlier poll reconciled it. No position is kept between polls. The known limit: in a workspace with more than 10,000 published reports, a report whose webhook was lost, and which more than 10,000 others outpace in activity before the next poll, is not reconciled until it changes again |
+| D99 | A withdrawn verdict holds the claim on its live record and on its latest version, which the admin edits. The admin then shows the hold, and a save keeps it until an editor releases the claim. A withdrawal of a claim already unverified changes nothing, so a released claim is not held again. The webhook answers `401`, as for a wrong secret, while no secret is set, so a caller cannot tell whether one is |
+| D100 | The home page's share image adds up every country's figures. A country shown as percentages has reached the threshold, so the sum shows percentages; otherwise it keeps counts, as each country did (section 10.4). A share image shows the first rating scale its claims are on, by tier. Pages with no image of their own, such as the officials list, use the nearest one above them |
+| D101 | `/sitemap.xml` is an index. Each language has a child for its home and topic pages, `/sitemap/{lang}/index.xml`, and one per country it runs in, `/sitemap/{lang}/{cc}.xml`, with the country, its officials list, every actor, every claim and its history. Area and seat addresses redirect, and search is not indexed, so neither is listed. Every page lists its address in every language the site runs in as `hreflang`, with the default language as `x-default` |
+| D102 | A country's feed carries its 30 latest claims by when they were said, each with its rating and summary, dated by when its rating was last reviewed. `robots.txt` disallows everything while PT_NOINDEX is set (section 16.1) |
+| D103 | Canonical addresses, sitemaps, feeds, share images and structured data use PT_PUBLIC_URL. Unset, they use `http://localhost` on the site's port, so a deployment must set it |
+| D104 | The `local` captcha's proof of work is a challenge the server signs with Payload's secret, so nothing is stored until a solution arrives. A solution needs 16 leading zero bits in its SHA-256 hash, expires after 15 minutes and passes once. The browser fetches a challenge from `GET /api/v1/captcha`, which is never cached. Every attempt counts toward the rate limit of ten forms an hour per scrambled address, held in each server's memory. The scrambled address is an HMAC of the network address with Payload's secret, read from `X-Forwarded-For` |
+| D105 | Accepting a submission makes a draft claim update with the claim's current rating, the sender's words as its narrative, and the sender's name as its attribution only with consent. An editor finishes and publishes it. A moderator, who cannot rate a claim, can still accept |
+| D106 | A submission carries at most three files, each a JPEG, PNG, WebP or PDF of up to 10 MB whose first bytes, declared type and extension agree. The text is up to 5,000 characters. The redesign's 50 MB is too large for a form any visitor can send |
+| D107 | The newsletter's confirmation link leads to `/{lang}/newsletter/confirm`, which confirms on opening and works once, for 7 days. An address already confirmed gets no second email, one not yet confirmed gets at most one an hour, and the form answers the same either way. Submissions, their files and sign-ups keep no version history, so a deletion erases the data. Emails go through Payload's email adapter: Mailpit in development and the tests |
+| D108 | An editor can force a section on even when its rule in section 10.3 would leave it out, but a section with nothing in it never shows, forced on or not. Forced on, Choose a country is a list even with one country |
+| D109 | The interface text in plugin-site is stored as one value per language, not a column per string. Postgres reads at most a hundred columns in one call, and the strings outnumber that. The admin still shows one box per string |
+| D110 | Articles are listed under their country, `GET /countries/{cc}/articles?about=`, with `about` as `country`, `claim:{slug}` or `actor:{slug}`, as every other record that belongs to a country is. Editor pages are read with `GET /pages?path=`, since a nested path does not fit one address segment. `GET /overview` gives the homepage's "What we have tracked". An article about a claim or actor not published in a language is left out in that language |
 
 ### 20.2 Why
 

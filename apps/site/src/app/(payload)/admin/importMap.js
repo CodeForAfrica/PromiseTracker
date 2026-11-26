@@ -2,6 +2,7 @@ import { LLMInstructionsMenuItem as LLMInstructionsMenuItem_3817bf644402e67bfe65
 import { FindClaims as FindClaims_0bdeb70f8d678ccbdc32cdf8ef64d7e3 } from '@promisetracker/plugin-ai/client'
 import { SourceQuote as SourceQuote_4b2483109986546830d3cc5a8828e016 } from '@promisetracker/plugin-core/client'
 import { ConfirmRating as ConfirmRating_4b2483109986546830d3cc5a8828e016 } from '@promisetracker/plugin-core/client'
+import { RatingPicker as RatingPicker_4b2483109986546830d3cc5a8828e016 } from '@promisetracker/plugin-core/client'
 import { NullField as NullField_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
 import { HierarchyButton as HierarchyButton_ab83ff7e88da8d3530831f296ec4756a } from '@payloadcms/ui/rsc'
 import { RscEntryLexicalCell as RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
@@ -49,6 +50,7 @@ import { TagIcon as TagIcon_3817bf644402e67bfe6577f60ef982de } from '@payloadcms
 import { HierarchySidebarTabServer as HierarchySidebarTabServer_ab83ff7e88da8d3530831f296ec4756a } from '@payloadcms/ui/rsc'
 import { LeastRecentlyReviewed as LeastRecentlyReviewed_8c5b2177b2b16cd169c58df0d5f2d182 } from '@promisetracker/plugin-core/widgets'
 import { AwaitingVerification as AwaitingVerification_8c5b2177b2b16cd169c58df0d5f2d182 } from '@promisetracker/plugin-core/widgets'
+import { WaitingSubmissions as WaitingSubmissions_8c5b2177b2b16cd169c58df0d5f2d182 } from '@promisetracker/plugin-core/widgets'
 import { EmptySearches as EmptySearches_8c5b2177b2b16cd169c58df0d5f2d182 } from '@promisetracker/plugin-core/widgets'
 import { WelcomeWidget as WelcomeWidget_ab83ff7e88da8d3530831f296ec4756a } from '@payloadcms/ui/rsc'
 import { CollectionCards as CollectionCards_ab83ff7e88da8d3530831f296ec4756a } from '@payloadcms/ui/rsc'
@@ -65,6 +67,7 @@ export const importMap = {
   "@promisetracker/plugin-ai/client#FindClaims": FindClaims_0bdeb70f8d678ccbdc32cdf8ef64d7e3,
   "@promisetracker/plugin-core/client#SourceQuote": SourceQuote_4b2483109986546830d3cc5a8828e016,
   "@promisetracker/plugin-core/client#ConfirmRating": ConfirmRating_4b2483109986546830d3cc5a8828e016,
+  "@promisetracker/plugin-core/client#RatingPicker": RatingPicker_4b2483109986546830d3cc5a8828e016,
   "@payloadcms/ui#NullField": NullField_3817bf644402e67bfe6577f60ef982de,
   "@payloadcms/ui/rsc#HierarchyButton": HierarchyButton_ab83ff7e88da8d3530831f296ec4756a,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
@@ -112,6 +115,7 @@ export const importMap = {
   "@payloadcms/ui/rsc#HierarchySidebarTabServer": HierarchySidebarTabServer_ab83ff7e88da8d3530831f296ec4756a,
   "@promisetracker/plugin-core/widgets#LeastRecentlyReviewed": LeastRecentlyReviewed_8c5b2177b2b16cd169c58df0d5f2d182,
   "@promisetracker/plugin-core/widgets#AwaitingVerification": AwaitingVerification_8c5b2177b2b16cd169c58df0d5f2d182,
+  "@promisetracker/plugin-core/widgets#WaitingSubmissions": WaitingSubmissions_8c5b2177b2b16cd169c58df0d5f2d182,
   "@promisetracker/plugin-core/widgets#EmptySearches": EmptySearches_8c5b2177b2b16cd169c58df0d5f2d182,
   "@payloadcms/ui/rsc#WelcomeWidget": WelcomeWidget_ab83ff7e88da8d3530831f296ec4756a,
   "@payloadcms/ui/rsc#CollectionCards": CollectionCards_ab83ff7e88da8d3530831f296ec4756a,

@@ -19,7 +19,30 @@ import {
   Tracked,
 } from '@promisetracker/ui'
 
-import { getArea, getClaim, getOverview, getPage, getTheme, LOGO, loadShell, orNull } from '@/data'
+import type { Metadata } from 'next'
+
+import {
+  findSite,
+  getArea,
+  getClaim,
+  getOverview,
+  getPage,
+  getTheme,
+  LOGO,
+  loadShell,
+  orNull,
+} from '@/data'
+import { alternates } from '@/seo'
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>
+}): Promise<Metadata> {
+  const { lang } = await params
+  const site = await findSite(lang)
+  return site ? { alternates: alternates(site, '/') } : {}
+}
 
 /** A read that may name something since unpublished, or never published in this language. */
 const available = async <T,>(read: Promise<T>): Promise<Exclude<T, { error: string }> | null> => {

@@ -261,3 +261,6 @@ export async function loadShell(
   const { items } = await orNotFound(getCountries(locale))
   return { site, countries: items }
 }
+
+/** Confirms a newsletter sign-up. Never cached: each link works once. */
+export const confirmSubscription = (token: string) => sdk.confirmSubscription(token)

@@ -6,6 +6,7 @@ import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 
 import { findSite, getPage, LOGO, loadShell, orNull } from '@/data'
+import { alternates } from '@/seo'
 
 /**
  * Editor pages live at `/{lang}/{page}`, nested (section 11.1). A two-letter
@@ -17,10 +18,15 @@ import { findSite, getPage, LOGO, loadShell, orNull } from '@/data'
 export const isCountrySegment = (segment: string): boolean => /^[a-z]{2}$/.test(segment)
 
 export async function editorPageMetadata(lang: string, path: string): Promise<Metadata> {
-  if (!(await findSite(lang))) return {}
+  const site = await findSite(lang)
+  if (!site) return {}
   const page = await orNull(getPage(lang, path))
   if (!page || isNotAvailable(page)) return {}
-  return { title: page.title, ...(page.summary ? { description: page.summary } : {}) }
+  return {
+    title: page.title,
+    alternates: alternates(site, `/${page.path}`),
+    ...(page.summary ? { description: page.summary } : {}),
+  }
 }
 
 /** The page at this address, the sister site it leads to, or the not-found page. */

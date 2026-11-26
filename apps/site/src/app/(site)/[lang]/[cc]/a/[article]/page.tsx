@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
 import { findSite, followRedirect, getArticle, LOGO, loadShell, orNull } from '@/data'
+import { alternates } from '@/seo'
 
 type Props = { params: Promise<{ lang: string; cc: string; article: string }> }
 
@@ -14,11 +15,13 @@ export function generateStaticParams(): never[] {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang, cc, article } = await params
-  if (!(await findSite(lang))) return {}
+  const site = await findSite(lang)
+  if (!site) return {}
   const found = await orNull(getArticle(lang, cc, article))
   if (!found || isNotAvailable(found)) return {}
   return {
     title: found.title,
+    alternates: alternates(site, `/${found.country}/a/${found.slug}`),
     ...(found.standfirst ? { description: found.standfirst } : {}),
   }
 }

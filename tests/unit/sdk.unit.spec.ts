@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const answering = (status: number, body: unknown): Transport => ({
   get: async () => ({ status, body }),
+  post: async () => ({ status, body }),
 })
 
 const country = {

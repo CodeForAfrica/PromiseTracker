@@ -28,6 +28,7 @@ import {
   orNotFound,
 } from '@/data'
 import { EditorPage, editorPageMetadata, isCountrySegment } from '@/editorPage'
+import { alternates } from '@/seo'
 
 type Props = { params: Promise<{ lang: string; cc: string }> }
 
@@ -45,9 +46,12 @@ const loadCountry = (lang: string, cc: string) => orNotFound(getCountry(lang, cc
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang, cc } = await params
   if (!isCountrySegment(cc)) return editorPageMetadata(lang, cc)
-  if (!(await findSite(lang))) return {}
+  const site = await findSite(lang)
+  if (!site) return {}
   const country = await loadCountry(lang, cc)
-  return isNotAvailable(country) ? {} : { title: country.name }
+  return isNotAvailable(country)
+    ? {}
+    : { title: country.name, alternates: alternates(site, `/${country.code}`) }
 }
 
 /**

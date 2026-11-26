@@ -35,6 +35,8 @@ import {
   orNotFound,
   orNull,
 } from '@/data'
+import { alternates, jsonLd } from '@/seo'
+import { actorData } from '@/structured'
 
 type Props = {
   params: Promise<{ lang: string; cc: string; actor: string }>
@@ -49,9 +51,12 @@ const slugParam = (value: string | string[] | undefined): string | undefined =>
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang, cc, actor } = await params
-  if (!(await findSite(lang))) return {}
+  const site = await findSite(lang)
+  if (!site) return {}
   const found = await orNull(getActor(lang, cc, actor))
-  return found && !isNotAvailable(found) ? { title: found.name } : {}
+  return found && !isNotAvailable(found)
+    ? { title: found.name, alternates: alternates(site, `/${cc}/e/${found.slug}`) }
+    : {}
 }
 
 /**
@@ -95,6 +100,11 @@ export default async function ActorPage({ params, searchParams }: Props) {
     : null
   return (
     <PageShell {...shell} logo={LOGO} active={cc}>
+      <script
+        type="application/ld+json"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: escaped by jsonLd
+        dangerouslySetInnerHTML={{ __html: jsonLd(actorData(shell.site, cc, actor)) }}
+      />
       <ActorHero site={shell.site} code={cc} actor={actor} />
       <WhoThisIs site={shell.site} actor={actor} />
       {actor.keyClaim && (

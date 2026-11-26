@@ -4,7 +4,7 @@ import type { SectionId, SiteInfo } from '@promisetracker/contract'
  * When a section shows (section 10.3). A section with nothing to show is left
  * out: never shown empty, greyed out, or as a zero. An editor can force a
  * section on or off in the site settings. Forced on, it shows even when its
- * rule would leave it out, but still never empty (D90).
+ * rule would leave it out, but still never empty (D108).
  */
 
 /** What a rule says about a section: whether it has anything, and whether its rule is met. */
