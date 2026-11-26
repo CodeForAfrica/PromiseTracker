@@ -202,6 +202,37 @@ public on Docker Hub, so Dokku pulls it without signing in.
 
 Re-run the latest CI run on `main`, or merge anything, and the `staging` job deploys it.
 
+### Turning on a plugin
+
+Deploy first, then switch it on. `dokku config:set` restarts the app on the image it already
+runs, and an image built before a plugin existed refuses to start with that plugin in
+`PT_PLUGINS`: "PT_PLUGINS names unknown plugins". Dokku keeps the old containers serving, but the
+setting stays saved, so the next restart fails the same way. Once the GitHub variables above are
+set, every merge to `main` deploys the new image before anyone needs its plugins.
+
+To deploy by hand, use the digest the CI run published, so Dokku cannot reuse a cached image:
+
+```bash
+dokku git:from-image promisetracker-v3 codeforafrica/promisetracker-v3@sha256:<digest>
+```
+
+Then switch the plugin on and set what it needs in the admin:
+
+| Plugin  | `PT_PLUGINS` adds | Then                                                                                             |
+| ------- | ----------------- | ------------------------------------------------------------------------------------------------ |
+| `tika`  | `tika`            | Administration > Settings > Tika: `http://promisetracker-v3-tika.web:9998`                       |
+| `ai`    | `ai`              | Set `PT_LLM_MODEL`, such as `google:gemini-2.5-pro`, and paste the vendor's key in Settings > AI |
+| `check` | `check`           | Only if editors verify in Meedan Check. Its settings are in Settings > Check                     |
+
+```bash
+dokku config:set promisetracker-v3 PT_PLUGINS=core,site,tika
+```
+
+`/api/health` shows the plugin as degraded until its settings are saved, and healthy after.
+
+After a deploy that brings search to a database that already has records, rebuild the index once:
+Administration > Search index > Reindex.
+
 ### Editors
 
 A super-admin adds each PesaCheck editor in Administration > Users, with the role they need, and
