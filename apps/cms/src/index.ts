@@ -9,7 +9,15 @@ import { getHealth as checkHealth } from './health'
 
 export type { FormInput, FormResult, Sender } from './api/forms'
 export { captchaChallenge, handleForm, inputOf, inputOfFormData } from './api/forms'
-export { etagOf, matches, READ_CACHE, respondForm, respondV1 } from './api/http'
+export {
+  etagOf,
+  matches,
+  proxyHops,
+  READ_CACHE,
+  respondForm,
+  respondV1,
+  senderOf,
+} from './api/http'
 export { handleV1, languages, matchRoute, V1_PATTERNS } from './api/v1'
 export type { AreaFamily } from './areaTree'
 export { areaFamily } from './areaTree'

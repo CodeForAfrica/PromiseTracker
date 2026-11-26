@@ -96,9 +96,30 @@ export async function respondV1(
 /** The most a form body may be: three files and the text around them. */
 const MAX_FORM_BYTES = 31 * 1024 * 1024
 
-/** The sender's address, from the proxy in front. Used only for the captcha's rate limit. */
-function senderOf(request: Request) {
-  const forwarded = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+/** How many proxies in front of the app add to `X-Forwarded-For`. Dokku's nginx is one. */
+export function proxyHops(env: Readonly<Record<string, string | undefined>> = process.env): number {
+  const hops = Number(env.PT_PROXY_HOPS?.trim() || '1')
+  return Number.isInteger(hops) && hops >= 1 ? hops : 1
+}
+
+/**
+ * The sender's address, used only for the captcha's rate limit. Each proxy
+ * appends the address it saw to `X-Forwarded-For`, so the entries a sender
+ * wrote come first and cannot be trusted. The one to use is the entry the
+ * outermost trusted proxy added: `PT_PROXY_HOPS` from the end. Reading the
+ * first entry instead would let a sender pick a new key for every request and
+ * step around the limit.
+ */
+export function senderOf(
+  request: Pick<Request, 'headers'>,
+  env: Readonly<Record<string, string | undefined>> = process.env,
+) {
+  const entries = (request.headers.get('x-forwarded-for') ?? '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+  // Fewer entries than proxies means the request skipped some: the earliest is the nearest we have.
+  const forwarded = entries[Math.max(0, entries.length - proxyHops(env))]
   const ip = forwarded || request.headers.get('x-real-ip')?.trim() || undefined
   const userAgent = request.headers.get('user-agent') ?? undefined
   return { ...(ip ? { ip } : {}), ...(userAgent ? { userAgent } : {}) }
